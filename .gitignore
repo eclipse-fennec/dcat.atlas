@@ -6,3 +6,4 @@ build/
 bin/
 bin_test/
 /cnf/cache
+references/

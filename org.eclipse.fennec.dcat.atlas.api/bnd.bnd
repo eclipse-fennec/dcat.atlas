@@ -1,0 +1,4 @@
+-library: enableEMF
+
+
+-buildpath: org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot

@@ -12,6 +12,11 @@
 | Path | Purpose |
 |---|---|
 | `org.eclipse.fennec.dcat.atlas.dcatap.de.model/` | EMF model bundle for the DCAT-AP.de vocabulary (ecores + generated code + tests). |
+| `org.eclipse.fennec.dcat.atlas.api/` | OSGi service API — per-entity read-only + admin service interfaces (EMF-typed). |
+| `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations — file-backed store; one read-only + admin component per entity; shared `helper.DcatHelper`. |
+| `org.eclipse.fennec.dcat.atlas.rest/` | JAX-RS whiteboard resources — read-only (public) + admin (write) resource per entity. |
+| `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
+| `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. |
 | `docs/` | Source-of-truth documentation. Internal docs stay here; the user guide is published via `docs-site/`. |
 | `docs-site/` | VitePress documentation site (publishes the curated user guide). |
 | `references/` | Specs and reference code (git-ignored, not committed). |
@@ -46,6 +51,125 @@ Standard loop for a model change:
 ---
 
 ## Change log
+
+### 2026-07-08 — Admin/read REST API, file store, RDF content negotiation (and Jena-in-OSGi)
+
+**Goal.** Stand up the write-side admin API and the public read API over the
+DCAT-AP model (requirements `opendata-portal-anforderungen.en.md`, admin spec
+`opendata-portal-admin-api_EN.md`): CRUD services per entity, JAX-RS resources,
+and RDF content negotiation on the read side. Persistence is a simple file store
+for now (the JPA/PostgreSQL of **F-10** is still open).
+
+**Per-entity architecture** (Catalog, Dataset, DatasetSeries, DataService, Distribution).
+
+- **Service API** (`…api`): a read-only interface (`getX`, `listX`) and an admin
+  interface that `extends` it (`upsertX`, `deleteX`) — so read and write can be
+  wired and secured independently.
+- **Service impl** (`…impl`): `XAdminServiceImpl extends XReadOnlyServiceImpl`, so
+  the read methods are inherited once (no duplication). Both are DS components; the
+  read-only one registers the read-only interface, the admin one registers **only**
+  the admin interface (one provider per interface). All persistence is delegated to
+  `helper.DcatHelper`, which is generic over the DCAT-AP document-root feature
+  (`DCATAP_ROOT__CATALOG`, `…__DATASET`, …): each resource is one RDF/XML file
+  `<dir>/<id>.rdf` wrapped in `<rdf:RDF>` (`RDFRoot` + `AnyType`), round-tripped by
+  the model's own EMF resource factory. `id` = the last path segment of `rdf:about`.
+- **Config** (`StoreConfig`, one shared OCD): every service `@Designate`s it, but
+  each component keeps its **own** configuration PID (its component name) — two
+  components cannot share a PID. Configure each PID with its own `directory`.
+- **REST** (`…rest`): a public read-only resource at `/{collection}` and an admin
+  resource at `/admin/{collection}`. The path split lets the upstream PEP
+  (APISix/Keycloak, **F-6/F-12**) leave reads anonymous and require auth on
+  `**/admin/**`. Every resource needs **both** `@JakartarsResource` (the whiteboard
+  registers by it) **and** `@JakartarsName` (`ResourceAware`/DTOs find it by it).
+  The admin resource sets the entity `rdf:about` and the `Location` to the **public
+  read URL** `{base}/{collection}/{id}` (D1) — never the `/admin` path; the
+  `READ_COLLECTION` constant must match the read resource's `@Path` (hyphenated,
+  e.g. `data-services`, `dataset-series`).
+- **RDF serialization** (`…msg.body.writer`, package `…readerwriter`): the model is
+  XSD-derived, so its EMF `XMLResource` already emits spec-correct RDF/XML.
+  `EObjectRDFModelBuilder` wraps an `EObject`/`Collection` in `<rdf:RDF>`, lets EMF
+  write RDF/XML, then hands it to Jena to re-serialize as Turtle/JSON-LD/N3/N-Triples
+  (`RDFDataMgr`); a separate RDF/XML reader+writer use EMF directly (no Jena). GET
+  resources `@Produces` all of these plus JSON/XML (those two via the fennec codec);
+  writes accept JSON/XML/RDF-XML. N-Triples is the DCAT-AP-mandated format (**F-18**);
+  N3 is kept alongside it (any endpoint offering one offers the other).
+
+**Model note — Distribution is root-level.** `DCATAPRoot` has a `distribution`
+feature and `Distribution extends rdf:Resource` (own `about`); a Dataset references
+its distributions **by URI** (`Dataset.distribution : EList<Resource>`), not by
+containment. So `DistributionAdminService` uses the same uniform signature as the
+others (`upsertDistribution(Distribution)`, no `datasetId`); the dataset↔distribution
+link is a relationship concern (**FR-10**), not part of `upsert`.
+
+**Jena in OSGi (the hard part).** Jena 6.1 initializes its subsystems (datatypes/
+`TypeMapper`, RIOT parsers/writers) by reading `META-INF/services/
+org.apache.jena.sys.JenaSubsystemLifecycle` via `ServiceLoader.load(…, jena-base's
+classloader)` (`SubsystemRegistryServiceLoader`, in jena-base). In OSGi that
+classloader can't see the other Jena bundles' service files, so init silently
+no-ops and the first RDF parse throws `NoClassDefFoundError: …LiteralLabelFactory`
+(`TypeMapper.getInstance()` returns null). Jena 4.9 (the old gecko bundles)
+self-initialized `TypeMapper`, so there was no prior recipe to copy — this is a 6.1
+regression. The fix makes Aries **SPI-Fly** mediate that `ServiceLoader` across
+bundles, applied in the **`geckoprojects-ibraries`** repackaging of `org.apache.jena.*`
+6.1.0:
+
+- Restore the runtime `META-INF/services/*` in `jena-arq`/`jena-shacl` (the
+  repackaging had shipped them only under `OSGI-OPT/src`); `jena-core` already had them.
+- Providers (`core`/`arq`/`shacl`): `Provide-Capability osgi.serviceloader;
+  osgi.serviceloader="…JenaSubsystemLifecycle"; register:="…Init<X>"` **and**
+  `Require-Capability osgi.extender=osgi.serviceloader.registrar`.
+- Consumer (`jena-base`): `Require-Capability osgi.serviceloader` (carrying the
+  **direct `osgi.serviceloader` attribute**, not just a `filter:`) **and**
+  `Require-Capability osgi.extender=osgi.serviceloader.processor`.
+- Keep everything at **`effective:=resolve`** (the default). `effective:=active`
+  leaves the extender requirement unwired, so SPI-Fly never weaves the bundle.
+- `org.apache.aries.spifly.dynamic.bundle` stays in the runtime.
+
+Gotchas: the JPMS `module-info` generator NPEs unless the requirement carries the
+direct `osgi.serviceloader` attribute (consumer) and the capability carries
+`register:` (provider) — i.e. mirror what bnd's `@ServiceConsumer`/`@ServiceProvider`
+emit. An eager `JenaSystem.init()` at bundle start is **not** a fix and is harmful:
+it runs discovery once (empty) and the one-shot `initialized` flag then blocks the
+real init.
+
+**Integration-test runtime** (`…rest.tests`: `test.bndrun` + `configs/config.json`).
+
+- Felix HTTP on `localhost:8185` (`org.apache.felix.http~testHttp`); Jersey
+  whiteboard at context `/rest` (`JakartarsServletWhiteboardRuntimeComponent~testRest`,
+  targeting `(id=testHttp)`), applied by the Felix **Configurator** — which needs
+  `org.apache.felix.configadmin` (the *impl*, not just the CM API) in `-runbundles`,
+  plus `felix.cm.json` and the interpolation plugin. Missing the ConfigAdmin impl →
+  no config applied → 0 whiteboard instances → resources never register.
+- Each service PID gets its own store dir (`$[env:STORE_FOLDER;default=/tmp/rdf]/
+  <collection>`) so entity types don't collide on `<id>.rdf`.
+
+**Tests.**
+
+- Unit (`…impl/test`): `TestResourceSets` builds a stand-alone `ResourceSet` (all
+  DCAT-AP packages + `.rdf` factory); one round-trip test per admin impl
+  (upsert→get, list, delete, id-minting) — which also covers the inherited reads.
+- Integration (`…rest.tests`): `AbstractEntityResourceIntegrationTest` drives the
+  full HTTP flow (GET in every RDF format, 404, list, PUT via RDF/XML, DELETE),
+  waiting on the read+admin resources via `ResourceAware` (the
+  `JakartarsServiceRuntime` DTO, matched by `@JakartarsName`). One thin subclass per
+  entity supplies the collection/type/resource names and seeds via the injected
+  admin service.
+
+**How to verify.**
+
+```bash
+# service unit tests
+./gradlew :org.eclipse.fennec.dcat.atlas.impl:test
+# full REST pipeline (resolve test.bndrun first)
+./gradlew :org.eclipse.fennec.dcat.atlas.rest.tests:test
+```
+
+Requires the patched `org.apache.jena.*` 6.1.0 bundles from `geckoprojects-ibraries`
+published to the local repo.
+
+**Still open.** JPA/PostgreSQL persistence (F-10; file store today), ETag/`If-Match`
+(F-16), SHACL validation (F-4/F-21), OpenAPI (F-15), relationship endpoints
+(FR-9/10/11), auth wiring (F-6).
 
 ### 2026-07-07 — Upgrade the DCAT-AP.de model from 2.0.0 to 3.0
 

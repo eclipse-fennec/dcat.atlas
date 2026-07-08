@@ -1,0 +1,28 @@
+-library: enableEMF
+
+-buildpath: \
+	jakarta.ws.rs-api;version=latest,\
+	org.osgi.service.jakartars;version=latest,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.apache.jena.base,\
+	org.apache.jena.core,\
+	org.apache.jena.arq
+
+# Apache Jena's runtime dependencies. They are only needed to *run* the code
+# (RIOT parsing/writing, JSON-LD via Titanium); the -buildpath above is API only.
+# In the assembled application these come from the gecko libraries; the plain
+# JUnit tests run on buildpath+testpath, so they must be listed here explicitly.
+-testpath: \
+	org.apache.jena.iri,\
+	org.apache.jena.langtag,\
+	slf4j.api,\
+	org.apache.commons.lang3,\
+	org.apache.commons.commons-compress,\
+	com.github.ben-manes.caffeine,\
+	com.apicatalog.titanium.json.ld,\
+	com.apicatalog.titanium.rdf.api,\
+	com.apicatalog.titanium.rdf.n.quads,\
+	com.apicatalog.titanium.jcs,\
+	com.apicatalog.titanium.tree.io.api,\
+	jakarta.json-api,\
+	org.eclipse.parsson.jakarta.json

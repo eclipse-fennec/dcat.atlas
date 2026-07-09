@@ -1,5 +1,8 @@
 -library: enableEMF
 
+# The EMF->Jena bridge (EObjectRDFModelBuilder) is reused by the validation bundle.
+Export-Package: org.eclipse.fennec.dcat.atlas.msg.body.readerwriter
+
 -buildpath: \
 	jakarta.ws.rs-api;version=latest,\
 	org.osgi.service.jakartars;version=latest,\

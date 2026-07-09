@@ -25,8 +25,14 @@ import dcat.Distribution;
  */
 public interface DistributionReadOnlyService {
 	
-	Optional<Distribution> getDistribution(String id);
+	//**FR-10 (Distribution composition):** Distributions are created/deleted in the context of 
+	//their Dataset; a Distribution without a Dataset is not allowed. 
 	
-	List<Distribution> listDistributions();
+	Optional<Distribution> getDistributionForDataset(String datasetId, String distributionId);
+
+	List<Distribution> listDistributionsForDataset(String datasetId);
+
+	/** Strong ETag validator for the stored distribution {@code id}, or empty if absent (F-16). */
+	Optional<String> etag(String id);
 
 }

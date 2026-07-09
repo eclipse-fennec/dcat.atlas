@@ -23,5 +23,6 @@
   "DataSeriesReadOnlyService":    { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/dataset-series" },
   "DataSeriesAdminService":       { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/dataset-series" },
   "DistributionReadOnlyService":  { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions" },
-  "DistributionAdminService":     { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions" }
+  "DistributionAdminService":     { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions" },
+  "DcatValidationService":        { "shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]" }
 }

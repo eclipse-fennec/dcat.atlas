@@ -31,6 +31,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.GenericEntity;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -75,9 +77,14 @@ public class DataServiceReadOnlyResource {
 	@GET
 	@Path("/{id}")
 	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
-	public Response getDataService(@PathParam("id") String id) {
+	public Response getDataService(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
 		Optional<DataService> dataService = dataServiceReadOnlyService.getDataService(id);
-		return dataService.map(c -> Response.ok(c).build()) //
-				.orElseGet(() -> Response.status(Status.NOT_FOUND).build());
+		if (dataService.isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		// Attach the ETag; DcatConditionalFilter stamps it, adds Vary, and does the
+		// If-None-Match -> 304 handling (F-16).
+		DcatConditionalFilter.attach(requestContext, dataServiceReadOnlyService.etag(id));
+		return Response.ok(dataService.get()).build();
 	}
 }

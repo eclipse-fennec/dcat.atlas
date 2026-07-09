@@ -27,7 +27,10 @@ import dcat.Dataset;
 public interface DatasetReadOnlyService {
 	
 	Optional<Dataset> getDataset(String id);
-	
+
     List<Dataset> listDatasets();
+
+    /** Strong ETag validator for the stored dataset {@code id}, or empty if absent (F-16). */
+    Optional<String> etag(String id);
 
 }

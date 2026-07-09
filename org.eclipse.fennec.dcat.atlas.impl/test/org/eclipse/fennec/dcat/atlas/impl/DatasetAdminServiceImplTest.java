@@ -1,6 +1,7 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -65,6 +66,24 @@ public class DatasetAdminServiceImplTest {
 		DatasetAdminServiceImpl service = service();
 		service.upsertDataset(dataset(null, "Untitled about"));
 		assertEquals(1, service.listDatasets().size());
+	}
+
+	@Test
+	void etagIsEmptyWhenMissing() {
+		assertTrue(service().etag("does-not-exist").isEmpty());
+	}
+
+	@Test
+	void etagIsStableAcrossReadsAndChangesWithContent() {
+		DatasetAdminServiceImpl service = service();
+		service.upsertDataset(dataset(BASE + "air", "Air quality"));
+		String first = service.etag("air").orElseThrow();
+		// Same stored bytes -> same validator.
+		assertEquals(first, service.etag("air").orElseThrow());
+
+		// Changed content -> different validator.
+		service.upsertDataset(dataset(BASE + "air", "Air quality (v2)"));
+		assertNotEquals(first, service.etag("air").orElseThrow());
 	}
 
 	private static Dataset dataset(String about, String title) {

@@ -22,11 +22,10 @@ import dcat.Distribution;
  */
 public interface DistributionAdminService extends DistributionReadOnlyService {
 
-    // Distribution is a root-level resource (DCATAPRoot#distribution) keyed by its own
-    // rdf:about, like the other entities; the dataset link is a URI reference handled
-    // as a relationship (FR-10), not part of the upsert.
-    Distribution upsertDistribution(Distribution distribution);
+	//**FR-10 (Distribution composition):** Distributions are created/deleted in the context of 
+	//their Dataset; a Distribution without a Dataset is not allowed. 
+    Distribution upsertDistributionToDataset(String datasetId, Distribution distribution);
 
-    void deleteDistribution(String id, boolean cascade);
+    void deleteDistributionFromDataset(String datasetId, String distributionId);
 
 }

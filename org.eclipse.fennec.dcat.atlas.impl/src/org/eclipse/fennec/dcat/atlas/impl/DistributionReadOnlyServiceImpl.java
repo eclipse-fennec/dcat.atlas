@@ -18,8 +18,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
@@ -28,6 +31,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
+import dcat.Dataset;
 import dcat.DcatPackage;
 import dcat.Distribution;
 
@@ -43,15 +47,26 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path directory;
 
+	/**
+	 * A Distribution only exists in the context of a Dataset (FR-10). The
+	 * dataset->distribution link is modelled as a {@code dcat:distribution} URI
+	 * reference on the Dataset, so resolving a dataset's distributions means
+	 * reading the dataset and looking the referenced ids up in this store.
+	 */
+	protected final DatasetReadOnlyService datasetService;
+
 	@Activate
-	public DistributionReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.directory()));
+	public DistributionReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference DatasetReadOnlyService datasetService, StoreConfig config) {
+		this(resourceSetFactory, Path.of(config.directory()), datasetService);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path directory) {
+	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path directory,
+			DatasetReadOnlyService datasetService) {
 		this.resourceSetFactory = resourceSetFactory;
 		this.directory = directory;
+		this.datasetService = datasetService;
 		try {
 			Files.createDirectories(directory);
 		} catch (IOException e) {
@@ -59,22 +74,44 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 		}
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
-	 * @see org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService#getDistribution(java.lang.String)
+	 * @see org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService#getDistributionForDataset(java.lang.String, java.lang.String)
 	 */
 	@Override
-	public Optional<Distribution> getDistribution(String id) {
-		return DcatHelper.get(resourceSetFactory, directory, id, DcatPackage.Literals.DCATAP_ROOT__DISTRIBUTION);
+	public Optional<Distribution> getDistributionForDataset(String datasetId, String distributionId) {
+		return datasetService.getDataset(datasetId) //
+				.filter(dataset -> referencesDistribution(dataset, distributionId)) //
+				.flatMap(dataset -> DcatHelper.get(resourceSetFactory, directory, distributionId,
+						DcatPackage.Literals.DCATAP_ROOT__DISTRIBUTION));
 	}
 
-	/* 
+	/*
 	 * (non-Javadoc)
-	 * @see org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService#listDistributions()
+	 * @see org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService#listDistributionsForDataset(java.lang.String)
 	 */
 	@Override
-	public List<Distribution> listDistributions() {
-		return DcatHelper.list(resourceSetFactory, directory, DcatPackage.Literals.DCATAP_ROOT__DISTRIBUTION);
+	public List<Distribution> listDistributionsForDataset(String datasetId) {
+		return datasetService.getDataset(datasetId) //
+				.map(dataset -> dataset.getDistribution().stream() //
+						.map(ref -> DcatHelper.idOf(ref.getResource())) //
+						.filter(Objects::nonNull) //
+						.map(id -> DcatHelper.<Distribution>get(resourceSetFactory, directory, id,
+								DcatPackage.Literals.DCATAP_ROOT__DISTRIBUTION)) //
+						.filter(Optional::isPresent).map(Optional::get) //
+						.collect(Collectors.toList())) //
+				.orElseGet(List::of);
+	}
+
+	@Override
+	public Optional<String> etag(String id) {
+		return DcatHelper.etag(directory, id);
+	}
+
+	/** Whether {@code dataset} carries a {@code dcat:distribution} reference to {@code distributionId}. */
+	protected static boolean referencesDistribution(Dataset dataset, String distributionId) {
+		return dataset.getDistribution().stream()
+				.anyMatch(ref -> distributionId.equals(DcatHelper.idOf(ref.getResource())));
 	}
 
 }

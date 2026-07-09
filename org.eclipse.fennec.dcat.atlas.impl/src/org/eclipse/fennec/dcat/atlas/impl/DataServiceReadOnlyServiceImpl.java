@@ -77,4 +77,9 @@ public class DataServiceReadOnlyServiceImpl implements DataServiceReadOnlyServic
 		return DcatHelper.list(resourceSetFactory, directory, DcatPackage.Literals.DCATAP_ROOT__DATA_SERVICE);
 	}
 
+	@Override
+	public Optional<String> etag(String id) {
+		return DcatHelper.etag(directory, id);
+	}
+
 }

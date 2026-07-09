@@ -52,6 +52,232 @@ Standard loop for a model change:
 
 ## Change log
 
+### 2026-07-09 — SHACL validation foundation (FR-4/FR-5, product F-21)
+
+**Goal.** Stand up DCAT-AP.de SHACL validation of entities. First increment: the
+validation *service* + engine, proven end-to-end; REST wiring (dry-run/enforce) and
+controlled-vocabulary checks (F-22) come next.
+
+**Shapes are the official GovData ones, loaded from *outside* the app.** The
+normative shapes live in the FITKO/GovData project
+`gitlab.opencode.de/fitko/govdata/dcat-ap.de-shacl-validation` (v3.0 set under
+`validator/resources/v3.0/shapes/`: `dcat-ap-SHACL-DE.ttl` + german-additions +
+deprecated + controlledvocabularies + imports). They are **AGPLv3**, so they are
+**not vendored** into this EPL codebase — the service loads every `*.ttl` from an
+operator-configured directory (`ShapesConfig.shapesDirectory`) at activation. Notes:
+the shapes are **plain core SHACL** (no SPARQL/JS), so Jena's engine runs them
+directly; `dcat-ap-de-imports.ttl` only holds `owl:imports` (Jena does **not**
+auto-fetch them — no surprise network calls), and the controlled-vocabulary
+constraints are `sh:deactivated` by default, so structural validation needs only the
+shape files, not the big EU authority tables. (F-22 will load those later.)
+
+**Architecture.**
+- `…api`: `DcatValidationService.validate(EObject) → ValidationResult` with neutral,
+  **Jena-free** result types — `ValidationResult(conforms, List<Violation>, reportTurtle)`
+  and `Violation(focusNode, path, message, severity, sourceShape)`. `reportTurtle` is
+  the native `sh:ValidationReport` serialized as Turtle, so REST can return the report
+  as RDF (FR-19) without leaking Jena. There is **no EMF model for the report** — SHACL
+  is the `sh:` vocabulary, a validation layer, not part of the DCAT data model; Jena
+  produces the report as RDF and we serialize it directly.
+- `…validation` (new bundle): `DcatValidationServiceImpl` (`@Component` + `ShapesConfig`
+  OCD) loads `*.ttl` → `Shapes.parse`, converts the entity with
+  `EObjectRDFModelBuilder.toModel`, runs `ShaclValidator`. When no shapes are configured
+  it is a **no-op that reports conformance** — enforcement is the caller's decision, not
+  the service's. Jena-SHACL stays isolated here; `…impl` (the file store) remains Jena-free.
+- `…msg.body.writer`: now `Export-Package`s `…readerwriter` so the EMF→Jena bridge is
+  reused rather than duplicated.
+
+**bnd gotcha.** The `…validation` buildpath needed the Jena bundles pinned
+(`;version=latest`) and the test runtime needed the full transitive set Jena pulls
+(thrift, commons-codec, commons-collections4, titanium/parsson, caffeine, …) on
+`-testpath`, since the plain JUnit tests run on buildpath+testpath only.
+
+**Tests.** `DcatValidationServiceImplTest` (3, green) validates against a tiny
+self-authored shape (a `dcat:Dataset` must have a `dct:title`) so the suite is
+deterministic and ships **no** licensed shapes: conformant → passes; missing title →
+one violation + a Turtle `ValidationReport`; no shapes configured → conformance.
+
+**Dry-run REST endpoint (FR-5).** `ValidationResource` exposes
+`POST /admin/validate/{catalogs|datasets|dataset-series|data-services|distributions}`
+(one method per type so the existing RDF/JSON/XML body readers deserialize the
+payload). It always returns **200** with the native `sh:ValidationReport` as Turtle
+plus `X-SHACL-Conforms: true|false` — a dry run reports, never rejects. `…rest` stays
+Jena-free (it only handles the `String` report). Chosen over the spec's
+`?validate=only` query flag to keep the report's `text/turtle` negotiation off the
+write methods; note this as a deviation to reconcile with the spec later.
+
+**Runtime wiring.** `…validation` + `org.apache.jena.shacl` added to
+`test.bndrun` (`-runrequires`/`-runbundles` — **re-resolve in bndtools**); the
+`DcatValidationService` PID's `shapesDirectory` comes from
+`$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]` (non-existent default → no-op
+unless set). To trial the official shapes, set `SHACL_SHAPES_DIR` to their folder.
+`ValidationResourceIntegrationTest` exercises real validation end-to-end: it writes a
+tiny self-authored shape to a temp dir, points the `DcatValidationService` PID at it
+via `ConfigurationAdmin`, polls until validation is live (reconfiguring reactivates the
+service and re-registers the resource), then asserts a title-less dataset →
+`X-SHACL-Conforms: false` + a `ValidationReport`, and a valid one → `true`. No external
+shapes needed.
+
+**Still open (this feature).** Config-gated on-write **422** enforcement (FR-4) on
+the admin resources; then controlled-vocabulary/license validation (F-22, needs the
+imported vocab files loaded and the deactivated CV constraints turned on).
+
+### 2026-07-09 — ETag / conditional requests (F-16)
+
+**Goal.** Make the write API safe and cache-friendly with HTTP conditional
+requests: ETags on reads, `If-None-Match` for caching, `If-Match` for optimistic
+locking, and idempotent membership operations.
+
+**ETag = a strong validator over the stored file.** `DcatHelper.etag(dir, id)`
+returns a SHA-256 (hex) digest of the persisted `<id>.rdf` bytes (empty when
+absent). It is **state-based**, so it is identical across serialization formats
+(Turtle/JSON-LD/…) and changes iff the stored state changes — which is what
+optimistic locking needs. It is exposed as `Optional<String> etag(String id)` on
+each read-only service interface (admin services inherit it). Trade-off: two
+different representations of the same resource share one ETag, so reads send
+`Vary: Accept` for cache correctness. (A per-representation ETag was considered and
+rejected as overkill for locking.)
+
+**REST wiring — read side is a response filter, write side stays in the resource.**
+This mirrors the split in the sibling `model.atlas` project (`ObjectMetadataResponseFilter`
+for emission/conditional-GET; `If-Match` evaluated in resources): a
+`ContainerRequestFilter` is the wrong tool for ETag preconditions because it runs
+*before* the resource and would have to recompute the current ETag itself — and for
+the membership endpoints the lock target is not the path resource (see below).
+
+- **Reads** — `DcatConditionalFilter` (`ContainerResponseFilter`, a
+  `@JakartarsExtension`). A `GET` calls `DcatConditionalFilter.attach(requestContext,
+  service.etag(id))`; the filter stamps `ETag` + `Vary: Accept` (only when the resource
+  didn't already set a tag) and, on a safe `200` whose `If-None-Match` matches, rewrites
+  to **304** with no body — before the message-body writer runs, so no wasted RDF
+  serialization. Centralised in one place; a GET can't forget it.
+- **Writes** — the `ConditionalRequests` helper (wrapping
+  `Request.evaluatePreconditions`) stays in the admin resources: stale `If-Match` →
+  **412**, `If-None-Match: *` on PUT is create-only, no header → proceed. It must run
+  *before* the mutation, so it can't move to a response filter.
+- Applied to all five entities (Catalog, Dataset, DatasetSeries, DataService, and the
+  nested Distribution).
+
+**Membership endpoints (FR-9/10/11) — idempotent + conditional.** The ETag
+returned and the `If-Match` target is **the resource that actually changes on
+disk**, which is not always the path resource:
+
+- FR-9 (catalog membership) → the **catalog**. The `addXToCatalog` service methods
+  gained a dedup guard (match by `rdf:about` last segment): re-adding an existing
+  member is a no-op that skips the write, so the catalog's ETag is unchanged — the
+  observable "nothing to do".
+- FR-10 (nested distribution) → the **distribution** (its own file), like entity
+  CRUD; the dataset link is a side effect and already deduped.
+- FR-11 (series membership) → the **dataset** (membership is `dcat:inSeries` on the
+  dataset, so the dataset is what changes). `DatasetSeriesAdminResource` therefore
+  `@Reference`s `DatasetReadOnlyService` to read the dataset's ETag, and derives the
+  dataset id from the posted body's `about` (add) or the path (delete).
+
+> Idempotency vs ETags — keep them distinct: "adding the same member twice does
+> nothing" is the **operation** being idempotent (the dedup guards). The ETag just
+> lets a client *observe* that (same validator, no change) and guards concurrent
+> edits via `If-Match`.
+
+**Tests.** Unit: `DcatHelper.etag` coverage in `DatasetAdminServiceImplTest`
+(empty when missing, stable across reads, changes with content). Integration:
+`AbstractEntityResourceIntegrationTest` gained conditional-GET (304), `If-Match`
+PUT (412 then 200) and `If-Match` DELETE (412) cases — run for all four
+base-derived entities; the standalone `DistributionResourceIntegrationTest` got the
+same plus a re-add-is-idempotent (dataset ETag unchanged) case; the Catalog FR-9
+test asserts a stable ETag on re-add.
+
+**Still open (unchanged).** JPA/PostgreSQL persistence (F-10), SHACL validation
+(F-4/F-21), OpenAPI (F-15), auth wiring (F-6).
+
+### 2026-07-09 — Relationship & composition endpoints (FR-9/10/11) + whiteboard test-flakiness fix
+
+**Goal.** Let clients manage membership/composition **without re-uploading the
+target resource**: assign/remove Datasets, DataServices and sub-catalogs to/from
+a Catalog (**FR-9**); create/delete Distributions in the context of their Dataset
+(**FR-10**); assign/remove Datasets to/from a DatasetSeries (**FR-11**).
+
+**Design — the membership methods live on the per-entity admin services, not a
+separate relation service.** The earlier `CatalogRelationService` sketch (id-based
+`link*/unlink*`, never implemented) was **deleted**; the operations now hang off
+`CatalogAdminService`, `DistributionAdminService`/`…ReadOnlyService` and
+`DatasetSeriesAdminService`. Where a relationship is materialised is dictated by
+the EMF model (all the relevant references are **containment**, `IS_COMPOSITE`):
+
+- **FR-9 — self-contained in the Catalog.** `Catalog.dataset` (→ `DatasetContainer`
+  → `Dataset`), `Catalog.service` (→ `DataService`) and `Catalog.catalog`
+  (sub-catalogs) are containment. So `addXToCatalog`/`deleteXFromCatalog` just load
+  the catalog, add/remove the member, and re-store the catalog — no other store is
+  touched. The client sends only the member. Delete matches a member by the last
+  path segment of its `rdf:about` (`DcatHelper.idOf`).
+- **FR-10 — Distribution kept in its own store, linked from the Dataset.**
+  `Dataset.distribution` is a **URI reference** (`EList<rdf.Resource>`), not a
+  contained `Distribution`; the `Distribution` itself is a root element with its
+  own `about`. So a Distribution stays one `<id>.rdf` in the distribution store,
+  and `upsertDistributionToDataset` also adds a `dcat:distribution rdf:resource=…`
+  link onto the owning Dataset (and **refuses when the Dataset is absent** —
+  `NoSuchElementException` → 404); `delete…FromDataset` removes both link and file.
+  `get/listDistributionsForDataset` resolve via the Dataset's links. This means the
+  Distribution services now depend on the Dataset services: `DistributionReadOnlyService`
+  `@Reference`s `DatasetReadOnlyService`, `DistributionAdminService` `@Reference`s
+  `DatasetAdminService` (which *is-a* `DatasetReadOnlyService`, so it also satisfies
+  the inherited read-side dependency of the superclass).
+- **FR-11 — series membership is `inSeries` on the Dataset.** There is no
+  `seriesMember` back-reference on `DatasetSeries` in this model; membership is
+  `Dataset.inSeries` (containment). So `DatasetSeriesAdminService.addDatasetToDatasetSeries`
+  edits the Dataset (embeds a copy of the series into `inSeries`) and stores it via
+  the injected `DatasetAdminService`; delete reverses it.
+
+**REST surface.**
+
+- Catalog: `POST|DELETE /admin/catalogs/{id}/datasets[/{datasetId}]`,
+  `…/services[/{serviceId}]`, `…/catalogs[/{subCatalogId}]`.
+- Distribution is **no longer a root collection** — it is nested under its Dataset:
+  read `GET /datasets/{datasetId}/distributions[/{id}]`, write
+  `POST|PUT|DELETE /admin/datasets/{datasetId}/distributions[/{id}]`. There is no
+  dataset-less create. The admin resource `@Reference`s `DatasetReadOnlyService`
+  only to answer **404** (instead of a 500 from the thrown `NoSuchElementException`)
+  when the parent dataset is unknown. Distribution `about`/`Location` is the nested
+  read URL `{base}/datasets/{datasetId}/distributions/{id}` (D1).
+- DatasetSeries: `POST|DELETE /admin/dataset-series/{id}/datasets[/{datasetId}]`.
+
+**Tests.**
+
+- Unit (`…impl/test`): FR-9 cases added to `CatalogAdminServiceImplTest`; FR-11 to
+  `DatasetSeriesAdminServiceImplTest`; `DistributionAdminServiceImplTest` rewritten
+  for the nested API. The series/distribution tests now build a real
+  `DatasetAdminServiceImpl` over a second `@TempDir` and pass it into the
+  service-under-test (package-visible constructors gained a `Dataset*Service` param).
+- Integration (`…rest.tests`): base HTTP helpers promoted to `protected` plus a
+  generic `rdfXmlBody`/`postRdfXml`/`delete`; FR-9 tests in `CatalogResourceIntegrationTest`,
+  FR-11 in `DatasetSeriesResourceIntegrationTest` (also injects `DatasetAdminService`
+  to assert `inSeries` landed on the Dataset). `DistributionResourceIntegrationTest`
+  is now **standalone** (does not extend `AbstractEntityResourceIntegrationTest`,
+  because the nested resource has no dataset-less create): it seeds a Dataset, then
+  drives the nested endpoints.
+
+**Whiteboard test flakiness — the important gotcha.** After these changes the
+integration suite became **non-deterministic**: runs intermittently failed with a
+burst of `404`s on endpoints that were otherwise fine. Root cause: the
+osgitech/Jersey Jakarta-RS whiteboard composes every resource into **one** Jersey
+application and **reloads the whole application whenever the resource set changes**;
+during a reload, already-registered endpoints transiently return 404. All tests
+share one framework. `ResourceAware` only waits for a resource **DTO to appear**
+(first sighting) — not for reloads to stop. The new cross-service `@Reference`s
+**stagger** resource activation (a resource now waits for the Dataset services),
+so the last resources register *later* and a reload can land in the middle of an
+unrelated test. Fix: a `helper.RestReady.awaitStable(...)` gate used in every
+`@BeforeEach` that waits until **all** resources are present **and** the runtime's
+`service.changecount` (falling back to the set of registered resource names) has
+been **quiet** for a short window — i.e. the whiteboard has reached steady state
+before the first request. This replaced the per-entity `ResourceAware` waits.
+
+> Takeaway for future resources: adding a resource with new service references can
+> reintroduce this. Keep gating tests on whole-whiteboard quiescence, not on a
+> single resource's presence.
+
+**Still open (unchanged).** JPA/PostgreSQL persistence (F-10), ETag/`If-Match`
+(F-16), SHACL validation (F-4/F-21), OpenAPI (F-15), auth wiring (F-6).
+
 ### 2026-07-08 — Admin/read REST API, file store, RDF content negotiation (and Jena-in-OSGi)
 
 **Goal.** Stand up the write-side admin API and the public read API over the

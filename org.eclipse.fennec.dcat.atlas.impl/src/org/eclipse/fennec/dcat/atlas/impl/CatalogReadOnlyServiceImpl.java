@@ -72,4 +72,9 @@ public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService {
 	public List<Catalog> listCatalogs() {
 		return DcatHelper.list(resourceSetFactory, directory, DcatPackage.Literals.DCATAP_ROOT__CATALOG);
 	}
+
+	@Override
+	public Optional<String> etag(String id) {
+		return DcatHelper.etag(directory, id);
+	}
 }

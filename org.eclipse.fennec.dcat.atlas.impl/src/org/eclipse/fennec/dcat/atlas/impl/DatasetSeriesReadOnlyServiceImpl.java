@@ -77,4 +77,9 @@ public class DatasetSeriesReadOnlyServiceImpl implements DatasetSeriesReadOnlySe
 		return DcatHelper.list(resourceSetFactory, directory, DcatPackage.Literals.DCATAP_ROOT__DATASET_SERIES);
 	}
 
+	@Override
+	public Optional<String> etag(String id) {
+		return DcatHelper.etag(directory, id);
+	}
+
 }

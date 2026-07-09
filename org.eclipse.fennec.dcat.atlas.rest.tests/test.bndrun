@@ -5,6 +5,7 @@
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.impl',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.msg.body.writer',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
+	bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation',\
 	bnd.identity;id='org.apache.felix.configadmin.plugin.interpolation',\
 	bnd.identity;id='org.apache.felix.gogo.command',\
 	bnd.identity;id='org.apache.felix.gogo.shell',\
@@ -65,6 +66,7 @@
 	org.apache.jena.core;version='[6.1.0,6.1.1)',\
 	org.apache.jena.iri;version='[6.1.0,6.1.1)',\
 	org.apache.jena.langtag;version='[6.1.0,6.1.1)',\
+	org.apache.jena.shacl;version='[6.1.0,6.1.1)',\
 	org.eclipse.emf.common;version='[2.44.0,2.44.1)',\
 	org.eclipse.emf.ecore;version='[2.41.0,2.41.1)',\
 	org.eclipse.emf.ecore.xmi;version='[2.39.0,2.39.1)',\
@@ -74,6 +76,7 @@
 	org.eclipse.fennec.dcat.atlas.msg.body.writer;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.rest;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.rest.tests;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.validation;version=snapshot,\
 	org.eclipse.fennec.emf.osgi.component.minimal;version='[0.1.2,0.1.3)',\
 	org.eclipse.osgitech.rest;version='[1.2.3,1.2.4)',\
 	org.eclipse.osgitech.rest.servlet.whiteboard;version='[1.2.3,1.2.4)',\

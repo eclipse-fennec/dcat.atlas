@@ -2,10 +2,12 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.eclipse.emf.ecore.EcorePackage;
@@ -22,6 +24,8 @@ import org.junit.jupiter.api.io.TempDir;
 import adms.AdmsPackage;
 import adms.impl.AdmsPackageImpl;
 import dcat.Catalog;
+import dcat.DataService;
+import dcat.Dataset;
 import dcat.DcatFactory;
 import dcat.DcatPackage;
 import dcat.impl.DcatPackageImpl;
@@ -114,6 +118,76 @@ public class CatalogAdminServiceImplTest {
 	void idIsDerivedFromAboutLastSegment() {
 		assertEquals("gov", DcatHelper.idOf(BASE + "gov"));
 		assertNull(DcatHelper.idOf(null));
+	}
+
+	// --- FR-9 catalog membership -------------------------------------------
+
+	@Test
+	void addAndRemoveDatasetMembership() {
+		CatalogAdminServiceImpl service = service();
+		service.upsertCatalog(catalog(BASE + "gov", "GovData"));
+
+		service.addDatasetToCatalog("gov", dataset(BASE + "datasets/air", "Air quality"));
+
+		Catalog stored = service.getCatalog("gov").get();
+		assertEquals(1, stored.getDataset().size());
+		assertEquals(BASE + "datasets/air", stored.getDataset().get(0).getDataset().getAbout());
+
+		service.deleteDatasetFromCatalog("gov", "air");
+		assertTrue(service.getCatalog("gov").get().getDataset().isEmpty());
+	}
+
+	@Test
+	void addAndRemoveServiceMembership() {
+		CatalogAdminServiceImpl service = service();
+		service.upsertCatalog(catalog(BASE + "gov", "GovData"));
+
+		service.addDataServiceToCatalog("gov", dataService(BASE + "services/sparql"));
+
+		Catalog stored = service.getCatalog("gov").get();
+		assertEquals(1, stored.getService().size());
+		assertEquals(BASE + "services/sparql", stored.getService().get(0).getAbout());
+
+		service.deleteDataServiceFromCatalog("gov", "sparql");
+		assertTrue(service.getCatalog("gov").get().getService().isEmpty());
+	}
+
+	@Test
+	void addAndRemoveSubCatalogMembership() {
+		CatalogAdminServiceImpl service = service();
+		service.upsertCatalog(catalog(BASE + "gov", "GovData"));
+
+		service.addSubCatalogToCatalog("gov", catalog(BASE + "eu", "EU Portal"));
+
+		Catalog stored = service.getCatalog("gov").get();
+		assertEquals(1, stored.getCatalog().size());
+		assertEquals(BASE + "eu", stored.getCatalog().get(0).getAbout());
+
+		service.deleteSubCatalogFromCatalog("gov", "eu");
+		assertTrue(service.getCatalog("gov").get().getCatalog().isEmpty());
+	}
+
+	@Test
+	void membershipOnUnknownCatalogThrows() {
+		CatalogAdminServiceImpl service = service();
+		assertThrows(NoSuchElementException.class,
+				() -> service.addDatasetToCatalog("missing", dataset(BASE + "datasets/air", "Air quality")));
+	}
+
+	private static Dataset dataset(String about, String title) {
+		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		dataset.setAbout(about);
+		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
+		literal.setLang("en");
+		literal.setValue(title);
+		dataset.getTitle().add(literal);
+		return dataset;
+	}
+
+	private static DataService dataService(String about) {
+		DataService service = DcatFactory.eINSTANCE.createDataService();
+		service.setAbout(about);
+		return service;
 	}
 
 	private static Catalog catalog(String about, String title) {

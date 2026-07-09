@@ -1,71 +1,120 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import dcat.Dataset;
 import dcat.DcatFactory;
 import dcat.Distribution;
 import rdf.PlainLiteral;
 import rdf.RdfFactory;
 
 /**
- * Round-trips the file-backed distribution store (admin impl, which also covers
- * the inherited read operations). Distribution is a root-level resource keyed by
- * its own {@code rdf:about}, like the other entities.
+ * FR-10: a Distribution is created/read/deleted only in the context of its
+ * Dataset. The Distribution itself is kept in the distribution store; the
+ * dataset->distribution link is a {@code dcat:distribution} URI reference the
+ * service maintains on the owning Dataset.
  */
 public class DistributionAdminServiceImplTest {
 
-	private static final String BASE = "https://portal.example/admin/api/v1/distributions/";
+	private static final String DATASET_BASE = "https://portal.example/admin/api/v1/datasets/";
+	/** Distributions dereference under their dataset, e.g. {@code .../datasets/air/distributions/csv}. */
+	private static final String DIST_BASE = DATASET_BASE + "air/distributions/";
 
 	@TempDir
 	Path storage;
 
+	@TempDir
+	Path datasetStorage;
+
+	private DatasetAdminServiceImpl datasetService;
+
 	private DistributionAdminServiceImpl service() {
-		return new DistributionAdminServiceImpl(TestResourceSets.factory(), storage);
+		datasetService = new DatasetAdminServiceImpl(TestResourceSets.factory(), datasetStorage);
+		return new DistributionAdminServiceImpl(TestResourceSets.factory(), storage, datasetService);
 	}
 
-	@Test
-	void upsertThenGetReturnsEquivalentDistribution() {
-		service().upsertDistribution(distribution(BASE + "csv", "CSV download"));
-
-		Optional<Distribution> loaded = service().getDistribution("csv");
-		assertTrue(loaded.isPresent());
-		assertEquals(BASE + "csv", loaded.get().getAbout());
-		assertEquals("CSV download", loaded.get().getTitle().getValue());
-	}
-
-	@Test
-	void listReturnsEveryStoredDistribution() {
+	/** Seeds an (empty) owning dataset "air" and returns the ready distribution service. */
+	private DistributionAdminServiceImpl serviceWithDataset() {
 		DistributionAdminServiceImpl service = service();
-		service.upsertDistribution(distribution(BASE + "csv", "CSV download"));
-		service.upsertDistribution(distribution(BASE + "json", "JSON download"));
-		assertEquals(2, service.listDistributions().size());
+		datasetService.upsertDataset(dataset(DATASET_BASE + "air", "Air quality"));
+		return service;
+	}
+
+	@Test
+	void upsertStoresDistributionAndLinksItToDataset() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+
+		Optional<Distribution> loaded = service.getDistributionForDataset("air", "csv");
+		assertTrue(loaded.isPresent());
+		assertEquals(DIST_BASE + "csv", loaded.get().getAbout());
+		assertEquals("CSV download", loaded.get().getTitle().getValue());
+
+		// The owning dataset now references the distribution.
+		Dataset dataset = datasetService.getDataset("air").get();
+		assertEquals(1, dataset.getDistribution().size());
+		assertEquals(DIST_BASE + "csv", dataset.getDistribution().get(0).getResource());
+	}
+
+	@Test
+	void upsertWithoutDatasetIsRejected() {
+		DistributionAdminServiceImpl service = service();
+		// No dataset "air" seeded: a Distribution cannot exist without a Dataset.
+		assertThrows(NoSuchElementException.class,
+				() -> service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download")));
+	}
+
+	@Test
+	void listReturnsOnlyTheDatasetsDistributions() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "json", "JSON download"));
+
+		assertEquals(2, service.listDistributionsForDataset("air").size());
+	}
+
+	@Test
+	void getForWrongDatasetIsEmpty() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+		datasetService.upsertDataset(dataset(DATASET_BASE + "water", "Water quality"));
+
+		// "csv" belongs to "air", not "water".
+		assertTrue(service.getDistributionForDataset("water", "csv").isEmpty());
 	}
 
 	@Test
 	void getUnknownIsEmpty() {
-		assertTrue(service().getDistribution("does-not-exist").isEmpty());
+		assertTrue(serviceWithDataset().getDistributionForDataset("air", "does-not-exist").isEmpty());
 	}
 
 	@Test
-	void deleteRemovesTheDistribution() {
-		DistributionAdminServiceImpl service = service();
-		service.upsertDistribution(distribution(BASE + "csv", "CSV download"));
-		service.deleteDistribution("csv", false);
-		assertTrue(service.getDistribution("csv").isEmpty());
+	void deleteRemovesDistributionAndUnlinksItFromDataset() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+
+		service.deleteDistributionFromDataset("air", "csv");
+
+		assertTrue(service.getDistributionForDataset("air", "csv").isEmpty());
+		assertTrue(datasetService.getDataset("air").get().getDistribution().isEmpty());
 	}
 
 	@Test
 	void mintsIdWhenAboutMissing() {
-		DistributionAdminServiceImpl service = service();
-		service.upsertDistribution(distribution(null, "Untitled about"));
-		assertEquals(1, service.listDistributions().size());
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		Distribution distribution = distribution(null, "Untitled about");
+		service.upsertDistributionToDataset("air", distribution);
+		// Stored under a minted id; with no about there is no dataset link to add.
+		assertTrue(datasetService.getDataset("air").get().getDistribution().isEmpty());
 	}
 
 	private static Distribution distribution(String about, String title) {
@@ -78,5 +127,17 @@ public class DistributionAdminServiceImplTest {
 		literal.setValue(title);
 		distribution.setTitle(literal);
 		return distribution;
+	}
+
+	private static Dataset dataset(String about, String title) {
+		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		if (about != null) {
+			dataset.setAbout(about);
+		}
+		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
+		literal.setLang("en");
+		literal.setValue(title);
+		dataset.getTitle().add(literal);
+		return dataset;
 	}
 }

@@ -22,8 +22,10 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 
 
@@ -54,29 +56,42 @@ public class DatasetAdminResource {
 		String id = UUID.randomUUID().toString();
 		URI about = readUri(uriInfo, id);
 		dataset.setAbout(about.toString());
-		Dataset stored = datasetAdminService.upsertDataset(dataset);
-		return Response.created(about).entity(stored).build();
+		datasetAdminService.upsertDataset(dataset);
+		ResponseBuilder created = Response.created(about).entity(dataset);
+		datasetAdminService.etag(id).ifPresent(created::tag);
+		return created.build();
 	}
 
 	@PUT
 	@Path("/{id}")
 	@Consumes({ JSON, XML, RDF_XML })
 	@Produces({ JSON, XML, RDF_XML })
-	public Response upsertDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo) {
+	public Response upsertDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
+			@Context Request request) {
+		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
 		// Force the public read URL onto the payload so the service stores it under
 		// {id} regardless of what the client sent (D1/D2, replace-only F-17).
 		dataset.setAbout(readUri(uriInfo, id).toString());
 		boolean existed = datasetAdminService.getDataset(id).isPresent();
-		Dataset stored = datasetAdminService.upsertDataset(dataset);
-		Status status = existed ? Status.OK : Status.CREATED;
-		return Response.status(status).entity(stored).build();
+		datasetAdminService.upsertDataset(dataset);
+		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(dataset);
+		datasetAdminService.etag(id).ifPresent(response::tag);
+		return response.build();
 	}
 
 	@DELETE
 	@Path("/{id}")
-	public Response deleteDataset(@PathParam("id") String id) {
+	public Response deleteDataset(@PathParam("id") String id, @Context Request request) {
 		if (datasetAdminService.getDataset(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
 		}
 		datasetAdminService.deleteDataset(id, false);
 		return Response.noContent().build();

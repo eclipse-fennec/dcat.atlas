@@ -13,9 +13,8 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import org.eclipse.fennec.dcat.atlas.rest.tests.helper.ResourceAware;
+import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,10 +76,11 @@ public abstract class AbstractEntityResourceIntegrationTest {
 
 	@BeforeEach
 	void ensureResourcesAvailable(@InjectBundleContext BundleContext context) throws InterruptedException {
-		assertTrue(ResourceAware.create(context, readResourceName()).waitForResource(15, TimeUnit.SECONDS),
-				readResourceName() + " should be registered within 15 seconds.");
-		assertTrue(ResourceAware.create(context, adminResourceName()).waitForResource(15, TimeUnit.SECONDS),
-				adminResourceName() + " should be registered within 15 seconds.");
+		// Wait for the WHOLE whiteboard to reach steady state, not just this entity's
+		// two resources: a late-registering resource elsewhere reloads the shared
+		// Jersey application and transiently 404s every endpoint (see RestReady).
+		assertTrue(RestReady.awaitStable(context, RestReady.ALL_RESOURCES, 20_000, 750),
+				"REST whiteboard should reach a stable state within 20 seconds.");
 	}
 
 	@AfterEach
@@ -177,6 +177,53 @@ public abstract class AbstractEntityResourceIntegrationTest {
 		assertEquals(404, get(reads() + "/e1", TURTLE).statusCode());
 	}
 
+	// --- conditional requests (F-16) --------------------------------------
+
+	@Test
+	void getReturnsEtagAndHonoursIfNoneMatch() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> first = get(reads() + "/e1", TURTLE);
+		assertEquals(200, first.statusCode());
+		String etag = first.headers().firstValue("ETag").orElseThrow();
+
+		// If-None-Match with the current ETag -> 304 Not Modified.
+		HttpResponse<String> conditional = send(
+				HttpRequest.newBuilder(URI.create(reads() + "/e1")).GET().header("If-None-Match", etag), TURTLE);
+		assertEquals(304, conditional.statusCode());
+	}
+
+	@Test
+	void putHonoursIfMatch() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		String etag = get(reads() + "/e1", RDF_XML).headers().firstValue("ETag").orElseThrow();
+
+		// A stale/wrong validator is rejected with 412.
+		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(writes() + "/e1"))
+				.header("Content-Type", RDF_XML).header("If-Match", "\"stale-value\"")
+				.PUT(BodyPublishers.ofString(rdfXmlBody("e1", "Updated"))), RDF_XML);
+		assertEquals(412, stale.statusCode());
+
+		// The current validator is accepted.
+		HttpResponse<String> ok = send(HttpRequest.newBuilder(URI.create(writes() + "/e1"))
+				.header("Content-Type", RDF_XML).header("If-Match", etag)
+				.PUT(BodyPublishers.ofString(rdfXmlBody("e1", "Updated"))), RDF_XML);
+		assertEquals(200, ok.statusCode());
+		assertEquals("Updated", storedTitle("e1"));
+	}
+
+	@Test
+	void deleteHonoursIfMatch() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+
+		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(writes() + "/e1"))
+				.header("If-Match", "\"stale-value\"").DELETE(), TURTLE);
+		assertEquals(412, stale.statusCode());
+		assertTrue(storedPresent("e1"));
+	}
+
 	// --- helpers -----------------------------------------------------------
 
 	protected String reads() {
@@ -191,29 +238,45 @@ public abstract class AbstractEntityResourceIntegrationTest {
 		created.add(id);
 	}
 
-	/** A minimal {@code <rdf:RDF>} document with one typed resource and a title. */
+	/** A minimal {@code <rdf:RDF>} document with one resource of this entity's type and a title. */
 	private String rdfXmlBody(String id, String title) {
+		return rdfXmlBody(typeName(), reads() + "/" + id, title);
+	}
+
+	/** A minimal {@code <rdf:RDF>} document with one typed resource ({@code about}) and a title. */
+	protected static String rdfXmlBody(String type, String about, String title) {
 		return """
 				<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 				         xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmlns:dct="http://purl.org/dc/terms/">
-				  <dcat:%s rdf:about="%s/%s">
+				  <dcat:%s rdf:about="%s">
 				    <dct:title xml:lang="en">%s</dct:title>
 				  </dcat:%s>
-				</rdf:RDF>""".formatted(typeName(), reads(), id, title, typeName());
+				</rdf:RDF>""".formatted(type, about, title, type);
 	}
 
-	private HttpResponse<String> get(String url, String accept) throws Exception {
+	protected HttpResponse<String> get(String url, String accept) throws Exception {
 		return send(HttpRequest.newBuilder(URI.create(url)).GET(), accept);
 	}
 
-	private HttpResponse<String> send(HttpRequest.Builder request, String accept)
+	/** POST an RDF/XML body to {@code url}. */
+	protected HttpResponse<String> postRdfXml(String url, String body) throws Exception {
+		return send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.POST(BodyPublishers.ofString(body)), RDF_XML);
+	}
+
+	/** DELETE {@code url}. */
+	protected HttpResponse<String> delete(String url) throws Exception {
+		return send(HttpRequest.newBuilder(URI.create(url)).DELETE(), RDF_XML);
+	}
+
+	protected HttpResponse<String> send(HttpRequest.Builder request, String accept)
 			throws IOException, InterruptedException {
 		return http.send(request.header("Accept", accept).timeout(Duration.ofSeconds(10)).build(),
 				BodyHandlers.ofString());
 	}
 
-	private static String mediaType(HttpResponse<String> response) {
+	protected static String mediaType(HttpResponse<String> response) {
 		return response.headers().firstValue("Content-Type").map(v -> v.split(";")[0].trim()).orElse(null);
 	}
 }

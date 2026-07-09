@@ -14,6 +14,8 @@ import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsResource;
 import org.osgi.service.servlet.whiteboard.annotations.RequireHttpWhiteboard;
 
 import dcat.Catalog;
+import dcat.DataService;
+import dcat.Dataset;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
@@ -22,7 +24,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -64,32 +68,130 @@ public class CatalogAdminResource {
 		String id = UUID.randomUUID().toString();
 		URI about = readUri(uriInfo, id);
 		catalog.setAbout(about.toString());
-		Catalog stored = catalogAdminService.upsertCatalog(catalog);
-		return Response.created(about).entity(stored).build();
+		catalogAdminService.upsertCatalog(catalog);
+		ResponseBuilder created = Response.created(about).entity(catalog);
+		catalogAdminService.etag(id).ifPresent(created::tag);
+		return created.build();
 	}
 
 	@PUT
 	@Path("/{id}")
 	@Consumes({ JSON, XML, RDF_XML })
 	@Produces({ JSON, XML, RDF_XML })
-	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog, @Context UriInfo uriInfo) {
+	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog, @Context UriInfo uriInfo,
+			@Context Request request) {
+		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
 		// Force the public read URL onto the payload so the service stores it under
 		// {id} regardless of what the client sent (D1/D2, replace-only F-17).
 		catalog.setAbout(readUri(uriInfo, id).toString());
 		boolean existed = catalogAdminService.getCatalog(id).isPresent();
-		Catalog stored = catalogAdminService.upsertCatalog(catalog);
-		Status status = existed ? Status.OK : Status.CREATED;
-		return Response.status(status).entity(stored).build();
+		catalogAdminService.upsertCatalog(catalog);
+		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(catalog);
+		catalogAdminService.etag(id).ifPresent(response::tag);
+		return response.build();
 	}
 
 	@DELETE
 	@Path("/{id}")
-	public Response deleteCatalog(@PathParam("id") String id) {
+	public Response deleteCatalog(@PathParam("id") String id, @Context Request request) {
 		if (catalogAdminService.getCatalog(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
 		catalogAdminService.deleteCatalog(id, false);
 		return Response.noContent().build();
+	}
+
+	// --- FR-9 catalog membership -------------------------------------------
+	//
+	// Assign/remove a member (Dataset, DataService or sub-catalog) to/from a
+	// catalog without re-sending the catalog itself. The member is contained in
+	// the catalog, so these operate purely on the catalog identified by {id}.
+
+	@POST
+	@Path("/{id}/datasets")
+	@Consumes({ JSON, XML, RDF_XML })
+	@Produces({ JSON, XML, RDF_XML })
+	public Response addDataset(@PathParam("id") String id, Dataset dataset, @Context Request request) {
+		return addMember(id, request, () -> catalogAdminService.addDatasetToCatalog(id, dataset));
+	}
+
+	@DELETE
+	@Path("/{id}/datasets/{datasetId}")
+	public Response removeDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
+			@Context Request request) {
+		return removeMember(id, request, () -> catalogAdminService.deleteDatasetFromCatalog(id, datasetId));
+	}
+
+	@POST
+	@Path("/{id}/services")
+	@Consumes({ JSON, XML, RDF_XML })
+	@Produces({ JSON, XML, RDF_XML })
+	public Response addService(@PathParam("id") String id, DataService service, @Context Request request) {
+		return addMember(id, request, () -> catalogAdminService.addDataServiceToCatalog(id, service));
+	}
+
+	@DELETE
+	@Path("/{id}/services/{serviceId}")
+	public Response removeService(@PathParam("id") String id, @PathParam("serviceId") String serviceId,
+			@Context Request request) {
+		return removeMember(id, request, () -> catalogAdminService.deleteDataServiceFromCatalog(id, serviceId));
+	}
+
+	@POST
+	@Path("/{id}/catalogs")
+	@Consumes({ JSON, XML, RDF_XML })
+	@Produces({ JSON, XML, RDF_XML })
+	public Response addSubCatalog(@PathParam("id") String id, Catalog subCatalog, @Context Request request) {
+		return addMember(id, request, () -> catalogAdminService.addSubCatalogToCatalog(id, subCatalog));
+	}
+
+	@DELETE
+	@Path("/{id}/catalogs/{subCatalogId}")
+	public Response removeSubCatalog(@PathParam("id") String id, @PathParam("subCatalogId") String subCatalogId,
+			@Context Request request) {
+		return removeMember(id, request, () -> catalogAdminService.deleteSubCatalogFromCatalog(id, subCatalogId));
+	}
+
+	/**
+	 * Shared flow for the add-member endpoints: 404 if the catalog is unknown,
+	 * optimistic-lock check against the catalog's ETag (F-16), then run {@code add}
+	 * (idempotent in the service) and return 200 with the catalog's new ETag. A
+	 * no-op add leaves the catalog — and therefore the ETag — unchanged.
+	 */
+	private Response addMember(String id, Request request, java.util.function.Supplier<Catalog> add) {
+		if (catalogAdminService.getCatalog(id).isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
+		ResponseBuilder ok = Response.ok(add.get());
+		catalogAdminService.etag(id).ifPresent(ok::tag);
+		return ok.build();
+	}
+
+	/** Shared flow for the remove-member endpoints (see {@link #addMember}); returns 204. */
+	private Response removeMember(String id, Request request, Runnable remove) {
+		if (catalogAdminService.getCatalog(id).isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
+		remove.run();
+		ResponseBuilder noContent = Response.noContent();
+		catalogAdminService.etag(id).ifPresent(noContent::tag);
+		return noContent.build();
 	}
 
 	/** The public (read-side) URI of the catalog, e.g. {@code {base}/catalogs/{id}}. */

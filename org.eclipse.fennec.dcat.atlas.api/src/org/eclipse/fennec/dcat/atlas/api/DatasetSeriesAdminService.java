@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.api;
 
+import dcat.Dataset;
 import dcat.DatasetSeries;
 
 /**
@@ -25,5 +26,10 @@ public interface DatasetSeriesAdminService extends DatasetSeriesReadOnlyService{
     DatasetSeries upsertDatasetSeries(DatasetSeries series);
     
     void deleteDatasetSeries(String id, boolean cascade);
+    
+    //**FR-11 (Series membership):** Datasets can be assigned to / removed from a DatasetSeries 
+    DatasetSeries addDatasetToDatasetSeries(String datasetSeriesId, Dataset dataset);
+    
+    void deleteDatasetFromDatasetSeries(String datasetSeriesId, String datasetId);
 
 }

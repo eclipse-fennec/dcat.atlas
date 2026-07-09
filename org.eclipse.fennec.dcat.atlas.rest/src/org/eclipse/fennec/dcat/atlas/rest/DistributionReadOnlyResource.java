@@ -31,6 +31,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.GenericEntity;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -46,7 +48,7 @@ import jakarta.ws.rs.core.Response.Status;
 @JakartarsResource
 @JakartarsName("DistributionReadOnlyResource")
 @Component(name = "DistributionReadOnlyResource", service = DistributionReadOnlyResource.class, scope = ServiceScope.PROTOTYPE)
-@Path("/distributions")
+@Path("/datasets/{datasetId}/distributions")
 public class DistributionReadOnlyResource {
 	
 	static final String JSON = "application/json";
@@ -62,8 +64,8 @@ public class DistributionReadOnlyResource {
 
 	@GET
 	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
-	public Response listDistributions() {
-		List<Distribution> distributions = distributionReadOnlyService.listDistributions();
+	public Response listDistributions(@PathParam("datasetId") String datasetId) {
+		List<Distribution> distributions = distributionReadOnlyService.listDistributionsForDataset(datasetId);
 		if (distributions.isEmpty()) {
 			return Response.noContent().build();
 		}
@@ -75,10 +77,16 @@ public class DistributionReadOnlyResource {
 	@GET
 	@Path("/{id}")
 	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
-	public Response getDistribution(@PathParam("id") String id) {
-		Optional<Distribution> distribution = distributionReadOnlyService.getDistribution(id);
-		return distribution.map(c -> Response.ok(c).build()) //
-				.orElseGet(() -> Response.status(Status.NOT_FOUND).build());
+	public Response getDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
+			@Context ContainerRequestContext requestContext) {
+		Optional<Distribution> distribution = distributionReadOnlyService.getDistributionForDataset(datasetId, id);
+		if (distribution.isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		// Attach the ETag; DcatConditionalFilter stamps it, adds Vary, and does the
+		// If-None-Match -> 304 handling (F-16).
+		DcatConditionalFilter.attach(requestContext, distributionReadOnlyService.etag(id));
+		return Response.ok(distribution.get()).build();
 	}
 
 }

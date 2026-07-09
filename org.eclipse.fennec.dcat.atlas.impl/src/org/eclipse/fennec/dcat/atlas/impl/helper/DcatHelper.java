@@ -17,7 +17,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,6 +106,28 @@ public final class DcatHelper {
 			resource.save(RESOURCE_OPTIONS);
 		} catch (IOException e) {
 			throw new UncheckedIOException("Could not store object " + id, e);
+		}
+	}
+
+	/**
+	 * A strong entity-tag validator for the object stored under {@code id}: a
+	 * SHA-256 (hex) digest of the stored file's bytes, or empty if there is no such
+	 * file. Because it is computed over the persisted representation it is stable
+	 * across serialization formats and changes iff the stored state changes — which
+	 * is what conditional requests (ETag / If-Match / If-None-Match, F-16) need.
+	 */
+	public static Optional<String> etag(Path directory, String id) {
+		Path file = fileFor(directory, id);
+		if (!Files.isRegularFile(file)) {
+			return Optional.empty();
+		}
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			return Optional.of(HexFormat.of().formatHex(digest.digest(Files.readAllBytes(file))));
+		} catch (IOException e) {
+			throw new UncheckedIOException("Could not compute ETag for " + id, e);
+		} catch (NoSuchAlgorithmException e) {
+			throw new IllegalStateException("SHA-256 is required but unavailable", e);
 		}
 	}
 

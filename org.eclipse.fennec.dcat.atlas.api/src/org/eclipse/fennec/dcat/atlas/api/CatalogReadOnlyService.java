@@ -26,7 +26,10 @@ import dcat.Catalog;
 public interface CatalogReadOnlyService {
 	
 	Optional<Catalog> getCatalog(String id);
-	
-    List<Catalog> listCatalogs();      
+
+    List<Catalog> listCatalogs();
+
+    /** Strong ETag validator for the stored catalog {@code id}, or empty if absent (F-16). */
+    Optional<String> etag(String id);
 
 }

@@ -26,7 +26,10 @@ import dcat.DataService;
 public interface DataServiceReadOnlyService {
 	
 	Optional<DataService> getDataService(String id);
-	
+
     List<DataService> listDataServices();
+
+    /** Strong ETag validator for the stored data service {@code id}, or empty if absent (F-16). */
+    Optional<String> etag(String id);
 
 }

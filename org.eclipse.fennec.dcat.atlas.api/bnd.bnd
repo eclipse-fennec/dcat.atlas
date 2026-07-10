@@ -1,4 +1,8 @@
 -library: enableEMF
 
 
--buildpath: org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot
+-buildpath: \
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.apache.jena.shacl;version=latest,\
+	org.apache.jena.core;version=latest,\
+	org.apache.jena.base;version=latest

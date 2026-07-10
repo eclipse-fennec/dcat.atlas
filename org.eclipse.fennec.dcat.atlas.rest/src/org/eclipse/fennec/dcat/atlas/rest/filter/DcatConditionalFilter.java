@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.rest;
+package org.eclipse.fennec.dcat.atlas.rest.filter;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +61,7 @@ public class DcatConditionalFilter implements ContainerResponseFilter {
 	 * when {@code requestContext} is {@code null} or {@code etag} is empty (e.g. the
 	 * resource is not stored / has no validator).
 	 */
-	static void attach(ContainerRequestContext requestContext, Optional<String> etag) {
+	public static void attach(ContainerRequestContext requestContext, Optional<String> etag) {
 		if (requestContext != null && etag != null) {
 			etag.ifPresent(value -> requestContext.setProperty(PROP_ETAG, value));
 		}

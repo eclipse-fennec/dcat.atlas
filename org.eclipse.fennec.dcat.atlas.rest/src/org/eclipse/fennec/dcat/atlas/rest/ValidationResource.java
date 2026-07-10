@@ -13,12 +13,15 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest;
 
+import org.apache.jena.shacl.ValidationReport;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -42,8 +45,9 @@ import jakarta.ws.rs.core.Response;
  * <p>
  * One POST per entity type so the existing per-type RDF/JSON/XML body readers
  * deserialize the payload. The response is always {@code 200} — a dry run reports
- * rather than rejects — carrying the native {@code sh:ValidationReport} as Turtle,
- * with {@code X-SHACL-Conforms: true|false} for a quick programmatic check.
+ * rather than rejects — carrying the native {@code sh:ValidationReport}, serialized in
+ * whichever RDF syntax the client negotiates (Turtle/JSON-LD/RDF-XML/N3/N-Triples,
+ * FR-19), with {@code X-SHACL-Conforms: true|false} for a quick programmatic check.
  * <p>
  * On-write enforcement (FR-4, {@code 422}) is a separate, config-gated concern on
  * the admin resources; this endpoint never blocks.
@@ -61,14 +65,23 @@ public class ValidationResource {
 	static final String XML = "application/xml";
 	static final String RDF_XML = "application/rdf+xml";
 	static final String TURTLE = "text/turtle";
+	static final String JSONLD = "application/ld+json";
+	static final String N3 = "text/n3";
+	static final String NTRIPLES = "application/n-triples";
 
-	@Reference
-	DcatValidationService validationService;
+	/**
+	 * Dynamic/optional so a validation reconfigure (shapes or enforce-flag change) rebinds
+	 * here without recycling this resource and reloading the whole JAX-RS whiteboard. The
+	 * field can be momentarily {@code null} during a rebind (or if no validation service is
+	 * installed), which {@link #report} answers with 503 rather than a 500/NPE.
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+	volatile DcatValidationService validationService;
 
 	@POST
 	@Path("/catalogs")
 	@Consumes({ JSON, XML, RDF_XML })
-	@Produces(TURTLE)
+	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateCatalog(Catalog catalog) {
 		return report(catalog);
 	}
@@ -76,7 +89,7 @@ public class ValidationResource {
 	@POST
 	@Path("/datasets")
 	@Consumes({ JSON, XML, RDF_XML })
-	@Produces(TURTLE)
+	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDataset(Dataset dataset) {
 		return report(dataset);
 	}
@@ -84,7 +97,7 @@ public class ValidationResource {
 	@POST
 	@Path("/dataset-series")
 	@Consumes({ JSON, XML, RDF_XML })
-	@Produces(TURTLE)
+	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDatasetSeries(DatasetSeries series) {
 		return report(series);
 	}
@@ -92,7 +105,7 @@ public class ValidationResource {
 	@POST
 	@Path("/data-services")
 	@Consumes({ JSON, XML, RDF_XML })
-	@Produces(TURTLE)
+	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDataService(DataService dataService) {
 		return report(dataService);
 	}
@@ -100,15 +113,21 @@ public class ValidationResource {
 	@POST
 	@Path("/distributions")
 	@Consumes({ JSON, XML, RDF_XML })
-	@Produces(TURTLE)
+	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDistribution(Distribution distribution) {
 		return report(distribution);
 	}
 
 	private Response report(EObject entity) {
-		ValidationResult result = validationService.validate(entity);
-		return Response.ok(result.reportTurtle()) //
-				.type(TURTLE) //
+		DcatValidationService validation = validationService;
+		if (validation == null) {
+			// Momentarily unbound (mid-reconfigure) or no validation service installed.
+			return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+		}
+		ValidationReport result = validation.validate(entity);
+		// The report entity is serialized by ValidationReportMessageBodyWriter in whichever
+		// of the @Produces syntaxes the client negotiates; no explicit type here.
+		return Response.ok(result) //
 				.header("X-SHACL-Conforms", Boolean.toString(result.conforms())) //
 				.build();
 	}

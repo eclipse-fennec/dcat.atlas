@@ -12,4 +12,7 @@
 	jakarta.persistence-api;version=latest,\
 	org.osgi.service.cdi;version=latest,\
 	org.osgi.service.component;version=latest,\
-	org.eclipse.fennec.codec.rest;version=latest
+	org.eclipse.fennec.codec.rest;version=latest,\
+	org.apache.jena.shacl;version=latest,\
+	org.apache.jena.core;version=latest,\
+	org.apache.jena.base;version=latest

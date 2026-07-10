@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.rest;
+package org.eclipse.fennec.dcat.atlas.rest.helper;
 
 import java.util.Optional;
 
@@ -29,13 +29,13 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
  * (304 for a matched {@code If-None-Match} on a read, 412 for a failed
  * {@code If-Match}) when a precondition is not met, or {@code null} to proceed.
  */
-final class ConditionalRequests {
+public class ConditionalRequests {
 
 	private ConditionalRequests() {
 	}
 
 	/** Wraps a raw validator string as a strong {@link EntityTag}, or {@code null} if empty. */
-	static EntityTag tag(Optional<String> etag) {
+	public static EntityTag tag(Optional<String> etag) {
 		return etag.map(EntityTag::new).orElse(null);
 	}
 
@@ -46,7 +46,7 @@ final class ConditionalRequests {
 	 * @return a response builder to return as-is when a precondition fails (412) or a
 	 *         read is fresh (304); {@code null} when the caller should proceed.
 	 */
-	static ResponseBuilder evaluate(Request request, Optional<String> currentEtag) {
+	public static ResponseBuilder evaluate(Request request, Optional<String> currentEtag) {
 		return currentEtag.isPresent() //
 				? request.evaluatePreconditions(new EntityTag(currentEtag.get())) //
 				: request.evaluatePreconditions(); // no representation yet: supports If-None-Match: * create-guard

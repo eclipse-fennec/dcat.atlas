@@ -9,7 +9,8 @@ Export-Package: org.eclipse.fennec.dcat.atlas.msg.body.readerwriter
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.apache.jena.base,\
 	org.apache.jena.core,\
-	org.apache.jena.arq
+	org.apache.jena.arq,\
+	org.apache.jena.shacl
 
 # Apache Jena's runtime dependencies. They are only needed to *run* the code
 # (RIOT parsing/writing, JSON-LD via Titanium); the -buildpath above is API only.

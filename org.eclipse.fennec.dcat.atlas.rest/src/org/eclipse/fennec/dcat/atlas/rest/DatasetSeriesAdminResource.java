@@ -7,8 +7,14 @@ import java.util.UUID;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesAdminService;
+import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
+import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -25,6 +31,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -59,14 +66,28 @@ public class DatasetSeriesAdminResource {
 	@Reference
 	DatasetReadOnlyService datasetReadOnlyService;
 
+	/**
+	 * On-write SHACL enforcement (FR-4); gated by the validation service's config.
+	 * Dynamic/optional so a validation reconfigure (shapes or enforce-flag change)
+	 * rebinds here without recycling this resource and reloading the whole JAX-RS
+	 * whiteboard; absent/unbound simply means no enforcement (see {@link WriteValidation}).
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+	volatile DcatValidationService validationService;
+
 	@POST
 	@Consumes({ JSON, XML, RDF_XML })
 	@Produces({ JSON, XML, RDF_XML })
-	public Response createDatasetSeries(DatasetSeries datasetSeries, @Context UriInfo uriInfo) {
+	public Response createDatasetSeries(DatasetSeries datasetSeries, @Context UriInfo uriInfo, @Context HttpHeaders headers) {
 		// Mint an id and make the resource's public read URL its about (D1/D2).
 		String id = UUID.randomUUID().toString();
 		URI about = readUri(uriInfo, id);
 		datasetSeries.setAbout(about.toString());
+		// Validate the exact form to be stored (about already stamped); 422 if enforced.
+		ResponseBuilder invalid = WriteValidation.enforce(validationService, datasetSeries, headers.getAcceptableMediaTypes());
+		if (invalid != null) {
+			return invalid.build();
+		}
 		datasetSeriesAdminService.upsertDatasetSeries(datasetSeries);
 		ResponseBuilder created = Response.created(about).entity(datasetSeries);
 		datasetSeriesAdminService.etag(id).ifPresent(created::tag);
@@ -78,7 +99,7 @@ public class DatasetSeriesAdminResource {
 	@Consumes({ JSON, XML, RDF_XML })
 	@Produces({ JSON, XML, RDF_XML })
 	public Response upsertDatasetSeries(@PathParam("id") String id, DatasetSeries datasetSeries,
-			@Context UriInfo uriInfo, @Context Request request) {
+			@Context UriInfo uriInfo, @Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetSeriesAdminService.etag(id));
 		if (precondition != null) {
@@ -87,6 +108,10 @@ public class DatasetSeriesAdminResource {
 		// Force the public read URL onto the payload so the service stores it under
 		// {id} regardless of what the client sent (D1/D2, replace-only F-17).
 		datasetSeries.setAbout(readUri(uriInfo, id).toString());
+		ResponseBuilder invalid = WriteValidation.enforce(validationService, datasetSeries, headers.getAcceptableMediaTypes());
+		if (invalid != null) {
+			return invalid.build();
+		}
 		boolean existed = datasetSeriesAdminService.getDatasetSeries(id).isPresent();
 		datasetSeriesAdminService.upsertDatasetSeries(datasetSeries);
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(datasetSeries);

@@ -18,6 +18,22 @@ package org.eclipse.fennec.dcat.atlas.api;
  * free of any SHACL/Jena types (F-16/FR-4). Mirrors a {@code sh:ValidationResult}:
  * the focus node that failed, the property path (if any), the human-readable
  * message, the severity IRI, and the shape that raised it.
+ *
+ * @deprecated Part of the deprecated {@link ValidationResult} projection; the native
+ *             Jena {@code ValidationReport} now carries the results directly.
  */
+@Deprecated
 public record Violation(String focusNode, String path, String message, String severity, String sourceShape) {
+
+	/** The SHACL severity IRI for a hard violation (DCAT-AP.de "MUSS"). */
+	public static final String SH_VIOLATION = "http://www.w3.org/ns/shacl#Violation";
+
+	/**
+	 * Whether this is a hard violation ({@code sh:Violation}, i.e. a DCAT-AP.de "MUSS"),
+	 * as opposed to a {@code sh:Warning}/{@code sh:Info} ("SOLL"/recommendation). Only
+	 * hard violations block a write (FR-4); recommendations are reported but do not reject.
+	 */
+	public boolean isViolation() {
+		return SH_VIOLATION.equals(severity);
+	}
 }

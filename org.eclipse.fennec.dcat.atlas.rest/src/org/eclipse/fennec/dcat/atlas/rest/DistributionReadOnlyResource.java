@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;

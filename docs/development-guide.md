@@ -52,6 +52,169 @@ Standard loop for a model change:
 
 ## Change log
 
+### 2026-07-10 — Validation report as native Jena `ValidationReport` (+ `shacl.model` bundle)
+
+**Goal.** Return the *full, spec-compliant* SHACL report in every RDF syntax (FR-19),
+and stop hand-rolling a lossy projection of it.
+
+**Decision — return the native Jena report; this reverses an earlier choice.** The
+2026-07-09 SHACL foundation deliberately kept `…api` Jena-free, exposing
+`ValidationResult(conforms, List<Violation>, reportTurtle)` /`Violation`. That was
+re-evaluated: those wrappers can only carry a *lossy projection*, and the spec (§6,
+FR-19) actually asks for the SHACL report itself as RDF/JSON. So
+`DcatValidationService.validate(EObject)` now returns
+`org.apache.jena.shacl.ValidationReport` directly — **`…api` now depends on Jena** (that
+is the conscious trade-off; acceptable since the whole app runs on Jena and this is an
+internal service API, not a published SPI). The old wrappers + a `validateLegacy(EObject)`
+adapter are kept **`@Deprecated`** as a fallback while the new path beds in — do not build
+on them.
+
+**Serialization — one writer, five syntaxes, no plain JSON.**
+`ValidationReportMessageBodyWriter` (in `…msg.body.writer`, package `…readerwriter`,
+alongside the other RDF writers — *not* in `rest`, which stays a thin adapter) is a
+`MessageBodyWriter<ValidationReport>` that hands `report.getModel()` straight to
+`RDFDataMgr` in the negotiated syntax: Turtle / JSON-LD / RDF-XML / N3 / N-Triples. No EMF
+conversion (the report is already a Jena model), so **full fidelity** — blank nodes,
+complex paths, literal values all survive. Plain `application/json` is intentionally *not*
+offered (JSON-LD covers JSON-shaped RDF); whether a plain-JSON projection is needed is an
+open product question. `ValidationResource` (dry-run) and the admin `422` both negotiate
+across all five formats (the `422` picks the client's accepted RDF type, Turtle default —
+no longer hardcoded Turtle). `rest` keeps `jena.shacl` (for the enforcement check) but
+dropped `jena.arq`.
+
+**Enforcement — MUSS blocks, SOLL doesn't.** `WriteValidation` (now under a `helper`
+package in `rest`) rejects a write (`422`) iff the report has a `sh:Violation` entry
+(DCAT-AP.de "MUSS"); `sh:Warning` (SOLL — e.g. the whole license vocabulary) is reported by
+the dry run but never blocks. A null severity defaults to `sh:Violation`.
+
+**New bundle `org.eclipse.fennec.shacl.model` — present but UNUSED.** A generated EMF
+model of the SHACL *results* vocabulary (`sh:ValidationReport`/`ValidationResult` +
+result properties), reusing `rdf:Resource`/`rdf:PlainLiteral` from the DCAT-AP model
+bundle (cross-bundle genmodel ref via the relative path to
+`dcatap.genmodel#//rdf`). It exists **only** as the future vehicle for a plain
+`application/json` report projection (the fennec codec, which Jena can't emit); it is not
+wired into the service or REST layer. Its `README.md` documents the **fidelity
+limitations** of a *typed* projection: URI-only object fields (`rdf:Resource`), so a
+literal `sh:value`, a blank-node `sh:sourceShape` (the GovData property shapes are
+anonymous!), and complex `sh:resultPath` are dropped; only Jena's native report (served for
+RDF) is byte-for-byte faithful. Modelling those faithfully would mean modelling the SHACL
+*constraint* vocabulary too — out of scope. See that README before extending it.
+
+**Tests.** Validation unit tests now assert on the Jena report (`conforms()`,
+`getEntries()`, `Severity`), with one test still covering the deprecated `validateLegacy`
+projection; the F-22 real-data regression test (`ControlledVocabularyRealDataTest`,
+env-gated, CI-skipped) updated likewise. Integration suite green. `rest` internals were
+also reorganised (the conditional filter and the `helper` classes moved into their own
+packages).
+
+### 2026-07-10 — Controlled-vocabulary validation (F-22)
+
+**Goal.** Validate that vocabulary-constrained properties (license, theme, language,
+frequency, availability, access-rights, format, status, …) use values from the
+DCAT-AP.de controlled vocabularies — the second half of the SHACL work.
+
+**Correcting the foundation's assumption.** The 2026-07-09 entry said the CV
+constraints are `sh:deactivated` by default. That is **wrong** for the real GovData
+files: there is **no** `sh:deactivated` anywhere. The CV constraints simply live in
+`dcat-ap-de-controlledvocabularies.ttl`; the existing loader already runs them once that
+file is in the shapes dir. No "activation" step exists or is needed.
+
+**The actual gap — reference data.** The CV shapes check membership by traversing
+`skos:inScheme`/`sh:class` on the *value* node, e.g. `dcterms:accrualPeriodicity`'s value
+must have `skos:inScheme <…/authority/frequency>`. That triple lives in the EU/GovData
+**authority tables** (the `owl:imports` targets in `dcat-ap-de-imports.ttl`), not in the
+submitted entity. So without the authority data present, every vocabulary value reports a
+**false** violation. Fix: load that data and union it into the graph being validated.
+- New `ShapesConfig.vocabularyDirectory()`; `DcatValidationServiceImpl` loads every RDF
+  file in it (format by extension via `RDFLanguages.filenameToLang`) into a vocabulary
+  `Model` once at activation, and `validate()` runs the shapes against
+  `ModelFactory.createUnion(entityModel, vocabulary)` (read-only union, no copy/mutation,
+  safe for concurrent validate() calls). Empty dir ⇒ empty graph (documented: then don't
+  ship the CV shape file, or you get false violations). **No network fetches** — the app
+  stays offline; the operator downloads the imports ahead of time.
+- The imports mirror on GovData (`validator/resources/mirror/`) holds only foaf/vcard/org;
+  the CV data (EU authority tables, the `dcat-ap.de` license register, spdx, adms) is the
+  *other* `owl:imports` at their canonical URLs. Assemble `vocabularyDirectory` by
+  downloading each uncommented import (e.g. `curl -L -H "Accept: application/rdf+xml"
+  http://publications.europa.eu/resource/authority/language -o language.rdf`); the file
+  extension must match the syntax (our loader detects language by extension).
+
+**Severity: MUSS blocks, SOLL does not.** DCAT-AP.de marks hard checks `sh:Violation`
+(MUSS) and recommendations `sh:Warning` (SOLL — e.g. the whole license vocabulary).
+Jena's `ValidationReport.conforms()` is `entries.isEmpty()`, so it is `false` for *any*
+entry including a Warning — meaning the FR-4 enforcement (which keyed on `conforms()`)
+would have wrongly 422'd a mere recommendation. Fixed: `Violation.isViolation()` +
+`ValidationResult.hasBlockingViolations()` (true iff some entry is `sh:Violation`);
+`WriteValidation` now rejects only on that. The dry run (FR-5) still reports everything.
+Gotcha: Jena's `ReportEntry.severity()` is a `Severity` wrapper, not the IRI — take
+`.level()` (null ⇒ SHACL default `sh:Violation`).
+
+**Tests.** Deterministic unit tests (self-authored, AGPL-free): CV conforms when the
+vocabulary graph supplies the `skos:inScheme` triple / violates when it does not, and a
+`sh:Warning` is reported but not blocking. Plus **`ControlledVocabularyRealDataTest`** — an
+opt-in real-data regression guard: it validates a dataset's `dcterms:accrualPeriodicity`
+against the **real** `controlledvocabularies.ttl` + the **real** EU authority tables, and
+is `@EnabledIfEnvironmentVariable` on `SHACL_SHAPES_DIR`/`SHACL_VOCAB_DIR` (the same env
+vars `config.json` uses) so it **skips on CI** and runs only when a developer points it at
+local GovData shapes + downloaded vocab. Verified manually: a real
+`…/frequency/ANNUAL` conforms; a bogus frequency raises the exact GovData MUSS violation
+(`#kv-frequency`). `config.json` gained `vocabularyDirectory` via
+`$[env:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]`.
+
+**Still open.** Nothing further planned for validation; next portal features are
+JPA/PostgreSQL persistence (F-10), OpenAPI (F-15), auth wiring (F-6).
+
+### 2026-07-10 — On-write SHACL enforcement (FR-4)
+
+**Goal.** Complete FR-4: with enforcement configured, a create/replace of a
+non-conformant entity is rejected **before** it is persisted, rather than only being
+reportable via the FR-5 dry run.
+
+**Config gate (operator policy, one PID).** `ShapesConfig` gained
+`enforceOnWrite()` (boolean, default `false`), exposed on the service as
+`DcatValidationService.isWriteEnforced()`. The flag lives with the shapes config so
+operators configure one PID; the *decision to act* on it stays in the REST write path,
+not the service. Enforcement is moot when no shapes are configured (validation is a
+no-op that reports conformance), so `enforceOnWrite=true` + no shapes = writes proceed.
+
+**Enforcement helper.** New `WriteValidation` in `…rest` (mirrors
+`ConditionalRequests`): `enforce(validationService, entity)` returns a **422** builder
+carrying the native `sh:ValidationReport` as Turtle + `X-SHACL-Conforms: false` when
+enforcement is on and the entity does not conform; otherwise `null` to proceed. It
+null-guards the service (see rebind note below). Wired into **POST create** and **PUT
+upsert** on all five admin resources. Two ordering rules: validate **after** the
+`about` URI is stamped (so the shapes see the real subject IRI, i.e. exactly what will
+be stored), and on PUT **after** the `If-Match` precondition (412 before 422). Membership
+endpoints (FR-9/10/11) are deliberately *not* gated here — they link existing resources
+rather than submit a fresh entity; revisit if partial-payload validation is wanted.
+
+**Reactivation robustness — the non-obvious part.** Making the admin resources
+consume `DcatValidationService` initially used a *static mandatory* `@Reference`. That
+turned every validation reconfigure (shapes reload **or** toggling the enforce flag)
+into a deactivate/reactivate of the whole admin write surface — a heavy Jersey
+whiteboard reload — and surfaced a latent race: the whiteboard could dispatch a
+PROTOTYPE `ValidationResource` instance mid-reactivation with its field momentarily
+unset → `NullPointerException` → 500. Fix: **all six** validation consumers (5 admin
+resources + `ValidationResource`) now use a **dynamic, optional, greedy, `volatile`**
+reference, so a reconfigure rebinds the field in place and triggers **zero** whiteboard
+reloads. Consumers treat a momentarily-`null` service as "no enforcement" (admin path,
+via `WriteValidation`) or **503** (`ValidationResource` dry run) instead of NPE-ing.
+This is the same class of whiteboard-reload flakiness noted in the 2026-07-09 FR-9/10/11
+entry — prefer dynamic references for any service whose config changes at runtime.
+
+**Runtime wiring & tests.** `config.json` exposes the flag as
+`enforceOnWrite = $[env:SHACL_ENFORCE;default=false]` (off in CI). Unit:
+`writeEnforcementReflectsConfig` (validation bundle). Integration:
+`WriteValidationIntegrationTest` enables enforcement via `ConfigurationAdmin`, then
+polls the admin path with an **idempotent PUT to a fixed id** (no UUID/store spam,
+unlike POST) until it flips to 422 — a readiness signal that exercises the real
+enforcement path rather than the dry-run endpoint — then asserts a non-conformant POST →
+422 + `ValidationReport` and a conformant POST → 201. No bndrun re-resolve needed (no new
+runbundles). Full suite green (62 tests).
+
+**Still open (this feature).** Controlled-vocabulary/license validation (F-22, needs
+the imported vocab files loaded and the deactivated CV constraints turned on).
+
 ### 2026-07-09 — SHACL validation foundation (FR-4/FR-5, product F-21)
 
 **Goal.** Stand up DCAT-AP.de SHACL validation of entities. First increment: the
@@ -76,9 +239,9 @@ shape files, not the big EU authority tables. (F-22 will load those later.)
   **Jena-free** result types — `ValidationResult(conforms, List<Violation>, reportTurtle)`
   and `Violation(focusNode, path, message, severity, sourceShape)`. `reportTurtle` is
   the native `sh:ValidationReport` serialized as Turtle, so REST can return the report
-  as RDF (FR-19) without leaking Jena. There is **no EMF model for the report** — SHACL
-  is the `sh:` vocabulary, a validation layer, not part of the DCAT data model; Jena
-  produces the report as RDF and we serialize it directly.
+  as RDF (FR-19) without leaking Jena.
+  **(Reversed 2026-07-10 — see the entry above: `validate` now returns the native Jena
+  `ValidationReport`, `…api` depends on Jena, and these wrappers are `@Deprecated`.)**
 - `…validation` (new bundle): `DcatValidationServiceImpl` (`@Component` + `ShapesConfig`
   OCD) loads `*.ttl` → `Shapes.parse`, converts the entity with
   `EObjectRDFModelBuilder.toModel`, runs `ShaclValidator`. When no shapes are configured
@@ -118,9 +281,10 @@ service and re-registers the resource), then asserts a title-less dataset →
 `X-SHACL-Conforms: false` + a `ValidationReport`, and a valid one → `true`. No external
 shapes needed.
 
-**Still open (this feature).** Config-gated on-write **422** enforcement (FR-4) on
-the admin resources; then controlled-vocabulary/license validation (F-22, needs the
-imported vocab files loaded and the deactivated CV constraints turned on).
+**Still open (this feature).** ~~Config-gated on-write **422** enforcement (FR-4) on
+the admin resources~~ — done 2026-07-10 (see entry above); then
+controlled-vocabulary/license validation (F-22, needs the imported vocab files loaded
+and the deactivated CV constraints turned on).
 
 ### 2026-07-09 — ETag / conditional requests (F-16)
 

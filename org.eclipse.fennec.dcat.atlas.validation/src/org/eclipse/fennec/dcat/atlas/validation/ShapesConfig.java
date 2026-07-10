@@ -29,4 +29,17 @@ public @interface ShapesConfig {
 	@AttributeDefinition(required = false, description = "Directory containing the DCAT-AP.de SHACL shape .ttl files. "
 			+ "All *.ttl in it are loaded into one shapes graph. Empty = validation disabled.")
 	String shapesDirectory() default "";
+
+	@AttributeDefinition(required = false, description = "Directory containing the controlled-vocabulary reference data "
+			+ "(the DCAT-AP.de owl:imports targets: EU authority tables, the GovData license register, etc.) as local "
+			+ "RDF files (*.ttl/*.rdf/*.xml/*.nt/*.jsonld). They are merged into the graph being validated so the "
+			+ "controlled-vocabulary shapes' skos:inScheme/sh:class checks resolve (F-22). Empty = no vocabulary data "
+			+ "loaded, so include the controlled-vocabularies shape file only together with this directory, otherwise "
+			+ "every vocabulary-constrained value reports a (false) violation.")
+	String vocabularyDirectory() default "";
+
+	@AttributeDefinition(required = false, description = "When true, the admin write endpoints reject a non-conformant "
+			+ "entity with 422 before persisting it (FR-4). When false, writes are never blocked and validation is "
+			+ "available only as the explicit dry-run (FR-5). Has no effect when no shapes are configured.")
+	boolean enforceOnWrite() default false;
 }

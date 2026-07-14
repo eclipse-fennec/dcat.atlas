@@ -1,0 +1,38 @@
+{
+	":configurator:resource-version": 1,
+	"CatalogReadOnlyService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/catalogs"
+	},
+	"CatalogAdminService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/catalogs"
+	},
+	"DatasetReadOnlyService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/datasets"
+	},
+	"DatasetAdminService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/datasets"
+	},
+	"DataServiceReadOnlyService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/data-services"
+	},
+	"DataServiceAdminService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/data-services"
+	},
+	"DataSeriesReadOnlyService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/dataset-series"
+	},
+	"DataSeriesAdminService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/dataset-series"
+	},
+	"DistributionReadOnlyService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions"
+	},
+	"DistributionAdminService": {
+		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions"
+	},
+	"DcatValidationService": {
+		"shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=$[prop:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]]",
+		"vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=$[prop:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]]",
+		"enforceOnWrite": "$[env:SHACL_ENFORCE;default=true]"
+	}
+}

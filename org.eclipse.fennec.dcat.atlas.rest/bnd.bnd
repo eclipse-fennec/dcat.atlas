@@ -1,0 +1,18 @@
+-library: enableEMF
+
+
+-buildpath: \
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.osgi.service.jakartars;version=latest,\
+	jakarta.ws.rs-api;version=latest,\
+	io.swagger.core.v3.swagger-annotations;version=latest,\
+	org.osgi.util.promise;version=latest,\
+	org.osgi.service.servlet;version=latest,\
+	jakarta.persistence-api;version=latest,\
+	org.osgi.service.cdi;version=latest,\
+	org.osgi.service.component;version=latest,\
+	org.eclipse.fennec.codec.rest;version=latest,\
+	org.apache.jena.shacl;version=latest,\
+	org.apache.jena.core;version=latest,\
+	org.apache.jena.base;version=latest

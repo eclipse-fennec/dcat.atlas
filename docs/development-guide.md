@@ -12,6 +12,11 @@
 | Path | Purpose |
 |---|---|
 | `org.eclipse.fennec.dcat.atlas.dcatap.de.model/` | EMF model bundle for the DCAT-AP.de vocabulary (ecores + generated code + tests). |
+| `org.eclipse.fennec.dcat.atlas.api/` | OSGi service API — per-entity read-only + admin service interfaces (EMF-typed). |
+| `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations — file-backed store; one read-only + admin component per entity; shared `helper.DcatHelper`. |
+| `org.eclipse.fennec.dcat.atlas.rest/` | JAX-RS whiteboard resources — read-only (public) + admin (write) resource per entity. |
+| `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
+| `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. |
 | `docs/` | Source-of-truth documentation. Internal docs stay here; the user guide is published via `docs-site/`. |
 | `docs-site/` | VitePress documentation site (publishes the curated user guide). |
 | `references/` | Specs and reference code (git-ignored, not committed). |
@@ -46,6 +51,579 @@ Standard loop for a model change:
 ---
 
 ## Change log
+
+### 2026-07-14 — Runtime + config bundles; manual REST walkthrough; JSON-GET fix
+
+**Goal.** Stand up a runnable app (outside the integration tests) and exercise the whole
+REST surface by hand — create/read/update/delete, content negotiation, conditional
+requests, SHACL validation — capturing the non-obvious bits so they land in the user guide.
+
+**Runtime + config bundles.** New `…runtime` bundle holds the bnd run descriptors:
+`base.bndrun` (framework + all DCAT.Atlas bundles + Felix ConfigAdmin/Configurator + the
+interpolation plugin), `local.bndrun` (`-include: base.bndrun, secrets.bndrun` + the
+`…config.local` runbundle) and `secrets.bndrun` (local-only `-runvm -D…` paths). Config
+lives in `…config.local` / `…config.docker` (docker still empty): HTTP on `8085`, servlet
+context `dcat/`, JAX-RS application path `rest` → **base URL `http://localhost:8085/dcat/rest`**;
+per-service store dirs under `$STORE_FOLDER` (default `/tmp/rdf`).
+
+**Gotcha — JSON GET returned `MessageBodyWriter not found for media type=application/json`.**
+The fennec **codec.rest** dependency was missing from `base.bndrun`. RDF/XML worked anyway
+because it has a dedicated `RdfXml…Writer` in `…msg.body.writer` that does not use the codec;
+only JSON/XML flow through the codec's `EObjectMessageBodyHandler`. Fix: add codec.rest to the
+runbundles.
+
+**Bug fix — JSON GET emitted the storage wrapper, not the entity.** After adding the codec, a
+JSON GET produced `{"_type":"…RDFRoot","RDF":[{"_type":"…AnyType","mixed":["dcat:catalog=…CatalogImpl@… (toString)"]}]}`.
+Root cause: `DcatHelper.write` wraps every stored entity in an `rdf:RDF` → `AnyType`
+feature-map scaffold (so EMF's `XMLResource` round-trips RDF/XML), and `DcatHelper.read`
+returned the entity **still attached** to that document; the codec writer serializes
+`t.eResource()` — the whole wrapper — and emfjson cannot represent EMF XML feature maps, so it
+fell back to `toString()`. The RDF/XML writer was immune because it copies into a *fresh*
+wrapper (`EObjectRDFModelBuilder.assemble`) and ignores the entity's own resource. **Fix:**
+`DcatHelper.read` now returns `EcoreUtil.copy(objects.get(0))` — detached (`eResource()==null`)
+— so the codec wraps just that object in a fresh resource of the negotiated format. All five
+entities benefit; RDF/XML unaffected; membership writes unaffected (`write` copies anyway).
+JSON GET now yields a proper typed tree (refs as `{"_type":"…//Resource","resource":"<uri>"}`,
+nested publisher `foaf:Agent`→`organization`, every node carrying an emfjson `_type` eClass URI).
+
+**Writing RDF/XML request bodies (EMF-XMI reader rules).** The `application/rdf+xml` reader
+(`RdfXmlMessageBodyReader` → EMF `XMLResource`, *not* a general RDF parser) accepts a body only
+if it maps onto the model, by feature type: `PlainLiteral` → text element (`xml:lang` optional);
+`rdf.Resource` (e.g. `dct:language`, `dcat:homepage`) → `rdf:resource="…"`; object-typed
+containment (e.g. `dct:publisher` → `foaf.Agent`) → a **nested typed element** (using
+`rdf:resource` there throws `Feature 'resource' not found`). `foaf.Agent` is a choice wrapper —
+`<dct:publisher>` *is* the Agent, so nest `<foaf:Organization rdf:about="…">…</foaf:Organization>`
+directly (an extra `<foaf:Agent>` wrapper selects the wrong branch → `Feature 'Organization' not
+found`). A parse miss surfaces as **`400`** (the reader throws `BadRequestException` when the body
+has no resource of the expected type), and note JAX-RS deserializes the body *before* the method
+runs — so a `400` on a write is always the body, never a bad ETag (a stale/`*` precondition is
+`412`, and a malformed unquoted `If-Match` header is also `400`).
+
+**Config interpolation — `prop:` vs `env:`.** `secrets.bndrun` sets the SHACL paths via
+`-runvm -DSHACL_SHAPES_DIR=… -DSHACL_VOCAB_DIR=…`, i.e. **JVM system properties**. The Felix
+configadmin interpolation plugin resolves `$[env:X]` from OS env and `$[prop:X]` from
+framework/system properties — so `-D` values need `prop:`, not `env:`. The local config now uses
+a nested fallback `$[env:X;default=$[prop:X;default=/tmp/…-unset]]` (env wins for docker, prop for
+local `-D`, hardcoded default last).
+
+**Validation — shapes loading.** Only DCAT-AP.**de-native** shapes
+(`http://dcat-ap.de/def/dcatde/3.0/shacl/DE_…`, self-contained) fire out of the box. Base
+DCAT-AP constraints (e.g. `dct:title` MUSS) live in the upstream SEMIC `dcat-ap-SHACL.ttl`
+referenced via `owl:imports`, which are **inert** (no auto-fetch) — the DE files carry only the
+German message/severity *override* for those shape IRIs. Drop the version-matching
+`dcat-ap-SHACL.ttl` (3.0.0, from `https://semiceu.github.io/DCAT-AP/releases/3.0.0/shacl/`) into
+the shapes dir and both the base (title) and DE (publisher) violations report — the base ones now
+carrying the German message, because the hashed shape IRIs match and the override binds. Same
+inert-imports story as the F-22 CV reference data.
+
+### 2026-07-10 — Validation report as native Jena `ValidationReport` (+ `shacl.model` bundle)
+
+**Goal.** Return the *full, spec-compliant* SHACL report in every RDF syntax (FR-19),
+and stop hand-rolling a lossy projection of it.
+
+**Decision — return the native Jena report; this reverses an earlier choice.** The
+2026-07-09 SHACL foundation deliberately kept `…api` Jena-free, exposing
+`ValidationResult(conforms, List<Violation>, reportTurtle)` /`Violation`. That was
+re-evaluated: those wrappers can only carry a *lossy projection*, and the spec (§6,
+FR-19) actually asks for the SHACL report itself as RDF/JSON. So
+`DcatValidationService.validate(EObject)` now returns
+`org.apache.jena.shacl.ValidationReport` directly — **`…api` now depends on Jena** (that
+is the conscious trade-off; acceptable since the whole app runs on Jena and this is an
+internal service API, not a published SPI). The old wrappers + a `validateLegacy(EObject)`
+adapter are kept **`@Deprecated`** as a fallback while the new path beds in — do not build
+on them.
+
+**Serialization — one writer, five syntaxes, no plain JSON.**
+`ValidationReportMessageBodyWriter` (in `…msg.body.writer`, package `…readerwriter`,
+alongside the other RDF writers — *not* in `rest`, which stays a thin adapter) is a
+`MessageBodyWriter<ValidationReport>` that hands `report.getModel()` straight to
+`RDFDataMgr` in the negotiated syntax: Turtle / JSON-LD / RDF-XML / N3 / N-Triples. No EMF
+conversion (the report is already a Jena model), so **full fidelity** — blank nodes,
+complex paths, literal values all survive. Plain `application/json` is intentionally *not*
+offered (JSON-LD covers JSON-shaped RDF); whether a plain-JSON projection is needed is an
+open product question. `ValidationResource` (dry-run) and the admin `422` both negotiate
+across all five formats (the `422` picks the client's accepted RDF type, Turtle default —
+no longer hardcoded Turtle). `rest` keeps `jena.shacl` (for the enforcement check) but
+dropped `jena.arq`.
+
+**Enforcement — MUSS blocks, SOLL doesn't.** `WriteValidation` (now under a `helper`
+package in `rest`) rejects a write (`422`) iff the report has a `sh:Violation` entry
+(DCAT-AP.de "MUSS"); `sh:Warning` (SOLL — e.g. the whole license vocabulary) is reported by
+the dry run but never blocks. A null severity defaults to `sh:Violation`.
+
+**New bundle `org.eclipse.fennec.shacl.model` — present but UNUSED.** A generated EMF
+model of the SHACL *results* vocabulary (`sh:ValidationReport`/`ValidationResult` +
+result properties), reusing `rdf:Resource`/`rdf:PlainLiteral` from the DCAT-AP model
+bundle (cross-bundle genmodel ref via the relative path to
+`dcatap.genmodel#//rdf`). It exists **only** as the future vehicle for a plain
+`application/json` report projection (the fennec codec, which Jena can't emit); it is not
+wired into the service or REST layer. Its `README.md` documents the **fidelity
+limitations** of a *typed* projection: URI-only object fields (`rdf:Resource`), so a
+literal `sh:value`, a blank-node `sh:sourceShape` (the GovData property shapes are
+anonymous!), and complex `sh:resultPath` are dropped; only Jena's native report (served for
+RDF) is byte-for-byte faithful. Modelling those faithfully would mean modelling the SHACL
+*constraint* vocabulary too — out of scope. See that README before extending it.
+
+**Tests.** Validation unit tests now assert on the Jena report (`conforms()`,
+`getEntries()`, `Severity`), with one test still covering the deprecated `validateLegacy`
+projection; the F-22 real-data regression test (`ControlledVocabularyRealDataTest`,
+env-gated, CI-skipped) updated likewise. Integration suite green. `rest` internals were
+also reorganised (the conditional filter and the `helper` classes moved into their own
+packages).
+
+### 2026-07-10 — Controlled-vocabulary validation (F-22)
+
+**Goal.** Validate that vocabulary-constrained properties (license, theme, language,
+frequency, availability, access-rights, format, status, …) use values from the
+DCAT-AP.de controlled vocabularies — the second half of the SHACL work.
+
+**Correcting the foundation's assumption.** The 2026-07-09 entry said the CV
+constraints are `sh:deactivated` by default. That is **wrong** for the real GovData
+files: there is **no** `sh:deactivated` anywhere. The CV constraints simply live in
+`dcat-ap-de-controlledvocabularies.ttl`; the existing loader already runs them once that
+file is in the shapes dir. No "activation" step exists or is needed.
+
+**The actual gap — reference data.** The CV shapes check membership by traversing
+`skos:inScheme`/`sh:class` on the *value* node, e.g. `dcterms:accrualPeriodicity`'s value
+must have `skos:inScheme <…/authority/frequency>`. That triple lives in the EU/GovData
+**authority tables** (the `owl:imports` targets in `dcat-ap-de-imports.ttl`), not in the
+submitted entity. So without the authority data present, every vocabulary value reports a
+**false** violation. Fix: load that data and union it into the graph being validated.
+- New `ShapesConfig.vocabularyDirectory()`; `DcatValidationServiceImpl` loads every RDF
+  file in it (format by extension via `RDFLanguages.filenameToLang`) into a vocabulary
+  `Model` once at activation, and `validate()` runs the shapes against
+  `ModelFactory.createUnion(entityModel, vocabulary)` (read-only union, no copy/mutation,
+  safe for concurrent validate() calls). Empty dir ⇒ empty graph (documented: then don't
+  ship the CV shape file, or you get false violations). **No network fetches** — the app
+  stays offline; the operator downloads the imports ahead of time.
+- The imports mirror on GovData (`validator/resources/mirror/`) holds only foaf/vcard/org;
+  the CV data (EU authority tables, the `dcat-ap.de` license register, spdx, adms) is the
+  *other* `owl:imports` at their canonical URLs. Assemble `vocabularyDirectory` by
+  downloading each uncommented import (e.g. `curl -L -H "Accept: application/rdf+xml"
+  http://publications.europa.eu/resource/authority/language -o language.rdf`); the file
+  extension must match the syntax (our loader detects language by extension).
+
+**Severity: MUSS blocks, SOLL does not.** DCAT-AP.de marks hard checks `sh:Violation`
+(MUSS) and recommendations `sh:Warning` (SOLL — e.g. the whole license vocabulary).
+Jena's `ValidationReport.conforms()` is `entries.isEmpty()`, so it is `false` for *any*
+entry including a Warning — meaning the FR-4 enforcement (which keyed on `conforms()`)
+would have wrongly 422'd a mere recommendation. Fixed: `Violation.isViolation()` +
+`ValidationResult.hasBlockingViolations()` (true iff some entry is `sh:Violation`);
+`WriteValidation` now rejects only on that. The dry run (FR-5) still reports everything.
+Gotcha: Jena's `ReportEntry.severity()` is a `Severity` wrapper, not the IRI — take
+`.level()` (null ⇒ SHACL default `sh:Violation`).
+
+**Tests.** Deterministic unit tests (self-authored, AGPL-free): CV conforms when the
+vocabulary graph supplies the `skos:inScheme` triple / violates when it does not, and a
+`sh:Warning` is reported but not blocking. Plus **`ControlledVocabularyRealDataTest`** — an
+opt-in real-data regression guard: it validates a dataset's `dcterms:accrualPeriodicity`
+against the **real** `controlledvocabularies.ttl` + the **real** EU authority tables, and
+is `@EnabledIfEnvironmentVariable` on `SHACL_SHAPES_DIR`/`SHACL_VOCAB_DIR` (the same env
+vars `config.json` uses) so it **skips on CI** and runs only when a developer points it at
+local GovData shapes + downloaded vocab. Verified manually: a real
+`…/frequency/ANNUAL` conforms; a bogus frequency raises the exact GovData MUSS violation
+(`#kv-frequency`). `config.json` gained `vocabularyDirectory` via
+`$[env:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]`.
+
+**Still open.** Nothing further planned for validation; next portal features are
+JPA/PostgreSQL persistence (F-10), OpenAPI (F-15), auth wiring (F-6).
+
+### 2026-07-10 — On-write SHACL enforcement (FR-4)
+
+**Goal.** Complete FR-4: with enforcement configured, a create/replace of a
+non-conformant entity is rejected **before** it is persisted, rather than only being
+reportable via the FR-5 dry run.
+
+**Config gate (operator policy, one PID).** `ShapesConfig` gained
+`enforceOnWrite()` (boolean, default `false`), exposed on the service as
+`DcatValidationService.isWriteEnforced()`. The flag lives with the shapes config so
+operators configure one PID; the *decision to act* on it stays in the REST write path,
+not the service. Enforcement is moot when no shapes are configured (validation is a
+no-op that reports conformance), so `enforceOnWrite=true` + no shapes = writes proceed.
+
+**Enforcement helper.** New `WriteValidation` in `…rest` (mirrors
+`ConditionalRequests`): `enforce(validationService, entity)` returns a **422** builder
+carrying the native `sh:ValidationReport` as Turtle + `X-SHACL-Conforms: false` when
+enforcement is on and the entity does not conform; otherwise `null` to proceed. It
+null-guards the service (see rebind note below). Wired into **POST create** and **PUT
+upsert** on all five admin resources. Two ordering rules: validate **after** the
+`about` URI is stamped (so the shapes see the real subject IRI, i.e. exactly what will
+be stored), and on PUT **after** the `If-Match` precondition (412 before 422). Membership
+endpoints (FR-9/10/11) are deliberately *not* gated here — they link existing resources
+rather than submit a fresh entity; revisit if partial-payload validation is wanted.
+
+**Reactivation robustness — the non-obvious part.** Making the admin resources
+consume `DcatValidationService` initially used a *static mandatory* `@Reference`. That
+turned every validation reconfigure (shapes reload **or** toggling the enforce flag)
+into a deactivate/reactivate of the whole admin write surface — a heavy Jersey
+whiteboard reload — and surfaced a latent race: the whiteboard could dispatch a
+PROTOTYPE `ValidationResource` instance mid-reactivation with its field momentarily
+unset → `NullPointerException` → 500. Fix: **all six** validation consumers (5 admin
+resources + `ValidationResource`) now use a **dynamic, optional, greedy, `volatile`**
+reference, so a reconfigure rebinds the field in place and triggers **zero** whiteboard
+reloads. Consumers treat a momentarily-`null` service as "no enforcement" (admin path,
+via `WriteValidation`) or **503** (`ValidationResource` dry run) instead of NPE-ing.
+This is the same class of whiteboard-reload flakiness noted in the 2026-07-09 FR-9/10/11
+entry — prefer dynamic references for any service whose config changes at runtime.
+
+**Runtime wiring & tests.** `config.json` exposes the flag as
+`enforceOnWrite = $[env:SHACL_ENFORCE;default=false]` (off in CI). Unit:
+`writeEnforcementReflectsConfig` (validation bundle). Integration:
+`WriteValidationIntegrationTest` enables enforcement via `ConfigurationAdmin`, then
+polls the admin path with an **idempotent PUT to a fixed id** (no UUID/store spam,
+unlike POST) until it flips to 422 — a readiness signal that exercises the real
+enforcement path rather than the dry-run endpoint — then asserts a non-conformant POST →
+422 + `ValidationReport` and a conformant POST → 201. No bndrun re-resolve needed (no new
+runbundles). Full suite green (62 tests).
+
+**Still open (this feature).** Controlled-vocabulary/license validation (F-22, needs
+the imported vocab files loaded and the deactivated CV constraints turned on).
+
+### 2026-07-09 — SHACL validation foundation (FR-4/FR-5, product F-21)
+
+**Goal.** Stand up DCAT-AP.de SHACL validation of entities. First increment: the
+validation *service* + engine, proven end-to-end; REST wiring (dry-run/enforce) and
+controlled-vocabulary checks (F-22) come next.
+
+**Shapes are the official GovData ones, loaded from *outside* the app.** The
+normative shapes live in the FITKO/GovData project
+`gitlab.opencode.de/fitko/govdata/dcat-ap.de-shacl-validation` (v3.0 set under
+`validator/resources/v3.0/shapes/`: `dcat-ap-SHACL-DE.ttl` + german-additions +
+deprecated + controlledvocabularies + imports). They are **AGPLv3**, so they are
+**not vendored** into this EPL codebase — the service loads every `*.ttl` from an
+operator-configured directory (`ShapesConfig.shapesDirectory`) at activation. Notes:
+the shapes are **plain core SHACL** (no SPARQL/JS), so Jena's engine runs them
+directly; `dcat-ap-de-imports.ttl` only holds `owl:imports` (Jena does **not**
+auto-fetch them — no surprise network calls), and the controlled-vocabulary
+constraints are `sh:deactivated` by default, so structural validation needs only the
+shape files, not the big EU authority tables. (F-22 will load those later.)
+
+**Architecture.**
+- `…api`: `DcatValidationService.validate(EObject) → ValidationResult` with neutral,
+  **Jena-free** result types — `ValidationResult(conforms, List<Violation>, reportTurtle)`
+  and `Violation(focusNode, path, message, severity, sourceShape)`. `reportTurtle` is
+  the native `sh:ValidationReport` serialized as Turtle, so REST can return the report
+  as RDF (FR-19) without leaking Jena.
+  **(Reversed 2026-07-10 — see the entry above: `validate` now returns the native Jena
+  `ValidationReport`, `…api` depends on Jena, and these wrappers are `@Deprecated`.)**
+- `…validation` (new bundle): `DcatValidationServiceImpl` (`@Component` + `ShapesConfig`
+  OCD) loads `*.ttl` → `Shapes.parse`, converts the entity with
+  `EObjectRDFModelBuilder.toModel`, runs `ShaclValidator`. When no shapes are configured
+  it is a **no-op that reports conformance** — enforcement is the caller's decision, not
+  the service's. Jena-SHACL stays isolated here; `…impl` (the file store) remains Jena-free.
+- `…msg.body.writer`: now `Export-Package`s `…readerwriter` so the EMF→Jena bridge is
+  reused rather than duplicated.
+
+**bnd gotcha.** The `…validation` buildpath needed the Jena bundles pinned
+(`;version=latest`) and the test runtime needed the full transitive set Jena pulls
+(thrift, commons-codec, commons-collections4, titanium/parsson, caffeine, …) on
+`-testpath`, since the plain JUnit tests run on buildpath+testpath only.
+
+**Tests.** `DcatValidationServiceImplTest` (3, green) validates against a tiny
+self-authored shape (a `dcat:Dataset` must have a `dct:title`) so the suite is
+deterministic and ships **no** licensed shapes: conformant → passes; missing title →
+one violation + a Turtle `ValidationReport`; no shapes configured → conformance.
+
+**Dry-run REST endpoint (FR-5).** `ValidationResource` exposes
+`POST /admin/validate/{catalogs|datasets|dataset-series|data-services|distributions}`
+(one method per type so the existing RDF/JSON/XML body readers deserialize the
+payload). It always returns **200** with the native `sh:ValidationReport` as Turtle
+plus `X-SHACL-Conforms: true|false` — a dry run reports, never rejects. `…rest` stays
+Jena-free (it only handles the `String` report). Chosen over the spec's
+`?validate=only` query flag to keep the report's `text/turtle` negotiation off the
+write methods; note this as a deviation to reconcile with the spec later.
+
+**Runtime wiring.** `…validation` + `org.apache.jena.shacl` added to
+`test.bndrun` (`-runrequires`/`-runbundles` — **re-resolve in bndtools**); the
+`DcatValidationService` PID's `shapesDirectory` comes from
+`$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]` (non-existent default → no-op
+unless set). To trial the official shapes, set `SHACL_SHAPES_DIR` to their folder.
+`ValidationResourceIntegrationTest` exercises real validation end-to-end: it writes a
+tiny self-authored shape to a temp dir, points the `DcatValidationService` PID at it
+via `ConfigurationAdmin`, polls until validation is live (reconfiguring reactivates the
+service and re-registers the resource), then asserts a title-less dataset →
+`X-SHACL-Conforms: false` + a `ValidationReport`, and a valid one → `true`. No external
+shapes needed.
+
+**Still open (this feature).** ~~Config-gated on-write **422** enforcement (FR-4) on
+the admin resources~~ — done 2026-07-10 (see entry above); then
+controlled-vocabulary/license validation (F-22, needs the imported vocab files loaded
+and the deactivated CV constraints turned on).
+
+### 2026-07-09 — ETag / conditional requests (F-16)
+
+**Goal.** Make the write API safe and cache-friendly with HTTP conditional
+requests: ETags on reads, `If-None-Match` for caching, `If-Match` for optimistic
+locking, and idempotent membership operations.
+
+**ETag = a strong validator over the stored file.** `DcatHelper.etag(dir, id)`
+returns a SHA-256 (hex) digest of the persisted `<id>.rdf` bytes (empty when
+absent). It is **state-based**, so it is identical across serialization formats
+(Turtle/JSON-LD/…) and changes iff the stored state changes — which is what
+optimistic locking needs. It is exposed as `Optional<String> etag(String id)` on
+each read-only service interface (admin services inherit it). Trade-off: two
+different representations of the same resource share one ETag, so reads send
+`Vary: Accept` for cache correctness. (A per-representation ETag was considered and
+rejected as overkill for locking.)
+
+**REST wiring — read side is a response filter, write side stays in the resource.**
+This mirrors the split in the sibling `model.atlas` project (`ObjectMetadataResponseFilter`
+for emission/conditional-GET; `If-Match` evaluated in resources): a
+`ContainerRequestFilter` is the wrong tool for ETag preconditions because it runs
+*before* the resource and would have to recompute the current ETag itself — and for
+the membership endpoints the lock target is not the path resource (see below).
+
+- **Reads** — `DcatConditionalFilter` (`ContainerResponseFilter`, a
+  `@JakartarsExtension`). A `GET` calls `DcatConditionalFilter.attach(requestContext,
+  service.etag(id))`; the filter stamps `ETag` + `Vary: Accept` (only when the resource
+  didn't already set a tag) and, on a safe `200` whose `If-None-Match` matches, rewrites
+  to **304** with no body — before the message-body writer runs, so no wasted RDF
+  serialization. Centralised in one place; a GET can't forget it.
+- **Writes** — the `ConditionalRequests` helper (wrapping
+  `Request.evaluatePreconditions`) stays in the admin resources: stale `If-Match` →
+  **412**, `If-None-Match: *` on PUT is create-only, no header → proceed. It must run
+  *before* the mutation, so it can't move to a response filter.
+- Applied to all five entities (Catalog, Dataset, DatasetSeries, DataService, and the
+  nested Distribution).
+
+**Membership endpoints (FR-9/10/11) — idempotent + conditional.** The ETag
+returned and the `If-Match` target is **the resource that actually changes on
+disk**, which is not always the path resource:
+
+- FR-9 (catalog membership) → the **catalog**. The `addXToCatalog` service methods
+  gained a dedup guard (match by `rdf:about` last segment): re-adding an existing
+  member is a no-op that skips the write, so the catalog's ETag is unchanged — the
+  observable "nothing to do".
+- FR-10 (nested distribution) → the **distribution** (its own file), like entity
+  CRUD; the dataset link is a side effect and already deduped.
+- FR-11 (series membership) → the **dataset** (membership is `dcat:inSeries` on the
+  dataset, so the dataset is what changes). `DatasetSeriesAdminResource` therefore
+  `@Reference`s `DatasetReadOnlyService` to read the dataset's ETag, and derives the
+  dataset id from the posted body's `about` (add) or the path (delete).
+
+> Idempotency vs ETags — keep them distinct: "adding the same member twice does
+> nothing" is the **operation** being idempotent (the dedup guards). The ETag just
+> lets a client *observe* that (same validator, no change) and guards concurrent
+> edits via `If-Match`.
+
+**Tests.** Unit: `DcatHelper.etag` coverage in `DatasetAdminServiceImplTest`
+(empty when missing, stable across reads, changes with content). Integration:
+`AbstractEntityResourceIntegrationTest` gained conditional-GET (304), `If-Match`
+PUT (412 then 200) and `If-Match` DELETE (412) cases — run for all four
+base-derived entities; the standalone `DistributionResourceIntegrationTest` got the
+same plus a re-add-is-idempotent (dataset ETag unchanged) case; the Catalog FR-9
+test asserts a stable ETag on re-add.
+
+**Still open (unchanged).** JPA/PostgreSQL persistence (F-10), SHACL validation
+(F-4/F-21), OpenAPI (F-15), auth wiring (F-6).
+
+### 2026-07-09 — Relationship & composition endpoints (FR-9/10/11) + whiteboard test-flakiness fix
+
+**Goal.** Let clients manage membership/composition **without re-uploading the
+target resource**: assign/remove Datasets, DataServices and sub-catalogs to/from
+a Catalog (**FR-9**); create/delete Distributions in the context of their Dataset
+(**FR-10**); assign/remove Datasets to/from a DatasetSeries (**FR-11**).
+
+**Design — the membership methods live on the per-entity admin services, not a
+separate relation service.** The earlier `CatalogRelationService` sketch (id-based
+`link*/unlink*`, never implemented) was **deleted**; the operations now hang off
+`CatalogAdminService`, `DistributionAdminService`/`…ReadOnlyService` and
+`DatasetSeriesAdminService`. Where a relationship is materialised is dictated by
+the EMF model (all the relevant references are **containment**, `IS_COMPOSITE`):
+
+- **FR-9 — self-contained in the Catalog.** `Catalog.dataset` (→ `DatasetContainer`
+  → `Dataset`), `Catalog.service` (→ `DataService`) and `Catalog.catalog`
+  (sub-catalogs) are containment. So `addXToCatalog`/`deleteXFromCatalog` just load
+  the catalog, add/remove the member, and re-store the catalog — no other store is
+  touched. The client sends only the member. Delete matches a member by the last
+  path segment of its `rdf:about` (`DcatHelper.idOf`).
+- **FR-10 — Distribution kept in its own store, linked from the Dataset.**
+  `Dataset.distribution` is a **URI reference** (`EList<rdf.Resource>`), not a
+  contained `Distribution`; the `Distribution` itself is a root element with its
+  own `about`. So a Distribution stays one `<id>.rdf` in the distribution store,
+  and `upsertDistributionToDataset` also adds a `dcat:distribution rdf:resource=…`
+  link onto the owning Dataset (and **refuses when the Dataset is absent** —
+  `NoSuchElementException` → 404); `delete…FromDataset` removes both link and file.
+  `get/listDistributionsForDataset` resolve via the Dataset's links. This means the
+  Distribution services now depend on the Dataset services: `DistributionReadOnlyService`
+  `@Reference`s `DatasetReadOnlyService`, `DistributionAdminService` `@Reference`s
+  `DatasetAdminService` (which *is-a* `DatasetReadOnlyService`, so it also satisfies
+  the inherited read-side dependency of the superclass).
+- **FR-11 — series membership is `inSeries` on the Dataset.** There is no
+  `seriesMember` back-reference on `DatasetSeries` in this model; membership is
+  `Dataset.inSeries` (containment). So `DatasetSeriesAdminService.addDatasetToDatasetSeries`
+  edits the Dataset (embeds a copy of the series into `inSeries`) and stores it via
+  the injected `DatasetAdminService`; delete reverses it.
+
+**REST surface.**
+
+- Catalog: `POST|DELETE /admin/catalogs/{id}/datasets[/{datasetId}]`,
+  `…/services[/{serviceId}]`, `…/catalogs[/{subCatalogId}]`.
+- Distribution is **no longer a root collection** — it is nested under its Dataset:
+  read `GET /datasets/{datasetId}/distributions[/{id}]`, write
+  `POST|PUT|DELETE /admin/datasets/{datasetId}/distributions[/{id}]`. There is no
+  dataset-less create. The admin resource `@Reference`s `DatasetReadOnlyService`
+  only to answer **404** (instead of a 500 from the thrown `NoSuchElementException`)
+  when the parent dataset is unknown. Distribution `about`/`Location` is the nested
+  read URL `{base}/datasets/{datasetId}/distributions/{id}` (D1).
+- DatasetSeries: `POST|DELETE /admin/dataset-series/{id}/datasets[/{datasetId}]`.
+
+**Tests.**
+
+- Unit (`…impl/test`): FR-9 cases added to `CatalogAdminServiceImplTest`; FR-11 to
+  `DatasetSeriesAdminServiceImplTest`; `DistributionAdminServiceImplTest` rewritten
+  for the nested API. The series/distribution tests now build a real
+  `DatasetAdminServiceImpl` over a second `@TempDir` and pass it into the
+  service-under-test (package-visible constructors gained a `Dataset*Service` param).
+- Integration (`…rest.tests`): base HTTP helpers promoted to `protected` plus a
+  generic `rdfXmlBody`/`postRdfXml`/`delete`; FR-9 tests in `CatalogResourceIntegrationTest`,
+  FR-11 in `DatasetSeriesResourceIntegrationTest` (also injects `DatasetAdminService`
+  to assert `inSeries` landed on the Dataset). `DistributionResourceIntegrationTest`
+  is now **standalone** (does not extend `AbstractEntityResourceIntegrationTest`,
+  because the nested resource has no dataset-less create): it seeds a Dataset, then
+  drives the nested endpoints.
+
+**Whiteboard test flakiness — the important gotcha.** After these changes the
+integration suite became **non-deterministic**: runs intermittently failed with a
+burst of `404`s on endpoints that were otherwise fine. Root cause: the
+osgitech/Jersey Jakarta-RS whiteboard composes every resource into **one** Jersey
+application and **reloads the whole application whenever the resource set changes**;
+during a reload, already-registered endpoints transiently return 404. All tests
+share one framework. `ResourceAware` only waits for a resource **DTO to appear**
+(first sighting) — not for reloads to stop. The new cross-service `@Reference`s
+**stagger** resource activation (a resource now waits for the Dataset services),
+so the last resources register *later* and a reload can land in the middle of an
+unrelated test. Fix: a `helper.RestReady.awaitStable(...)` gate used in every
+`@BeforeEach` that waits until **all** resources are present **and** the runtime's
+`service.changecount` (falling back to the set of registered resource names) has
+been **quiet** for a short window — i.e. the whiteboard has reached steady state
+before the first request. This replaced the per-entity `ResourceAware` waits.
+
+> Takeaway for future resources: adding a resource with new service references can
+> reintroduce this. Keep gating tests on whole-whiteboard quiescence, not on a
+> single resource's presence.
+
+**Still open (unchanged).** JPA/PostgreSQL persistence (F-10), ETag/`If-Match`
+(F-16), SHACL validation (F-4/F-21), OpenAPI (F-15), auth wiring (F-6).
+
+### 2026-07-08 — Admin/read REST API, file store, RDF content negotiation (and Jena-in-OSGi)
+
+**Goal.** Stand up the write-side admin API and the public read API over the
+DCAT-AP model (requirements `opendata-portal-anforderungen.en.md`, admin spec
+`opendata-portal-admin-api_EN.md`): CRUD services per entity, JAX-RS resources,
+and RDF content negotiation on the read side. Persistence is a simple file store
+for now (the JPA/PostgreSQL of **F-10** is still open).
+
+**Per-entity architecture** (Catalog, Dataset, DatasetSeries, DataService, Distribution).
+
+- **Service API** (`…api`): a read-only interface (`getX`, `listX`) and an admin
+  interface that `extends` it (`upsertX`, `deleteX`) — so read and write can be
+  wired and secured independently.
+- **Service impl** (`…impl`): `XAdminServiceImpl extends XReadOnlyServiceImpl`, so
+  the read methods are inherited once (no duplication). Both are DS components; the
+  read-only one registers the read-only interface, the admin one registers **only**
+  the admin interface (one provider per interface). All persistence is delegated to
+  `helper.DcatHelper`, which is generic over the DCAT-AP document-root feature
+  (`DCATAP_ROOT__CATALOG`, `…__DATASET`, …): each resource is one RDF/XML file
+  `<dir>/<id>.rdf` wrapped in `<rdf:RDF>` (`RDFRoot` + `AnyType`), round-tripped by
+  the model's own EMF resource factory. `id` = the last path segment of `rdf:about`.
+- **Config** (`StoreConfig`, one shared OCD): every service `@Designate`s it, but
+  each component keeps its **own** configuration PID (its component name) — two
+  components cannot share a PID. Configure each PID with its own `directory`.
+- **REST** (`…rest`): a public read-only resource at `/{collection}` and an admin
+  resource at `/admin/{collection}`. The path split lets the upstream PEP
+  (APISix/Keycloak, **F-6/F-12**) leave reads anonymous and require auth on
+  `**/admin/**`. Every resource needs **both** `@JakartarsResource` (the whiteboard
+  registers by it) **and** `@JakartarsName` (`ResourceAware`/DTOs find it by it).
+  The admin resource sets the entity `rdf:about` and the `Location` to the **public
+  read URL** `{base}/{collection}/{id}` (D1) — never the `/admin` path; the
+  `READ_COLLECTION` constant must match the read resource's `@Path` (hyphenated,
+  e.g. `data-services`, `dataset-series`).
+- **RDF serialization** (`…msg.body.writer`, package `…readerwriter`): the model is
+  XSD-derived, so its EMF `XMLResource` already emits spec-correct RDF/XML.
+  `EObjectRDFModelBuilder` wraps an `EObject`/`Collection` in `<rdf:RDF>`, lets EMF
+  write RDF/XML, then hands it to Jena to re-serialize as Turtle/JSON-LD/N3/N-Triples
+  (`RDFDataMgr`); a separate RDF/XML reader+writer use EMF directly (no Jena). GET
+  resources `@Produces` all of these plus JSON/XML (those two via the fennec codec);
+  writes accept JSON/XML/RDF-XML. N-Triples is the DCAT-AP-mandated format (**F-18**);
+  N3 is kept alongside it (any endpoint offering one offers the other).
+
+**Model note — Distribution is root-level.** `DCATAPRoot` has a `distribution`
+feature and `Distribution extends rdf:Resource` (own `about`); a Dataset references
+its distributions **by URI** (`Dataset.distribution : EList<Resource>`), not by
+containment. So `DistributionAdminService` uses the same uniform signature as the
+others (`upsertDistribution(Distribution)`, no `datasetId`); the dataset↔distribution
+link is a relationship concern (**FR-10**), not part of `upsert`.
+
+**Jena in OSGi (the hard part).** Jena 6.1 initializes its subsystems (datatypes/
+`TypeMapper`, RIOT parsers/writers) by reading `META-INF/services/
+org.apache.jena.sys.JenaSubsystemLifecycle` via `ServiceLoader.load(…, jena-base's
+classloader)` (`SubsystemRegistryServiceLoader`, in jena-base). In OSGi that
+classloader can't see the other Jena bundles' service files, so init silently
+no-ops and the first RDF parse throws `NoClassDefFoundError: …LiteralLabelFactory`
+(`TypeMapper.getInstance()` returns null). Jena 4.9 (the old gecko bundles)
+self-initialized `TypeMapper`, so there was no prior recipe to copy — this is a 6.1
+regression. The fix makes Aries **SPI-Fly** mediate that `ServiceLoader` across
+bundles, applied in the **`geckoprojects-ibraries`** repackaging of `org.apache.jena.*`
+6.1.0:
+
+- Restore the runtime `META-INF/services/*` in `jena-arq`/`jena-shacl` (the
+  repackaging had shipped them only under `OSGI-OPT/src`); `jena-core` already had them.
+- Providers (`core`/`arq`/`shacl`): `Provide-Capability osgi.serviceloader;
+  osgi.serviceloader="…JenaSubsystemLifecycle"; register:="…Init<X>"` **and**
+  `Require-Capability osgi.extender=osgi.serviceloader.registrar`.
+- Consumer (`jena-base`): `Require-Capability osgi.serviceloader` (carrying the
+  **direct `osgi.serviceloader` attribute**, not just a `filter:`) **and**
+  `Require-Capability osgi.extender=osgi.serviceloader.processor`.
+- Keep everything at **`effective:=resolve`** (the default). `effective:=active`
+  leaves the extender requirement unwired, so SPI-Fly never weaves the bundle.
+- `org.apache.aries.spifly.dynamic.bundle` stays in the runtime.
+
+Gotchas: the JPMS `module-info` generator NPEs unless the requirement carries the
+direct `osgi.serviceloader` attribute (consumer) and the capability carries
+`register:` (provider) — i.e. mirror what bnd's `@ServiceConsumer`/`@ServiceProvider`
+emit. An eager `JenaSystem.init()` at bundle start is **not** a fix and is harmful:
+it runs discovery once (empty) and the one-shot `initialized` flag then blocks the
+real init.
+
+**Integration-test runtime** (`…rest.tests`: `test.bndrun` + `configs/config.json`).
+
+- Felix HTTP on `localhost:8185` (`org.apache.felix.http~testHttp`); Jersey
+  whiteboard at context `/rest` (`JakartarsServletWhiteboardRuntimeComponent~testRest`,
+  targeting `(id=testHttp)`), applied by the Felix **Configurator** — which needs
+  `org.apache.felix.configadmin` (the *impl*, not just the CM API) in `-runbundles`,
+  plus `felix.cm.json` and the interpolation plugin. Missing the ConfigAdmin impl →
+  no config applied → 0 whiteboard instances → resources never register.
+- Each service PID gets its own store dir (`$[env:STORE_FOLDER;default=/tmp/rdf]/
+  <collection>`) so entity types don't collide on `<id>.rdf`.
+
+**Tests.**
+
+- Unit (`…impl/test`): `TestResourceSets` builds a stand-alone `ResourceSet` (all
+  DCAT-AP packages + `.rdf` factory); one round-trip test per admin impl
+  (upsert→get, list, delete, id-minting) — which also covers the inherited reads.
+- Integration (`…rest.tests`): `AbstractEntityResourceIntegrationTest` drives the
+  full HTTP flow (GET in every RDF format, 404, list, PUT via RDF/XML, DELETE),
+  waiting on the read+admin resources via `ResourceAware` (the
+  `JakartarsServiceRuntime` DTO, matched by `@JakartarsName`). One thin subclass per
+  entity supplies the collection/type/resource names and seeds via the injected
+  admin service.
+
+**How to verify.**
+
+```bash
+# service unit tests
+./gradlew :org.eclipse.fennec.dcat.atlas.impl:test
+# full REST pipeline (resolve test.bndrun first)
+./gradlew :org.eclipse.fennec.dcat.atlas.rest.tests:test
+```
+
+Requires the patched `org.apache.jena.*` 6.1.0 bundles from `geckoprojects-ibraries`
+published to the local repo.
+
+**Still open.** JPA/PostgreSQL persistence (F-10; file store today), ETag/`If-Match`
+(F-16), SHACL validation (F-4/F-21), OpenAPI (F-15), relationship endpoints
+(FR-9/10/11), auth wiring (F-6).
 
 ### 2026-07-07 — Upgrade the DCAT-AP.de model from 2.0.0 to 3.0
 

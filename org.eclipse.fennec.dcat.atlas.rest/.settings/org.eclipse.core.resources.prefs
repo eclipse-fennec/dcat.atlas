@@ -1,0 +1,8 @@
+eclipse.preferences.version=1
+encoding//src/org/eclipse/fennec/dcat/atlas/rest/DataServiceAdminResource.java=UTF-8
+encoding//src/org/eclipse/fennec/dcat/atlas/rest/DatasetAdminResource.java=UTF-8
+encoding//src/org/eclipse/fennec/dcat/atlas/rest/DatasetSeriesAdminResource.java=UTF-8
+encoding//src/org/eclipse/fennec/dcat/atlas/rest/DistributionAdminResource.java=UTF-8
+encoding//test/org/eclipse/fennec/dcat/atlas/rest/ExampleTest.java=UTF-8
+encoding/<project>=UTF-8
+encoding/bnd.bnd=UTF-8

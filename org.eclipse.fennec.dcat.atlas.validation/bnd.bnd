@@ -1,0 +1,33 @@
+-library: enableEMF
+
+-buildpath: \
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.msg.body.writer;version=snapshot,\
+	org.osgi.service.component.annotations;version=latest,\
+	org.osgi.service.metatype.annotations;version=latest,\
+	org.apache.jena.base;version=latest,\
+	org.apache.jena.core;version=latest,\
+	org.apache.jena.arq;version=latest,\
+	org.apache.jena.shacl;version=latest
+
+# Jena runtime deps (RIOT Turtle parsing, SHACL engine). Only needed to *run*; in the
+# assembled app these come from the gecko libraries. The plain JUnit tests run on
+# buildpath+testpath, so list them here explicitly (mirrors msg.body.writer).
+-testpath: \
+	org.apache.jena.iri;version=latest,\
+	org.apache.jena.langtag;version=latest,\
+	slf4j.api;version=latest,\
+	org.apache.commons.lang3;version=latest,\
+	org.apache.commons.commons-compress;version=latest,\
+	com.github.ben-manes.caffeine;version=latest,\
+	com.apicatalog.titanium.json.ld;version=latest,\
+	com.apicatalog.titanium.rdf.api;version=latest,\
+	com.apicatalog.titanium.rdf.n.quads;version=latest,\
+	com.apicatalog.titanium.jcs;version=latest,\
+	com.apicatalog.titanium.tree.io.api;version=latest,\
+	jakarta.json-api;version=latest,\
+	org.eclipse.parsson.jakarta.json;version=latest,\
+	org.apache.thrift;version=latest,\
+	org.apache.commons.commons-codec;version=latest,\
+	org.apache.commons.commons-collections4;version=latest,\

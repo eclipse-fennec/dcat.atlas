@@ -151,7 +151,12 @@ public final class DcatHelper {
 		RDFRoot rdfRoot = (RDFRoot) resource.getContents().get(0);
 		AnyType anyType = rdfRoot.getRDF().get(0);
 		List<T> objects = (List<T>) anyType.eGet(rootFeature);
-		return objects.get(0);
+		// Detach from the RDFRoot/AnyType storage wrapper before handing the object
+		// out: a codec MessageBodyWriter serializes the object's own eResource, and
+		// the wrapper's XML feature maps don't survive non-XML formats (e.g. JSON
+		// renders them as a toString()). A detached copy has no eResource, so the
+		// codec wraps just this object in a fresh resource of the requested format.
+		return EcoreUtil.copy(objects.get(0));
 	}
 
 	// --- id / path helpers -------------------------------------------------

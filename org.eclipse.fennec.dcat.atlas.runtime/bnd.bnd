@@ -1,0 +1,8 @@
+-buildpath: \
+	org.osgi.service.component.annotations,\
+	osgi.core,\
+
+-testpath: \
+	${junit}
+
+

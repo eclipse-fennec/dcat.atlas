@@ -52,6 +52,70 @@ Standard loop for a model change:
 
 ## Change log
 
+### 2026-07-14 — Runtime + config bundles; manual REST walkthrough; JSON-GET fix
+
+**Goal.** Stand up a runnable app (outside the integration tests) and exercise the whole
+REST surface by hand — create/read/update/delete, content negotiation, conditional
+requests, SHACL validation — capturing the non-obvious bits so they land in the user guide.
+
+**Runtime + config bundles.** New `…runtime` bundle holds the bnd run descriptors:
+`base.bndrun` (framework + all DCAT.Atlas bundles + Felix ConfigAdmin/Configurator + the
+interpolation plugin), `local.bndrun` (`-include: base.bndrun, secrets.bndrun` + the
+`…config.local` runbundle) and `secrets.bndrun` (local-only `-runvm -D…` paths). Config
+lives in `…config.local` / `…config.docker` (docker still empty): HTTP on `8085`, servlet
+context `dcat/`, JAX-RS application path `rest` → **base URL `http://localhost:8085/dcat/rest`**;
+per-service store dirs under `$STORE_FOLDER` (default `/tmp/rdf`).
+
+**Gotcha — JSON GET returned `MessageBodyWriter not found for media type=application/json`.**
+The fennec **codec.rest** dependency was missing from `base.bndrun`. RDF/XML worked anyway
+because it has a dedicated `RdfXml…Writer` in `…msg.body.writer` that does not use the codec;
+only JSON/XML flow through the codec's `EObjectMessageBodyHandler`. Fix: add codec.rest to the
+runbundles.
+
+**Bug fix — JSON GET emitted the storage wrapper, not the entity.** After adding the codec, a
+JSON GET produced `{"_type":"…RDFRoot","RDF":[{"_type":"…AnyType","mixed":["dcat:catalog=…CatalogImpl@… (toString)"]}]}`.
+Root cause: `DcatHelper.write` wraps every stored entity in an `rdf:RDF` → `AnyType`
+feature-map scaffold (so EMF's `XMLResource` round-trips RDF/XML), and `DcatHelper.read`
+returned the entity **still attached** to that document; the codec writer serializes
+`t.eResource()` — the whole wrapper — and emfjson cannot represent EMF XML feature maps, so it
+fell back to `toString()`. The RDF/XML writer was immune because it copies into a *fresh*
+wrapper (`EObjectRDFModelBuilder.assemble`) and ignores the entity's own resource. **Fix:**
+`DcatHelper.read` now returns `EcoreUtil.copy(objects.get(0))` — detached (`eResource()==null`)
+— so the codec wraps just that object in a fresh resource of the negotiated format. All five
+entities benefit; RDF/XML unaffected; membership writes unaffected (`write` copies anyway).
+JSON GET now yields a proper typed tree (refs as `{"_type":"…//Resource","resource":"<uri>"}`,
+nested publisher `foaf:Agent`→`organization`, every node carrying an emfjson `_type` eClass URI).
+
+**Writing RDF/XML request bodies (EMF-XMI reader rules).** The `application/rdf+xml` reader
+(`RdfXmlMessageBodyReader` → EMF `XMLResource`, *not* a general RDF parser) accepts a body only
+if it maps onto the model, by feature type: `PlainLiteral` → text element (`xml:lang` optional);
+`rdf.Resource` (e.g. `dct:language`, `dcat:homepage`) → `rdf:resource="…"`; object-typed
+containment (e.g. `dct:publisher` → `foaf.Agent`) → a **nested typed element** (using
+`rdf:resource` there throws `Feature 'resource' not found`). `foaf.Agent` is a choice wrapper —
+`<dct:publisher>` *is* the Agent, so nest `<foaf:Organization rdf:about="…">…</foaf:Organization>`
+directly (an extra `<foaf:Agent>` wrapper selects the wrong branch → `Feature 'Organization' not
+found`). A parse miss surfaces as **`400`** (the reader throws `BadRequestException` when the body
+has no resource of the expected type), and note JAX-RS deserializes the body *before* the method
+runs — so a `400` on a write is always the body, never a bad ETag (a stale/`*` precondition is
+`412`, and a malformed unquoted `If-Match` header is also `400`).
+
+**Config interpolation — `prop:` vs `env:`.** `secrets.bndrun` sets the SHACL paths via
+`-runvm -DSHACL_SHAPES_DIR=… -DSHACL_VOCAB_DIR=…`, i.e. **JVM system properties**. The Felix
+configadmin interpolation plugin resolves `$[env:X]` from OS env and `$[prop:X]` from
+framework/system properties — so `-D` values need `prop:`, not `env:`. The local config now uses
+a nested fallback `$[env:X;default=$[prop:X;default=/tmp/…-unset]]` (env wins for docker, prop for
+local `-D`, hardcoded default last).
+
+**Validation — shapes loading.** Only DCAT-AP.**de-native** shapes
+(`http://dcat-ap.de/def/dcatde/3.0/shacl/DE_…`, self-contained) fire out of the box. Base
+DCAT-AP constraints (e.g. `dct:title` MUSS) live in the upstream SEMIC `dcat-ap-SHACL.ttl`
+referenced via `owl:imports`, which are **inert** (no auto-fetch) — the DE files carry only the
+German message/severity *override* for those shape IRIs. Drop the version-matching
+`dcat-ap-SHACL.ttl` (3.0.0, from `https://semiceu.github.io/DCAT-AP/releases/3.0.0/shacl/`) into
+the shapes dir and both the base (title) and DE (publisher) violations report — the base ones now
+carrying the German message, because the hashed shape IRIs match and the override binds. Same
+inert-imports story as the F-22 CV reference data.
+
 ### 2026-07-10 — Validation report as native Jena `ValidationReport` (+ `shacl.model` bundle)
 
 **Goal.** Return the *full, spec-compliant* SHACL report in every RDF syntax (FR-19),

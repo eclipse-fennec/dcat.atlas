@@ -1,0 +1,16 @@
+{
+  ":configurator:resource-version": 1,
+   "org.apache.felix.http~maHttp": {
+        "org.osgi.service.http.port": "8085",
+        "org.osgi.service.http.host": "0.0.0.0",
+        "org.apache.felix.http.context_path": "dcat/",
+        "org.apache.felix.http.name": "dcat",
+        "org.apache.felix.http.runtime.init.id": "dcatHttp",
+        "org.apache.felix.http.whiteboard.enable": true
+    },
+	"JakartarsServletWhiteboardRuntimeComponent~dcatRest": {
+		"jersey.jaxrs.whiteboard.name": "dcatRest",
+		"jersey.context.path": "rest",
+		"osgi.http.whiteboard.target": "(id=dcatHttp)"
+	}
+}

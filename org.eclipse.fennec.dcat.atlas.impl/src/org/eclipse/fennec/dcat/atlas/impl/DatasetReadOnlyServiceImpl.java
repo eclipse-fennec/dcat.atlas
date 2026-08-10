@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
+import org.apache.felix.hc.api.FormattingResultLog;
+import org.apache.felix.hc.api.HealthCheck;
+import org.apache.felix.hc.api.Result;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
@@ -38,9 +40,10 @@ import dcat.DcatPackage;
  * @author ilenia
  * @since Jul 8, 2026
  */
-@Component(name = "DatasetReadOnlyService", service = { DatasetReadOnlyService.class, DcatHealthContributor.class })
+@Component(name = "DatasetReadOnlyService", service = { DatasetReadOnlyService.class, HealthCheck.class }, property = {
+		HealthCheck.NAME + "=store:datasets", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = StoreConfig.class)
-public class DatasetReadOnlyServiceImpl implements DatasetReadOnlyService, DcatHealthContributor {
+public class DatasetReadOnlyServiceImpl implements DatasetReadOnlyService, HealthCheck {
 	
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path directory;
@@ -88,19 +91,20 @@ public class DatasetReadOnlyServiceImpl implements DatasetReadOnlyService, DcatH
 
 	// --- F-25 readiness -----------------------------------------------------
 
+	/**
+	 * Reports whether this store can serve (F-25). CRITICAL rather than WARN: an
+	 * unusable store directory is a misconfiguration that no retry fixes, and the
+	 * portal should be taken out of rotation.
+	 */
 	@Override
-	public String name() {
-		return "store:datasets";
-	}
-
-	@Override
-	public boolean ready() {
-		return StoreHealth.ready(directory);
-	}
-
-	@Override
-	public String detail() {
-		return StoreHealth.detail(directory);
+	public Result execute() {
+		FormattingResultLog log = new FormattingResultLog();
+		if (StoreHealth.ready(directory)) {
+			log.info("{}", StoreHealth.detail(directory));
+		} else {
+			log.critical("{}", StoreHealth.detail(directory));
+		}
+		return new Result(log);
 	}
 
 }

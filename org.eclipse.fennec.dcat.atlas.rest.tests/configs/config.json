@@ -14,6 +14,24 @@
     "name": "dcatatlas-test",
     "osgi.http.whiteboard.target": "(id=testHttp)"
   },
+  "org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatLive": {
+  	"servletPath": "/health/live",
+  	"tags": ["live"],
+  	"format": "json",
+  	"httpStatusMapping": "OK:200,WARN:200,CRITICAL:503,TEMPORARILY_UNAVAILABLE:503,HEALTH_CHECK_ERROR:500"
+  },
+  "org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatReady": {
+  	"servletPath": "/health/ready",
+  	"tags": ["ready"],
+  	"format": "json",
+  	"httpStatusMapping": "OK:200,WARN:200,CRITICAL:503,TEMPORARILY_UNAVAILABLE:503,HEALTH_CHECK_ERROR:500"
+  },
+  "org.apache.felix.hc.generalchecks.ServicesCheck": {
+  	"hc.name": "services",
+  	"hc.tags": ["ready"],
+  	"services.list": ["(objectClass=org.eclipse.fennec.dcat.atlas.api.DcatValidationService)"],
+  	"statusForMissing": "CRITICAL"
+  },
   "CatalogReadOnlyService":       { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/catalogs" },
   "CatalogAdminService":          { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/catalogs" },
   "DatasetReadOnlyService":       { "directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/datasets" },

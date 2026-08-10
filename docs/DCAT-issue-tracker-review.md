@@ -316,12 +316,22 @@ Build a container over the `…runtime` bundle, fill the docker config bundle (e
 
 No health/readiness endpoint exists. Needed for the container orchestrator. Readiness should reflect store availability and whether the SHACL shapes actually loaded — a portal running with no shapes silently validates nothing.
 
-**Delivered.** `GET /health` (liveness — checks no dependencies, because a failing liveness probe means "restart me" and a missing store is not fixed by a restart) and `GET /ready` (readiness — 200 when every contributor is ready, else 503 with a per-check JSON body). Readiness aggregates `DcatHealthContributor` services, so a subsystem that appears later registers one and the endpoint needs no change; the Phase 1 SPARQL graph will use exactly that. 6 + 4 unit and 5 integration tests (74 integration tests total).
+**Delivered** using **Apache Felix Health Checks** (`healthcheck.api` 2.0.4, `.core` 2.3.0, `.generalchecks` 3.0.8) rather than a hand-rolled endpoint, matching what model.atlas uses:
 
-Two decisions worth recording:
+| Endpoint | Tag | Contents |
+|---|---|---|
+| `GET /health/live` | `live` | one trivial `LivenessHealthCheck`, checks nothing |
+| `GET /health/ready` | `ready` | 5 store checks + `shacl` + `services` |
 
-- **Split shapes status.** Shapes are operator-supplied deployment input, and running without them is a documented no-op — so *not configured* is ready, reported as a warning, while *configured but nothing loaded* (bad path, no `*.ttl`) is **not ready**. Failing readiness for the first case would break every deployment that deliberately runs unvalidated, including the integration tests; not failing the second leaves the silent-no-validation trap this issue was filed about. Known limitation: unparseable shapes make the validation component fail activation outright, so the service — and its contributor — is simply absent rather than reporting unready.
-- **A missing store directory is ready.** Stores are created lazily (`DcatHelper.write` does not mkdir; EMF's file URI handler creates the parent on first save), so a fresh install has no store directories at all. Readiness therefore accepts "absent but creatable" and only fails when the path exists and is not a usable directory, or cannot be created. Not-writable is also ready — a read-only mount is legitimate for a read runtime — and is reported in the detail text.
+Liveness deliberately inspects nothing: a failing liveness probe means "restart me", and neither an unmounted store nor missing shapes is fixed by a restart. Readiness is what an orchestrator should use to stop routing traffic. 10 unit + 5 integration tests (74 integration tests total).
+
+Three decisions worth recording:
+
+- **Split shapes status, expressed natively.** Felix's `WARN` vs `CRITICAL` *is* the distinction: no shapes directory configured → `WARN` (shapes are operator-supplied deployment input and validation is then a documented no-op, so the portal stays fit to serve), configured but nothing loaded → `CRITICAL`. The servlet's `httpStatusMapping` maps `WARN:200,CRITICAL:503`, so the portal keeps serving in the first case and is pulled from rotation in the second. Note `Result.isOk()` is strictly `OK`, so the "still serving" guarantee lives in the status mapping, not in the result.
+- **`ServicesCheck` closes the absent-service gap.** A self-registering contributor can only report on itself *when present*, so a component that fails activation is invisible. `org.apache.felix.hc.generalchecks.ServicesCheck` names the services that must exist (`(objectClass=…DcatValidationService)`, `statusForMissing=CRITICAL`), which catches exactly the case an earlier hand-rolled design had to document as a limitation.
+- **A missing store directory is ready.** Stores are created lazily (`DcatHelper.write` does not mkdir; EMF's file URI handler creates the parent on first save), so a fresh install has no store directories and failing readiness there would mean it never starts serving. `StoreHealth` accepts "absent but creatable" (walking up to the nearest existing ancestor) and fails only when the path exists and is not a usable directory, or cannot be created. Not-writable is ready too — a read-only mount is legitimate for a read runtime — and is reported in the message.
+
+**Two traps for anyone configuring this elsewhere.** `healthcheck.core` **2.0.x imports `javax.servlet` as an *optional* dependency**, so on a jakarta.servlet runtime (this repo runs `felix.http.jetty12` + `servlet-api` 6.1.0) the bundle resolves and starts but its servlet can never register — every health URL 404s with nothing in the log. 2.3.0 imports `jakarta.servlet [5,…)` and works. And the executor servlet is **not** a whiteboard `Servlet` service: its component descriptor declares no service, so `osgi.http.whiteboard.*` properties are ignored. The real configuration attributes, per the 2.3.0 metatype, are `servletPath`, `tags`, `format`, `httpStatusMapping`, `servletContextName`, `combineTagsWithOr`, `timeout`.
 
 ---
 

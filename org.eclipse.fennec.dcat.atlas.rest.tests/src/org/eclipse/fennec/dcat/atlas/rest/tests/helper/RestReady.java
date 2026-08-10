@@ -53,8 +53,7 @@ public final class RestReady {
 			"DatasetReadOnlyResource", "DatasetAdminResource", //
 			"DataServiceReadOnlyResource", "DataServiceAdminResource", //
 			"DatasetSeriesReadOnlyResource", "DatasetSeriesAdminResource", //
-			"DistributionReadOnlyResource", "DistributionAdminResource", //
-			"HealthResource");
+			"DistributionReadOnlyResource", "DistributionAdminResource");
 
 	/**
 	 * Blocks until all {@code required} resources are registered and the whiteboard

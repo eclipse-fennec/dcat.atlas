@@ -36,7 +36,9 @@ import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
+import org.apache.felix.hc.api.FormattingResultLog;
+import org.apache.felix.hc.api.HealthCheck;
+import org.apache.felix.hc.api.Result;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.eclipse.fennec.dcat.atlas.api.Violation;
@@ -62,9 +64,10 @@ import org.osgi.service.metatype.annotations.Designate;
  * the entity graph before validation; without it every vocabulary-constrained value
  * would report a false violation.
  */
-@Component(name = "DcatValidationService", service = { DcatValidationService.class, DcatHealthContributor.class })
+@Component(name = "DcatValidationService", service = { DcatValidationService.class, HealthCheck.class }, property = {
+		HealthCheck.NAME + "=shacl", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = ShapesConfig.class)
-public class DcatValidationServiceImpl implements DcatValidationService, DcatHealthContributor {
+public class DcatValidationServiceImpl implements DcatValidationService, HealthCheck {
 
 	private static final Logger LOGGER = System.getLogger(DcatValidationServiceImpl.class.getName());
 
@@ -239,33 +242,34 @@ public class DcatValidationServiceImpl implements DcatValidationService, DcatHea
 		return value == null ? null : value.toString();
 	}
 	// --- F-25 readiness -----------------------------------------------------
-	//
-	// Split status, deliberately: shapes are operator-supplied deployment input and a
-	// portal may legitimately run without them (validation is then a documented no-op).
-	// So "none configured" is ready-with-a-warning, while "configured but nothing
-	// loaded" is NOT ready — that is the misconfiguration where an operator believes
-	// the portal validates and it silently does not.
 
+	/**
+	 * Reports the shapes state (F-25), split three ways because "no shapes" and "broken
+	 * shapes" are different operational situations:
+	 * <ul>
+	 * <li><b>OK</b> — shapes loaded.</li>
+	 * <li><b>WARN</b> — no shapes directory configured. Shapes are operator-supplied
+	 * deployment input and validation is then a documented no-op, so the portal is fit to
+	 * serve; the servlet maps WARN to 200. It is reported so the situation is visible
+	 * rather than silent.</li>
+	 * <li><b>CRITICAL</b> — a directory was configured but nothing loaded from it (wrong
+	 * path, no {@code *.ttl}). That is the dangerous case: an operator believes the portal
+	 * validates and it silently passes everything.</li>
+	 * </ul>
+	 */
 	@Override
-	public String name() {
-		return "shacl";
-	}
-
-	@Override
-	public boolean ready() {
-		return shapesDirectory == null || shapeFileCount > 0;
-	}
-
-	@Override
-	public String detail() {
+	public Result execute() {
+		FormattingResultLog log = new FormattingResultLog();
 		if (shapesDirectory == null) {
-			return "no shapes directory configured - SHACL validation is a no-op, everything conforms";
+			log.warn("No shapes directory configured - SHACL validation is a no-op, everything conforms");
+		} else if (shapeFileCount == 0) {
+			log.critical("Shapes directory configured but no *.ttl shapes loaded from {} - "
+					+ "validation would silently pass everything", shapesDirectory);
+		} else {
+			log.info("{} shape file(s) loaded from {}", shapeFileCount, shapesDirectory);
+			log.info("enforceOnWrite={}", enforceOnWrite);
 		}
-		if (shapeFileCount == 0) {
-			return "shapes directory configured but no *.ttl shapes loaded from " + shapesDirectory
-					+ " - validation would silently pass everything";
-		}
-		return shapeFileCount + " shape file(s) loaded from " + shapesDirectory + "; enforceOnWrite=" + enforceOnWrite;
+		return new Result(log);
 	}
 
 }

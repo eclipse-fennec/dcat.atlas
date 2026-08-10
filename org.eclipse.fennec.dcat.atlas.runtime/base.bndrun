@@ -103,6 +103,9 @@
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.impl',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.msg.body.writer',\
+	bnd.identity;id='org.apache.felix.healthcheck.api',\
+	bnd.identity;id='org.apache.felix.healthcheck.core',\
+	bnd.identity;id='org.apache.felix.healthcheck.generalchecks',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation',\
 	bnd.identity;id='org.apache.felix.configadmin.plugin.interpolation',\
 	bnd.identity;id='org.apache.felix.configadmin',\

@@ -26,6 +26,7 @@ import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.apache.jena.shacl.validation.Severity;
 import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
+import org.apache.felix.hc.api.Result;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -231,37 +232,39 @@ public class DcatValidationServiceImplTest {
 	// --- F-25 readiness (split shapes status) -------------------------------
 
 	@Test
-	void readinessNoShapesConfiguredIsReadyWithAWarning() {
+	void readinessNoShapesConfiguredIsWarnNotCritical() {
 		// Shapes are operator-supplied deployment input; running without them is a
-		// documented no-op, not a failure, so the portal must still serve traffic.
+		// documented no-op, so the portal stays fit to serve. WARN maps to HTTP 200.
 		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
 				(Path) null);
-		assertEquals("shacl", service.name());
-		assertTrue(service.ready());
-		assertTrue(service.detail().contains("no shapes directory configured"), service.detail());
+		// WARN, not CRITICAL. Felix's Result.isOk() is strictly OK, so "still serving" is
+		// not expressed here but by the servlet's httpStatus.warn=200 mapping — asserted in
+		// HealthEndpointIntegrationTest.
+		assertEquals(Result.Status.WARN, service.execute().getStatus());
 	}
 
 	@Test
-	void readinessShapesConfiguredButEmptyIsNotReady() {
+	void readinessShapesConfiguredButEmptyIsCritical() {
 		// The dangerous case: an operator believes the portal validates, and it does not.
 		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
 				shapesDir);
-		assertFalse(service.ready());
-		assertTrue(service.detail().contains("no *.ttl shapes loaded"), service.detail());
+		assertEquals(Result.Status.CRITICAL, service.execute().getStatus());
 	}
 
 	@Test
-	void readinessShapesConfiguredButDirectoryMissingIsNotReady() {
+	void readinessShapesConfiguredButDirectoryMissingIsCritical() {
 		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
 				shapesDir.resolve("does-not-exist"));
-		assertFalse(service.ready());
+		assertEquals(Result.Status.CRITICAL, service.execute().getStatus());
 	}
 
 	@Test
-	void readinessShapesLoadedIsReady() throws IOException {
+	void readinessShapesLoadedIsOk() throws IOException {
 		DcatValidationServiceImpl service = serviceWithTitleShape();
-		assertTrue(service.ready());
-		assertTrue(service.detail().contains("1 shape file(s) loaded"), service.detail());
+		Result result = service.execute();
+		assertEquals(Result.Status.OK, result.getStatus());
+		assertTrue(result.isOk());
+		assertTrue(result.toString().contains("1 shape file(s) loaded"), result.toString());
 	}
 
 }

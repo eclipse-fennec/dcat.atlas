@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
+import org.apache.felix.hc.api.FormattingResultLog;
+import org.apache.felix.hc.api.HealthCheck;
+import org.apache.felix.hc.api.Result;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
@@ -42,9 +44,10 @@ import dcat.DcatPackage;
  * implementation of {@code getCatalog}/{@code listCatalogs}. The storage
  * location is exposed to that subclass through the {@code protected} fields.
  */
-@Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, DcatHealthContributor.class })
+@Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, HealthCheck.class }, property = {
+		HealthCheck.NAME + "=store:catalogs", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = StoreConfig.class)
-public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService, DcatHealthContributor {
+public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService, HealthCheck {
 
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path directory;
@@ -82,19 +85,20 @@ public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService, DcatH
 
 	// --- F-25 readiness -----------------------------------------------------
 
+	/**
+	 * Reports whether this store can serve (F-25). CRITICAL rather than WARN: an
+	 * unusable store directory is a misconfiguration that no retry fixes, and the
+	 * portal should be taken out of rotation.
+	 */
 	@Override
-	public String name() {
-		return "store:catalogs";
-	}
-
-	@Override
-	public boolean ready() {
-		return StoreHealth.ready(directory);
-	}
-
-	@Override
-	public String detail() {
-		return StoreHealth.detail(directory);
+	public Result execute() {
+		FormattingResultLog log = new FormattingResultLog();
+		if (StoreHealth.ready(directory)) {
+			log.info("{}", StoreHealth.detail(directory));
+		} else {
+			log.critical("{}", StoreHealth.detail(directory));
+		}
+		return new Result(log);
 	}
 
 }

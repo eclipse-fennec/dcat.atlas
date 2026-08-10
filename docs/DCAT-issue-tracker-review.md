@@ -16,8 +16,9 @@
 ## 1. Summary
 
 - **All 7 closed issues are genuinely closed** in the sense that the thing they asked
-  for exists and is tested. The one piece of untracked **residue** is that #29 never
-  delivered the `accessService` link endpoint (FR-10) — see §2.
+  for exists and is tested. The one piece of untracked **residue** was that #29 never
+  delivered the `accessService` link endpoint (FR-10) — see §2. **Closed 2026-08-10 as N7**,
+  which also corrected two model deviations from DCAT-AP.de §4.6.24 and surfaced **N28**.
 - **The three open issues are all genuinely open**, but #5 is now nearly empty: its own
   scope (CRUD REST + OSGi service) is done, and the only thing left under it is its
   sub-issue #32 (persistence). #5 should either be narrowed or closed in favour of #32.
@@ -25,7 +26,7 @@
   There is **no issue at all** for WP-DCAT-5 (SPARQL + delivery), 7 (endpoint
   awareness), 8 (catalog browser), 9 (ops/Docker), 10 (documentation), 11 (EMF editor),
   12 (OData query UI), 13 (admin UI), or the cross-cutting QA line.
-- §3 sketches **23 new issues** to close that gap, with a recommended
+- §3 sketches **24 new issues** to close that gap, with a recommended
   *create now / create later* split so the board does not get flooded.
 
 ---
@@ -37,11 +38,11 @@
 | # | Title | Verdict | Evidence in the repo |
 |---|-------|---------|----------------------|
 | 1 | WP-DCAT-02 — DCAT-AP model to v3 | ✅ correctly closed | `org.eclipse.fennec.dcat.atlas.dcatap.de.model` — generated DCAT-AP.**de** 3.0 model incl. `DatasetSeries`, `Relationship`, `CatalogRecord`, plus adms/foaf/locn/odrl/owl/prov/rdf/schema/skos/spdx/terms/vcard sub-packages. |
-| 2 | WP-DCAT-1 — initial gradle setup | 🟡 closed early | bnd workspace + per-bundle Gradle + `cnf` ✅; runnable `…runtime` bundle + `local.bndrun` ✅. But WP-DCAT-1 also asks for **CI (build + tests)**, and `.github/workflows/` contains only `docs-pages.yml`. A clean `./gradlew build` also still fails at `rest.tests:resolve.test` (task-wiring gap — see **N1**). → new issue **N1**. |
+| 2 | WP-DCAT-1 — initial gradle setup | 🟡 closed early | bnd workspace + per-bundle Gradle + `cnf` ✅; runnable `…runtime` bundle + `local.bndrun` ✅. WP-DCAT-1 also asks for **CI (build + tests)**, which was missing (`.github/workflows/` held only `docs-pages.yml`) and a clean `./gradlew build` failed at `rest.tests:resolve.test` (a bnd `-dependson` task-wiring gap). Both **fixed 2026-08-10 via N1**: CI now verifies every branch and PR on JDK 21 + 25 with the OSGi tests, gated by the Eclipse header check. |
 | 3 | Use Apache Jena for N3, Turtle, JSON-LD | ✅ correctly closed | `…msg.body.writer`: `TurtleMessageBodyWriter`, `N3MessageBodyWriter`, `JsonLdMessageBodyWriter`, `NTriplesMessageBodyWriter`, `RdfXmlMessageBodyWriter` + `RdfXmlMessageBodyReader`, all over `EObjectRDFModelBuilder`. |
 | 4 | OSGi-fied Jena deps → gecko libraries | ✅ correctly closed | The OSGi Jena 6.1.0 bundles (SPI-Fly `osgi.serviceloader` capabilities) are published under the `org.geckoprojects.libraries` groupId and consumed through the `geckoLibraries` `-library` (`cnf/ext/libraries.bnd`), resolved from Maven Central + the publicly readable DIM Nexus. **No local publish step is required** and `cnf/local` is empty — an earlier arrangement did need one, so that stale instruction is worth retiring. Verified 2026-08-07. |
 | 9 | AP-DCAT-1 — repo + documentation setup | 🟡 closed early | `docs/` (dev guide, user guide, admin-API spec DE/EN, requirements, planning) + `docs-site/` ✅. `README.md` is two lines. → **N22**. |
-| 29 | WP-DCAT-4 — relationship/membership endpoints | 🟡 closed with residue | FR-9 ✅ (`…/admin/catalogs/{id}/{datasets,services,catalogs}`), FR-11 ✅ (via `Dataset.inSeries`, `…/admin/dataset-series/{id}/datasets/{dsId}`), FR-10 ✅ *for composition* (`…/admin/datasets/{id}/distributions`, no dataset-less create). **Not delivered: the `accessService` link** — `grep -i accessservice` over `api`/`impl`/`rest` returns nothing, although FR-10 names it explicitly. → **N7**. |
+| 29 | WP-DCAT-4 — relationship/membership endpoints | 🟡 closed with residue | FR-9 ✅ (`…/admin/catalogs/{id}/{datasets,services,catalogs}`), FR-11 ✅ (via `Dataset.inSeries`, `…/admin/dataset-series/{id}/datasets/{dsId}`), FR-10 ✅ *for composition* (`…/admin/datasets/{id}/distributions`, no dataset-less create). ~~**Not delivered: the `accessService` link**~~ — was missing entirely from `api`/`impl`/`rest`; **delivered 2026-08-10 via N7** (`PUT`/`DELETE …/distributions/{distId}/access-service/{serviceId}`). Residue now cleared. |
 | 30 | WP-DCAT-4 — SHACL input validation | ✅ correctly closed | FR-5 dry-run: `ValidationResource` → `POST /admin/validate/{type}` returns the native Jena `ValidationReport` negotiated across Turtle/JSON-LD/RDF-XML/N3/NT + `X-SHACL-Conforms`. FR-4 on-write: `helper/WriteValidation` → 422 + report before persist, config-gated via `ShapesConfig.enforceOnWrite`, MUSS(`sh:Violation`) blocks / SOLL(`sh:Warning`) does not. Plus controlled-vocabulary validation (F-22) via `ShapesConfig.vocabularyDirectory`. Integration-tested. **Two operational caveats, neither tracked:** the GovData shapes are AGPLv3 so they cannot be vendored and must be supplied by the operator, and `owl:imports` are inert — without the upstream `dcat-ap-SHACL.ttl` and the EU/GovData authority tables in those directories, base DCAT-AP rules silently do not fire. → **N27**. |
 
 Also worth fixing in `docs/DCAT-github-issues.md`: the #30 entry has a duplicated
@@ -51,7 +52,7 @@ heading marker (`### ### [DCAT] …`).
 
 | # | Title | Verdict |
 |---|-------|---------|
-| 5 | WP-DCAT-4 — CRUD Operations for DCAT | **Effectively done — narrow or close.** All five entities (Catalog, Dataset, DatasetSeries, DataService, Distribution) have read-only + admin OSGi services (`…api` / `…impl`) and REST resources (`…rest`), XML/JSON in and all RDF formats out, upsert/idempotency, ETag/If-Match, SHACL enforcement, 62 green OSGi integration tests. The issue text's remaining clause is "*dcat data should be persisted, either via fennec persistence or file-based*" — file-based **is** implemented (`impl/helper/DcatHelper`, one `<id>.rdf` per resource), and the upgrade path is exactly sub-issue #32. Recommendation: **close #5**, let #32 carry persistence, and open the residual FR-4-scope items as their own issues (**N7**, **N8**, **N9**, **N10**). |
+| 5 | WP-DCAT-4 — CRUD Operations for DCAT | **Effectively done — narrow or close.** All five entities (Catalog, Dataset, DatasetSeries, DataService, Distribution) have read-only + admin OSGi services (`…api` / `…impl`) and REST resources (`…rest`), XML/JSON in and all RDF formats out, upsert/idempotency, ETag/If-Match, SHACL enforcement, 69 green OSGi integration tests. The issue text's remaining clause is "*dcat data should be persisted, either via fennec persistence or file-based*" — file-based **is** implemented (`impl/helper/DcatHelper`, one `<id>.rdf` per resource), and the upgrade path is exactly sub-issue #32. Recommendation: **close #5**, let #32 carry persistence, and open the residual FR-4-scope items as their own issues (**N7**, **N8**, **N9**, **N10**). |
 | 32 | WP-DCAT-3 — Persistence of DCAT objects | **Genuinely open and the single highest-priority item.** Nothing in the product code references TDB2, a dataset, or transactions (`grep -ril 'tdb2\|fuseki\|QueryExecution'` over `src` → no hits; the only "sparql" matches are string literals in tests). This is also decision **C1** — requirements F-10 say JPA/PostgreSQL, WP §3.2 and admin-API D5/D6 say Jena TDB2, and the code is neither. Recommendation: make #32 explicitly a **decision + ADR** issue with the implementation split into **N4/N5/N6**, because it blocks FR-6 (transactions), FR-12 (by-URI dedup), FR-14 (named-graph replace), WP-DCAT-5 (SPARQL) and FR-1's 409-when-referenced. |
 | 7 | WP-DCAT-06 — Client library | **Genuinely open, untouched.** No client bundle exists. Blocker for WP-DA-10, WP-MA-5 and WP-SN-4 — i.e. three other modules are waiting on it. Recommendation: do **N11** (freeze the contract) before or alongside it, otherwise the client library locks in an API the spec still contradicts. |
 | 8 | Convert Ecore into RDF | **Genuinely open, untouched**, and correctly marked low priority. Note it overlaps WP-MA-5 (Model-Atlas registering schemas as DataService/Distribution) — worth a cross-link so it is not solved twice. |
@@ -120,13 +121,24 @@ An entity referenced from two catalogs must be stored once and resolved by URI, 
 
 ### WP-DCAT-4 — admin interface (residue from #5/#29/#30)
 
-#### N7 · *Now*
+#### N7 · ✅ *Done (2026-08-10)*
 
 **[DCAT] WP-DCAT-4 — `accessService` link endpoint on Distribution (FR-10)**
 
 FR-10 requires `Distribution.accessService` to optionally reference a DataService. Issue #29 was closed without it — `getAccessService()` exists on the generated `Distribution` class, but nothing in `api`/`impl`/`rest` references it, so there is no way to set the link through the API.
 
 Add the link/unlink endpoint under the nested distribution path (`…/admin/datasets/{dsId}/distributions/{distId}/access-service/{serviceId}`), ETag-guarded on the distribution, idempotent on re-add, consistent with the FR-9/FR-11 membership endpoints.
+
+**Delivered.** `PUT`/`DELETE …/admin/datasets/{dsId}/distributions/{distId}/access-service/{serviceId}`, plus `DistributionAdminService.addAccessServiceToDistribution` / `deleteAccessServiceFromDistribution`. 7 unit + 7 OSGi integration tests (69 integration tests total, green on JDK 21 and 25).
+
+Two model corrections were needed first, both checked against DCAT-AP.de 3.0 §4.6.24:
+
+- `accessService` had `lowerBound="1"`, i.e. *required*, while the spec's Verbindlichkeit is **Optional** → now 0.
+- It was direct containment of `#//DataService`, which would have embedded a *copy* of the service in every distribution referencing it. Changed to containment of `rdf.ecore#//Resource` — the URI-pointer wrapper `Dataset.distribution` already uses — so it serializes as `<dcat:accessService rdf:resource="…"/>` and the service stays a single catalog entity. The spec supports this reading: §4.6.24 says the property *"verweist auf"* the service, and the `dcat:DataService` class is *"eingebunden über"* `dcat:service`, `dcat:accessService` and `foaf:primaryTopic`. Containment vs reference is invisible to the spec, which constrains the RDF graph and not the XML syntax.
+
+Semantics as implemented: the target must exist as a DataService resource, but **catalog membership is deliberately not required** — per the "eingebunden über" list, a service bound only from a distribution is legitimate. Unlinking never deletes the service.
+
+Follow-up: **N28** (the same embedded-copy problem still applies to `Catalog.service` and friends).
 
 ---
 
@@ -392,6 +404,37 @@ Three linked gaps left over from #30:
 
 ---
 
+#### N28 · *Later (after N7; a real migration, not a rename)*
+
+**[DCAT] Cross-cutting — membership references embed copies instead of pointing at the entity**
+
+Surfaced while doing **N7**. The model links first-class entities in two incompatible ways, and most of them embed a full copy:
+
+| Feature | eType | Effect |
+|---|---|---|
+| `Dataset.distribution` | `rdf.ecore#//Resource` | ✅ URI pointer |
+| `Distribution.accessService` | `rdf.ecore#//Resource` | ✅ URI pointer (changed by N7) |
+| `Catalog.service` | `#//DataService` | ❌ embedded copy |
+| `Catalog.dataset` | `#//DatasetContainer` → `Dataset` | ❌ embedded copy |
+| `Catalog.catalog` | `#//Catalog` | ❌ embedded copy |
+| `Dataset.inSeries` | `#//DatasetSeries` | ❌ embedded copy |
+
+Every entity involved is *also* stored standalone by its own admin service (`DcatHelper.write(…, DCATAP_ROOT__*, …)`, one `<id>.rdf` each), so the embedded copies are duplicates that drift. Concretely, after cataloguing a DataService and linking it to a distribution:
+
+- `PUT /admin/data-services/{id}` updates the standalone resource;
+- the distribution's `accessService` pointer resolves to the new state;
+- the catalog's embedded copy under `dcat:service` is now **stale**.
+
+A merged RDF graph then contains two different descriptions of the same IRI, which is poor for Interoperabilitätslevel A consumers even though the spec does not forbid it.
+
+Proposal: migrate these features to the `rdf.ecore#//Resource` pointer convention, so there is exactly one representation of every entity and one way to express membership.
+
+**Why this is bigger than N7.** `accessService` was free to change because nothing referenced it — that was N7's whole premise. These features *are* referenced by working code and tests: `CatalogAdminServiceImpl.addDatasetToCatalog` / `addDataServiceToCatalog` / `addSubCatalogToCatalog`, `DatasetSeriesAdminServiceImpl`, the corresponding REST resources, and their unit + integration tests. Changing the eType changes those service signatures (`addDataServiceToCatalog(String, DataService)` would become id- or URI-based), so it needs a migration plan and a decision about already-stored data.
+
+Also settle at the same time whether `dcat:servesDataset` should be maintained on the DataService, and if so that it is derived ("datasets owning the distributions that reference me") rather than a straight inverse of `accessService`, which points at distributions, not datasets.
+
+---
+
 ## 4. Work-package coverage matrix
 
 | WP | Existing issues | Proposed | Coverage after |
@@ -399,7 +442,7 @@ Three linked gaps left over from #30:
 | WP-DCAT-1 Setup & build | #2 ✅, #9 ✅ | N1 | complete |
 | WP-DCAT-2 Model v3 | #1 ✅ | (conformance corpus → N27) | complete |
 | WP-DCAT-3 Jena persistence & bridge | #3 ✅, #4 ✅, **#32 open** | N4, N5, N6 | complete |
-| WP-DCAT-4 Admin interface | #5 open (→close), #6 ✅, #28 ✅, #29 ✅, #30 ✅ | N7, N8, N9, N10, N11, N12 | complete |
+| WP-DCAT-4 Admin interface | #5 open (→close), #6 ✅, #28 ✅, #29 ✅, #30 ✅ | N7 ✅, N8, N9, N10, N11, N12, N28 | complete |
 | WP-DCAT-5 Delivery + SPARQL | **none** | N13, N14, N15 | complete |
 | WP-DCAT-6 Client library | **#7 open** | (N11 first) | complete |
 | WP-DCAT-7 Endpoint awareness | **none** | N16 | complete |
@@ -475,7 +518,7 @@ could be vendored, which would remove one manual provisioning step.
 2. **Re-scope #32** into a decision + ADR on the store backend (C1: Jena TDB2 vs.
    JPA/PostgreSQL), with N4/N5/N6 as follow-ups. It is the critical path — six other
    requirements are blocked behind it.
-3. **Create the "Now" issues:** N1, N7, N10, N11, N14, N20, N21, N27.
+3. **Create the "Now" issues:** N1 ✅ *(done)*, N7 ✅ *(done)*, N10, N11, N14, N20, N21, N27.
 4. **Do N11 before #7** so the client library does not freeze a contract the spec still
    contradicts, and remember #7 blocks WP-DA-10, WP-MA-5 and WP-SN-4.
 5. Create the "Later" issues as each work package starts.

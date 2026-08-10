@@ -83,7 +83,7 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | FR-7 | ETag concurrency (**mandatory**) | 🟡 | ETag on GET + after write ✅; `If-Match`→412 ✅; `If-None-Match`/304 ✅. **But not mandatory** — unconditional writes are allowed (no 428) ([C6](#c6)). |
 | FR-8 | Format agnosticism | ✅ | **By design, the Jena RDF syntaxes are read-only.** Reads produce RDF/XML, Turtle, N-Triples, JSON-LD and N3 (+JSON/XML); writes — and the dry-run endpoint — consume `application/json`, `application/xml` and `application/rdf+xml` only. Per the project decision recorded in issue #5: "All the endpoints will ask/provide XML. **Only** the GET endpoints, in addition, will provide jsonLD, Turtle and N3 (via Apache Jena)." Implemented consistently across all five admin resources and `ValidationResource`; there is an `RdfXmlMessageBodyReader` but deliberately no Turtle/JSON-LD/N-Triples reader. Client-library authors (WP-6) must respect this asymmetry. |
 | FR-9 | Catalog membership | ✅ | `…/admin/catalogs/{id}/{datasets,services,catalogs}` add/remove; only the member is sent, never the catalog. Endpoint shape differs from the spec's link-by-id ([C7](#c7)). |
-| FR-10 | Distribution composition | 🟡 | Nested `…/admin/datasets/{id}/distributions`, no dataset-less create ✅; **`accessService` link endpoint not implemented** although `Distribution.getAccessService()` exists in the model (tracked as N7); contradicts the spec's top-level `/distributions` ([C4](#c4)). |
+| FR-10 | Distribution composition | ✅ | Nested `…/admin/datasets/{id}/distributions`, no dataset-less create ✅; `accessService` link ✅ (`PUT`/`DELETE …/distributions/{distId}/access-service/{serviceId}`, N7, 2026-08-10) — stored as a `dcat:accessService rdf:resource` pointer after correcting the model, which had it as *required* containment against the spec's Optional reference (§4.6.24). Still contradicts the spec's top-level `/distributions` ([C4](#c4)). |
 | FR-11 | Series membership | ✅ | Via `Dataset.inSeries`; spec's `seriesMember`/`/members/` differs ([C8](#c8)). |
 | FR-12 | Embedded references | 🟡 | "Embedded, not top-level" ✅ (containment in the model); **by-URI dedup ⬜** — belongs to the graph store. |
 | FR-13 | Graph ingest | ⬜ | No `CatalogIngestService` / `POST /ingest`. |
@@ -130,7 +130,7 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | WP-DCAT-1 | Project setup & build | 🟡 | bnd workspace, per-bundle Gradle, bundle scheme ✅; runnable `…runtime` bundle + `local.bndrun` ✅. **No build/test CI** (only `docs-pages.yml`); a full-workspace `./gradlew` build still fails resolving a `-SNAPSHOT` gecko library; README is two lines. |
 | WP-DCAT-2 | DCAT-AP-3 model upgrade | ✅ | DCAT-AP.de v3 model + `DatasetSeries`/`inSeries`; validation against the official shapes is now possible (see cross-cutting). Bundle identity differs ([C3](#c3)). |
 | WP-DCAT-3 | Jena persistence & EMF⇄RDF bridge | 🟡 | EMF⇄RDF **serialization** bridge ✅ (`msg.body.writer`, EMF + Jena RIOT). **Jena TDB2 store, named graphs, transactions ⬜** — still file-per-entity. Roundtrip fidelity untested. |
-| WP-DCAT-4 | Admin interface (OSGi + REST) | 🟡 | CRUD + FR-9/10/11 + ETag + **SHACL (FR-4/5)** ✅; bulk ingest (FR-13/14/15), full error taxonomy (FR-19), `accessService` link, OpenAPI ⬜. Service decomposition differs ([C5](#c5)). |
+| WP-DCAT-4 | Admin interface (OSGi + REST) | 🟡 | CRUD + FR-9/10/11 + ETag + **SHACL (FR-4/5)** + `accessService` link ✅; bulk ingest (FR-13/14/15), full error taxonomy (FR-19), OpenAPI ⬜. Service decomposition differs ([C5](#c5)). |
 | WP-DCAT-5 | Catalog delivery (formats + SPARQL) | 🟡 | Read REST + content negotiation + RIOT ✅; **SPARQL ⬜**, caching/pagination ⬜ (collection GETs return everything). |
 | WP-DCAT-6 | Client library | ⬜ | Blocks Data-Atlas (WP-DA-10), Model-Atlas (WP-MA-5) and SensiNact (WP-SN-4). Freeze the contract ([C4](#c4)–[C9](#c9)) first; note the write-format restriction under FR-8. |
 | WP-DCAT-7 | Endpoint/microservice awareness | 🟡 | Base URL from request; configured base URL, discovery, reachability ⬜. |
@@ -181,7 +181,7 @@ resolution. Resolving [C4](#c4)–[C9](#c9) is a prerequisite for the client lib
 - **Code:** follows FR-10 — nested `…/datasets/{id}/distributions`, no dataset-less create, no top-level `/distributions`.
 - **Resolution:** update §2/§5.1/§6 to drop the standalone distribution collection (align the spec to FR-10, which the code implements).
 - **Resolution**: double check with dcat specs, but distribution should be in the dataset context
-- **Knock-on:** the spec's `accessService` endpoint is written as `/distributions/{id}/access-service/{serviceId}`; under the nested model it becomes `…/datasets/{dsId}/distributions/{distId}/access-service/{serviceId}` (N7).
+- **Knock-on:** the spec's `accessService` endpoint is written as `/distributions/{id}/access-service/{serviceId}`; under the nested model it became `…/datasets/{dsId}/distributions/{distId}/access-service/{serviceId}` — implemented that way (N7, 2026-08-10), so this divergence is now shipped, not hypothetical.
 
 ### C5
 **OSGi service decomposition**
@@ -245,7 +245,7 @@ resolution. Resolving [C4](#c4)–[C9](#c9) is a prerequisite for the client lib
 3. **Reconcile the published contracts** ([C4](#c4), [C5](#c5), [C7](#c7), [C9](#c9),
    [C12](#c12)) **before** WP-DCAT-6 (client library) locks them in — remembering that
    three other modules are blocked on that library.
-4. **Close the small, unblocked gaps:** `accessService` (N7), OpenAPI (F-15),
+4. **Close the small, unblocked gaps:** ~~`accessService` (N7 ✅)~~, OpenAPI (F-15),
    pagination, health/readiness, and CI — none of which depend on the store decision.
 5. UI, auth and ops (WP-8/13, F-5/6, WP-9) follow.
 

@@ -7,7 +7,7 @@
 > missing to cover work packages **WP-DCAT-1…13**.
 >
 > Companion documents: `docs/status-gap-analysis.md` (FR/F-level status, contradictions
-> C1…C11 — **now partly stale**, see §4) and `docs/development-guide.md` (change log).
+> C1…C12 — refreshed 2026-08-07) and `docs/development-guide.md` (change log).
 
 **Legend:** ✅ delivered · 🟡 partially delivered · ⬜ not started
 
@@ -25,7 +25,7 @@
   There is **no issue at all** for WP-DCAT-5 (SPARQL + delivery), 7 (endpoint
   awareness), 8 (catalog browser), 9 (ops/Docker), 10 (documentation), 11 (EMF editor),
   12 (OData query UI), 13 (admin UI), or the cross-cutting QA line.
-- §3 sketches **24 new issues** to close that gap, with a recommended
+- §3 sketches **23 new issues** to close that gap, with a recommended
   *create now / create later* split so the board does not get flooded.
 
 ---
@@ -37,9 +37,9 @@
 | # | Title | Verdict | Evidence in the repo |
 |---|-------|---------|----------------------|
 | 1 | WP-DCAT-02 — DCAT-AP model to v3 | ✅ correctly closed | `org.eclipse.fennec.dcat.atlas.dcatap.de.model` — generated DCAT-AP.**de** 3.0 model incl. `DatasetSeries`, `Relationship`, `CatalogRecord`, plus adms/foaf/locn/odrl/owl/prov/rdf/schema/skos/spdx/terms/vcard sub-packages. |
-| 2 | WP-DCAT-1 — initial gradle setup | 🟡 closed early | bnd workspace + per-bundle Gradle + `cnf` ✅. But WP-DCAT-1 also asks for **CI (build + tests)** and a **standalone bndrun**: `.github/workflows/` contains only `docs-pages.yml`, and a full-workspace `./gradlew` build still fails resolving a `-SNAPSHOT` gecko library. → new issues **N1**, **N2**. |
+| 2 | WP-DCAT-1 — initial gradle setup | 🟡 closed early | bnd workspace + per-bundle Gradle + `cnf` ✅; runnable `…runtime` bundle + `local.bndrun` ✅. But WP-DCAT-1 also asks for **CI (build + tests)**, and `.github/workflows/` contains only `docs-pages.yml`. A clean `./gradlew build` also still fails at `rest.tests:resolve.test` (task-wiring gap — see **N1**). → new issue **N1**. |
 | 3 | Use Apache Jena for N3, Turtle, JSON-LD | ✅ correctly closed | `…msg.body.writer`: `TurtleMessageBodyWriter`, `N3MessageBodyWriter`, `JsonLdMessageBodyWriter`, `NTriplesMessageBodyWriter`, `RdfXmlMessageBodyWriter` + `RdfXmlMessageBodyReader`, all over `EObjectRDFModelBuilder`. |
-| 4 | OSGi-fied Jena deps → gecko libraries | ✅ correctly closed | Patched Jena 6.1.0 bundles live in the separate repo `/opt/git/geckoprojects-ibraries` (SPI-Fly `osgi.serviceloader` capabilities) and are consumed here. **Caveat:** they must be published to the local repo for this repo to build — an undocumented onboarding trap, folded into **N2**. |
+| 4 | OSGi-fied Jena deps → gecko libraries | ✅ correctly closed | The OSGi Jena 6.1.0 bundles (SPI-Fly `osgi.serviceloader` capabilities) are published under the `org.geckoprojects.libraries` groupId and consumed through the `geckoLibraries` `-library` (`cnf/ext/libraries.bnd`), resolved from Maven Central + the publicly readable DIM Nexus. **No local publish step is required** and `cnf/local` is empty — an earlier arrangement did need one, so that stale instruction is worth retiring. Verified 2026-08-07. |
 | 9 | AP-DCAT-1 — repo + documentation setup | 🟡 closed early | `docs/` (dev guide, user guide, admin-API spec DE/EN, requirements, planning) + `docs-site/` ✅. `README.md` is two lines. → **N22**. |
 | 29 | WP-DCAT-4 — relationship/membership endpoints | 🟡 closed with residue | FR-9 ✅ (`…/admin/catalogs/{id}/{datasets,services,catalogs}`), FR-11 ✅ (via `Dataset.inSeries`, `…/admin/dataset-series/{id}/datasets/{dsId}`), FR-10 ✅ *for composition* (`…/admin/datasets/{id}/distributions`, no dataset-less create). **Not delivered: the `accessService` link** — `grep -i accessservice` over `api`/`impl`/`rest` returns nothing, although FR-10 names it explicitly. → **N7**. |
 | 30 | WP-DCAT-4 — SHACL input validation | ✅ correctly closed | FR-5 dry-run: `ValidationResource` → `POST /admin/validate/{type}` returns the native Jena `ValidationReport` negotiated across Turtle/JSON-LD/RDF-XML/N3/NT + `X-SHACL-Conforms`. FR-4 on-write: `helper/WriteValidation` → 422 + report before persist, config-gated via `ShapesConfig.enforceOnWrite`, MUSS(`sh:Violation`) blocks / SOLL(`sh:Warning`) does not. Plus controlled-vocabulary validation (F-22) via `ShapesConfig.vocabularyDirectory`. Integration-tested. **Two operational caveats, neither tracked:** the GovData shapes are AGPLv3 so they cannot be vendored and must be supplied by the operator, and `owl:imports` are inert — without the upstream `dcat-ap-SHACL.ttl` and the EU/GovData authority tables in those directories, base DCAT-AP rules silently do not fire. → **N27**. |
@@ -60,172 +60,335 @@ heading marker (`### ### [DCAT] …`).
 
 ## 3. Proposed new issues
 
-Ready-to-paste sketches. "Now" = create on the board immediately (near-term critical
-path or already-identified residue); "Later" = create when the preceding WP starts, so
-the board stays readable.
+Ready to paste. For each: the **bold line is the issue title**, and everything from there
+to the horizontal rule is the issue body. "Now" = create on the board immediately
+(near-term critical path or already-identified residue); "Later" = create when the
+preceding WP starts, so the board stays readable.
 
 ### WP-DCAT-1 — build & CI
 
-**N1 · [DCAT] WP-DCAT-1 — CI pipeline for build and tests** — *Now*
-> `.github/workflows/` only has `docs-pages.yml`; nothing builds or tests on push/PR.
-> Add a workflow that builds all bundles and runs unit + OSGi integration tests.
-> Blocker to resolve first: a full-workspace `./gradlew` build fails resolving a
-> `-SNAPSHOT` gecko library (`org.gecko.emf.util.jakartars…`) — pin it or publish it —
-> and the patched Jena 6.1.0 bundles from `geckoprojects-ibraries` must be available to
-> CI. Also add the Eclipse compliance-header check.
-> *Evidence:* green build + test run on a PR.
+#### N1 · *Now*
 
-**N2 · [DCAT] WP-DCAT-1 — Reproducible local build & run documentation** — *Now*
-> Document the two non-obvious prerequisites that currently only live in people's heads:
-> (a) the patched OSGi Jena bundles live in the separate `geckoprojects-ibraries` repo
-> and must be published to the local repo first; (b) the full-workspace gradle build is
-> broken, so build per bundle / in bndtools. Cover running the portal via
-> `org.eclipse.fennec.dcat.atlas.runtime/local.bndrun` (port 8085, `/dcat/rest`) and the
-> `SHACL_SHAPES_DIR` / `SHACL_VOCAB_DIR` / `SHACL_ENFORCE` knobs.
-> *Evidence:* a fresh clone can be built and run from the README alone.
+**[DCAT] WP-DCAT-1 — CI pipeline for build and tests**
+
+`.github/workflows/` only has `docs-pages.yml`; nothing builds or tests on push/PR. Add a workflow that builds all bundles and runs unit + OSGi integration tests.
+
+Dependencies resolve remotely (Maven Central + the publicly readable DIM Nexus, via the `geckoLibraries` `-library`), so CI needs network access but no credentials and no local publish step.
+
+**Known blocker, diagnosed 2026-08-07.** `:org.eclipse.fennec.dcat.atlas.rest.tests:resolve.test` fails from a clean state with:
+
+```
+⇒ Bundle: org.eclipse.fennec.dcat.atlas.validation cannot be resolved
+   osgi.identity: (osgi.identity=org.eclipse.fennec.dcat.atlas.validation)
+```
+
+Cause: `test.bndrun` requires `bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation'` in `-runrequires`, but that project is on no other bundle's `-buildpath`, so gradle never pulls it into the task graph and `…validation/generated/` holds no jar when the resolve runs. bndtools always sees workspace projects, which is why resolving `test.bndrun` in the IDE succeeds — this is a gradle task-wiring gap, not a repository or dependency problem. It passes as soon as the jar exists (verified: `./gradlew :…validation:jar :…rest:jar :…rest.tests:resolve.test` → BUILD SUCCESSFUL). Fix by making the resolve task depend on that project's `jar`, and beware that a green local run may only reflect a stale artifact from an earlier invocation — CI must prove it from clean.
+
+Remaining reproducibility risk: `cnf/ext/libraries.maven` pins `org.gecko.libraries.workspace.library:1.0.0-SNAPSHOT`, so the build can change under you when the snapshot moves. (The second entry, `org.gecko.emf.util.jakartars.bnd.library.workspace`, was unused and removed on 2026-08-07.)
+
+Also add the Eclipse compliance-header check.
+
+*Evidence:* green build + test run on a PR, from a clean checkout.
+
+---
 
 ### WP-DCAT-3 — persistence (all depend on #32)
 
-**N4 · [DCAT] WP-DCAT-3 — Named-graph layout and transactional writes** — *Later (after #32 decision)*
-> One named graph per catalog (admin-API D6); all write operations atomic (FR-6),
-> including the multi-entity membership operations. Replaces the current non-atomic
-> file-per-entity writes.
+#### N4 · *Later (after the #32 decision)*
 
-**N5 · [DCAT] WP-DCAT-3 — EMF⇄RDF roundtrip fidelity tests** — *Later*
-> WP-DCAT-3 lists roundtrip fidelity as its evidence and it is currently untested:
-> blank nodes, language tags, typed literals, and the `rdf:resource` vs. nested-object
-> distinction (see `docs/` RDF/XML body mapping notes) must survive EMF → RDF → EMF.
+**[DCAT] WP-DCAT-3 — Named-graph layout and transactional writes**
 
-**N6 · [DCAT] WP-DCAT-3 — By-URI deduplication of embedded references (FR-12)** — *Later*
-> An entity referenced from two catalogs must be stored once and resolved by URI, not
-> duplicated per containment tree. Natural in a triple store, needs explicit design in a
-> relational one — hence blocked on #32.
+One named graph per catalog (admin-API D6); all write operations atomic (FR-6), including the multi-entity membership operations. Replaces the current non-atomic file-per-entity writes.
+
+---
+
+#### N5 · *Later*
+
+**[DCAT] WP-DCAT-3 — EMF⇄RDF roundtrip fidelity tests**
+
+WP-DCAT-3 lists roundtrip fidelity as its evidence and it is currently untested: blank nodes, language tags, typed literals, and the `rdf:resource` vs. nested-object distinction must survive EMF → RDF → EMF.
+
+---
+
+#### N6 · *Later*
+
+**[DCAT] WP-DCAT-3 — By-URI deduplication of embedded references (FR-12)**
+
+An entity referenced from two catalogs must be stored once and resolved by URI, not duplicated per containment tree. Natural in a triple store, needs explicit design in a relational one — hence blocked on #32.
+
+---
 
 ### WP-DCAT-4 — admin interface (residue from #5/#29/#30)
 
-**N7 · [DCAT] WP-DCAT-4 — `accessService` link endpoint on Distribution (FR-10)** — *Now*
-> FR-10 requires `Distribution.accessService` to optionally reference a DataService.
-> Issue #29 was closed without it (no `accessService` anywhere in `api`/`impl`/`rest`).
-> Add the link/unlink endpoint under the nested distribution path, ETag-guarded on the
-> distribution, consistent with the FR-9/FR-11 membership endpoints.
+#### N7 · *Now*
 
-**N8 · [DCAT] WP-DCAT-4 — Error taxonomy: cascade delete, 409-when-referenced, structured 400 (FR-19)** — *Later (needs #32)*
-> `deleteX(id, cascade)` currently accepts `cascade` and ignores it — there are literal
-> `// TODO FR-1` markers in all four admin impls — and 409 is never returned. Implement
-> referential checks and cascade semantics once the real store lands, plus the structured
-> 400 error body from admin-API §6.
+**[DCAT] WP-DCAT-4 — `accessService` link endpoint on Distribution (FR-10)**
 
-**N9 · [DCAT] WP-DCAT-4 — Bulk graph ingest (FR-13/14/15)** — *Later (needs #32)*
-> `CatalogIngestService` + `POST /ingest`: ingest a whole DCAT graph, named-graph
-> replace/delete with `?purge`, and differential upsert. Nothing exists today.
+FR-10 requires `Distribution.accessService` to optionally reference a DataService. Issue #29 was closed without it — `getAccessService()` exists on the generated `Distribution` class, but nothing in `api`/`impl`/`rest` references it, so there is no way to set the link through the API.
 
-**N10 · [DCAT] WP-DCAT-4 — OpenAPI descriptor for the admin and read API (F-15)** — *Now*
-> `io.swagger.core.v3.swagger-annotations` is already on the `…rest` buildpath but no
-> resource uses it. Annotate the resources and serve the descriptor. Prerequisite for the
-> admin UI (WP-DCAT-13) and useful documentation for the client library (#7).
+Add the link/unlink endpoint under the nested distribution path (`…/admin/datasets/{dsId}/distributions/{distId}/access-service/{serviceId}`), ETag-guarded on the distribution, idempotent on re-add, consistent with the FR-9/FR-11 membership endpoints.
 
-**N11 · [DCAT] WP-DCAT-4 — Reconcile the admin-API spec with the implementation** — *Now (blocks #7)*
-> `docs/status-gap-analysis.md` records contradictions C4…C9 between
-> `opendata-portal-admin-api_EN.md` and the code: top-level `/distributions` vs. nested
-> (spec contradicts itself), aggregate `CatalogAdminService`/`CatalogRelationService` vs.
-> the per-entity services actually built, link-by-id vs. link-with-member-body on the
-> membership endpoints, `seriesMember` vs. `inSeries`, and the missing `/api/v1` base
-> path. On the membership shape specifically: **both designs satisfy FR-9** — neither
-> re-sends the catalog — but the spec's `PUT /catalogs/{id}/datasets/{datasetId}` (and
-> `CatalogRelationService.linkDatasetToCatalog(catalogId, datasetId)` in §6) sends *no
-> body at all* and therefore presupposes the dataset already exists as an independently
-> stored resource, whereas the code sends the member's content and embeds it as
-> containment. That is a consequence of C1 (file store vs. triple store), so decide it
-> together with #32. Also settle C6: is If-Match "mandatory" = *honour if present* (today) or
-> *reject without it* (adds 428)? Freeze this **before** the client library (#7) hardens
-> the contract.
+---
 
-**N12 · [DCAT] WP-DCAT-4 — CatalogRecord / audit provenance (FR-20, optional)** — *Later, low*
-> The model has `CatalogRecord` but no service or endpoint uses it. Optional per the spec.
+#### N8 · *Later (needs #32)*
+
+**[DCAT] WP-DCAT-4 — Error taxonomy: cascade delete, 409-when-referenced, structured 400 (FR-19)**
+
+`deleteX(id, cascade)` currently accepts `cascade` and ignores it — there are literal `// TODO FR-1` markers in all four admin impls — and 409 is never returned. Implement referential checks and cascade semantics once the real store lands, plus the structured 400 error body from admin-API §6.
+
+---
+
+#### N9 · *Later (needs #32)*
+
+**[DCAT] WP-DCAT-4 — Bulk graph ingest (FR-13/14/15)**
+
+`CatalogIngestService` + `POST /ingest`: ingest a whole DCAT graph, named-graph replace/delete with `?purge`, and differential upsert. Nothing exists today.
+
+---
+
+#### N10 · *Now*
+
+**[DCAT] WP-DCAT-4 — OpenAPI descriptor for the admin and read API (F-15)**
+
+`io.swagger.core.v3.swagger-annotations` is already on the `…rest` buildpath but no resource uses it. Annotate the resources and serve the descriptor.
+
+Prerequisite for the admin UI (WP-DCAT-13) and useful documentation for the client library (#7). Remember to document the write-format restriction: the Jena RDF syntaxes are read-only, writes accept `application/json`, `application/xml` and `application/rdf+xml`.
+
+---
+
+#### N11 · *Now (blocks #7)*
+
+**[DCAT] WP-DCAT-4 — Reconcile the admin-API spec with the implementation**
+
+`docs/status-gap-analysis.md` records contradictions C4…C9 between `opendata-portal-admin-api_EN.md` and the code:
+
+- top-level `/distributions` vs. nested under Dataset (the spec contradicts itself);
+- aggregate `CatalogAdminService`/`CatalogRelationService` vs. the per-entity services actually built;
+- link-by-id vs. link-with-member-body on the membership endpoints;
+- `seriesMember` vs. `inSeries`;
+- the missing `/api/v1` base path.
+
+On the membership shape specifically: both designs satisfy FR-9 — neither re-sends the catalog, which is the resource being modified. But the spec's `PUT /catalogs/{id}/datasets/{datasetId}` (and `CatalogRelationService.linkDatasetToCatalog(catalogId, datasetId)` in §6) sends no body at all and therefore presupposes the dataset already exists as an independently stored resource, whereas the code sends the member's content and embeds it as containment. That is a consequence of C1 (file store vs. triple store), so decide it together with #32.
+
+Also settle C6: is If-Match "mandatory" = honour if present (today's behaviour) or reject without it (adds 428)?
+
+Freeze all of this before the client library (#7) hardens the contract.
+
+---
+
+#### N12 · *Later, low*
+
+**[DCAT] WP-DCAT-4 — CatalogRecord / audit provenance (FR-20, optional)**
+
+The generated model has `CatalogRecord` but no service or endpoint uses it. Optional per the spec.
+
+---
 
 ### WP-DCAT-5 — catalog delivery (no issue exists today)
 
-**N13 · [DCAT] WP-DCAT-5 — SPARQL endpoint** — *Later (needs #32)*
-> ARQ over the store, with the Fuseki option evaluated. Core WP-DCAT-5 deliverable and a
-> prerequisite for the browser's search/facets (N19).
+#### N13 · *Later (needs #32)*
 
-**N14 · [DCAT] WP-DCAT-5 — Pagination and caching on the read collections** — *Now*
-> `GET /{collection}` currently loads and serialises **every** resource
-> (`CatalogReadOnlyResource.listCatalogs` and its four siblings). Add pagination and
-> cache headers before the catalog grows.
+**[DCAT] WP-DCAT-5 — SPARQL endpoint**
 
-**N15 · [DCAT] WP-DCAT-5 — Dereferenceable resource URIs** — *Later*
-> A minted `about` URI must resolve to the resource with content negotiation. Pairs with
-> N16.
+ARQ over the store, with the Fuseki option evaluated. Core WP-DCAT-5 deliverable and a prerequisite for the browser's search/facets (N19).
+
+---
+
+#### N14 · *Now*
+
+**[DCAT] WP-DCAT-5 — Pagination and caching on the read collections**
+
+`GET /{collection}` currently loads and serialises every resource (`CatalogReadOnlyResource.listCatalogs` and its four siblings). Add pagination and cache headers before the catalog grows.
+
+---
+
+#### N15 · *Later*
+
+**[DCAT] WP-DCAT-5 — Dereferenceable resource URIs: harden and decide the open policies**
+
+🟡 **The base mechanism already exists** — this issue is verification plus three policy
+decisions, not a build from scratch. On create, `CatalogAdminResource.createCatalog`
+mints `about = {base}/catalogs/{id}` via `readUri`; on upsert the same URI is forced onto
+the payload regardless of what the client sent (D1/D2). That URL *is*
+`CatalogReadOnlyResource`'s `GET /{id}`, which negotiates JSON, XML, RDF/XML, Turtle,
+N-Triples, JSON-LD and N3, with `Vary: Accept` and the ETag stamped by
+`DcatConditionalFilter`. Same pattern across all five collections.
+
+What is actually left:
+
+1. **Correctness behind a proxy — blocks everything else.** The base comes from
+   `uriInfo.getBaseUriBuilder()`, i.e. the *inbound* request. Behind APISIX/nginx/Traefik/
+   an Ingress that is the internal hop (`http://dcat-atlas:8080/…`), so host, scheme
+   (TLS terminated at the proxy), port and a stripped path prefix can each be wrong.
+   Fixed by the configured `publicBaseUrl` in **N16**; until then a minted `about` is
+   unresolvable from outside.
+2. **Re-minting when the base changes.** `about` is persisted verbatim, so any base change
+   leaves stale URIs on disk: adopting `publicBaseUrl` on an existing store, a later domain
+   or scheme change, promoting/restoring a store across environments, or ingesting another
+   instance's dump. Mechanically cheap — the id is the last segment and `DcatHelper.idOf`
+   already keys off it — but the rewrite must reach nested references (`dataset`/`service`/
+   `catalog` links, `inSeries`, distribution `about`s), not just the top-level field.
+   **Policy question:** in RDF the URI *is* the identity, so a re-stamp breaks every external
+   consumer that harvested the old URI. Decide between a hard rename and keeping the old URI
+   resolvable (`owl:sameAs` or a redirect). *(Storing relative and rendering absolute at read
+   time is not a fix — it hides the same identity change behind the current config.)*
+3. **`text/html` representation.** `Accept: text/html` returns 406 today. Full linked-data
+   dereferenceability expects an HTML view alongside the RDF, which is the browser
+   (**N17**/**N18**). Sub-decisions: one URI with `Vary: Accept` vs. distinct URIs behind a
+   303, and whether the HTML embeds schema.org JSON-LD (the prerequisite for Google Dataset
+   Search and similar crawlers). Either scope this issue to RDF only and defer HTML to
+   WP-DCAT-8, or declare the dependency.
+4. **Distribution identity is parent-derived.** `about` is
+   `{base}/datasets/{datasetId}/distributions/{id}`, so re-parenting a distribution or
+   re-creating its dataset under a new id silently changes the distribution's URI, and two
+   datasets referencing one distribution cannot share a URI. Note that URI shape and creation
+   route are separable: FR-10's composition rule (no dataset-less create) can stay exactly as
+   it is while `about` is minted flat as `{base}/distributions/{id}`. **Decide:** does a
+   distribution have standalone identity?
+
+Pairs with **N16** (which point 1 depends on entirely) and **N17**/**N18** for point 3.
+
+---
 
 ### WP-DCAT-7 — endpoint awareness (no issue exists today)
 
-**N16 · [DCAT] WP-DCAT-7 — Public base URL and endpoint self-awareness (FR-16/17/18)** — *Later*
-> The base URI is derived from the incoming request `UriInfo`; there is no configured
-> `publicBaseUrl`, so URIs minted behind a proxy or in a container are wrong. Add
-> configuration, internal→public resolution, and the optional reachability health check
-> of distribution `accessURL`s.
+#### N16 · *Later*
+
+**[DCAT] WP-DCAT-7 — Public base URL and endpoint self-awareness (FR-16/17/18)**
+
+The base URI is derived from the incoming request `UriInfo`; there is no configured `publicBaseUrl`, so URIs minted behind a proxy or in a container are wrong. Add configuration, internal→public resolution, and the optional reachability health check of distribution `accessURL`s.
+
+---
 
 ### WP-DCAT-8 — catalog browser (no issue exists today)
 
-**N17 · [DCAT] WP-DCAT-8 — UI stack decision and scaffold** — *Later*
-> Decision issue: pick the stack (shared with the admin UI, WP-DCAT-13) and stand up the
-> scaffold. Record as an ADR.
+#### N17 · *Later*
 
-**N18 · [DCAT] WP-DCAT-8 — Catalog overview, dataset/series detail, distribution views** — *Later*
-> Includes the "view source" format toggle, responsive layout, WCAG AA basics (F-27),
-> DE/EN i18n (F-28), CSS customisation hook (F-26) and the legal pages (F-29) — those
-> product requirements have no other home.
+**[DCAT] WP-DCAT-8 — UI stack decision and scaffold**
 
-**N19 · [DCAT] WP-DCAT-8 — Search and facets over SPARQL** — *Later (needs N13)*
+Decision issue: pick the stack (shared with the admin UI, WP-DCAT-13) and stand up the scaffold. Record as an ADR.
+
+---
+
+#### N18 · *Later*
+
+**[DCAT] WP-DCAT-8 — Catalog overview, dataset/series detail, distribution views**
+
+Includes the "view source" format toggle, responsive layout, WCAG AA basics (F-27), DE/EN i18n (F-28), CSS customisation hook (F-26) and the legal pages (F-29) — those product requirements have no other home.
+
+---
+
+#### N19 · *Later (needs N13)*
+
+**[DCAT] WP-DCAT-8 — Search and facets over SPARQL**
+
+Faceted search across the catalog (theme, publisher, format, license) driven by SPARQL queries against the store.
+
+---
 
 ### WP-DCAT-9 — operations & deployment (no issue exists today)
 
-**N20 · [DCAT] WP-DCAT-9 — Docker image and container configuration** — *Now*
-> There is no Dockerfile, and `org.eclipse.fennec.dcat.atlas.config.docker/configs/config.json`
-> is still the generated stub (`"ExampleConfig": {"your.prop.here": "text"}`). Build a
-> container over the `…runtime` bundle, fill the docker config bundle (env-driven:
-> store location, shapes/vocabulary dirs, `SHACL_ENFORCE`, public base URL), and mount a
-> volume for the store (F-23/F-24).
+#### N20 · *Now*
 
-**N21 · [DCAT] WP-DCAT-9 — Health and readiness endpoints (F-25)** — *Now*
-> No health/readiness endpoint exists. Needed for the container orchestrator; readiness
-> should reflect store availability and whether the SHACL shapes actually loaded.
+**[DCAT] WP-DCAT-9 — Docker image and container configuration**
+
+There is no Dockerfile, and `org.eclipse.fennec.dcat.atlas.config.docker/configs/config.json` is still the generated stub (`"ExampleConfig": {"your.prop.here": "text"}`).
+
+Build a container over the `…runtime` bundle, fill the docker config bundle (env-driven: store location, shapes/vocabulary directories, `SHACL_ENFORCE`, public base URL), and mount a volume for the store (F-23/F-24).
+
+---
+
+#### N21 · *Now*
+
+**[DCAT] WP-DCAT-9 — Health and readiness endpoints (F-25)**
+
+No health/readiness endpoint exists. Needed for the container orchestrator. Readiness should reflect store availability and whether the SHACL shapes actually loaded — a portal running with no shapes silently validates nothing.
+
+---
 
 ### WP-DCAT-10 — documentation
 
-**N22 · [DCAT] WP-DCAT-10 — README, operations manual and integration guide** — *Later*
-> `README.md` is two lines. Needs: architecture overview, the ops manual, the integration
-> guide for Data-/Model-Atlas/SensiNact (pairs with #7), and the generated OpenAPI
-> reference (N10). End-user docs for the browser and SPARQL follow WP-DCAT-8.
+#### N22 · *Later*
+
+**[DCAT] WP-DCAT-10 — README, operations manual and integration guide**
+
+`README.md` is two lines. Needs: architecture overview, the ops manual, the integration guide for Data-Atlas / Model-Atlas / SensiNact (pairs with #7), and the generated OpenAPI reference (N10). End-user docs for the browser and SPARQL follow WP-DCAT-8.
+
+---
 
 ### WP-DCAT-11 / 12 / 13 — editors and UIs
 
-**N23 · [DCAT] WP-DCAT-11 — EMF editor for the DCAT-AP.de 3 model** — *Later*
-> Adapt the generated edit/editor bundles: labels, icons, cleaned-up property views,
-> guided creation, validation feedback.
+#### N23 · *Later*
 
-**N24 · [DCAT] WP-DCAT-12 — OData query UI in the catalog browser** — *Later (blocked on N17/N18 + WP-OD-2)*
+**[DCAT] WP-DCAT-11 — EMF editor for the DCAT-AP.de 3 model**
 
-**N25 · [DCAT] WP-DCAT-13 — Admin web UI** — *Later (needs N10, N17)*
-> Form-based CRUD for all five entities incl. memberships, PUT-upsert + If-Match conflict
-> handling (412 dialog), SHACL feedback before saving.
+Adapt the generated edit/editor bundles: labels, icons, cleaned-up property views, guided creation, validation feedback.
 
-**N26 · [DCAT] WP-DCAT-13 — Authentication and authorisation wiring (F-5/6/7/12, FR-21)** — *Later*
-> The `/admin/**` vs. `/{collection}` path split already prepares an APISix/Keycloak PEP,
-> but nothing is wired: no login, no OAuth client-credentials for machine clients (which
-> the client library #7 will need), no roles.
+---
+
+#### N24 · *Later (blocked on N17/N18 + WP-OD-2)*
+
+**[DCAT] WP-DCAT-12 — OData query UI in the catalog browser**
+
+Detect OData endpoints on DataService/Distribution, discover `$metadata` (EDMX), and offer an interactive read-only query builder with a result preview and a copyable query URL.
+
+---
+
+#### N25 · *Later (needs N10, N17)*
+
+**[DCAT] WP-DCAT-13 — Admin web UI**
+
+Form-based CRUD for all five entities including memberships, PUT-upsert with If-Match conflict handling (412 dialog), and SHACL feedback before saving.
+
+---
+
+#### N26 · *Later*
+
+**[DCAT] WP-DCAT-13 — Authentication and authorisation wiring (F-5/6/7/12, FR-21)**
+
+The `/admin/**` vs. `/{collection}` path split already prepares an APISix/Keycloak PEP, but nothing is wired: no login, no OAuth client-credentials for machine clients (which the client library #7 will need), no roles.
+
+**Mostly infrastructure, but not entirely.** F-6 and F-12 say explicitly that enforcement is
+handled upstream (APISix as PEP, Keycloak as PDP), so the backend needs no token validation,
+no login endpoint and no OAuth dance. Four items still land outside APISix config:
+
+1. **F-7 permission granularity — the decision this issue must force.** F-7 requires
+   configuring "who is allowed to create, change, or delete **which objects**", and the
+   requirements note the role/permission structure is *still to be defined*. A gateway
+   matches path, method and role claim; it cannot know that a given catalog belongs to
+   publisher A. If the model is coarse (role `editor` writes anything under `/admin/**`),
+   APISix covers F-7 completely and there is no backend work. If it is per-object or
+   per-publisher ownership, only the backend can enforce it. **Decide this first — it
+   determines whether the rest of the issue has any code in it.**
+2. **FR-20 author.** Logging changes with timestamp *and author* requires the backend to
+   consume the identity APISix forwards (JWT claims or headers) — not validate it. Nothing
+   reads such a header today.
+3. **Direct access is unauthenticated by design.** Anything that can reach the port can
+   write: in-cluster traffic, a port-forward, a second ingress, a misconfigured route.
+   Normally mitigated by network policy/mTLS rather than app code, but state it as an
+   explicit deployment constraint — *the backend MUST NOT be routable except through the
+   PEP* — rather than leaving it implicit (pairs with **N20**).
+4. **Error-shape consistency.** APISix returns its own 401/403 bodies, which will not match
+   the API's negotiated error format — the client library (#7) sees a different shape for
+   auth failures than for everything else. Decide whether that is acceptable.
+
+Trusted-proxy handling is shared with **N16**: if the gateway forwards identity headers *and*
+`X-Forwarded-*` for the public base URL, both must be trusted only from the gateway and
+stripped from direct client requests — one configuration serving both concerns.
+
+---
 
 ### Cross-cutting
 
-**N27 · [DCAT] Cross-cutting — SHACL conformance in CI, test corpus, and shapes provisioning** — *Now*
-> Three linked gaps left over from #30: (a) the official GovData DCAT-AP.de shapes are
-> **AGPLv3 and cannot be vendored**, so document/automate the operator-side download of
-> both the shapes and the `owl:imports` reference data (EU/GovData authority tables);
-> (b) because those imports are inert, the upstream `dcat-ap-SHACL.ttl` must be present
-> or base DCAT-AP rules silently never fire — this needs a startup warning or a
-> readiness signal (see N21); (c) build a corpus of real DCAT examples and run SHACL
-> conformance in CI (needs N1).
+#### N27 · *Now*
+
+**[DCAT] Cross-cutting — SHACL conformance in CI, test corpus, and shapes provisioning**
+
+Three linked gaps left over from #30:
+
+1. The official GovData DCAT-AP.de shapes are AGPL-3.0 and cannot be vendored, so document and ideally automate the operator-side download of both the shapes and the `owl:imports` reference data (EU/GovData authority tables).
+2. Because those imports are inert in Jena, the upstream `dcat-ap-SHACL.ttl` must be present or the base DCAT-AP rules silently never fire. This needs a startup warning or a readiness signal (see N21).
+3. Build a corpus of real DCAT examples and run SHACL conformance in CI (needs N1).
 
 ---
 
@@ -233,7 +396,7 @@ the board stays readable.
 
 | WP | Existing issues | Proposed | Coverage after |
 |----|-----------------|----------|----------------|
-| WP-DCAT-1 Setup & build | #2 ✅, #9 ✅ | N1, N2 | complete |
+| WP-DCAT-1 Setup & build | #2 ✅, #9 ✅ | N1 | complete |
 | WP-DCAT-2 Model v3 | #1 ✅ | (conformance corpus → N27) | complete |
 | WP-DCAT-3 Jena persistence & bridge | #3 ✅, #4 ✅, **#32 open** | N4, N5, N6 | complete |
 | WP-DCAT-4 Admin interface | #5 open (→close), #6 ✅, #28 ✅, #29 ✅, #30 ✅ | N7, N8, N9, N10, N11, N12 | complete |
@@ -254,48 +417,48 @@ the board stays readable.
 To be posted on <https://github.com/DataInMotion/xdp/issues/30>. Kept here so the
 reasoning survives outside the issue tracker.
 
-> **Note on the SHACL shapes: licensing, and why they are loaded at runtime**
->
-> Recording the reasoning behind the shapes-loading design, since it is not obvious from
-> the code alone.
->
-> **The problem.** The official GovData DCAT-AP.de 3.0 SHACL shapes are published under
-> AGPL-3.0. We cannot vendor them into this repository — the bundle ships under EPL-2.0
-> and committing AGPL artifacts into the distribution would create a licensing conflict.
->
-> **The design.** No shape file is committed. `DcatValidationServiceImpl` loads them at
-> bundle activation from an operator-configured directory (`ShapesConfig.shapesDirectory`,
-> env `SHACL_SHAPES_DIR`): every `*.ttl` in that directory is merged into a single Jena
-> `Shapes` graph. If no directory is configured the service is a no-op and reports
-> conformance, so the portal still starts. The shapes are therefore *deployment input*,
-> never part of what we build or redistribute.
->
-> The same applies to the controlled-vocabulary reference data
-> (`ShapesConfig.vocabularyDirectory`, env `SHACL_VOCAB_DIR`). This is needed because the
-> CV constraints check `skos:inScheme` / `sh:class` on the **value** node, and those
-> triples live in the EU/GovData authority tables that the shapes reach via `owl:imports`.
-> Jena does not resolve `owl:imports` — there is no auto-fetch — so without local copies
-> every vocabulary value would report as a false violation. `validate()` runs the shapes
-> against `ModelFactory.createUnion(entity, vocab)`.
->
-> **How it was verified.** Tested against the real GovData shapes and the real authority
-> tables, both downloaded to local directories outside the repository and loaded through
-> the two config properties. Confirmed: a genuine `…/frequency/ANNUAL` conforms, a bogus
-> value produces the MUSS `#kv-frequency` violation.
->
-> **What is in the repo instead.** The unit and integration tests use tiny self-authored
-> shapes, so nothing licensed is committed and CI needs no external files. The real-data
-> regression test `ControlledVocabularyRealDataTest` is `@EnabledIfEnvironmentVariable` on
-> `SHACL_SHAPES_DIR` / `SHACL_VOCAB_DIR` and simply skips where those are unset.
->
-> **Consequence to be aware of.** Because `owl:imports` are inert, only the shapes
-> physically present in the directory actually fire. The DCAT-AP.de-native shapes are
-> self-contained, but the German files carry only the message/severity *overrides* for the
-> upstream SEMIC base rules, not the rule bodies — so to enforce base DCAT-AP 3 constraints
-> the operator must also place `dcat-ap-SHACL.ttl` in the same directory. Follow-up work
-> (documenting/automating the operator-side download, and surfacing "shapes loaded / not
-> loaded" as a startup warning or readiness signal so a silently unvalidating portal is
-> visible) is tracked separately.
+**Note on the SHACL shapes: licensing, and why they are loaded at runtime**
+
+Recording the reasoning behind the shapes-loading design, since it is not obvious from
+the code alone.
+
+**The problem.** The official GovData DCAT-AP.de 3.0 SHACL shapes are published under
+AGPL-3.0. We cannot vendor them into this repository — the bundle ships under EPL-2.0
+and committing AGPL artifacts into the distribution would create a licensing conflict.
+
+**The design.** No shape file is committed. `DcatValidationServiceImpl` loads them at
+bundle activation from an operator-configured directory (`ShapesConfig.shapesDirectory`,
+env `SHACL_SHAPES_DIR`): every `*.ttl` in that directory is merged into a single Jena
+`Shapes` graph. If no directory is configured the service is a no-op and reports
+conformance, so the portal still starts. The shapes are therefore *deployment input*,
+never part of what we build or redistribute.
+
+The same applies to the controlled-vocabulary reference data
+(`ShapesConfig.vocabularyDirectory`, env `SHACL_VOCAB_DIR`). This is needed because the
+CV constraints check `skos:inScheme` / `sh:class` on the **value** node, and those
+triples live in the EU/GovData authority tables that the shapes reach via `owl:imports`.
+Jena does not resolve `owl:imports` — there is no auto-fetch — so without local copies
+every vocabulary value would report as a false violation. `validate()` runs the shapes
+against `ModelFactory.createUnion(entity, vocab)`.
+
+**How it was verified.** Tested against the real GovData shapes and the real authority
+tables, both downloaded to local directories outside the repository and loaded through
+the two config properties. Confirmed: a genuine `…/frequency/ANNUAL` conforms, a bogus
+value produces the MUSS `#kv-frequency` violation.
+
+**What is in the repo instead.** The unit and integration tests use tiny self-authored
+shapes, so nothing licensed is committed and CI needs no external files. The real-data
+regression test `ControlledVocabularyRealDataTest` is `@EnabledIfEnvironmentVariable` on
+`SHACL_SHAPES_DIR` / `SHACL_VOCAB_DIR` and simply skips where those are unset.
+
+**Consequence to be aware of.** Because `owl:imports` are inert, only the shapes
+physically present in the directory actually fire. The DCAT-AP.de-native shapes are
+self-contained, but the German files carry only the message/severity *overrides* for the
+upstream SEMIC base rules, not the rule bodies — so to enforce base DCAT-AP 3 constraints
+the operator must also place `dcat-ap-SHACL.ttl` in the same directory. Follow-up work
+(documenting/automating the operator-side download, and surfacing "shapes loaded / not
+loaded" as a startup warning or readiness signal so a silently unvalidating portal is
+visible) is tracked separately.
 
 **Two open points to confirm before posting:** (a) the shape files carry no inline
 license header, so the AGPL-3.0 claim rests on the GovData source repository — verify it
@@ -312,7 +475,7 @@ could be vendored, which would remove one manual provisioning step.
 2. **Re-scope #32** into a decision + ADR on the store backend (C1: Jena TDB2 vs.
    JPA/PostgreSQL), with N4/N5/N6 as follow-ups. It is the critical path — six other
    requirements are blocked behind it.
-3. **Create the "Now" issues:** N1, N2, N7, N10, N11, N14, N20, N21, N27.
+3. **Create the "Now" issues:** N1, N7, N10, N11, N14, N20, N21, N27.
 4. **Do N11 before #7** so the client library does not freeze a contract the spec still
    contradicts, and remember #7 blocks WP-DA-10, WP-MA-5 and WP-SN-4.
 5. Create the "Later" issues as each work package starts.

@@ -115,16 +115,16 @@ public interface Distribution extends Resource {
 
 	/**
 	 * Returns the value of the '<em><b>Access Service</b></em>' containment reference list.
-	 * The list contents are of type {@link dcat.DataService}.
+	 * The list contents are of type {@link rdf.Resource}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Access Service</em>' containment reference list.
 	 * @see dcat.DcatPackage#getDistribution_AccessService()
-	 * @model containment="true" required="true"
+	 * @model containment="true"
 	 *        extendedMetaData="kind='element' name='accessService' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<DataService> getAccessService();
+	EList<Resource> getAccessService();
 
 	/**
 	 * Returns the value of the '<em><b>Format</b></em>' containment reference.

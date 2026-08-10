@@ -24,7 +24,9 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
+import org.eclipse.fennec.dcat.atlas.api.DataServiceAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +38,7 @@ import org.osgi.test.common.annotation.InjectService;
 import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
 
+import dcat.DataService;
 import dcat.DcatFactory;
 import dcat.Dataset;
 import rdf.PlainLiteral;
@@ -59,12 +62,22 @@ public class DistributionResourceIntegrationTest {
 	private static final String TURTLE = "text/turtle";
 
 	private static final String DATASET_ID = "dist-e2e-ds";
+	/** The DataService that the FR-10 accessService tests link to. */
+	private static final String SERVICE_ID = "dist-e2e-svc";
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
 	/** Seeds/inspects the owning dataset that distributions attach to. */
 	@InjectService
 	DatasetAdminService datasetService;
+
+	/** Seeds/inspects the DataService referenced by {@code dcat:accessService}. */
+	@InjectService
+	DataServiceAdminService dataServiceService;
+
+	/** Reads back the stored distribution to assert on the accessService references. */
+	@InjectService
+	DistributionAdminService distributionService;
 
 	@BeforeEach
 	void ensureResourcesAndDataset(@InjectBundleContext BundleContext context) throws InterruptedException {
@@ -76,6 +89,7 @@ public class DistributionResourceIntegrationTest {
 	@AfterEach
 	void cleanup() {
 		datasetService.deleteDataset(DATASET_ID, false);
+		dataServiceService.deleteDataService(SERVICE_ID, false);
 	}
 
 	private String distributions() {
@@ -178,7 +192,127 @@ public class DistributionResourceIntegrationTest {
 		assertEquals(404, post.statusCode());
 	}
 
+	// --- FR-10 accessService link ------------------------------------------
+
+	@Test
+	void putLinksAccessServiceAndRdfCarriesTheReference() throws Exception {
+		String url = adminDistributions() + "/csv";
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		seedDataService();
+
+		HttpResponse<String> link = send(
+				HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
+				RDF_XML);
+		assertEquals(200, link.statusCode(), link.body());
+		// The mutated resource is the Distribution, so its ETag comes back.
+		assertTrue(link.headers().firstValue("ETag").isPresent(), "link response should carry the distribution ETag");
+
+		// dcat:accessService is emitted as a URI reference to the service, not a copy of it.
+		HttpResponse<String> get = get(distributions() + "/csv", RDF_XML);
+		assertEquals(200, get.statusCode());
+		assertTrue(get.body().contains(serviceAbout()), get.body());
+		assertTrue(get.body().contains("accessService"), get.body());
+	}
+
+	@Test
+	void reLinkingSameAccessServiceLeavesDistributionUnchanged() throws Exception {
+		String url = adminDistributions() + "/csv";
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		seedDataService();
+
+		send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
+				RDF_XML);
+		String etagAfterFirst = distributionService.etag("csv").orElseThrow();
+
+		// Idempotent: the link is already recorded, so nothing is written and the ETag holds.
+		HttpResponse<String> again = send(
+				HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
+				RDF_XML);
+		assertEquals(200, again.statusCode());
+		assertEquals(etagAfterFirst, distributionService.etag("csv").orElseThrow());
+		assertEquals(1, distributionService.getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().size());
+	}
+
+	@Test
+	void deleteUnlinksAccessServiceButKeepsTheService() throws Exception {
+		String url = adminDistributions() + "/csv";
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		seedDataService();
+		send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
+				RDF_XML);
+
+		HttpResponse<String> unlink = send(
+				HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).DELETE(), RDF_XML);
+		assertEquals(204, unlink.statusCode());
+
+		assertTrue(distributionService.getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().isEmpty());
+		// The DataService is a catalog entity of its own and must survive the unlink.
+		assertTrue(dataServiceService.getDataService(SERVICE_ID).isPresent());
+	}
+
+	@Test
+	void unlinkingAnAccessServiceThatIsNotLinkedIsNoContent() throws Exception {
+		String url = adminDistributions() + "/csv";
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+
+		HttpResponse<String> unlink = send(
+				HttpRequest.newBuilder(URI.create(url + "/access-service/never-linked")).DELETE(), RDF_XML);
+		assertEquals(204, unlink.statusCode());
+	}
+
+	@Test
+	void linkingUnknownAccessServiceIsNotFound() throws Exception {
+		String url = adminDistributions() + "/csv";
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+
+		HttpResponse<String> link = send(
+				HttpRequest.newBuilder(URI.create(url + "/access-service/no-such-service")).PUT(BodyPublishers.noBody()),
+				RDF_XML);
+		assertEquals(404, link.statusCode());
+	}
+
+	@Test
+	void linkingOnUnknownDistributionIsNotFound() throws Exception {
+		seedDataService();
+		HttpResponse<String> link = send(HttpRequest
+				.newBuilder(URI.create(adminDistributions() + "/no-such-dist/access-service/" + SERVICE_ID))
+				.PUT(BodyPublishers.noBody()), RDF_XML);
+		assertEquals(404, link.statusCode());
+	}
+
+	@Test
+	void linkHonoursIfMatch() throws Exception {
+		String url = adminDistributions() + "/csv";
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		seedDataService();
+
+		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID))
+				.header("If-Match", "\"stale-value\"").PUT(BodyPublishers.noBody()), RDF_XML);
+		assertEquals(412, stale.statusCode());
+	}
+
 	// --- helpers -----------------------------------------------------------
+
+	private String serviceAbout() {
+		return BASE + "/data-services/" + SERVICE_ID;
+	}
+
+	/** Catalogues the DataService that {@code accessService} will reference. */
+	private void seedDataService() {
+		DataService service = DcatFactory.eINSTANCE.createDataService();
+		service.setAbout(serviceAbout());
+		PlainLiteral title = RdfFactory.eINSTANCE.createPlainLiteral();
+		title.setLang("en");
+		title.setValue("Air quality WFS");
+		service.getTitle().add(title);
+		dataServiceService.upsertDataService(service);
+	}
 
 	private String distributionBody(String title) {
 		return """

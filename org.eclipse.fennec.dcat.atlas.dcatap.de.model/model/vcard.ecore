@@ -134,7 +134,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="hasTelephone" upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="hasTelephone" upperBound="-1"
+        eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="hasTelephone"/>

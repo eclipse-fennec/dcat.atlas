@@ -26,6 +26,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
+import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatPackage;
 import dcat.Distribution;
@@ -97,9 +98,65 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		DcatHelper.delete(directory, distributionId);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.fennec.dcat.atlas.api.DistributionAdminService#addAccessServiceToDistribution(java.lang.String, java.lang.String, dcat.DataService)
+	 */
+	@Override
+	public Distribution addAccessServiceToDistribution(String datasetId, String distributionId,
+			DataService dataService) {
+		Distribution distribution = requireDistribution(datasetId, distributionId);
+		String serviceAbout = dataService == null ? null : dataService.getAbout();
+		if (serviceAbout == null || serviceAbout.isBlank()) {
+			// Without an about there is nothing to point at: the reference is a URI, not a copy.
+			throw new IllegalArgumentException("DataService without rdf:about cannot be referenced");
+		}
+		boolean linked = distribution.getAccessService().stream()
+				.anyMatch(ref -> serviceAbout.equals(ref.getResource()));
+		if (linked) {
+			// Idempotent: link already recorded, leave the distribution (and its ETag) untouched.
+			return distribution;
+		}
+		rdf.Resource ref = RdfFactory.eINSTANCE.createResource();
+		ref.setResource(serviceAbout);
+		distribution.getAccessService().add(ref);
+		return store(distributionId, distribution);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.fennec.dcat.atlas.api.DistributionAdminService#deleteAccessServiceFromDistribution(java.lang.String, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void deleteAccessServiceFromDistribution(String datasetId, String distributionId, String dataServiceId) {
+		getDistributionForDataset(datasetId, distributionId).ifPresent(distribution -> {
+			// Matched on the last path segment of the reference, as elsewhere for membership.
+			if (distribution.getAccessService()
+					.removeIf(ref -> dataServiceId != null
+							&& dataServiceId.equals(DcatHelper.idOf(ref.getResource())))) {
+				store(distributionId, distribution);
+			}
+		});
+	}
+
 	private Dataset requireDataset(String datasetId) {
 		return datasetAdminService.getDataset(datasetId)
 				.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId));
+	}
+
+	private Distribution requireDistribution(String datasetId, String distributionId) {
+		return getDistributionForDataset(datasetId, distributionId).orElseThrow(() -> new NoSuchElementException(
+				"Unknown distribution: " + distributionId + " in dataset: " + datasetId));
+	}
+
+	/**
+	 * Stores the distribution under its own id. Only the distribution changes here — the
+	 * dataset's {@code dcat:distribution} link is untouched, so no dataset write is needed.
+	 */
+	private Distribution store(String distributionId, Distribution distribution) {
+		DcatHelper.write(resourceSetFactory, directory, distributionId,
+				DcatPackage.Literals.DCATAP_ROOT__DISTRIBUTION, distribution);
+		return distribution;
 	}
 
 	/** Adds a {@code dcat:distribution} reference to the dataset if it is not already present. */

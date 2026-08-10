@@ -14,9 +14,11 @@
 package org.eclipse.fennec.dcat.atlas.rest;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
+import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
@@ -33,6 +35,7 @@ import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsResource;
 import org.osgi.service.servlet.whiteboard.annotations.RequireHttpWhiteboard;
 
+import dcat.DataService;
 import dcat.Distribution;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -73,6 +76,10 @@ public class DistributionAdminResource {
 	/** Used only to answer 404 (rather than 500) when the parent dataset is unknown (FR-10). */
 	@Reference
 	DatasetReadOnlyService datasetReadOnlyService;
+
+	/** Resolves the {@code accessService} target: the DataService must already be catalogued. */
+	@Reference
+	DataServiceReadOnlyService dataServiceReadOnlyService;
 
 	/**
 	 * On-write SHACL enforcement (FR-4); gated by the validation service's config.
@@ -150,6 +157,55 @@ public class DistributionAdminResource {
 			return precondition.build();
 		}
 		distributionAdminService.deleteDistributionFromDataset(datasetId, id);
+		return Response.noContent().build();
+	}
+
+	// --- FR-10 accessService link ------------------------------------------
+	//
+	// Records which already catalogued DataService gives access to this distribution
+	// (DCAT-AP.de 3.0 §4.6.24). The link is stored as dcat:accessService on the
+	// Distribution, so the Distribution is what is edited, what If-Match keys on and
+	// what these endpoints return. The DataService itself is never modified: it is a
+	// catalog entity in its own right, referenced by URI rather than copied.
+
+	@PUT
+	@Path("/{id}/access-service/{serviceId}")
+	@Produces({ JSON, XML, RDF_XML })
+	public Response addAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
+			@PathParam("serviceId") String serviceId, @Context Request request) {
+		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		// The service must already exist in the catalog — accessService references it, so
+		// there is nothing to point at otherwise.
+		Optional<DataService> dataService = dataServiceReadOnlyService.getDataService(serviceId);
+		if (dataService.isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
+		ResponseBuilder ok = Response
+				.ok(distributionAdminService.addAccessServiceToDistribution(datasetId, id, dataService.get()));
+		distributionAdminService.etag(id).ifPresent(ok::tag);
+		return ok.build();
+	}
+
+	@DELETE
+	@Path("/{id}/access-service/{serviceId}")
+	public Response removeAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
+			@PathParam("serviceId") String serviceId, @Context Request request) {
+		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(id));
+		if (precondition != null) {
+			return precondition.build();
+		}
+		// Idempotent: unlinking a service that is not referenced is a no-op, not a 404 —
+		// consistent with the FR-11 series membership removal.
+		distributionAdminService.deleteAccessServiceFromDistribution(datasetId, id, serviceId);
 		return Response.noContent().build();
 	}
 

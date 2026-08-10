@@ -12,7 +12,6 @@
  */
 package dcat.impl;
 
-import dcat.DataService;
 import dcat.DcatPackage;
 import dcat.Distribution;
 
@@ -118,7 +117,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<DataService> accessService;
+	protected EList<Resource> accessService;
 
 	/**
 	 * The cached value of the '{@link #getFormat() <em>Format</em>}' containment reference.
@@ -469,9 +468,9 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<DataService> getAccessService() {
+	public EList<Resource> getAccessService() {
 		if (accessService == null) {
-			accessService = new EObjectContainmentEList<DataService>(DataService.class, this, DcatPackage.DISTRIBUTION__ACCESS_SERVICE);
+			accessService = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DISTRIBUTION__ACCESS_SERVICE);
 		}
 		return accessService;
 	}
@@ -1192,7 +1191,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
 				getAccessService().clear();
-				getAccessService().addAll((Collection<? extends DataService>)newValue);
+				getAccessService().addAll((Collection<? extends Resource>)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__FORMAT:
 				setFormat((Concept)newValue);

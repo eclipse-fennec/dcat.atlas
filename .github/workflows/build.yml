@@ -1,0 +1,25 @@
+name: CI Build
+
+# Every branch and every pull request is verified. Unlike other Fennec repos this
+# one has no snapshot/release publishing workflow (nothing is deployed to Maven
+# Central), so `main` and `snapshot` are not excluded here — otherwise they would
+# get no CI at all.
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '*'
+
+# Least privilege by default; this workflow only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    uses: eclipse-fennec/.github/.github/workflows/reusable-verify.yml@227b1dfa5f323fdd6d857d0a61fbaaf6e7288716 # v1.0.0

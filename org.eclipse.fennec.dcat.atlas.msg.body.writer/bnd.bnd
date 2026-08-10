@@ -29,4 +29,5 @@ Export-Package: org.eclipse.fennec.dcat.atlas.msg.body.readerwriter
 	com.apicatalog.titanium.jcs,\
 	com.apicatalog.titanium.tree.io.api,\
 	jakarta.json-api,\
-	org.eclipse.parsson.jakarta.json
+	org.eclipse.parsson.jakarta.json,\
+	org.apache.thrift

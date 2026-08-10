@@ -9,10 +9,21 @@ Test-Cases: ${classes;HIERARCHY_INDIRECTLY_ANNOTATED;org.junit.platform.commons.
 	org.osgi.framework;version=latest,\
 	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
-	org.osgi.service.jakartars,\
-	org.osgi.util.tracker,\
+	org.osgi.service.jakartars;version=latest,\
+	org.osgi.util.tracker;version=latest,\
 	org.osgi.service.cm;version=latest
 	
+# Projects that test.bndrun needs at *run* time but that are not on the -buildpath.
+# bnd derives the build order (and thus the Gradle task graph for resolve.test/testOSGi)
+# from -buildpath/-testpath only, so without this the resolve can run before these
+# bundles exist in the Workspace repo. Eclipse never hits this because its Workspace
+# repo always sees every project.
+-dependson: \
+	org.eclipse.fennec.dcat.atlas.impl,\
+	org.eclipse.fennec.dcat.atlas.msg.body.writer,\
+	org.eclipse.fennec.dcat.atlas.rest,\
+	org.eclipse.fennec.dcat.atlas.validation
+
 Private-Package: \
 	org.eclipse.fennec.dcat.atlas.rest.tests,\
 	org.eclipse.fennec.dcat.atlas.rest.tests.helper

@@ -23,8 +23,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
 import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -40,9 +42,9 @@ import dcat.Distribution;
  * @author ilenia
  * @since Jul 8, 2026
  */
-@Component(name = "DistributionReadOnlyService", service = DistributionReadOnlyService.class)
+@Component(name = "DistributionReadOnlyService", service = { DistributionReadOnlyService.class, DcatHealthContributor.class })
 @Designate(ocd = StoreConfig.class)
-public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyService {
+public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyService, DcatHealthContributor {
 	
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path directory;
@@ -112,6 +114,23 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 	protected static boolean referencesDistribution(Dataset dataset, String distributionId) {
 		return dataset.getDistribution().stream()
 				.anyMatch(ref -> distributionId.equals(DcatHelper.idOf(ref.getResource())));
+	}
+
+	// --- F-25 readiness -----------------------------------------------------
+
+	@Override
+	public String name() {
+		return "store:distributions";
+	}
+
+	@Override
+	public boolean ready() {
+		return StoreHealth.ready(directory);
+	}
+
+	@Override
+	public String detail() {
+		return StoreHealth.detail(directory);
 	}
 
 }

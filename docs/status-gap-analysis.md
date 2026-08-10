@@ -118,7 +118,7 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | F-21 | Input validation | ✅ | SHACL on write (422) and dry-run; = FR-4/FR-5. UI feedback pending the UI. |
 | F-22 | License-vocabulary validation | ✅ | Controlled vocabularies (license, theme, language, frequency, availability, access-rights, format, status) validated against the DCAT-AP.de authority tables, loaded from `ShapesConfig.vocabularyDirectory` and unioned with the entity at validation time. Verified against real data. |
 | F-23/24 | Docker, env configuration | 🟡 | Env-driven configuration ✅ (`STORE_FOLDER`, `SHACL_SHAPES_DIR`, `SHACL_VOCAB_DIR`, `SHACL_ENFORCE` via the configurator, with a nested `$[env:…;default=$[prop:…]]` fallback so both container env and bndrun `-D` work). **No Dockerfile**; `config.docker/configs/config.json` is still the generated stub. |
-| F-25 | Health / readiness | ⬜ | No endpoint. Should also surface whether the SHACL shapes actually loaded. |
+| F-25 | Health / readiness | ✅ | `GET /health` (liveness, checks nothing) and `GET /ready` (readiness, 200/503) — N21, 2026-08-10. Readiness aggregates `DcatHealthContributor` services: one per store plus SHACL. Shapes status is split on purpose — *not configured* is ready-with-a-warning (validation is a documented no-op), *configured but nothing loaded* is **not ready**, which is the misconfiguration where an operator believes the portal validates and it silently does not. |
 | F-26 | CSS customization | ⬜ | No UI. |
 | F-27/28 | Accessibility (AA), DE/EN i18n | ⬜ | No UI. |
 | F-29 | Legal pages (Impressum/privacy) | ⬜ | No UI. |
@@ -135,7 +135,7 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | WP-DCAT-6 | Client library | ⬜ | Blocks Data-Atlas (WP-DA-10), Model-Atlas (WP-MA-5) and SensiNact (WP-SN-4). Freeze the contract ([C4](#c4)–[C9](#c9)) first; note the write-format restriction under FR-8. |
 | WP-DCAT-7 | Endpoint/microservice awareness | 🟡 | Base URL from request; configured base URL, discovery, reachability ⬜. |
 | WP-DCAT-8 | Frontend / catalog browser | ⬜ | — |
-| WP-DCAT-9 | Operations & deployment | 🟡 | Runtime bundle + local/docker config bundles + env-driven config ✅; Docker image, docker config content, store volume, health/readiness, config docs ⬜. |
+| WP-DCAT-9 | Operations & deployment | 🟡 | Runtime bundle + local/docker config bundles + env-driven config + health/readiness (F-25) ✅; Docker image, docker config content, store volume, config docs ⬜. |
 | WP-DCAT-10 | Documentation | 🟡 | Dev guide, user guide, admin-API spec, this analysis, issue review ✅; README, OpenAPI, ops manual, integration guide ⬜. |
 | WP-DCAT-11 | EMF editor | ⬜ | — |
 | WP-DCAT-12 | OData query UI | ⬜ | — |

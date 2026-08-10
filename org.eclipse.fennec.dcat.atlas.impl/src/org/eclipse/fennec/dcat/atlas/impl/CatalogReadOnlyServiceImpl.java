@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -40,9 +42,9 @@ import dcat.DcatPackage;
  * implementation of {@code getCatalog}/{@code listCatalogs}. The storage
  * location is exposed to that subclass through the {@code protected} fields.
  */
-@Component(name = "CatalogReadOnlyService", service = CatalogReadOnlyService.class)
+@Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, DcatHealthContributor.class })
 @Designate(ocd = StoreConfig.class)
-public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService {
+public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService, DcatHealthContributor {
 
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path directory;
@@ -77,4 +79,22 @@ public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService {
 	public Optional<String> etag(String id) {
 		return DcatHelper.etag(directory, id);
 	}
+
+	// --- F-25 readiness -----------------------------------------------------
+
+	@Override
+	public String name() {
+		return "store:catalogs";
+	}
+
+	@Override
+	public boolean ready() {
+		return StoreHealth.ready(directory);
+	}
+
+	@Override
+	public String detail() {
+		return StoreHealth.detail(directory);
+	}
+
 }

@@ -310,11 +310,18 @@ Build a container over the `…runtime` bundle, fill the docker config bundle (e
 
 ---
 
-#### N21 · *Now*
+#### N21 · ✅ *Done (2026-08-10)*
 
 **[DCAT] WP-DCAT-9 — Health and readiness endpoints (F-25)**
 
 No health/readiness endpoint exists. Needed for the container orchestrator. Readiness should reflect store availability and whether the SHACL shapes actually loaded — a portal running with no shapes silently validates nothing.
+
+**Delivered.** `GET /health` (liveness — checks no dependencies, because a failing liveness probe means "restart me" and a missing store is not fixed by a restart) and `GET /ready` (readiness — 200 when every contributor is ready, else 503 with a per-check JSON body). Readiness aggregates `DcatHealthContributor` services, so a subsystem that appears later registers one and the endpoint needs no change; the Phase 1 SPARQL graph will use exactly that. 6 + 4 unit and 5 integration tests (74 integration tests total).
+
+Two decisions worth recording:
+
+- **Split shapes status.** Shapes are operator-supplied deployment input, and running without them is a documented no-op — so *not configured* is ready, reported as a warning, while *configured but nothing loaded* (bad path, no `*.ttl`) is **not ready**. Failing readiness for the first case would break every deployment that deliberately runs unvalidated, including the integration tests; not failing the second leaves the silent-no-validation trap this issue was filed about. Known limitation: unparseable shapes make the validation component fail activation outright, so the service — and its contributor — is simply absent rather than reporting unready.
+- **A missing store directory is ready.** Stores are created lazily (`DcatHelper.write` does not mkdir; EMF's file URI handler creates the parent on first save), so a fresh install has no store directories at all. Readiness therefore accepts "absent but creatable" and only fails when the path exists and is not a usable directory, or cannot be created. Not-writable is also ready — a read-only mount is legitimate for a read runtime — and is reported in the detail text.
 
 ---
 
@@ -447,7 +454,7 @@ Also settle at the same time whether `dcat:servesDataset` should be maintained o
 | WP-DCAT-6 Client library | **#7 open** | (N11 first) | complete |
 | WP-DCAT-7 Endpoint awareness | **none** | N16 | complete |
 | WP-DCAT-8 Catalog browser | **none** | N17, N18, N19 | complete |
-| WP-DCAT-9 Operations & deployment | **none** | N20, N21 | complete |
+| WP-DCAT-9 Operations & deployment | **none** | N20, N21 ✅ | complete |
 | WP-DCAT-10 Documentation | **none** | N22 | complete |
 | WP-DCAT-11 EMF editor | **none** | N23 | complete |
 | WP-DCAT-12 OData query UI | **none** | N24 | complete |
@@ -518,7 +525,7 @@ could be vendored, which would remove one manual provisioning step.
 2. **Re-scope #32** into a decision + ADR on the store backend (C1: Jena TDB2 vs.
    JPA/PostgreSQL), with N4/N5/N6 as follow-ups. It is the critical path — six other
    requirements are blocked behind it.
-3. **Create the "Now" issues:** N1 ✅ *(done)*, N7 ✅ *(done)*, N10, N11, N14, N20, N21, N27.
+3. **Create the "Now" issues:** N1 ✅ *(done)*, N7 ✅ *(done)*, N21 ✅ *(done)*, N10, N11, N14, N20, N27.
 4. **Do N11 before #7** so the client library does not freeze a contract the spec still
    contradicts, and remember #7 blocks WP-DA-10, WP-MA-5 and WP-SN-4.
 5. Create the "Later" issues as each work package starts.

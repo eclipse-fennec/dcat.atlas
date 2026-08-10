@@ -228,4 +228,40 @@ public class DcatValidationServiceImplTest {
 		}
 		return dataset;
 	}
+	// --- F-25 readiness (split shapes status) -------------------------------
+
+	@Test
+	void readinessNoShapesConfiguredIsReadyWithAWarning() {
+		// Shapes are operator-supplied deployment input; running without them is a
+		// documented no-op, not a failure, so the portal must still serve traffic.
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
+				(Path) null);
+		assertEquals("shacl", service.name());
+		assertTrue(service.ready());
+		assertTrue(service.detail().contains("no shapes directory configured"), service.detail());
+	}
+
+	@Test
+	void readinessShapesConfiguredButEmptyIsNotReady() {
+		// The dangerous case: an operator believes the portal validates, and it does not.
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
+				shapesDir);
+		assertFalse(service.ready());
+		assertTrue(service.detail().contains("no *.ttl shapes loaded"), service.detail());
+	}
+
+	@Test
+	void readinessShapesConfiguredButDirectoryMissingIsNotReady() {
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
+				shapesDir.resolve("does-not-exist"));
+		assertFalse(service.ready());
+	}
+
+	@Test
+	void readinessShapesLoadedIsReady() throws IOException {
+		DcatValidationServiceImpl service = serviceWithTitleShape();
+		assertTrue(service.ready());
+		assertTrue(service.detail().contains("1 shape file(s) loaded"), service.detail());
+	}
+
 }

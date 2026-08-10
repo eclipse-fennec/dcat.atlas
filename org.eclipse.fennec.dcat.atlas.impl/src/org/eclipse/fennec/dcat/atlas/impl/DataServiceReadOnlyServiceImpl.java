@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -36,9 +38,9 @@ import dcat.DcatPackage;
  * @author ilenia
  * @since Jul 8, 2026
  */
-@Component(name = "DataServiceReadOnlyService", service = DataServiceReadOnlyService.class)
+@Component(name = "DataServiceReadOnlyService", service = { DataServiceReadOnlyService.class, DcatHealthContributor.class })
 @Designate(ocd = StoreConfig.class)
-public class DataServiceReadOnlyServiceImpl implements DataServiceReadOnlyService {
+public class DataServiceReadOnlyServiceImpl implements DataServiceReadOnlyService, DcatHealthContributor {
 	
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path directory;
@@ -80,6 +82,23 @@ public class DataServiceReadOnlyServiceImpl implements DataServiceReadOnlyServic
 	@Override
 	public Optional<String> etag(String id) {
 		return DcatHelper.etag(directory, id);
+	}
+
+	// --- F-25 readiness -----------------------------------------------------
+
+	@Override
+	public String name() {
+		return "store:data-services";
+	}
+
+	@Override
+	public boolean ready() {
+		return StoreHealth.ready(directory);
+	}
+
+	@Override
+	public String detail() {
+		return StoreHealth.detail(directory);
 	}
 
 }

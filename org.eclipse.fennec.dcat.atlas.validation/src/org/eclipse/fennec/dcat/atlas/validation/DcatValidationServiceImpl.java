@@ -36,6 +36,7 @@ import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.fennec.dcat.atlas.api.DcatHealthContributor;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.eclipse.fennec.dcat.atlas.api.Violation;
@@ -61,9 +62,9 @@ import org.osgi.service.metatype.annotations.Designate;
  * the entity graph before validation; without it every vocabulary-constrained value
  * would report a false violation.
  */
-@Component(name = "DcatValidationService", service = DcatValidationService.class)
+@Component(name = "DcatValidationService", service = { DcatValidationService.class, DcatHealthContributor.class })
 @Designate(ocd = ShapesConfig.class)
-public class DcatValidationServiceImpl implements DcatValidationService {
+public class DcatValidationServiceImpl implements DcatValidationService, DcatHealthContributor {
 
 	private static final Logger LOGGER = System.getLogger(DcatValidationServiceImpl.class.getName());
 
@@ -74,6 +75,10 @@ public class DcatValidationServiceImpl implements DcatValidationService {
 	private final Model vocabulary;
 	/** Operator policy: block non-conformant writes with 422 (FR-4). */
 	private final boolean enforceOnWrite;
+	/** Configured shapes directory, {@code null} when the operator configured none (F-25). */
+	private final Path shapesDirectory;
+	/** Number of {@code *.ttl} shape files actually parsed; 0 means nothing is enforced (F-25). */
+	private final int shapeFileCount;
 
 	@Activate
 	public DcatValidationServiceImpl(@Reference ResourceSetFactory resourceSetFactory, ShapesConfig config) {
@@ -100,7 +105,10 @@ public class DcatValidationServiceImpl implements DcatValidationService {
 	DcatValidationServiceImpl(ResourceSetFactory resourceSetFactory, Path shapesDirectory, Path vocabularyDirectory,
 			boolean enforceOnWrite) {
 		this.resourceSetFactory = resourceSetFactory;
-		this.shapes = loadShapes(shapesDirectory);
+		ShapesLoad load = loadShapes(shapesDirectory);
+		this.shapes = load.shapes();
+		this.shapeFileCount = load.fileCount();
+		this.shapesDirectory = shapesDirectory;
 		this.vocabulary = loadVocabulary(vocabularyDirectory);
 		this.enforceOnWrite = enforceOnWrite;
 	}
@@ -138,12 +146,16 @@ public class DcatValidationServiceImpl implements DcatValidationService {
 		return directory == null || directory.isBlank() ? null : Path.of(directory);
 	}
 
-	private static Shapes loadShapes(Path directory) {
+	/** Parsed shapes plus how many files they came from, so readiness can tell "none configured" from "configured but empty". */
+	private record ShapesLoad(Shapes shapes, int fileCount) {
+	}
+
+	private static ShapesLoad loadShapes(Path directory) {
 		if (directory == null || !Files.isDirectory(directory)) {
 			LOGGER.log(Level.WARNING,
 					"No SHACL shapes directory configured (or not a directory): {0}. No shapes loaded (everything conforms).",
 					directory);
-			return emptyShapes();
+			return new ShapesLoad(emptyShapes(), 0);
 		}
 		Model shapesModel = ModelFactory.createDefaultModel();
 		int count = 0;
@@ -162,10 +174,10 @@ public class DcatValidationServiceImpl implements DcatValidationService {
 		if (count == 0) {
 			LOGGER.log(Level.WARNING, "No *.ttl shape files found in {0}. No shapes loaded (everything conforms).",
 					directory);
-			return emptyShapes();
+			return new ShapesLoad(emptyShapes(), 0);
 		}
 		LOGGER.log(Level.INFO, "Loaded {0} SHACL shape file(s) from {1}.", count, directory);
-		return Shapes.parse(shapesModel.getGraph());
+		return new ShapesLoad(Shapes.parse(shapesModel.getGraph()), count);
 	}
 
 	/** An empty shapes set — used when no shapes are configured, so validation conforms. */
@@ -226,4 +238,34 @@ public class DcatValidationServiceImpl implements DcatValidationService {
 	private static String str(Object value) {
 		return value == null ? null : value.toString();
 	}
+	// --- F-25 readiness -----------------------------------------------------
+	//
+	// Split status, deliberately: shapes are operator-supplied deployment input and a
+	// portal may legitimately run without them (validation is then a documented no-op).
+	// So "none configured" is ready-with-a-warning, while "configured but nothing
+	// loaded" is NOT ready — that is the misconfiguration where an operator believes
+	// the portal validates and it silently does not.
+
+	@Override
+	public String name() {
+		return "shacl";
+	}
+
+	@Override
+	public boolean ready() {
+		return shapesDirectory == null || shapeFileCount > 0;
+	}
+
+	@Override
+	public String detail() {
+		if (shapesDirectory == null) {
+			return "no shapes directory configured - SHACL validation is a no-op, everything conforms";
+		}
+		if (shapeFileCount == 0) {
+			return "shapes directory configured but no *.ttl shapes loaded from " + shapesDirectory
+					+ " - validation would silently pass everything";
+		}
+		return shapeFileCount + " shape file(s) loaded from " + shapesDirectory + "; enforceOnWrite=" + enforceOnWrite;
+	}
+
 }

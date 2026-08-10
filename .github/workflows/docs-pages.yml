@@ -5,10 +5,15 @@ name: Docs site
 # slices (p2 update site + docs) in an orchestrator — DCAT.Atlas has only the
 # docs, so this single workflow builds and deploys in one go. A root index.html
 # redirect makes https://eclipse-fennec.github.io/dcat.atlas/ land on the docs.
+# Triggered from `snapshot`, the default branch and where development lands —
+# matching the other Fennec repos, which deploy their docs from `snapshot` too.
+# `main` currently holds only the initial commit, so triggering on it meant this
+# workflow never ran and the published site 404'd. Add `main` here once releases
+# start landing there, alongside a `latest` version segment.
 on:
   push:
     branches:
-      - main
+      - snapshot
   workflow_dispatch:
 
 # Serialize Pages publishing; let an in-flight deploy finish before the next.

@@ -3,6 +3,7 @@
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="dcat" nsURI="http://www.w3.org/ns/dcat#" nsPrefix="dcat">
   <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
     <details key="documentation" value="DCAT Application Profile for data portals in Europe — DCAT-AP.de Version 3.0"/>
+    <details key="copyrightText" value="Copyright (c) 2026 Contributors to the Eclipse Foundation.&#xA;&#xA;This program and the accompanying materials are made&#xA;available under the terms of the Eclipse Public License 2.0&#xA;which is available at https://www.eclipse.org/legal/epl-2.0/&#xA;&#xA;SPDX-License-Identifier: EPL-2.0&#xA;&#xA;Contributors:&#xA;  Data In Motion Consulting - initial implementation"/>
   </eAnnotations>
   <eClassifiers xsi:type="ecore:EClass" name="Catalog" eSuperTypes="#//Dataset">
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
@@ -93,8 +94,7 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="temporalResolution"
-        eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//Duration">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="temporalResolution" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//Duration">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="temporalResolution"/>
@@ -273,8 +273,7 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="temporalResolution"
-        eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//Duration">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="temporalResolution" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//Duration">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="temporalResolution"/>
@@ -391,8 +390,9 @@
         <details key="namespace" value="http://www.w3.org/ns/adms#"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="applicableLegislation" upperBound="-1"
-        eType="ecore:EClass rdf.ecore#//Resource" containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="applicableLegislation"
+        upperBound="-1" eType="ecore:EClass rdf.ecore#//Resource" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
         <details key="documentation" value="dcatap:applicableLegislation — the legislation that mandates the distribution. New in DCAT-AP.de 3.0."/>
       </eAnnotations>
@@ -648,8 +648,9 @@
         <details key="namespace" value="http://purl.org/dc/terms/"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="applicableLegislation" upperBound="-1"
-        eType="ecore:EClass rdf.ecore#//Resource" containment="true" resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="applicableLegislation"
+        upperBound="-1" eType="ecore:EClass rdf.ecore#//Resource" containment="true"
+        resolveProxies="false">
       <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
         <details key="documentation" value="dcatap:applicableLegislation — the legislation that mandates the resource. New in DCAT-AP.de 3.0; inherited by Catalog, Dataset, DataService and DatasetSeries."/>
       </eAnnotations>

@@ -21,3 +21,7 @@ plugins {
 
 // Project name comes from gradle.properties (single source of truth)
 rootProject.name = github_repository
+
+// The docker staging project is a plain Gradle project (no bundle), so it needs an
+// explicit include — the bnd workspace plugin only sweeps root folders.
+include ":docker:dcatatlas"

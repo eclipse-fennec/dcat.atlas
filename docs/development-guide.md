@@ -16,9 +16,17 @@
 | `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations — file-backed store; one read-only + admin component per entity; shared `helper.DcatHelper`. |
 | `org.eclipse.fennec.dcat.atlas.rest/` | JAX-RS whiteboard resources — read-only (public) + admin (write) resource per entity. |
 | `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
-| `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. |
+| `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed), controlled-vocabulary checks, and the Felix health checks behind `/health/*`. |
+| `org.eclipse.fennec.shacl.model/` | EMF model bundle for the SHACL vocabulary (used by the validation-report representation). |
+| `org.eclipse.fennec.dcat.atlas.runtime/` | bnd run descriptors: `base.bndrun` (framework + all bundles), `local.bndrun`, `docker.bndrun`, `secrets.bndrun`. Exports the executable jars. |
+| `org.eclipse.fennec.dcat.atlas.config.local/` | OSGi configuration for local development (HTTP on `8085`, store under `/tmp/rdf`). |
+| `org.eclipse.fennec.dcat.atlas.config.docker/` | OSGi configuration for the container — the same settings, but env-driven via the ConfigAdmin interpolation plugin. |
+| `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. Uses its own standalone `test.bndrun`. |
+| `docker/` | Container packaging: `dcatatlas/` (Dockerfile + `prepareDocker` staging task), `dockercompose/`, and `docker/README.md`. |
 | `docs/` | Source-of-truth documentation. Internal docs stay here; the user guide is published via `docs-site/`. |
 | `docs-site/` | VitePress documentation site (publishes the curated user guide). |
+| `cnf/` | bnd workspace configuration — repositories, `ext/` includes, shared build settings. |
+| `tools/` | Build/CI helper scripts (e.g. `dash-licenses.sh`). |
 | `references/` | Specs and reference code (git-ignored, not committed). |
 
 ## Working on the EMF model
@@ -51,6 +59,108 @@ Standard loop for a model change:
 ---
 
 ## Change log
+
+### 2026-08-11 — Container packaging (N20/F-23/F-24)
+
+**Goal.** Ship the runtime as a container: an env-driven configuration bundle, a distroless
+image, a compose file, and a verified start-up path.
+
+**Layout.** `…config.docker/configs/config.json` carries the whole container configuration —
+HTTP, the Jakarta-RS whiteboard, the F-25 health checks, the per-entity store directories and
+the SHACL paths — with every value interpolated from the environment
+(`$[env:HTTP_PORT;default=8080]`, …). `docker.bndrun` is `base.bndrun` plus that bundle;
+`docker/dcatatlas/` holds the Dockerfile and the `prepareDocker` staging task. See
+`docker/README.md` for the operator-facing documentation.
+
+**Build — export and stage are two separate commands, deliberately.**
+
+```bash
+./gradlew :org.eclipse.fennec.dcat.atlas.runtime:export.docker
+./gradlew :docker:dcatatlas:prepareDocker
+docker build -t eclipse-fennec/dcat.atlas:latest docker/dcatatlas
+```
+
+They cannot be wired together. The bnd workspace **settings** plugin includes only the bnd
+projects it believes the requested task paths need, so invoking `:docker:dcatatlas:prepareDocker`
+yields a project graph of just `[cnf, docker]` and any `dependsOn`/`evaluationDependsOn` on
+`:org.eclipse.fennec.dcat.atlas.runtime` fails at configuration time with *"Project with path …
+could not be found"*. `gradlew projects` lists everything, which makes this look impossible; a
+probe printing `rootProject.childProjects` from the staging project shows the truncated graph.
+This is **not** configure-on-demand — `--no-configure-on-demand` does not help. The `docker/*`
+projects in `model.atlas` are not wired either, for the same reason.
+
+**Gotcha — `export.docker` is not input-aware.** It reports `UP-TO-DATE` after you change a
+bundle or a `.bndrun`, so you silently rebuild the image from the previous jar. When iterating:
+
+```bash
+rm -rf org.eclipse.fennec.dcat.atlas.runtime/generated/distributions
+./gradlew :org.eclipse.fennec.dcat.atlas.runtime:export.docker --rerun-tasks
+```
+
+**Gotcha — two Jetty instances fight over port 8080; the entire REST API 404s.** Felix's
+`JettyActivator` starts a **default** Jetty instance (singleton PID `org.apache.felix.http`, via
+`JettyManagedService`) *in addition* to any `org.apache.felix.http~name` factory instance
+(`JettyManagedServiceFactory`). Locally this is invisible because dev runs on `8085`, away from
+Felix's default `8080`. In the container both want `8080`, the default instance wins the bind,
+and the Jakarta-RS whiteboard — which targets `(id=dcatHttp)` — ends up on a runtime nothing can
+reach. The symptom is deceptive: `/health/live` and `/health/ready` answer correctly (the Felix
+health-check servlets register on *every* runtime) while every `/rest/…` path returns 404.
+
+Diagnosis: run with `HTTP_PORT=9090` and publish both ports. If `8080` *and* `9090` both answer
+`/health/live`, there are two runtimes.
+
+**Fix — one framework property, and it was simply missing from our `base.bndrun`:**
+
+```
+-runproperties: \
+	org.osgi.service.http.port=-1,\
+	felix.cm.config.plugins=org.apache.felix.configadmin.plugin.interpolation
+```
+
+`-1` makes the default instance bind no port at all. Factory configurations set their own
+`org.osgi.service.http.port` and are unaffected, so nothing else has to change — no per-config
+opt-in, and no obligation on future `org.apache.felix.http~*` configurations.
+
+This is the established pattern: `modelatlas.runtime_base.bndrun` in `model.atlas` carries the
+identical two-line `-runproperties` block, as do every `test.bndrun` in both repos (including
+our own `…rest.tests/test.bndrun`, which is why the integration tests never saw the problem).
+Our `base.bndrun` had only the `felix.cm.config.plugins` line.
+
+**Gotcha — `"//": "text"` comment keys spam the log.** The configurator rejects them with an
+`ERROR` per key on every startup (*"Ignoring property (not a configuration)"*). Felix `cm.json`
+parses configurator resources through a `CommentRemovingReader`, so **real `//` comments are
+legal in `config.json`** — use those.
+
+**Image.** Two stages: a `temurin` builder that lays out the directory tree with uid 65532
+ownership, and a `gcr.io/distroless/java21-debian12:nonroot` runtime stage. Distroless has no
+shell and no package manager, which is why all directory creation happens in the builder, and
+why the compose file defines **no** `healthcheck:` — there is no `curl`/`wget` in the image to
+run one. Probe over HTTP from outside instead; under Kubernetes these are `httpGet` probes,
+which need no in-image binary.
+
+**Readiness is deliberately strict.** `shapesDirectory` defaults to the canonical mount path
+`/opt/dcat/shapes`. Start the container without that mount and the shapes check reports
+`CRITICAL`, `/health/ready` returns 503, and the container never becomes ready. The shapes are
+AGPL-3.0 and are **not** in the image (see `NOTICE.md`); the operator mounts them read-only. A
+portal that silently validates nothing must not be routed traffic.
+
+**Verified in a running container.** `/health/live` 200; `/health/ready` 503 without shapes and
+200 with them; all five `/rest/*` read endpoints; a POST→GET round trip on
+`/rest/admin/catalogs`; data surviving `docker restart` on a named volume (confirming uid 65532
+can write it — the image pre-creates `/opt/dcat/data` with that ownership, which a fresh named
+volume inherits); and `HTTP_PORT`/`CONTEXT_PATH` overrides both taking effect. `./gradlew build`
+green, 74/74 OSGi integration tests pass (they are unaffected by the `base.bndrun` change — they
+use their own standalone `test.bndrun` with `org.osgi.service.http.port=-1`).
+
+**Also.** `gradle.properties` gained `docker` to `bnd_exclude` so bnd does not sweep `docker/`
+as a bundle project. The `:docker` intermediate Gradle project still gets a plain `java` jar
+task and writes an empty, git-ignored `docker/build/libs/docker.jar` — harmless.
+
+> **Note.** The first fix attempted here was the framework property
+> `org.apache.felix.http.enable=false` plus a per-instance `"org.apache.felix.http.enable": true`
+> in every factory configuration. It works, but it is not the house pattern and it burdens every
+> future HTTP configuration with an opt-in flag. `org.osgi.service.http.port=-1` achieves the
+> same thing in one line — check `model.atlas` for the established pattern before inventing one.
 
 ### 2026-07-14 — Runtime + config bundles; manual REST walkthrough; JSON-GET fix
 

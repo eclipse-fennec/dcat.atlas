@@ -71,6 +71,9 @@ header:
     - 'cnf/**'
     - 'docs/**'
     - 'docs-site/**'
+    # Container packaging: Dockerfile, staging build.gradle, compose files.
+    # Same exemption as model.atlas ('docker/**/*').
+    - 'docker/**'
     # Local scratch clones of other projects' code; gitignored, so absent in CI.
     - 'references/**'
     - '**/generated/**'

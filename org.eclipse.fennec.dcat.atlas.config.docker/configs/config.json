@@ -1,8 +1,66 @@
+// Container configuration (F-23/F-24). Every value is env-driven via the Felix
+// ConfigAdmin interpolation plugin, enabled by felix.cm.config.plugins in base.bndrun.
+//
+// Comments are legal here: Felix cm.json parses configurator resources through a
+// comment-removing reader. Do not reintroduce the "//"-as-a-key idiom - the
+// configurator logs every one of those at ERROR on each startup.
 {
-  ":configurator:resource-version": 1,
-  
-  "ExampleConfig": 
-  {
-    "your.prop.here": "text" 
+	":configurator:resource-version": 1,
+
+	"org.apache.felix.http~dcatHttp": {
+		"org.osgi.service.http.port": "$[env:HTTP_PORT;default=8080]",
+		"org.osgi.service.http.host": "0.0.0.0",
+		"org.apache.felix.http.context_path": "$[env:CONTEXT_PATH;default=/]",
+		"org.apache.felix.http.name": "dcat",
+		"org.apache.felix.http.runtime.init.id": "dcatHttp",
+		"org.apache.felix.http.whiteboard.enable": true
+	},
+	"JakartarsServletWhiteboardRuntimeComponent~dcatRest": {
+		"jersey.jaxrs.whiteboard.name": "dcatRest",
+		"jersey.context.path": "rest",
+		"osgi.http.whiteboard.target": "(id=dcatHttp)"
+	},
+
+	// F-25 probes. Liveness must never depend on the store or the shapes:
+	// a restart does not mount a volume. Readiness is what stops traffic.
+	"org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatLive": {
+		"servletPath": "/health/live",
+		"tags": ["live"],
+		"format": "json",
+		"httpStatusMapping": "OK:200,WARN:200,CRITICAL:503,TEMPORARILY_UNAVAILABLE:503,HEALTH_CHECK_ERROR:500"
+	},
+	"org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatReady": {
+		"servletPath": "/health/ready",
+		"tags": ["ready"],
+		"format": "json",
+		"httpStatusMapping": "OK:200,WARN:200,CRITICAL:503,TEMPORARILY_UNAVAILABLE:503,HEALTH_CHECK_ERROR:500"
+	},
+	"org.apache.felix.hc.generalchecks.ServicesCheck": {
+		"hc.name": "services",
+		"hc.tags": ["ready"],
+		"services.list": ["(objectClass=org.eclipse.fennec.dcat.atlas.api.DcatValidationService)"],
+		"statusForMissing": "CRITICAL"
+	},
+
+	// One directory per entity under the mounted store volume (F-23).
+	"CatalogReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/catalogs" },
+	"CatalogAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/catalogs" },
+	"DatasetReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/datasets" },
+	"DatasetAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/datasets" },
+	"DataServiceReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/data-services" },
+	"DataServiceAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/data-services" },
+	"DataSeriesReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/dataset-series" },
+	"DataSeriesAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/dataset-series" },
+	"DistributionReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/distributions" },
+	"DistributionAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/distributions" },
+
+	// The DCAT-AP.de shapes are AGPL-3.0 and are NOT in the image (see NOTICE.md):
+	// the operator mounts them. The default points at the canonical mount path, so an
+	// image started without that mount reports CRITICAL on /health/ready and never
+	// becomes ready - a container must not silently serve an unvalidating portal.
+	"DcatValidationService": {
+		"shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=/opt/dcat/shapes]",
+		"vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=/opt/dcat/vocabularies]",
+		"enforceOnWrite": "$[env:SHACL_ENFORCE;default=true]"
 	}
 }

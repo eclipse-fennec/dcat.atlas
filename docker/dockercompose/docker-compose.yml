@@ -1,0 +1,45 @@
+# DCAT.Atlas, single container (F-23/F-24).
+#
+# Build the image first:
+#   ./gradlew :docker:dcatatlas:prepareDocker
+#   docker build -t eclipse-fennec/dcat.atlas:latest docker/dcatatlas
+#
+# then from this directory:
+#   docker compose up
+#
+# The SHACL shapes are AGPL-3.0 and are deliberately NOT in the image (see
+# NOTICE.md). They are mounted read-only. Without them the readiness probe
+# reports CRITICAL and the container never becomes ready — a portal that
+# silently validates nothing must not be routed traffic. Set DCAT_SHAPES_DIR and
+# DCAT_VOCAB_DIR to the directories holding the GovData shapes and the EU /
+# GovData authority tables.
+
+services:
+  dcat-atlas:
+    image: eclipse-fennec/dcat.atlas:latest
+    container_name: dcat-atlas
+    ports:
+      - "${DCAT_PORT:-8080}:8080"
+    environment:
+      HTTP_PORT: "8080"
+      CONTEXT_PATH: "/"
+      STORE_FOLDER: /opt/dcat/data
+      SHACL_SHAPES_DIR: /opt/dcat/shapes
+      SHACL_VOCAB_DIR: /opt/dcat/vocabularies
+      SHACL_ENFORCE: "true"
+    volumes:
+      - dcat-data:/opt/dcat/data
+      - ${DCAT_SHAPES_DIR:-./shapes}:/opt/dcat/shapes:ro
+      - ${DCAT_VOCAB_DIR:-./vocabularies}:/opt/dcat/vocabularies:ro
+    restart: unless-stopped
+    # No `healthcheck:` here on purpose. The image is distroless — no shell, no
+    # curl, no wget — so an in-container probe has nothing to run. Use the HTTP
+    # endpoints from outside instead:
+    #   liveness  GET /health/live   200 while the process is up
+    #   readiness GET /health/ready  200 when stores and shapes are usable, else 503
+    # Under Kubernetes these map to httpGet probes, which need no in-image binary:
+    #   livenessProbe:  { httpGet: { path: /health/live,  port: 8080 } }
+    #   readinessProbe: { httpGet: { path: /health/ready, port: 8080 } }
+
+volumes:
+  dcat-data:

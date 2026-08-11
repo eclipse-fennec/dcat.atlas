@@ -1,0 +1,7 @@
+# Container flavour of the runtime: the base application plus the env-driven
+# container configuration bundle. Exported by `gradlew :...runtime:export.docker`
+# to generated/distributions/executable/docker.jar, which the Dockerfile copies.
+-include: \
+	base.bndrun
+
+-runbundles.docker: org.eclipse.fennec.dcat.atlas.config.docker

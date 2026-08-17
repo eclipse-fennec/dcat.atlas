@@ -89,12 +89,18 @@ Applies uniformly to `catalogs`, `datasets`, `dataset-series`, `data-services`, 
 | Method & path | Purpose | Success | Key errors |
 |---|---|---|---|
 | `GET /{coll}` | List (paginated: `?page`, `?size`, filters `?q`, `?theme`, `?publisher`) | 200 | — |
-| `POST /{coll}` | Create; server mints an ID if none in payload | 201 + `Location` | 422 validation |
+| `POST /{coll}` | Create; ID taken from the payload's `about` when it names one of ours, minted only when `about` is absent | 201 + `Location` | 400 (foreign/unusable `about`), 409 (identity taken), 422 validation |
 | `GET /{coll}/{id}` | Single resource (content negotiation) | 200 + `ETag` | 404 |
-| `PUT /{coll}/{id}` | **Upsert** (create-or-replace, idempotent; the only way to change, FR-2b) | 200/201 + `ETag` | 409, 412, 422 |
+| `PUT /{coll}/{id}` | **Upsert** (create-or-replace, idempotent; the only way to change, FR-2b). The ID comes from the path; the body's `about` must be absent or name that same resource | 200/201 + `ETag` | 400 (`about` ≠ the path's resource), 409, 412, 422 |
 | `DELETE /{coll}/{id}` | Delete (`?cascade=true` deletes composites) | 204 | 404, 409 (referenced) |
 
 There is **no** `PATCH` — changes happen exclusively via a full `PUT` replace (D8/FR-2b). `PUT`/`DELETE` evaluate `If-Match: <etag>` (FR-7, mandatory). `?validate=only` performs FR-5 (dry run) → 200 with a report, no writing.
+
+A `409` from a create carries a **`Location`** header too — the read URL of the resource
+already holding that identity, the same URL the `201` would have returned. A client whose
+retry conflicts therefore still ends up with the URL, and the ID in it, that it needs to go
+on and add members; no `GET` in between, and no parsing the message to recover it. The other
+refusals carry no `Location`: a `400` names no resource of ours to point at.
 
 ### 5.2 Relationship/membership endpoints (FR-9/10/11)
 
@@ -109,6 +115,23 @@ There is **no** `PATCH` — changes happen exclusively via a full `PUT` replace 
 | `POST /datasets/{id}/distributions` | Create a distribution **in context** (FR-10) |
 | `PUT/DELETE /dataset-series/{id}/members/{datasetId}` | Series membership (FR-11, AP1) |
 | `PUT/DELETE /distributions/{id}/access-service/{serviceId}` | `accessService` link |
+
+Each membership also has a `POST /catalogs/{id}/datasets` (likewise `/services`,
+`/catalogs`) taking the member in the body: it **creates the member** and then links it,
+so the identity rules of `POST /datasets` apply — 400 for a foreign `about`, **409 when
+the member already exists**. An existing member is never overwritten through this path:
+use the `PUT` above to link it, `PUT /datasets/{datasetId}` to change it. That
+separation is deliberate — one dataset may be referenced from several catalogs, series
+and services, and a change made through a single membership path would silently change
+it for all of them.
+
+**How a link is written in each format.** XMI serializes a membership as
+`<dataset href="{base}/datasets/{id}#/"/>`, RDF as
+`<dcat:dataset rdf:resource="{base}/datasets/{id}"/>`. The trailing `#/` is XMI pointer
+syntax — a document URL plus a fragment naming the object inside it, `/` being that
+document's root — and is **not** part of the identity; the identity is the URL with the
+fragment removed. A fragment is never transmitted to a server, so the two forms address
+the same resource over HTTP. On a write, an `href` is accepted either way.
 
 ### 5.3 Bulk ingest (FR-13/14/15)
 
@@ -273,6 +296,15 @@ public class NotFoundException    extends RuntimeException { /* -> 404          
 | RDF body ⇄ EMF | RIOT ⇄ EMF-DCAT bridge (AP2) |
 
 The REST adapter contains **no business logic** — only serialization (RDF⇄EMF), status-code mapping and the auth hook (FR-21). This makes embedded and distributed operation behave identically.
+
+That is a constraint on where rules live, not just a description. The **identity rule is one
+of them**: `DcatIds.idForWrite` honours an `about` naming one of ours, mints only when
+`about` is absent, and throws `ForeignIdentityException` for anything else. The *service*
+enforces it, so an importer or another bundle calling `upsertDataset(...)` directly gets the
+same answer as `POST /admin/datasets`; the adapter only turns the refusal into `400`. It was
+not always so — the rule lived in the adapter alone, and the service underneath quietly
+minted a fresh id for a foreign `about`, which is precisely the kind of drift this principle
+exists to prevent.
 
 ## 8. Open Points (review)
 

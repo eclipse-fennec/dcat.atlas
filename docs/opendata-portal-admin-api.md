@@ -89,12 +89,19 @@ Gilt einheitlich für `catalogs`, `datasets`, `dataset-series`, `data-services`,
 | Methode & Pfad | Zweck | Erfolg | Wichtige Fehler |
 |---|---|---|---|
 | `GET /{coll}` | Liste (paginiert: `?page`, `?size`, Filter `?q`, `?theme`, `?publisher`) | 200 | — |
-| `POST /{coll}` | Anlegen; Server mintet ID falls keine im Payload | 201 + `Location` | 422 Validierung |
+| `POST /{coll}` | Anlegen; ID aus dem `about` des Payloads, falls dieses eine unserer Ressourcen benennt, gemintet nur bei fehlendem `about` | 201 + `Location` | 400 (fremdes/unbrauchbares `about`), 409 (ID bereits vergeben), 422 Validierung |
 | `GET /{coll}/{id}` | Einzelne Ressource (Content-Negotiation) | 200 + `ETag` | 404 |
-| `PUT /{coll}/{id}` | **Upsert** (create-or-replace, idempotent; einziger Änderungsweg, FR-2b) | 200/201 + `ETag` | 409, 412, 422 |
+| `PUT /{coll}/{id}` | **Upsert** (create-or-replace, idempotent; einziger Änderungsweg, FR-2b). ID kommt aus dem Pfad; `about` im Body muss fehlen oder genau diese Ressource benennen | 200/201 + `ETag` | 400 (`about` ≠ Pfad-Ressource), 409, 412, 422 |
 | `DELETE /{coll}/{id}` | Löschen (`?cascade=true` löscht Komposita) | 204 | 404, 409 (referenziert) |
 
 Es gibt **kein** `PATCH` — Änderungen erfolgen ausschließlich per vollständigem `PUT`-Replace (D8/FR-2b). `PUT`/`DELETE` werten `If-Match: <etag>` aus (FR-7, verbindlich). `?validate=only` führt FR-5 (Dry-Run) aus → 200 mit Bericht, kein Schreiben.
+
+Ein `409` beim Anlegen trägt ebenfalls einen **`Location`**-Header — die Lese-URL der
+Ressource, die diese Identität bereits belegt, also genau die URL, die das `201` geliefert
+hätte. Ein Client, dessen Wiederholung im Konflikt endet, hat damit trotzdem die URL und die
+darin enthaltene ID, die er braucht, um anschließend Member hinzuzufügen; ohne
+zwischengeschaltetes `GET` und ohne die Meldung zu parsen. Die übrigen Ablehnungen tragen
+keinen `Location`: Ein `400` benennt keine Ressource von uns, auf die er zeigen könnte.
 
 ### 5.2 Beziehungs-/Mitgliedschafts-Endpunkte (FR-9/10/11)
 
@@ -109,6 +116,24 @@ Es gibt **kein** `PATCH` — Änderungen erfolgen ausschließlich per vollständ
 | `POST /datasets/{id}/distributions` | Distribution **im Kontext** anlegen (FR-10) |
 | `PUT/DELETE /dataset-series/{id}/members/{datasetId}` | Serien-Mitgliedschaft (FR-11, AP1) |
 | `PUT/DELETE /distributions/{id}/access-service/{serviceId}` | `accessService`-Verknüpfung |
+
+Zusätzlich gibt es je Mitgliedschaft ein `POST /catalogs/{id}/datasets` (bzw.
+`/services`, `/catalogs`) mit dem Member im Body: es **legt den Member an** und
+verknüpft ihn anschließend. Es gelten daher dieselben Identitätsregeln wie für
+`POST /datasets` — 400 bei fremdem `about`, **409 wenn der Member bereits existiert**.
+Ein vorhandener Member wird also nicht überschrieben: zum Verknüpfen dient das `PUT`
+oben, zum Ändern `PUT /datasets/{datasetId}`. Das ist Absicht — ein Dataset kann in
+mehreren Katalogen, Serien und Services referenziert sein, und eine Änderung über einen
+einzelnen Mitgliedschaftspfad würde diese unangekündigt für alle mit ändern.
+
+**Wie eine Verknüpfung je Format geschrieben wird.** XMI serialisiert eine Mitgliedschaft
+als `<dataset href="{base}/datasets/{id}#/"/>`, RDF als
+`<dcat:dataset rdf:resource="{base}/datasets/{id}"/>`. Das angehängte `#/` ist
+XMI-Zeigersyntax — Dokument-URL plus Fragment, das das Objekt darin benennt, wobei `/`
+die Wurzel dieses Dokuments meint — und gehört **nicht** zur Identität; die Identität ist
+die URL ohne Fragment. Ein Fragment wird nie an einen Server übertragen, beide Formen
+adressieren über HTTP also dieselbe Ressource. Beim Schreiben wird ein `href` in beiden
+Formen akzeptiert.
 
 ### 5.3 Massen-Ingest (FR-13/14/15)
 
@@ -273,6 +298,15 @@ public class NotFoundException    extends RuntimeException { /* -> 404          
 | RDF-Body ⇄ EMF | RIOT ⇄ EMF-DCAT-Brücke (AP2) |
 
 Der REST-Adapter enthält **keine Fachlogik** — nur Serialisierung (RDF⇄EMF), Statuscode-Mapping und Auth-Hook (FR-21). Damit verhält sich eingebetteter und verteilter Betrieb identisch.
+
+Das ist eine Vorgabe, wo Regeln liegen, und nicht bloß eine Beschreibung. Die **Identitäts­regel**
+gehört dazu: `DcatIds.idForWrite` übernimmt ein `about`, das eine unserer Ressourcen benennt,
+mintet nur bei fehlendem `about` und wirft andernfalls `ForeignIdentityException`. Durchgesetzt
+wird sie im *Service*, damit ein Importer oder ein anderes Bundle mit direktem Aufruf von
+`upsertDataset(...)` dieselbe Antwort erhält wie `POST /admin/datasets`; der Adapter macht aus
+der Ablehnung lediglich ein `400`. Das war nicht immer so — die Regel lag allein im Adapter,
+während der Service darunter für ein fremdes `about` stillschweigend eine neue ID mintete:
+genau die Divergenz, die dieses Prinzip verhindern soll.
 
 ## 8. Offene Punkte (Review)
 

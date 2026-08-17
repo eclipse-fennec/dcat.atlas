@@ -6,11 +6,16 @@
 
 ## Overview
 
-Fennec DCAT.Atlas is a **DCAT-AP 3** compliant open-data portal. It ingests DCAT
-descriptions (as RDF/XML) from the Fennec Data-Atlas and Model-Atlas, persists them
-in an [Apache Jena](https://jena.apache.org/) TDB2 triplestore, and serves the
-catalog both machine-readably (JSON-LD, Turtle and N3) and human-readably
-(a catalog browser UI).
+Fennec DCAT.Atlas is a **DCAT-AP 3** compliant open-data portal. It takes DCAT
+descriptions from the Fennec Data-Atlas and Model-Atlas, stores each resource as a
+file in the EMF model's own XMI encoding, and serves the catalog machine-readably
+(Turtle, JSON-LD, RDF/XML, N-Triples, N3), queryably
+([SPARQL](#querying-with-sparql), over an in-memory [Apache
+Jena](https://jena.apache.org/) projection of that store) and human-readably (a
+catalog browser UI).
+
+Writes are validated against the DCAT-AP.de SHACL shapes; see
+[Validating metadata](#validating-metadata).
 
 For the architecture, scope and work-package plan, see the internal
 [planning document](./opendata-portal-planung.md). For the write-side contract,
@@ -50,44 +55,62 @@ interchangeable façades over the same operations:
 Managed entities (DCAT-AP 3): `Catalog`, `Dataset`, `DatasetSeries`, `DataService`
 and `Distribution`.
 
-The REST examples below use `Catalog`; the other entities follow the same shape
-under their own collection (`/admin/datasets`, `/admin/data-services`, …). Bodies
-may be sent as `application/rdf+xml`, `application/json` or `application/xml`.
+The REST examples below use `Catalog`. `Dataset`, `DatasetSeries` and `DataService`
+follow the same shape under their own collection — `/admin/datasets`,
+`/admin/dataset-series`, `/admin/data-services` — and are shown in
+[Other entities](#other-entities). `Distribution` is the exception: it has no
+collection of its own and is always created inside its dataset, at
+`POST /admin/datasets/{datasetId}/distributions`.
+
+**Writes take XMI, reads give you RDF.** A request body is sent as
+`application/xmi` — the DCAT-AP EMF model's own XML encoding, which is also the
+on-disk format, so a stored entity can be sent straight back. Any other content type
+on a write is answered `415 Unsupported Media Type`. Reads are the other half of the
+story and are unaffected: you negotiate Turtle, JSON-LD, RDF/XML, N-Triples or N3 with
+`Accept`, as [Content negotiation](#content-negotiation) describes, and a write
+response honours the same `Accept`.
+
+> `application/xmi`, not `application/xml`. The codec selects by media type, and
+> `application/xml` picks a plain-XML codec that does not understand `xmi:version` or a
+> literal written in attribute form.
 
 ### Creating a catalog
 
-`POST /admin/catalogs` with an RDF/XML body. The server mints an id, sets the
-resource's public read URL as its `rdf:about`, stores it, and returns `201 Created`
-with a `Location` header and an `ETag`.
+`POST /admin/catalogs` with an XMI body. The server takes the id from the
+`about` you send when that names a resource of ours, mints one when you send no
+`about` at all, stores the catalog, and returns `201 Created` with a `Location`
+header and an `ETag`. Sending the same body twice therefore creates once: the second
+`POST` is answered `409 Conflict`, because the identity it names is already taken.
+That `409` carries the same `Location` as the `201` did — the catalog that is in the
+way — so a retry that conflicts still hands you the URL, and the id at the end of it,
+that the next section needs to add datasets.
 
-`catalog.rdf`:
+`catalog.xmi`:
 
 ```xml
-<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-         xmlns:dcat="http://www.w3.org/ns/dcat#"
-         xmlns:dct="http://purl.org/dc/terms/"
-         xmlns:foaf="http://xmlns.com/foaf/0.1/">
-  <dcat:Catalog rdf:about="http://localhost:8085/dcat/rest/catalogs/example">
-    <dct:title xml:lang="en">Example Catalog</dct:title>
-    <dct:title xml:lang="de">Beispiel-Katalog</dct:title>
-    <dct:description xml:lang="en">A catalog created via the admin API.</dct:description>
-    <dct:language rdf:resource="http://publications.europa.eu/resource/authority/language/ENG"/>
-    <dct:language rdf:resource="http://publications.europa.eu/resource/authority/language/DEU"/>
-    <dct:issued>2026-07-14T10:00:00.000+02:00</dct:issued>
-    <dct:publisher>
-      <foaf:Organization rdf:about="https://data-in-motion.biz">
-        <foaf:name xml:lang="en">Data In Motion</foaf:name>
-      </foaf:Organization>
-    </dct:publisher>
-  </dcat:Catalog>
-</rdf:RDF>
+<?xml version="1.0" encoding="UTF-8"?>
+<dcat:Catalog xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+              xmi:version="2.0"
+              about="http://localhost:8085/dcat/rest/catalogs/example"
+              homepage="https://example.org/opendata">
+  <title lang="en" value="Example Catalog"/>
+  <title lang="de" value="Beispiel-Katalog"/>
+  <description lang="en" value="A catalog created via the admin API."/>
+  <language>http://publications.europa.eu/resource/authority/language/ENG</language>
+  <language>http://publications.europa.eu/resource/authority/language/DEU</language>
+  <issued value="2026-07-14T10:00:00.000+02:00"/>
+  <publisher about="https://data-in-motion.biz">
+    <name lang="en" value="Data In Motion"/>
+  </publisher>
+  <license about="http://dcat-ap.de/def/licenses/dl-by-de/2.0"/>
+</dcat:Catalog>
 ```
 
 ```bash
 curl -i -X POST http://localhost:8085/dcat/rest/admin/catalogs \
-  -H 'Content-Type: application/rdf+xml' \
+  -H 'Content-Type: application/xmi' \
   -H 'Accept: application/rdf+xml' \
-  --data-binary @catalog.rdf
+  --data-binary @catalog.xmi
 ```
 
 ```
@@ -97,30 +120,77 @@ ETag: "9a1c4d…e7"
 ```
 
 The `{id}` (last segment of `Location`) and the `ETag` are what you use for the
-read, update and delete operations below. On a `POST` the `rdf:about` you send is
-overwritten with the minted read URL, so its value does not matter here.
+read, update and delete operations below.
 
-#### Writing RDF/XML bodies
+The `about` on the entity you are storing must be one of ours — a read URL this
+portal served, or the logical form behind it — or absent. Any other URI (a publisher's
+homepage, the catalogue's own website on another portal) is refused with
+`400 Bad Request`: no id is ever carved out of a URL the portal does not own, and
+answering `201` while quietly filing your catalogue under an identity you did not
+choose would leave you unable to tell one of your catalogues from another. Omit
+`about` to have an id minted for you.
 
-Request bodies are parsed onto the DCAT-AP EMF model, so how a property is written
-depends on its type. Three rules cover almost everything (getting one wrong yields a
-`400 Bad Request` with a `Feature '…' not found` cause):
+This applies to the entity being stored, and to nothing else in the body. The resources
+*inside* it — `publisher`, `license`, `contactPoint`, `conformsTo` — are external things
+by nature and keep the `about` you send them with, unchanged.
+The example above stores a publisher identified by `https://data-in-motion.biz` and
+leaves it exactly so.
 
-- **Text with a language** (`dct:title`, `dct:description`) → an element with
-  `xml:lang`: `<dct:title xml:lang="en">…</dct:title>`.
-- **A URI reference** (`dct:language`, `dcat:homepage`, `dct:hasPart`) → the
-  `rdf:resource` attribute: `<dct:language rdf:resource="http://…"/>`.
-- **A nested object** (`dct:publisher`, which is a `foaf:Agent`) → a nested typed
-  element, *not* `rdf:resource`. `<dct:publisher>` is itself the agent, so put the
-  organisation directly inside it (do not add a `<foaf:Agent>` wrapper):
+To replace a catalogue rather than create it, `PUT /admin/catalogs/{id}` — which also
+creates, answering `201 Created` when that id was free and `200 OK` when it was not.
+
+A `PUT` takes the identity from the **path**, so the body's `about` must either be
+absent or name that same resource; anything else is `400 Bad Request`. In particular an
+`about` naming a *different* catalogue of ours is refused rather than written to the
+path's id under the other one's name.
+
+This costs you nothing in reach: the path already says which catalogue is meant, so a
+catalogue whose natural IRI belongs to somebody else is stored by `PUT`ting it to an id
+of your choosing, with no `about` at all. Where that original IRI matters, keep it in
+`dct:identifier` or `adms:identifier` — those are data, and are never rewritten.
+
+#### Writing XMI bodies
+
+A body is the EMF model serialised, so how a property is written follows from its type
+in the model rather than from RDF syntax. Property elements are **unprefixed** — only
+the root element carries the `dcat:` prefix — and getting a name wrong yields a
+`400 Bad Request` with a `Feature '…' not found` cause. Four rules cover almost
+everything:
+
+- **The identity** → an `about` attribute on the root element (no `rdf:` prefix):
+  `about="http://localhost:8085/dcat/rest/catalogs/example"`. See the identity rules
+  above for when it is honoured, minted or refused.
+- **Text with a language** (`title`, `description`, `keyword`, `name`) → an empty
+  element carrying both parts as attributes: `<title lang="en" value="Example Catalog"/>`.
+  Repeat the element for each language or each keyword.
+- **A URI-valued property** (`language`, `theme`, `themeTaxonomy`, `hasPart`,
+  `accessRights`) → the URI as element text, `<language>http://…</language>`, repeated
+  for a property that takes several. Where the model allows only one — `homepage`,
+  `accrualPeriodicity` — it may also be written as a plain attribute on the element, as
+  `homepage` is above.
+- **A nested object** (`publisher` and `creator`, which are agents; `license`;
+  `contactPoint`) → an element named after the property, carrying that object's own
+  `about` and properties. There is no wrapper and no type name, because the model
+  already says what the property holds:
 
   ```xml
-  <dct:publisher>
-    <foaf:Organization rdf:about="https://data-in-motion.biz">
-      <foaf:name xml:lang="en">Data In Motion</foaf:name>
-    </foaf:Organization>
-  </dct:publisher>
+  <publisher about="https://data-in-motion.biz">
+    <name lang="en" value="Data In Motion"/>
+  </publisher>
   ```
+
+  A publisher is a `foaf:Agent`, which is what you get by default. Add
+  `xsi:type="foaf:Organization"` (declaring `xmlns:xsi` and `xmlns:foaf`) only when you
+  want the narrower type.
+
+A **date** is a literal like the text ones, but with a single `value`:
+`<issued value="2026-07-14T10:00:00.000+02:00"/>`.
+
+Membership properties (`dataset`, `service`, `catalog` on a Catalog; `inSeries` on a
+Dataset) are references to entities stored in their own right, not nested copies.
+Writing one inline links it — the content you put inside is *not* written to the
+referenced entity, and a reference to something that does not exist is refused. Prefer
+the membership endpoints below.
 
 ### Updating a catalog (optimistic locking)
 
@@ -135,10 +205,10 @@ Send conditional headers to coordinate concurrent writers (all optional):
 
 ```bash
 curl -i -X PUT http://localhost:8085/dcat/rest/admin/catalogs/3f2b1c8e-… \
-  -H 'Content-Type: application/rdf+xml' \
+  -H 'Content-Type: application/xmi' \
   -H 'Accept: application/rdf+xml' \
   -H 'If-Match: "9a1c4d…e7"' \
-  --data-binary @catalog.rdf
+  --data-binary @catalog.xmi
 ```
 
 Returns `200 OK` (replaced) or `201 Created` (new) with the new `ETag`. The ETag is
@@ -162,21 +232,143 @@ curl -i -X DELETE http://localhost:8085/dcat/rest/admin/catalogs/3f2b1c8e-…
 Datasets, data services and sub-catalogs are members of a catalog. Add or remove one
 without re-sending the whole catalog:
 
-- `POST   /admin/catalogs/{id}/datasets`  — body is a `dcat:Dataset`
-- `POST   /admin/catalogs/{id}/services`  — body is a `dcat:DataService`
-- `POST   /admin/catalogs/{id}/catalogs`  — body is a sub-`dcat:Catalog`
-- `DELETE /admin/catalogs/{id}/datasets/{memberId}` (and `/services/…`, `/catalogs/…`)
+- `POST   /admin/catalogs/{id}/datasets`  — body is a **new** `dcat:Dataset`
+- `PUT    /admin/catalogs/{id}/datasets/{memberId}` — no body; adds one that exists
+- `DELETE /admin/catalogs/{id}/datasets/{memberId}`
+- the same three under `/services/…` (`dcat:DataService`) and `/catalogs/…` (sub-catalog)
 
-Unlike the top-level create, these keep the `rdf:about` you send: its **last path
-segment** is the `{memberId}` used to remove the member later, and re-adding the same
-`about` is an idempotent no-op. An add returns `200 OK` with the updated catalog and
-its new `ETag`.
+The `POST` **stores the member and then links it**, so it follows exactly the rules of
+`POST /admin/datasets`: the `about` must be one of ours or absent (`400` otherwise),
+and a member that already exists is refused with `409 Conflict` rather than replaced.
+Both requests that could be meant are named in that `409`:
+
+- to add a dataset that already exists, `PUT /admin/catalogs/{id}/datasets/{memberId}` —
+  it carries no body and leaves the dataset's content alone;
+- to change the dataset, `PUT /admin/datasets/{memberId}`.
+
+Its `Location` header points at the member that is in the way — `/datasets/{memberId}`,
+the dataset's own read URL, not the membership path you posted to.
+
+That second one is deliberately not reachable through this path. A dataset can be a
+member of several catalogs, and be listed in a series and served by a data service, all
+at once — there is one dataset, referenced from many places. Changing it through
+`/admin/datasets/{id}` says so; changing it through one catalogue's membership path
+would read as a change to that catalogue while silently rewriting what everyone else
+sees.
+
+An add returns `200 OK` with the updated catalog and its new `ETag`.
 
 ```bash
 curl -i -X POST http://localhost:8085/dcat/rest/admin/catalogs/3f2b1c8e-…/datasets \
-  -H 'Content-Type: application/rdf+xml' -H 'Accept: application/rdf+xml' \
-  --data-binary @dataset.rdf
+  -H 'Content-Type: application/xmi' -H 'Accept: application/rdf+xml' \
+  --data-binary @dataset.xmi
 ```
+
+### How a membership looks in each format
+
+A member is *referenced*, never copied, so the catalog carries a link rather than the
+dataset itself. The two formats spell that link differently, and the difference is worth
+knowing before it surprises you:
+
+```xml
+<!-- XMI -->
+<dataset href="http://localhost:8085/dcat/rest/datasets/luftqualitaet-2026#/"/>
+
+<!-- RDF/XML -->
+<dcat:dataset rdf:resource="http://localhost:8085/dcat/rest/datasets/luftqualitaet-2026"/>
+```
+
+Both name the same dataset. The trailing **`#/` is XMI pointer syntax, not part of the
+id**: an XMI `href` addresses *an object inside a document*, written as the document's
+URL, then `#`, then a fragment identifying the object within it. Our documents hold one
+object, so that fragment is always `/` — "the root of the document at this URL". RDF has
+no such notion; a resource is named by its IRI, so `rdf:resource` carries the bare IRI.
+
+Practical consequences:
+
+- **The identity is the URL without the fragment.** To get the dataset's id, strip
+  anything from `#` onward and take the last path segment.
+- **You are not looking at two addresses.** A fragment is never sent to a server, so
+  requesting the `#/` form and the bare form makes the byte-identical HTTP request. Your
+  client discards the fragment before it connects.
+- **You may send either form.** On a write, an `href` is accepted with or without `#/`;
+  both are normalised to the same stored reference.
+- **The fragment is what makes the link resolvable to an EMF client.** If you load an XMI
+  response as an EMF model and resolve the reference, EMF needs the fragment to know
+  which object in the target document is meant. That is why it is there, and why a
+  non-EMF client is usually better served by asking for RDF.
+
+### Other entities
+
+`Dataset`, `DatasetSeries` and `DataService` work exactly as `Catalog` does — same
+verbs, same identity rules, same `ETag` handling — under `/admin/datasets`,
+`/admin/dataset-series` and `/admin/data-services`. Only the payload differs, because
+each type has its own mandatory properties.
+
+A **data service** needs at least a title, a description, a publisher and one
+`dcat:endpointURL`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dcat:DataService xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    about="http://localhost:8085/dcat/rest/data-services/luftqualitaet-api">
+  <title value="Luftqualität API" lang="de"/>
+  <description value="Abfrageschnittstelle für die Messwerte der Luftqualität." lang="de"/>
+  <publisher about="https://www.umweltbundesamt.de/">
+    <name value="Umweltbundesamt" lang="de"/>
+  </publisher>
+  <endpointURL>https://example.org/api/luftqualitaet</endpointURL>
+  <endpointDescription>https://example.org/api/luftqualitaet/openapi.json</endpointDescription>
+</dcat:DataService>
+```
+
+```bash
+curl -i -X POST http://localhost:8085/dcat/rest/admin/data-services \
+  -H 'Content-Type: application/xmi' --data-binary @data-service.xmi
+```
+
+### Creating a distribution
+
+A distribution is the one entity with **no collection of its own**. It belongs to a
+dataset, so it is created in that dataset's context (FR-10) and its `about` nests
+accordingly — there is no `POST /admin/distributions`:
+
+```bash
+POST /admin/datasets/{datasetId}/distributions
+```
+
+`distribution.xmi`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dcat:Distribution xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    about="http://localhost:8085/dcat/rest/datasets/luftqualitaet-2026/distributions/csv"
+    format="http://publications.europa.eu/resource/authority/file-type/CSV">
+  <title value="CSV-Download" lang="de"/>
+  <description value="Alle Messwerte als CSV-Datei." lang="de"/>
+  <license about="http://dcat-ap.de/def/licenses/dl-by-de/2.0"/>
+  <accessURL>https://example.org/data/luftqualitaet-2026.csv</accessURL>
+  <downloadURL>https://example.org/data/luftqualitaet-2026.csv</downloadURL>
+</dcat:Distribution>
+```
+
+```bash
+curl -i -X POST \
+  http://localhost:8085/dcat/rest/admin/datasets/luftqualitaet-2026/distributions \
+  -H 'Content-Type: application/xmi' --data-binary @distribution.xmi
+```
+
+`dcterms:license` is mandatory on a distribution in DCAT-AP.de, and at least one
+`dcat:accessURL` is expected. `404` if the dataset does not exist — a distribution
+cannot be created before the thing it distributes.
+
+> **XMI shape, once:** a single-valued property is an XML **attribute** (`format`), a
+> multi-valued one is a **child element** (`accessURL`, `downloadURL`, `endpointURL`),
+> and a reference is a child element (`title`, `license`, `publisher`). That rule
+> explains every example above, and it is the usual reason a body that looks right is
+> rejected.
 
 ## Consuming the catalog
 
@@ -192,7 +384,7 @@ several RDF syntaxes plus JSON:
 |---|---|---|
 | `text/turtle` | Turtle | Most readable; best for eyeballing by hand. |
 | `application/ld+json` | JSON-LD | **Standards-based RDF-in-JSON** — use this for interoperable JSON. |
-| `application/rdf+xml` | RDF/XML | The on-disk storage syntax. |
+| `application/rdf+xml` | RDF/XML | Widely supported; the format the DCAT-AP.de tooling expects. |
 | `application/n-triples` | N-Triples | One triple per line; good for diffing/streaming. |
 | `text/n3` | N3 | Turtle plus rule/logic features (unused by DCAT data). |
 | `application/json` | EMF JSON | Internal object encoding (typed `_type` fields); for round-tripping through this stack — **not** interoperable DCAT. For public JSON, prefer JSON-LD. |
@@ -204,6 +396,115 @@ curl http://localhost:8085/dcat/rest/catalogs/3f2b1c8e-… -H 'Accept: applicati
 
 Turtle, JSON-LD, RDF/XML and N-Triples of the same catalog all encode the identical
 RDF graph — pick whichever your consumer prefers.
+
+### Querying with SPARQL
+
+`GET`/`POST /rest/sparql` answers SPARQL 1.1 queries over the whole catalogue at once,
+which is what content negotiation on a single resource cannot do: "every dataset with
+this theme, published since March, that has a CSV distribution" is one query here and a
+crawl otherwise.
+
+It is **read-only by construction** — the endpoint parses queries, so a SPARQL `UPDATE`
+is rejected as a parse error rather than being refused by a rule someone could
+misconfigure. The store stays the source of truth; SPARQL runs over an in-memory
+projection of it.
+
+#### One named graph per resource
+
+This is the thing to know before anything else. Each resource is projected into **its
+own named graph**, named by the resource's IRI, and **the default graph is empty**. So
+the obvious first query matches nothing:
+
+```sparql
+SELECT * WHERE { ?s ?p ?o }               # 0 results, always
+SELECT * WHERE { GRAPH ?g { ?s ?p ?o } }  # what you meant
+```
+
+Graph names are the same public IRIs the REST API serves, so a graph name is also a URL
+you can `GET`.
+
+#### Sending a query
+
+Three forms, all standard SPARQL 1.1 protocol:
+
+```bash
+# 1. GET with ?query= (simplest; URL-encode it)
+curl -G http://localhost:8085/dcat/rest/sparql \
+  --data-urlencode 'query=SELECT DISTINCT ?g WHERE { GRAPH ?g { ?s ?p ?o } }'
+
+# 2. POST the query as the body — best for anything long
+curl -X POST http://localhost:8085/dcat/rest/sparql \
+  -H 'Content-Type: application/sparql-query' \
+  --data-binary @query.rq
+
+# 3. POST form-encoded
+curl -X POST http://localhost:8085/dcat/rest/sparql \
+  --data-urlencode 'query=ASK { GRAPH ?g { ?s ?p ?o } }'
+```
+
+In a GUI client such as Postman, form 2 needs the `Content-Type` set by hand — the raw
+body dropdown has no SPARQL entry, so choose *Text* and add the header yourself.
+
+#### Choosing the response format
+
+`Accept` decides. A client that sends `Accept: */*` (Postman's default) gets the
+fallback for the query form:
+
+| Query form | Default | Also available |
+|---|---|---|
+| `SELECT`, `ASK` | `application/sparql-results+json` | `…+xml`, `text/csv`, `text/tab-separated-values` |
+| `CONSTRUCT`, `DESCRIBE` | `text/turtle` | `application/rdf+xml`, `application/ld+json`, `application/n-triples`, `text/n3` |
+
+`SELECT` and `ASK` return **result sets**, which are not RDF — that is why they have
+their own media types rather than reusing the ones above.
+
+#### Queries to start from
+
+```sparql
+# Which resources exist?
+SELECT DISTINCT ?g WHERE { GRAPH ?g { ?s ?p ?o } }
+
+# Every dataset and its title
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct:  <http://purl.org/dc/terms/>
+SELECT ?dataset ?title WHERE {
+  GRAPH ?g { ?dataset a dcat:Dataset ; dct:title ?title }
+}
+
+# Everything about one resource, as RDF
+CONSTRUCT { ?s ?p ?o } WHERE {
+  GRAPH <http://localhost:8085/dcat/rest/datasets/luftqualitaet-2026> { ?s ?p ?o }
+}
+
+# Does anything carry this title?
+PREFIX dct: <http://purl.org/dc/terms/>
+ASK { GRAPH ?g { ?s dct:title "GovData Katalog"@de } }
+```
+
+#### What the responses mean
+
+| Status | Meaning |
+|---|---|
+| `200` | Results, in the negotiated format. |
+| `400` | The query did not parse. Also what a SPARQL `UPDATE` gets — this endpoint reads only. |
+| `503` | The projection is still being built; retry shortly. Deliberately *not* an empty result set, which you could not tell apart from "nothing matches". |
+| `500` | Execution failed, or hit the query timeout. |
+| `404` | SPARQL is disabled on this deployment. |
+
+Two limits protect the instance: a **30-second** timeout per query, and a **10,000-row**
+cap on `SELECT`, applied by narrowing the query's `LIMIT` — a smaller `LIMIT` of your own
+always wins.
+
+The projection follows the store automatically, including writes made through the OSGi
+services rather than REST. If you ever need to force a rebuild:
+
+```bash
+curl -i -X POST http://localhost:8085/dcat/rest/admin/sparql/reindex
+#   -> HTTP/1.1 202 Accepted
+```
+
+It runs in the background and queries keep being answered from the previous projection
+meanwhile; watch the `sparql` check on `/health/ready` for completion.
 
 ### Conditional reads (caching)
 
@@ -237,8 +538,8 @@ you negotiate) and an `X-SHACL-Conforms: true|false` header for a quick check.
 
 ```bash
 curl -i -X POST http://localhost:8085/dcat/rest/admin/validate/datasets \
-  -H 'Content-Type: application/rdf+xml' -H 'Accept: text/turtle' \
-  --data-binary @dataset.rdf
+  -H 'Content-Type: application/xmi' -H 'Accept: text/turtle' \
+  --data-binary @dataset.xmi
 ```
 
 Each `sh:ValidationResult` in the report names the failing node (`sh:focusNode`), the

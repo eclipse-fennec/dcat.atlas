@@ -17,11 +17,12 @@
 | `org.eclipse.fennec.dcat.atlas.rest/` | JAX-RS whiteboard resources — read-only (public) + admin (write) resource per entity. |
 | `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
 | `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed), controlled-vocabulary checks, and the Felix health checks behind `/health/*`. |
+| `org.eclipse.fennec.dcat.atlas.sparql/` | The in-memory RDF projection of the file store and the SPARQL endpoint over it (WP-DCAT-5 Phase 1). Nothing exported — Jena query types stay inside. |
 | `org.eclipse.fennec.shacl.model/` | EMF model bundle for the SHACL vocabulary (used by the validation-report representation). |
 | `org.eclipse.fennec.dcat.atlas.runtime/` | bnd run descriptors: `base.bndrun` (framework + all bundles), `local.bndrun`, `docker.bndrun`, `secrets.bndrun`. Exports the executable jars. |
 | `org.eclipse.fennec.dcat.atlas.config.local/` | OSGi configuration for local development (HTTP on `8085`, store under `/tmp/rdf`). |
 | `org.eclipse.fennec.dcat.atlas.config.docker/` | OSGi configuration for the container — the same settings, but env-driven via the ConfigAdmin interpolation plugin. |
-| `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. Uses its own standalone `test.bndrun`. |
+| `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. Uses its own standalone `test.bndrun`, its own HTTP port (`8185`) and its own store (`/tmp/dcat-atlas-test-store`) — it must never share the local runtime's, since its cleanup deletes fixed ids whether or not it created them. |
 | `docker/` | Container packaging: `dcatatlas/` (Dockerfile + `prepareDocker` staging task), `dockercompose/`, and `docker/README.md`. |
 | `docs/` | Source-of-truth documentation. Internal docs stay here; the user guide is published via `docs-site/`. |
 | `docs-site/` | VitePress documentation site (publishes the curated user guide). |
@@ -56,9 +57,522 @@ Standard loop for a model change:
 > containment references, `DocumentRoot`/`DCATAPRoot` document roots, and
 > `rdf.ecore#//Resource` / `PlainLiteral` / `DateOrDateTimeLiteral` ranges.
 
+### An attribute's datatype decides whether it becomes an IRI or a literal
+
+If the DCAT range of a property is a **class or a controlled-vocabulary term** — a theme, a
+media type, a file format, an endpoint — type the attribute
+`ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI`. Anything else
+(`XMLType#//String`, `Ecore#//EString`) becomes a **string literal** in RDF.
+
+`EObjectToJena.objectOf` decides with a single identity comparison against
+`XMLTypePackage.Literals.ANY_URI`, so that exact datatype is the only marker. Three
+consequences worth knowing before you reach for something cleverer:
+
+- **The Java is identical either way.** XMLType's `AnyURI` maps to `java.lang.String`, so an
+  `EList<String>` getter tells you nothing about which branch a feature takes. You have to read
+  the ecore.
+- **A custom EDataType is not the answer.** Whatever `instanceClassName` you gave it, it would
+  not be the singleton the comparison tests for, and the feature would land back on the literal
+  branch — unless `EObjectToJena` is taught about it too.
+- **Getting it wrong is silent.** The output is well-formed RDF with the wrong graph; nothing
+  fails until a SHACL `sh:NodeKindConstraintComponent` violation turns a write into a 422. So
+  pin every such feature in `EObjectToJenaTest` with `assertObjectIri`, which asserts the parsed
+  triple's *object* is a URI resource rather than that the triple merely exists.
+
+This was not hypothetical: four features were mistyped, and it made `dcat:DataService`
+impossible to create at all. See the 2026-08-17 change-log entry.
+
 ---
 
 ## Change log
+
+### 2026-08-17 — `AnyURI` is the IRI marker, and three things found while proving it
+
+**No `dcat:DataService` could be created at all.** Under FR-4 enforcement the endpoint was
+dead in both directions: omitting `dcat:endpointURL` failed the cardinality rule
+(*"MUSS MINDESTENS einmal vorkommen"*), supplying it failed the nodekind rule
+(*"MUSS auf eine Blank Node oder eine IRI verweisen"*). No body could satisfy both.
+
+*Cause.* `EObjectToJena.objectOf` picks IRI-vs-literal from one identity comparison —
+`XMLTypePackage.Literals.ANY_URI.equals(attribute.getEAttributeType())` — so a feature emits
+`rdf:resource` only if its `.ecore` `eType` is `XMLType#//AnyURI`. Four features were typed as
+plain strings and therefore serialized as literals where the shapes require IRIs:
+
+| feature | was | now |
+|---|---|---|
+| `Distribution.mediaType` | `XMLType#//String` | `XMLType#//AnyURI` |
+| `Distribution.packageFormat` | `XMLType#//String` | `XMLType#//AnyURI` |
+| `DataService.endpointDescription` | `Ecore#//EString` | `XMLType#//AnyURI` |
+| `DataService.endpointURL` | `XMLType#//String` | `XMLType#//AnyURI` |
+
+`Dataset.version` is the one string-typed attribute that is right — `owl:versionInfo` really
+is a literal.
+
+*Why it hid so well, and why the tests are per-feature.* The datatype is **invisible in the
+generated Java**: XMLType's `AnyURI` maps to `java.lang.String` (correct — `xsd:anyURI`'s value
+space *is* a string), so `getAccessURL()` and `getEndpointURL()` were both `EList<String>` and
+nothing distinguished the broken features from the working ones. Nor is a custom EDataType with
+a URI-ish `instanceClassName` the fix: the comparison is against that one singleton, so a new
+datatype would land straight back on the literal branch. Retyping costs nothing downstream —
+same Java signature, and XMI element/attribute shape comes from the `ExtendedMetaData`
+annotations, not the datatype. The failure mode is silent (valid RDF, wrong graph, no error),
+so `EObjectToJenaTest` now pins each feature with `assertObjectIri`, plus
+`theEmfDatatypeAloneDecidesIriOrLiteral`, which contrasts `version` (String → literal) against
+`hasVersion` (AnyURI → IRI) on a single Dataset. A later regeneration could revert the typing
+and nothing else would notice.
+
+**`Location` on a create conflict.** A `409` from `POST /admin/{coll}` now carries the read URL
+of the resource already holding that identity — the same header the `201` would have had — so a
+client whose retry conflicts still gets the URL, and the id in it, needed to go on and add
+members, with no `GET` in between and no parsing of the message. Built in
+`CreateIdentity.refuse` from the `UriInfo` the three resolvers now take; the `400`s carry none,
+because they name no resource of ours to point at. For an add-member conflict it points at the
+**member's own** read URL, not the membership path that was posted to.
+
+**Two gaps in the build and the tests, both found the hard way.**
+
+*`resolve.test` failed from a clean Gradle build* with `⇒ Bundle: …dcat.atlas.sparql cannot be
+resolved`, while Eclipse resolved fine. bnd derives the task graph from
+`-buildpath`/`-testpath`/`-dependson` only, so a workspace project named merely in a `.bndrun`
+is never scheduled — it is not built *late*, it is not built *at all*, and bndtools never
+reproduces it because its Workspace repo always sees every project. Exactly the `validation`
+problem of 2026-08-07: `sparql` reached the bndruns with SPARQL Phase 1 but not the
+`-dependson` lists. Added to **both** `rest.tests/bnd.bnd` and `runtime/bnd.bnd` — the latter
+had the same latent gap for `base.bndrun`, whose resolution no test covers.
+
+*The integration suite shared the live runtime's store.* It writes fixed ids (`gov`, `cat1`,
+`e1`, `dup-cat`) under `$STORE_FOLDER` and its cleanup deletes them whether or not it created
+them, so a `./gradlew build` destroyed real data in `/tmp/rdf` and, worse, went red or green
+depending on what happened to be lying there — the two recurring failures were
+`postingTheSameBodyTwiceCreatesOnceAndThenConflicts` and
+`containedResourcesKeepTheirForeignAbout`, both reporting `catalogs/gov already exists`. The
+test bundle's `configs/config.json` now defaults to `/tmp/dcat-atlas-test-store`, matching the
+port isolation (8185 vs 8085) it already had; `STORE_FOLDER` still overrides for CI. Verified by
+fingerprinting every path and timestamp under `/tmp/rdf` either side of a full run: identical.
+Note this isolates the store but does not sweep it — the suite still leaks a UUID dataset per
+run, so **assert on deltas, not totals, and delete what you create.**
+
+**The identity rule moved down to the service.** Both layers already computed the id with the
+same `DcatIds.idOf`; they disagreed on what `null` meant. `CreateIdentity` refused it with
+`400`, while `AbstractEntityStore.idOrMint` — and five sibling mint sites — minted a fresh
+UUID and let `Store.put` overwrite the `about`. So `POST /admin/datasets` rejected a body that
+`upsertDataset(...)` accepted, storing it under an id the caller never saw. The store was never
+in danger (`put` always stamps a logical IRI, so a foreign IRI cannot become an identity of
+ours) but the caller was told nothing, which is how `SparqlEndpointIntegrationTest` leaked a
+dataset per run.
+
+The rule now lives once, in `DcatIds.idForWrite`/`distributionIdForWrite`, and throws
+`ForeignIdentityException`. All six service mint sites call it, `CreateIdentity` catches it and
+renders `400` — keeping only what is genuinely REST's, the mapping to a status code — and
+`ForeignIdentityExceptionMapper` backstops any path that reaches the service without
+pre-resolution. This is the "adapter holds no business logic" constraint (§7 of the admin API
+doc) applied to identity: the service is the boundary every consumer shares, so the contract
+has to be the same whichever door you come in by.
+
+Only one test encoded the old behaviour — `aForeignAboutDoesNotDecideWhereWeStoreIt`, which
+asserted the minted-id outcome. Its intent survives (the store must never be steered by
+somebody else's URL); it now asserts the refusal, joined by the public-IRI case, which is the
+sharpest one: that IRI *is* ours, but the public→logical fold lives in `PublicIriFilter`, so a
+direct caller never gets it. Two more cover the nested Distribution derivation, where an
+`about` under a *different* dataset is as foreign as an external URL.
+
+**…and the other half of the same story: a non-IRI `AnyURI` value now becomes a literal.**
+Validating a real `dcat:Catalog` from the Jena city portal (piveau) against the DCAT-AP.de 3.0
+shapes returned **conforms, zero violations** — including its `dct:type "ckan"`, a plain
+literal. The shapes constrain `dcterms:type` *per class*: MUSS be an IRI on `dcat:Dataset`
+(`dcat-ap-SHACL-DE.ttl:515`) and on `dct:LicenseDocument` (`:875`), unconstrained on
+`dcat:Catalog`. An `EAttribute` cannot express that split — `xsd:anyURI`'s value space is a
+string — and our `type` sits on the shared `DcatResource` supertype, so we were stricter than
+the profile.
+
+That was not merely academic. `EObjectToJena.iri()` threw on a value with no scheme, so such a
+catalog could be **written** (no shape forbids it), **stored**, and then **500 on every RDF
+read** — while XMI reads kept working and hid it. `anyUriObject` now emits a literal instead:
+lossless, and symmetric with `JenaToEObject`, which already read an IRI node or a literal into
+an `AnyURI` attribute alike. Whether an IRI was *required* is SHACL's question, and FR-4
+already asks it on write. The boundary matters — only attribute **objects** degrade; a subject
+and a non-containment link target still go through `iri()` and fail loudly, because RDF has no
+literal subjects and a literal where a link belongs severs it silently.
+
+**Also:** `putWithoutAConditionalHeaderReplaces` closes a real hole — the only bare-`PUT` test
+wrote to an id that did not exist, so the create path was covered and the replace path was not.
+And the XMI `href` form is now documented in the user guide and admin API reference: the
+trailing `#/` is XMI pointer syntax (document URL + fragment, `/` being that document's root),
+not part of the identity, which is why RDF renders the same link as a bare IRI. It is accepted
+on a write either way.
+
+**153 integration tests, 157 unit tests, 0 failures.**
+
+### 2026-08-14 — Collection GETs, and the last of the red integration tests
+
+**`GET /rest/catalogs` was a 500 in every format.** Two independent faults stacked on the
+same endpoint.
+
+*First,* `PublicIriFilter` erased the generic type. The resources declare
+`new GenericEntity<List<Catalog>>(…){}`, the RDF writers select on that
+(`AbstractRDFMessageBodyWriter.isSupported` wants a `ParameterizedType` whose element is an
+`EObject`), and the filter handed on a bare `ArrayList` — so every writer declined and
+Jersey reported `MessageBodyWriter not found … genericType=class java.util.ArrayList`. The
+filter now re-attaches `responseContext.getEntityType()`. That alone fixed all five RDF
+syntaxes and the four `listContainsSeededEntity` failures.
+
+*Second,* the codec cannot write a collection at all: `EObjectMessageBodyHandler.isWriteable`
+requires `EObject.class.isAssignableFrom(type)`, which no list satisfies. XMI/JSON/XML needed
+a root object. `org.eclipse.fennec.model`'s `utilities.Response` is exactly that wrapper —
+the pattern `model.atlas`'s `JpaDataResource` already uses, found by looking there rather
+than inventing one. The filter wraps **only for the non-RDF formats**, so a harvester's graph
+gains no wrapper subject and the RDF output is unchanged. `Response.data` is a *containment*
+reference, so only the detached `PublicView.render` copies ever reach it — feeding it stored
+objects would pull them out of their store resources.
+
+Runtime additions: `org.eclipse.fennec.model` (the wrapper) and `org.eclipse.fennec.codec`
+(the `application/json` resource factory — without it JSON was unserializable for single
+entities too, which is why there had never been a JSON test). Note `-runbundles` does not
+update itself: add the bundle to `-runrequires` and re-resolve.
+
+**The last four red tests, all stale rather than broken product** — except the fourth, which
+was a real bug:
+
+- `addAndRemoveDatasetMembershipOverHttp` sent a member `about` under the *catalogs* base, so
+  `DcatIds.idOf(DATASETS, …)` rightly refused it, minted a UUID, and the later `DELETE …/ds1`
+  named a resource that never existed.
+- The two health tests expected five store checks; there are four, because a Distribution is
+  contained in its Dataset and has no store of its own. **CRITICAL readiness is the expected
+  steady state in this suite** and is now documented on the class: the DCAT-AP.de shapes are
+  AGPL-3.0 and deliberately not vendored, so no test can point the runtime at real shapes.
+  Assert on individual checks, never on `overallResult`.
+- `dryRunReportsViolationForMissingTitleAndConformsForValid` exposed a genuine product bug:
+  `ValidationResource` still declared `@Consumes({ JSON, XML, RDF_XML })`. RDF stopped being
+  readable when its reader was dropped for the Jena converter, and XMI — the actual write
+  format — was not accepted at all, so **the FR-5 dry run could not be given a body a real
+  write would accept.** Now `@Consumes({ XMI })` on all five endpoints.
+
+**108 integration tests, 0 failures; 148 unit tests, 0 failures.** From 30 red when the day
+started.
+
+### 2026-08-14 — Referential integrity on the write side
+
+Written test-first: six integration tests plus five unit tests, three of each failing before
+the fix, all passing after.
+
+**Three ways a client can point at a Dataset from a Catalog body, and what each did.**
+
+| body | before | after |
+|---|---|---|
+| `<dataset href="http://dcat.atlas/datasets/air#/"/>` | ✅ links, resolves, no duplicate | unchanged |
+| `<dataset href="{PUBLIC}/datasets/air#/"/>` | ✅ folded to logical by `PublicIriFilter` | unchanged |
+| `<dataset about="…/air">…</dataset>` (inline) | ❌ **silently dropped** | links it |
+| href to a dataset that does not exist | ❌ **stored, dangling** | 409 |
+
+**Why inline was lost.** `Catalog.dataset` is non-containment, and XMI has no way to express an
+inline object under a non-containment reference. EMF fell back to a same-document IDREF — legal,
+because `about` doubles as the XMI `iD` — and wrote `dataset="http://dcat.atlas/datasets/air"` as
+an *attribute* on the Catalog. There is no such object inside the catalog's own file, so the
+IDREF resolved to nothing on the next read and the membership vanished. The client got a 200 and
+a response body that already lacked it.
+
+Fixed in `PublicView.foldLink`, which the reader interceptor already runs over every
+non-containment reference of a request body: it now sets the proxy URI whether or not the link
+arrived as a proxy. An inline object bearing an identity of ours *is* a reference to it, so it
+becomes one, and its inline content is dropped rather than written into somebody else's
+resource. This needed a second fix to be reachable at all: `targetIri` read
+`EcoreUtil.getURI(target)`, which for an inline member — not a proxy, in no resource — returns a
+bare fragment rather than the identity, so `isOwned` said no and the link was skipped. It now
+prefers `about` when there is one, falling back to the proxy URI for an unresolved proxy (whose
+`about` is null).
+
+**Dangling references, refused.** New `References.requireResolvable`, called from
+`DcatHelper.Store.put` — every write funnels through there, so that is where the invariant
+holds. It is `detach`'s mirror image and equally reflective: walk each non-containment
+reference, and if the target IRI sits under one of our collection bases but names nothing in the
+store, throw. Only identities of ours are checked — a publisher, licence or vocabulary concept
+is not ours to resolve, and an IRI under our base matching no collection is left alone rather
+than guessed at.
+
+**The 409 that was documented but not implemented.** `ResourceInUseException`'s javadoc has
+always promised "the REST layer renders this as 409 Conflict". There is no `ExceptionMapper`
+anywhere in the bundle, so FR-1 refusals were reaching clients as **500** — a refusal
+indistinguishable from a crash. Both exceptions now share a `ReferentialIntegrityException`
+supertype (same invariant, same consequence, same status) and one
+`ReferentialIntegrityExceptionMapper` renders the family as 409 with the message as the body.
+Mapped on that supertype deliberately, not on `IllegalStateException`, which would turn every
+unrelated illegal-state bug into a 409 and hide real faults.
+
+**Status choice.** 409, matching FR-1's delete side: the request is well-formed and understood,
+it conflicts with what is stored. Not 404 — the request target (the catalog) is fine, it is the
+*body* that names something missing. Not 422, which is SHACL's.
+
+### 2026-08-14 — Membership by reference over HTTP (FR-9)
+
+**The gap.** `CatalogAdminService` has had `linkDatasetToCatalog(catalogId, datasetId)` (and the
+DataService / sub-catalog equivalents) since FR-9 — link a member that already exists, without
+writing it. Nothing outside tests ever called them: there was **no REST endpoint**. The only
+way to attach a member over HTTP was `POST /admin/catalogs/{id}/datasets` with a body, and
+`add` *stores before it links* (`DcatHelper:129` — `put` re-stamps `about` and clears the
+resource contents, a full replace). So the natural "create the dataset, then POST a small stub
+to link it" silently truncated the dataset to the stub. Create-then-link was only expressible
+by re-sending the whole entity, which is a rewrite, not a link.
+
+**The endpoints.** `PUT` on the member path — the exact counterpart of the `DELETE` that was
+already there, and the shape `DistributionAdminResource` had already set with
+`PUT /{id}/access-service/{serviceId}`:
+
+| | |
+|---|---|
+| `PUT /admin/catalogs/{id}/datasets/{datasetId}` | `linkDatasetToCatalog` |
+| `PUT /admin/catalogs/{id}/services/{serviceId}` | `linkDataServiceToCatalog` |
+| `PUT /admin/catalogs/{id}/catalogs/{subCatalogId}` | `linkSubCatalogToCatalog` |
+| `PUT /admin/dataset-series/{id}/datasets/{datasetId}` | `linkDatasetToDatasetSeries` (FR-11) |
+| `PUT /admin/data-services/{id}/datasets/{datasetId}` | `linkDatasetToDataService` (`dcat:servesDataset`) |
+
+**`dcat:servesDataset` had no API at all** — not at REST, not on the service. Walking the ecore
+settles it: the model has exactly **seven** non-containment `EReference`s (`Catalog.catalog`,
+`Catalog.dataset`, `Catalog.service`, `Dataset.inSeries`, `Distribution.accessService`,
+`CatalogRecord.primaryTopic`, `DataService.servesDataset`), and `servesDataset` is structurally
+identical to the ones that already had one — multi-valued, non-containment, proxy-resolving. It
+was simply never wired. Now `addDatasetToDataService` / `linkDatasetToDataService` /
+`deleteDatasetFromDataService` on `DataServiceAdminService`, with `POST`, `PUT` and `DELETE`
+under `/admin/data-services/{id}/datasets`. The reference is declared on the DataService, so the
+DataService is what is edited, what If-Match keys on and what comes back; the Dataset is
+untouched. It is **not** the inverse of `dcat:accessService` — that one says which service gives
+access to a Distribution, this one which datasets a service serves. (The seventh,
+`CatalogRecord.primaryTopic`, is single-valued and CatalogRecord has no admin service at all;
+out of scope.)
+
+**FR-1 needed no change**, and that is the payoff of the reflective design: `References` walks
+`eClass().getEAllReferences()` and filters non-containment, so a Dataset served by a DataService
+became undeletable the moment the link existed — no list to update. Pinned by
+`servedDatasetCannotBeDeletedWhileStillReferenced`, which also checks the cascade detaches
+rather than dangling.
+
+That is now every `link*` on every admin service. The one that predated all of this,
+`linkAccessServiceToDistribution`, already had its endpoint — `PUT
+/admin/datasets/{datasetId}/distributions/{id}/access-service/{serviceId}`, the one that set
+this shape — but it called `addAccessServiceToDistribution(…, DataService)`, so it read the
+DataService only to `store.put` it straight back before connecting. Now switched to the by-id
+`link*`: same result, no pointless rewrite.
+
+No body: both ends are named in the path. 200 with the catalog and its new ETag, idempotent
+(a repeat link is a no-op, so the ETag is unchanged), If-Match honoured through the existing
+`addMember` flow.
+
+**404 for a missing member.** `link` signals it with `NoSuchElementException`, and the bundle
+registers no `ExceptionMapper` — so unhandled it would have been a 500. `addMember` now catches
+it and returns 404. Deliberately *not* pre-checking the member's existence the way
+`DistributionAdminResource` does: that would need three more read-service references here, and
+the service's own check is atomic with the link, so there is no check-then-act gap.
+
+**Note the precondition ordering.** If-Match is evaluated before the member-exists check, so a
+stale If-Match on a link to a non-existent dataset is a 412, not a 404. That is the RFC 9110
+order and is intended.
+
+**Tests.** Four in `CatalogResourceIntegrationTest`, all passing: link + unlink keeps the
+dataset intact (the property that distinguishes this from `POST` — a stub POST would have
+replaced its title); linking twice leaves the ETag unchanged; an unknown dataset is 404 and not
+500; an unknown catalog is 404. `AbstractEntityResourceIntegrationTest` gained a body-less
+`putEmpty`. One trap in the test itself, worth knowing: the cleanup must unlink *before*
+deleting the dataset, because FR-1 refuses to delete a still-referenced resource — the very
+guarantee that makes linking safe.
+
+**FR-4 on the add-member endpoints (same day).** The add-member endpoints did not run
+`WriteValidation`, while `POST`/`PUT` on the member's own collection did — so with
+`enforceOnWrite=true` a dataset rejected at `/admin/datasets` could still be persisted through
+`POST /admin/catalogs/{id}/datasets`, which stores it. Enforcement on one door and not the
+other. Now closed for all three catalog add-member endpoints and
+`POST /admin/dataset-series/{id}/datasets` (which stores the Dataset too).
+
+Two things this needed:
+
+- **Stamp the identity first.** `WriteValidation` documents that the caller must validate *the
+  exact form to be stored*, and for these endpoints the store derives the id from the body's
+  `about` (or mints one when it names none). New `MemberIdentity.stamp` does that in the
+  resource, so the shapes see the entity that will actually be persisted rather than one whose
+  `about` is still absent. It does **not** move anything: the store then derives the same id
+  back out of the stamped `about`.
+- **Order the checks.** Validation runs *after* the catalog-exists 404 and *before* the write,
+  so an unknown catalog is still a 404 rather than a 422 about a member it could never take.
+  `addMember` gained a validation-supplier overload; the link endpoints pass `() -> null`,
+  having no member of their own to validate.
+
+**The Distribution suite, unblocked.** All 10 `DistributionResourceIntegrationTest` failures had
+one cause, and it was the test's own seed: it stored its fixture dataset with
+`about = {BASE}/datasets/dist-e2e-ds`, a *public* URL. `DcatIds.idOf` deliberately refuses to
+carve an id out of an IRI that is not under the collection's logical base (otherwise an entity
+whose `about` is somebody else's URL gets filed under an id we do not own), so `upsert` minted a
+UUID instead and every `/datasets/dist-e2e-ds/...` path below it 404'd. Seeding logically — as
+`CatalogResourceIntegrationTest` already did — fixes all ten. Worth remembering as the
+signature of this class of staleness: **a direct service call is not filtered**, so seeds must
+use logical IRIs; only HTTP request bodies get folded public→logical by `PublicIriFilter`.
+
+**A stale test fixed on the way.** `WriteValidationIntegrationTest` had been failing with 415:
+it still sent RDF/XML request bodies, which stopped being readable when the reader was dropped
+for the Jena converter. Now XMI in, `Accept: application/rdf+xml` out (the 422 carries a
+`sh:ValidationReport`, and there is no XMI serialization for one). Its new sibling
+`nonConformantMemberIsRejectedOnTheCatalogPath` asserts the 422 *and* that nothing was stored —
+a `DELETE` of the would-be dataset returns 404.
+
+### 2026-08-14 — The vocabulary union reported third-party defects as the caller's
+
+**The bug.** With `vocabularyDirectory` configured, POSTing a catalog whose only mention of
+a licence was `<license about="http://dcat-ap.de/def/licenses/dl-by-de/2.0"/>` came back with
+`sh:resultPath dcterms:type ; sh:value "Freie Nutzung"`. Nothing in the submitted entity says
+that. The literal is in `licenses-20210721.rdf`, which writes `<dct:type>Freie Nutzung</dct:type>`
+as a **plain literal on every entry**, while the SEMIC shapes require an IRI there
+(`sh:NodeKindConstraintComponent`). Because the CV reference data is unioned into the *data*
+graph, SHACL validates the authority tables too: where the entity and a table share an IRI,
+SHACL sees one node carrying both sets of triples and reports violations from either. With
+`enforceOnWrite=true` that made **every write referencing any licence a 422** — FR-4 was
+unusable against the real vocabularies, and no client could do anything about it.
+
+**Not fixable by dropping the union.** The CV shapes traverse `skos:inScheme`/`sh:class` on
+the *value* node, whose triples exist only in the authority tables. Remove the union and every
+vocabulary-constrained value reports a false violation instead — the older bug (F-22) this
+same union was added to fix.
+
+**The fix: attribute each result to a graph, per triple.** `validate()` keeps the union and
+then filters the report through `onlyEntityResults`. A result is the caller's when its
+`(focusNode, resultPath, value)` triple is present in the **entity** graph — re-evaluated with
+`ShaclPaths.valueNodes(entityGraph, focusNode, resultPath)`, the same walker the engine uses,
+so every SHACL path kind (sequence, inverse, alternative, `*`/`+`/`?`) behaves as the
+constraint did. Filtering on the **focus node alone does not work**: the licence IRI is
+legitimately a node in the entity graph too, since the converter emits
+`<licence> a dct:LicenseDocument`. It is the specific triple that has to be the caller's.
+
+**Value-less results need a different rule.** `sh:minCount` and the node-level constraints the
+`sh:targetObjectsOf` CV shapes are built from report no `sh:value`, so there is no triple to
+point at. Those fall back to the focus node: the caller's when the entity graph **mentions**
+it and the vocabularies do not describe it. Two details, both learned the hard way:
+- *Mentions*, not "is a subject of" — a CV concept only ever appears as an **object** in the
+  entity graph. The first cut checked subjects only and silently swallowed the bogus-frequency
+  violation; `ControlledVocabularyRealDataTest` caught it, which is exactly why that opt-in
+  test exists.
+- *And the vocabularies do not describe it* — otherwise a table entry that fails a shape the
+  caller cannot influence comes back as the caller's error again. "The concept you referenced
+  is not in the authority table" still surfaces, because the table says nothing about it.
+
+**Residual, accepted.** A node-level constraint that fails *because of* a vocabulary triple on
+a node the tables do describe is suppressed rather than re-attributed. The union cannot
+separate those, and under FR-4 blocking a write for somebody else's file is the worse failure.
+
+**Tests.** Three deterministic ones in `DcatValidationServiceImplTest` (self-authored shapes,
+AGPL-free): a vocabulary-only defect does not surface; an entity's own bad value on the **same
+focus node and same `sh:path`** still does — the pair that proves attribution is per triple,
+not per node; and a value-less `sh:minCount` survives the filter. Plus
+`realLicenceTableDefectsAreNotReportedAsTheEntitys` in the opt-in
+`ControlledVocabularyRealDataTest`, which replays the original scenario against the real
+shapes and the real licence table. All four fail if the filter is removed — verified, not
+assumed.
+
+### 2026-08-11 — SPARQL over an in-memory Jena projection (WP-DCAT-5, persistence plan Phase 1)
+
+**Goal.** Phase 1 of [`persistence-and-sparql-implementation-plan.md`](persistence-and-sparql-implementation-plan.md):
+a working SPARQL endpoint with no change to how data is stored. Files stay authoritative;
+the graph is a disposable projection, rebuilt at startup and updated on every write.
+
+**Where things live.** New `…sparql` bundle holds `DcatGraphServiceImpl` (the projection and
+the query engine), `SparqlResource` (`/rest/sparql`) and `SparqlAdminResource`
+(`/rest/admin/sparql/reindex`). It exports nothing.
+
+**Three deviations from the plan text, all deliberate.**
+
+1. **`DcatGraphService` lives in `…api`, not exported from `…sparql`.** The plan had the sparql
+   bundle export it, which would mean `…impl → …sparql`. Putting the contract in the api
+   bundle adds no dependency edge at all and matches how `DcatValidationService` is already
+   split (interface in api, implementation in `…validation`, consumed by `…rest`).
+2. **The contract is `invalidate(entity, id)`, not `replace(resourceId, EObject)`.** Callers say
+   *which* resource changed and the projection re-reads it through the ordinary read services.
+   That makes the graph a function of what is actually on disk (G1) rather than of what a
+   caller passed, makes every update idempotent by construction (G3), and — the practical win —
+   means a delete needs no read-before-delete: "re-read; absent → drop the named graph" is one
+   code path for create, update and delete. A distribution additionally needs its dataset id
+   (`invalidate(entity, parentId, id)`), because `DistributionReadOnlyService` only resolves one
+   while its dataset still references it (FR-10).
+3. **The endpoint serializes results itself** (`ResultSetFormatter` / `RDFDataMgr`) instead of
+   reusing the DCAT message body writers. Those map *EMF objects* to RDF; a `CONSTRUCT` already
+   yields a Jena `Model`, and a SPARQL result set is not RDF at all.
+
+**Graph shape.** `DatasetFactory.createTxnMem()`, one named graph per resource named by its
+`rdf:about`. An in-memory index maps (entity, parentId, id) → graph name, which is what lets an
+`about` change *rename* a graph instead of duplicating the resource under two identities, and
+what lets a delete find the graph of a resource that no longer exists.
+
+**One refresh path for everything.** Startup build, periodic reconciliation and operator
+reindex are the same method: re-project everything the stores return, then drop any indexed
+resource that was not seen. It deliberately does **not** clear the dataset first, so queries
+keep being answered from the previous projection while a rebuild runs. Consequence for
+readiness: the initial build is CRITICAL (nothing to serve yet), a later rebuild is only WARN.
+
+**Hooks at the persistence boundary, not in REST (G2).** All five admin services take an
+optional/dynamic `DcatGraphService` and each now funnels its writes through a single private
+`store(...)`/`reproject(...)` pair, so a future call site cannot quietly skip maintenance. The
+integration test `aMutationThroughTheOsgiServiceWithoutRestIsProjected` mutates through the OSGi
+service with no HTTP involved — a hook in the JAX-RS resource fails exactly that test.
+
+**Ordering trap — a distribution must be projected *after* its dataset links it.** `upsert`
+writes the distribution file, then adds the `dcat:distribution` reference to the dataset, and
+only then re-projects. Projecting straight after the file write reads through
+`DistributionReadOnlyService`, which cannot yet resolve it, so the projection would conclude the
+resource is gone and drop it.
+
+**Jena 6.1.0 API check (plan risk R6, now discharged).** Verified against the bundled jars:
+`DatasetFactory.createTxnMem()`, `Dataset.replaceNamedModel`/`removeNamedModel`/`listNames`,
+`QueryExecutionBuilder.timeout(long, TimeUnit)`, `ResultSetFormatter.outputAsJSON/XML/CSV/TSV`,
+`Txn.executeWrite`/`calculateRead` all exist as the plan assumed.
+
+**Read-only by construction.** `QueryFactory.create` parses queries only, so a SPARQL *Update*
+comes back 400 rather than being able to mutate a projection that is not the store of record.
+
+**Gotcha — new JAX-RS resources must be added to `RestReady.ALL_RESOURCES`.** That set is what
+every integration test waits for before its first request; the osgitech/Jersey whiteboard
+reloads the whole application when the resource set changes, and a reload landing mid-test
+produces cross-cutting 404s. Note the failure mode when a listed resource never registers:
+`awaitStable` burns its full 20 s timeout *per test*, so the suite goes from ~80 s to ~25
+minutes, which reads like a hang rather than a misconfiguration.
+
+**Gotcha — `com.github.andrewoma.dexx.collection` on the `-testpath`.** Jena's graph
+implementation needs it at runtime; without it every plain JUnit test in the bundle fails with
+`NoClassDefFoundError`, and bnd's test output reports only `ClassNotFoundException` with no
+class name unless you re-run with `--info`.
+
+**Configuration (P1-9).** `DcatGraphService`: `enabled`, `queryTimeoutMillis`,
+`maxResultRows`, `reconcileIntervalSeconds`, env-driven in the container as `SPARQL_ENABLED`,
+`SPARQL_QUERY_TIMEOUT_MS`, `SPARQL_MAX_ROWS`, `SPARQL_RECONCILE_INTERVAL_S`. Disabling it
+reports readiness OK ("SPARQL disabled") rather than CRITICAL — a deployment that switched
+SPARQL off is still fit to serve — and the endpoint answers 404, not 503.
+
+**Verified.** 15 unit tests in `…sparql`, 86 OSGi integration tests (74 existing + 12 new), and
+in a running container: the plan's own G4 example — datasets whose distribution format is CSV,
+spanning two named graphs — plus delete removing graphs, restart rebuilding identically from
+files, `SPARQL_ENABLED=false` giving 404 while REST keeps serving, and `SPARQL_MAX_ROWS=2`
+capping a 4-row result while a tighter `LIMIT 1` in the query still wins.
+
+**Not done in Phase 1.** No git-backed store (Phase 2), no runtime split (Phase 3), no
+pushdown into a query IR. Plan risk R1 (no documented scale requirement) still stands and now
+matters more: reconciliation re-reads every store on its interval, which is fine for a few
+thousand datasets and should be revisited against a real number.
+
+> **Known limitation — graph granularity and duplicated member triples. Left open on purpose.**
+>
+> Two things are unsettled here, and they are entangled:
+>
+> 1. **Granularity.** Admin-API **D6** and issue **N4** say one named graph per *catalog*; the
+>    plan's P1-2 says one per *resource*, which is what this implements. The difference is
+>    client-visible — `GRAPH ?g` binds a resource IRI, not a catalog IRI. D6 is written about the
+>    store of record under a TDB2 transaction, and this projection is read-only, so the two may
+>    legitimately differ; that should still be a decision rather than an accident.
+> 2. **Duplication.** While catalog membership embeds copies (**N28**), a catalogued dataset is
+>    projected twice — its own graph and the catalog's embedded copy — so `COUNT` over
+>    `GRAPH ?g` double-counts it. Measured, not theorised: a catalog with one dataset yields two
+>    `dct:title` triples for the same subject IRI in two graphs. Scoping to an explicit
+>    `GRAPH <resourceIri>` is the reliable form meanwhile.
+>
+> The plan's own "Interaction with N7" section anticipated this: settle containment-vs-pointer
+> before P1-3 or the granularity has to change afterwards. N7 settled `accessService` only; N28
+> (catalog membership) is still open, and **the DCAT-AP model itself may change**, which would
+> settle the layout. Both are therefore deliberately left as-is.
+>
+> `EmbeddedMembershipCharacterizationTest` asserts the current behaviour so it cannot change
+> unnoticed — resolving N28 or adopting D6's layout will fail that test, which is the point.
 
 ### 2026-08-11 — Container packaging (N20/F-23/F-24)
 

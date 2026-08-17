@@ -101,6 +101,25 @@ Also add the Eclipse compliance-header check.
 
 One named graph per catalog (admin-API D6); all write operations atomic (FR-6), including the multi-entity membership operations. Replaces the current non-atomic file-per-entity writes.
 
+**Open — graph granularity is not settled (2026-08-11).** D6 says one graph per *catalog*; the
+persistence plan's P1-2 says one graph per *resource*, and the Phase 1 SPARQL projection was
+built that way. The two are not equivalent and the difference is client-visible: `GRAPH ?g`
+currently binds a resource IRI, not a catalog IRI, so a query written against the projection
+today would change meaning if D6's layout is adopted for the store of record.
+
+Arguments as they stand: per-resource makes replace/remove a single idempotent graph operation
+and is well defined for resources that belong to no catalog or to several; per-catalog matches
+D6, makes catalog-wide delete/replace the graph operation D6 describes, and matches the eventual
+TDB2 layout, but re-serializes a whole catalog subtree on every member write. Note D6 is written
+about the *store of record* under a TDB2 transaction, whereas the Phase 1 projection is
+read-only and performs no writes — so the two may legitimately differ, but that should be a
+decision rather than an accident.
+
+Entangled with **N28**: while membership embeds copies, per-resource graphs duplicate member
+triples (see the measurement under N28). **To be decided with the model question — the DCAT-AP
+model itself may change, which would settle the layout.** Left as-is deliberately in the
+meantime.
+
 ---
 
 #### N5 · *Later*
@@ -445,6 +464,15 @@ Every entity involved is *also* stored standalone by its own admin service (`Dca
 A merged RDF graph then contains two different descriptions of the same IRI, which is poor for Interoperabilitätslevel A consumers even though the spec does not forbid it.
 
 Proposal: migrate these features to the `rdf.ecore#//Resource` pointer convention, so there is exactly one representation of every entity and one way to express membership.
+
+**Measured consequence for SPARQL (2026-08-11).** The Phase 1 RDF projection makes this
+concrete and countable. With one named graph per resource, a catalogued dataset's triples land
+in *two* graphs — its own, and the embedded copy inside the catalog's — so
+`SELECT (COUNT(*) …) WHERE { GRAPH ?g { … } }` double-counts every catalogued resource. Verified
+against a catalog holding one dataset: two `dct:title` triples for the same subject IRI, in two
+graphs. Migrating these features to the pointer convention removes the duplication at the root;
+until then it is a known limitation of the SPARQL endpoint. See the 2026-08-11 entry in
+[`development-guide.md`](development-guide.md) and the granularity note under **N4**.
 
 **Why this is bigger than N7.** `accessService` was free to change because nothing referenced it — that was N7's whole premise. These features *are* referenced by working code and tests: `CatalogAdminServiceImpl.addDatasetToCatalog` / `addDataServiceToCatalog` / `addSubCatalogToCatalog`, `DatasetSeriesAdminServiceImpl`, the corresponding REST resources, and their unit + integration tests. Changing the eType changes those service signatures (`addDataServiceToCatalog(String, DataService)` would become id- or URI-based), so it needs a migration plan and a decision about already-stored data.
 

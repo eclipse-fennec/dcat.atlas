@@ -1,6 +1,6 @@
 -library: enableEMF
 
-# The EMF->Jena bridge (EObjectRDFModelBuilder) is reused by the validation bundle.
+# The EMF->Jena bridge (EObjectToJena) is reused by the validation and sparql bundles.
 Export-Package: org.eclipse.fennec.dcat.atlas.msg.body.readerwriter
 
 -buildpath: \

@@ -22,7 +22,6 @@ import java.util.Collection;
 
 import org.apache.jena.rdf.model.Model;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
@@ -41,13 +40,6 @@ import jakarta.ws.rs.ext.MessageBodyWriter;
 public abstract class AbstractRDFMessageBodyWriter implements MessageBodyWriter<Object> {
 
 	/**
-	 * @return a resource set factory able to create resource sets that know the
-	 *         DCAT-AP packages and resource factory. Supplied by the concrete
-	 *         component so the OSGi {@code @Reference} is unambiguous.
-	 */
-	protected abstract ResourceSetFactory resourceSetFactory();
-
-	/**
 	 * Serializes the given graph in the concrete RDF syntax.
 	 */
 	protected abstract void writeModel(Model model, OutputStream out);
@@ -61,8 +53,7 @@ public abstract class AbstractRDFMessageBodyWriter implements MessageBodyWriter<
 	public void writeTo(Object entity, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
 			throws IOException, WebApplicationException {
-		// A fresh resource set per request: ResourceSet is not thread safe.
-		Model model = EObjectRDFModelBuilder.toModel(entity, resourceSetFactory().createResourceSet());
+		Model model = EObjectToJena.toModel(entity);
 		writeModel(model, entityStream);
 		entityStream.flush();
 	}

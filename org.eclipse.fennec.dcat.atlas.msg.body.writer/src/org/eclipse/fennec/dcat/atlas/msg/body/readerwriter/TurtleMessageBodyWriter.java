@@ -18,9 +18,7 @@ import java.io.OutputStream;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
-import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsExtension;
 
 import jakarta.ws.rs.Produces;
@@ -35,14 +33,6 @@ import jakarta.ws.rs.ext.Provider;
 @Produces("text/turtle")
 @Component(name = "TurtleMessageBodyWriter", service = MessageBodyWriter.class)
 public class TurtleMessageBodyWriter extends AbstractRDFMessageBodyWriter {
-
-	@Reference
-	private ResourceSetFactory resourceSetFactory;
-
-	@Override
-	protected ResourceSetFactory resourceSetFactory() {
-		return resourceSetFactory;
-	}
 
 	@Override
 	protected void writeModel(Model model, OutputStream out) {

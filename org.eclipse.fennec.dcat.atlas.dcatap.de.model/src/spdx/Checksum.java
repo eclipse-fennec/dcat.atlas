@@ -12,11 +12,9 @@
  */
 package spdx;
 
-import org.eclipse.emf.ecore.EObject;
-
 import org.osgi.annotation.versioning.ProviderType;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 /**
  * <!-- begin-user-doc -->
@@ -35,10 +33,9 @@ import rdf.Resource;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link spdx.Checksum#getAlgorithm <em>Algorithm</em>}</li>
  *   <li>{@link spdx.Checksum#getChecksumValue <em>Checksum Value</em>}</li>
- *   <li>{@link spdx.Checksum#getAbout <em>About</em>}</li>
  *   <li>{@link spdx.Checksum#getNodeID <em>Node ID</em>}</li>
+ *   <li>{@link spdx.Checksum#getAlgorithm <em>Algorithm</em>}</li>
  * </ul>
  *
  * @see spdx.SpdxPackage#getChecksum()
@@ -46,30 +43,7 @@ import rdf.Resource;
  * @generated
  */
 @ProviderType
-public interface Checksum extends EObject {
-	/**
-	 * Returns the value of the '<em><b>Algorithm</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Algorithm</em>' containment reference.
-	 * @see #setAlgorithm(Resource)
-	 * @see spdx.SpdxPackage#getChecksum_Algorithm()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='algorithm' namespace='##targetNamespace'"
-	 * @generated
-	 */
-	Resource getAlgorithm();
-
-	/**
-	 * Sets the value of the '{@link spdx.Checksum#getAlgorithm <em>Algorithm</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Algorithm</em>' containment reference.
-	 * @see #getAlgorithm()
-	 * @generated
-	 */
-	void setAlgorithm(Resource value);
-
+public interface Checksum extends IdentifiedResource {
 	/**
 	 * Returns the value of the '<em><b>Checksum Value</b></em>' attribute.
 	 * <!-- begin-user-doc -->
@@ -94,29 +68,6 @@ public interface Checksum extends EObject {
 	void setChecksumValue(byte[] value);
 
 	/**
-	 * Returns the value of the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>About</em>' attribute.
-	 * @see #setAbout(String)
-	 * @see spdx.SpdxPackage#getChecksum_About()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
-	 *        extendedMetaData="kind='attribute' name='about' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
-	 * @generated
-	 */
-	String getAbout();
-
-	/**
-	 * Sets the value of the '{@link spdx.Checksum#getAbout <em>About</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>About</em>' attribute.
-	 * @see #getAbout()
-	 * @generated
-	 */
-	void setAbout(String value);
-
-	/**
 	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -138,5 +89,28 @@ public interface Checksum extends EObject {
 	 * @generated
 	 */
 	void setNodeID(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Algorithm</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Algorithm</em>' attribute.
+	 * @see #setAlgorithm(String)
+	 * @see spdx.SpdxPackage#getChecksum_Algorithm()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
+	 *        extendedMetaData="kind='element' name='algorithm' namespace='##targetNamespace'"
+	 * @generated
+	 */
+	String getAlgorithm();
+
+	/**
+	 * Sets the value of the '{@link spdx.Checksum#getAlgorithm <em>Algorithm</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Algorithm</em>' attribute.
+	 * @see #getAlgorithm()
+	 * @generated
+	 */
+	void setAlgorithm(String value);
 
 } // Checksum

@@ -24,7 +24,7 @@ import org.eclipse.emf.ecore.EClass;
  *
  * @generated
  */
-public class PersonImpl extends AgentTypeImpl implements Person {
+public class PersonImpl extends AgentImpl implements Person {
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

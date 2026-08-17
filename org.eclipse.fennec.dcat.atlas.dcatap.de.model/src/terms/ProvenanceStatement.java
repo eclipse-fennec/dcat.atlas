@@ -12,9 +12,12 @@
  */
 package terms;
 
-import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.IdentifiedResource;
+import rdf.PlainLiteral;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +28,8 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link terms.ProvenanceStatement#getProvenanceStatement <em>Provenance Statement</em>}</li>
+ *   <li>{@link terms.ProvenanceStatement#getDescription <em>Description</em>}</li>
+ *   <li>{@link terms.ProvenanceStatement#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @see terms.TermsPackage#getProvenanceStatement()
@@ -33,28 +37,41 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface ProvenanceStatement extends EObject {
+public interface ProvenanceStatement extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Provenance Statement</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Description</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Provenance Statement</em>' containment reference.
-	 * @see #setProvenanceStatement(ProvenanceStatementType)
-	 * @see terms.TermsPackage#getProvenanceStatement_ProvenanceStatement()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='ProvenanceStatement' namespace='##targetNamespace'"
+	 * @return the value of the '<em>Description</em>' containment reference list.
+	 * @see terms.TermsPackage#getProvenanceStatement_Description()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='description' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	ProvenanceStatementType getProvenanceStatement();
+	EList<PlainLiteral> getDescription();
 
 	/**
-	 * Sets the value of the '{@link terms.ProvenanceStatement#getProvenanceStatement <em>Provenance Statement</em>}' containment reference.
+	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Provenance Statement</em>' containment reference.
-	 * @see #getProvenanceStatement()
+	 * @return the value of the '<em>Node ID</em>' attribute.
+	 * @see #setNodeID(String)
+	 * @see terms.TermsPackage#getProvenanceStatement_NodeID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.NCName"
+	 *        extendedMetaData="kind='attribute' name='nodeID' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
 	 * @generated
 	 */
-	void setProvenanceStatement(ProvenanceStatementType value);
+	String getNodeID();
+
+	/**
+	 * Sets the value of the '{@link terms.ProvenanceStatement#getNodeID <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Node ID</em>' attribute.
+	 * @see #getNodeID()
+	 * @generated
+	 */
+	void setNodeID(String value);
 
 } // ProvenanceStatement

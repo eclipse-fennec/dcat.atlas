@@ -17,7 +17,6 @@ import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EEnum;
-import org.eclipse.emf.ecore.EReference;
 
 import org.eclipse.fennec.emf.osgi.annotation.provide.EPackage;
 
@@ -134,7 +133,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-@EPackage(uri = RdfPackage.eNS_URI, genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/rdf.ecore", ecoreSourceLocations = "/model/rdf.ecore")
+@EPackage(uri = RdfPackage.eNS_URI, fingerprint = "fp1:1791d7852e7ba108bbe3ed6c9db3a118ee00f63c2af996b177b2f7d0dc96ee4b", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/rdf.ecore", ecoreSourceLocations = "/model/rdf.ecore")
 public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -177,52 +176,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	RdfPackage eINSTANCE = rdf.impl.RdfPackageImpl.init();
 
 	/**
-	 * The meta object id for the '{@link rdf.impl.DateLiteralImpl <em>Date Literal</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.DateLiteralImpl
-	 * @see rdf.impl.RdfPackageImpl#getDateLiteral()
-	 * @generated
-	 */
-	int DATE_LITERAL = 0;
-
-	/**
-	 * The feature id for the '<em><b>Value</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_LITERAL__VALUE = 0;
-
-	/**
-	 * The feature id for the '<em><b>Datatype</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_LITERAL__DATATYPE = 1;
-
-	/**
-	 * The number of structural features of the '<em>Date Literal</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_LITERAL_FEATURE_COUNT = 2;
-
-	/**
-	 * The number of operations of the '<em>Date Literal</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_LITERAL_OPERATION_COUNT = 0;
-
-	/**
 	 * The meta object id for the '{@link rdf.impl.DateOrDateTimeLiteralImpl <em>Date Or Date Time Literal</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -230,7 +183,7 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see rdf.impl.RdfPackageImpl#getDateOrDateTimeLiteral()
 	 * @generated
 	 */
-	int DATE_OR_DATE_TIME_LITERAL = 1;
+	int DATE_OR_DATE_TIME_LITERAL = 0;
 
 	/**
 	 * The feature id for the '<em><b>Value</b></em>' attribute.
@@ -269,162 +222,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	int DATE_OR_DATE_TIME_LITERAL_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link rdf.impl.DateTimeLiteralImpl <em>Date Time Literal</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.DateTimeLiteralImpl
-	 * @see rdf.impl.RdfPackageImpl#getDateTimeLiteral()
-	 * @generated
-	 */
-	int DATE_TIME_LITERAL = 2;
-
-	/**
-	 * The feature id for the '<em><b>Value</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_TIME_LITERAL__VALUE = 0;
-
-	/**
-	 * The feature id for the '<em><b>Datatype</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_TIME_LITERAL__DATATYPE = 1;
-
-	/**
-	 * The number of structural features of the '<em>Date Time Literal</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_TIME_LITERAL_FEATURE_COUNT = 2;
-
-	/**
-	 * The number of operations of the '<em>Date Time Literal</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DATE_TIME_LITERAL_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.impl.ResourceImpl <em>Resource</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.ResourceImpl
-	 * @see rdf.impl.RdfPackageImpl#getResource()
-	 * @generated
-	 */
-	int RESOURCE = 6;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RESOURCE__RESOURCE = 0;
-
-	/**
-	 * The feature id for the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RESOURCE__ABOUT = 1;
-
-	/**
-	 * The number of structural features of the '<em>Resource</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RESOURCE_FEATURE_COUNT = 2;
-
-	/**
-	 * The number of operations of the '<em>Resource</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RESOURCE_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.impl.ObjectTypeImpl <em>Object Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.ObjectTypeImpl
-	 * @see rdf.impl.RdfPackageImpl#getObjectType()
-	 * @generated
-	 */
-	int OBJECT_TYPE = 3;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int OBJECT_TYPE__RESOURCE = RESOURCE__RESOURCE;
-
-	/**
-	 * The feature id for the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int OBJECT_TYPE__ABOUT = RESOURCE__ABOUT;
-
-	/**
-	 * The feature id for the '<em><b>Value</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int OBJECT_TYPE__VALUE = RESOURCE_FEATURE_COUNT + 0;
-
-	/**
-	 * The feature id for the '<em><b>Datatype</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int OBJECT_TYPE__DATATYPE = RESOURCE_FEATURE_COUNT + 1;
-
-	/**
-	 * The number of structural features of the '<em>Object Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int OBJECT_TYPE_FEATURE_COUNT = RESOURCE_FEATURE_COUNT + 2;
-
-	/**
-	 * The number of operations of the '<em>Object Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int OBJECT_TYPE_OPERATION_COUNT = RESOURCE_OPERATION_COUNT + 0;
-
-	/**
 	 * The meta object id for the '{@link rdf.impl.PlainLiteralImpl <em>Plain Literal</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -432,7 +229,7 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see rdf.impl.RdfPackageImpl#getPlainLiteral()
 	 * @generated
 	 */
-	int PLAIN_LITERAL = 4;
+	int PLAIN_LITERAL = 1;
 
 	/**
 	 * The feature id for the '<em><b>Value</b></em>' attribute.
@@ -471,199 +268,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	int PLAIN_LITERAL_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link rdf.impl.PredicateTypeImpl <em>Predicate Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.PredicateTypeImpl
-	 * @see rdf.impl.RdfPackageImpl#getPredicateType()
-	 * @generated
-	 */
-	int PREDICATE_TYPE = 5;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PREDICATE_TYPE__RESOURCE = RESOURCE__RESOURCE;
-
-	/**
-	 * The feature id for the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PREDICATE_TYPE__ABOUT = RESOURCE__ABOUT;
-
-	/**
-	 * The number of structural features of the '<em>Predicate Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PREDICATE_TYPE_FEATURE_COUNT = RESOURCE_FEATURE_COUNT + 0;
-
-	/**
-	 * The number of operations of the '<em>Predicate Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PREDICATE_TYPE_OPERATION_COUNT = RESOURCE_OPERATION_COUNT + 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.impl.StatementImpl <em>Statement</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.StatementImpl
-	 * @see rdf.impl.RdfPackageImpl#getStatement()
-	 * @generated
-	 */
-	int STATEMENT = 7;
-
-	/**
-	 * The feature id for the '<em><b>Statement</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT__STATEMENT = 0;
-
-	/**
-	 * The number of structural features of the '<em>Statement</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_FEATURE_COUNT = 1;
-
-	/**
-	 * The number of operations of the '<em>Statement</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.impl.StatementTypeImpl <em>Statement Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.StatementTypeImpl
-	 * @see rdf.impl.RdfPackageImpl#getStatementType()
-	 * @generated
-	 */
-	int STATEMENT_TYPE = 8;
-
-	/**
-	 * The feature id for the '<em><b>Subject</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_TYPE__SUBJECT = 0;
-
-	/**
-	 * The feature id for the '<em><b>Predicate</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_TYPE__PREDICATE = 1;
-
-	/**
-	 * The feature id for the '<em><b>Object</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_TYPE__OBJECT = 2;
-
-	/**
-	 * The feature id for the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_TYPE__ABOUT = 3;
-
-	/**
-	 * The number of structural features of the '<em>Statement Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_TYPE_FEATURE_COUNT = 4;
-
-	/**
-	 * The number of operations of the '<em>Statement Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int STATEMENT_TYPE_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.impl.SubjectTypeImpl <em>Subject Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.SubjectTypeImpl
-	 * @see rdf.impl.RdfPackageImpl#getSubjectType()
-	 * @generated
-	 */
-	int SUBJECT_TYPE = 9;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUBJECT_TYPE__RESOURCE = RESOURCE__RESOURCE;
-
-	/**
-	 * The feature id for the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUBJECT_TYPE__ABOUT = RESOURCE__ABOUT;
-
-	/**
-	 * The number of structural features of the '<em>Subject Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUBJECT_TYPE_FEATURE_COUNT = RESOURCE_FEATURE_COUNT + 0;
-
-	/**
-	 * The number of operations of the '<em>Subject Type</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int SUBJECT_TYPE_OPERATION_COUNT = RESOURCE_OPERATION_COUNT + 0;
-
-	/**
 	 * The meta object id for the '{@link rdf.impl.TypedLiteralImpl <em>Typed Literal</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -671,7 +275,7 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see rdf.impl.RdfPackageImpl#getTypedLiteral()
 	 * @generated
 	 */
-	int TYPED_LITERAL = 10;
+	int TYPED_LITERAL = 2;
 
 	/**
 	 * The feature id for the '<em><b>Value</b></em>' attribute.
@@ -710,50 +314,14 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	int TYPED_LITERAL_OPERATION_COUNT = 0;
 
 	/**
-	 * The meta object id for the '{@link rdf.impl.RDFRootImpl <em>RDF Root</em>}' class.
+	 * The meta object id for the '{@link rdf.impl.IdentifiedResourceImpl <em>Identified Resource</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see rdf.impl.RDFRootImpl
-	 * @see rdf.impl.RdfPackageImpl#getRDFRoot()
+	 * @see rdf.impl.IdentifiedResourceImpl
+	 * @see rdf.impl.RdfPackageImpl#getIdentifiedResource()
 	 * @generated
 	 */
-	int RDF_ROOT = 11;
-
-	/**
-	 * The feature id for the '<em><b>Mixed</b></em>' attribute list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT__MIXED = 0;
-
-	/**
-	 * The feature id for the '<em><b>XMLNS Prefix Map</b></em>' map.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT__XMLNS_PREFIX_MAP = 1;
-
-	/**
-	 * The feature id for the '<em><b>XSI Schema Location</b></em>' map.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT__XSI_SCHEMA_LOCATION = 2;
-
-	/**
-	 * The feature id for the '<em><b>Type</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT__TYPE = 3;
+	int IDENTIFIED_RESOURCE = 3;
 
 	/**
 	 * The feature id for the '<em><b>About</b></em>' attribute.
@@ -762,127 +330,35 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int RDF_ROOT__ABOUT = 4;
+	int IDENTIFIED_RESOURCE__ABOUT = 0;
 
 	/**
-	 * The feature id for the '<em><b>Datatype</b></em>' attribute.
+	 * The number of structural features of the '<em>Identified Resource</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int RDF_ROOT__DATATYPE = 5;
+	int IDENTIFIED_RESOURCE_FEATURE_COUNT = 1;
 
 	/**
-	 * The feature id for the '<em><b>Node ID</b></em>' attribute.
+	 * The number of operations of the '<em>Identified Resource</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int RDF_ROOT__NODE_ID = 6;
+	int IDENTIFIED_RESOURCE_OPERATION_COUNT = 0;
 
 	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
+	 * The meta object id for the '{@link rdf.Datatype <em>Datatype</em>}' enum.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT__RESOURCE = 7;
-
-	/**
-	 * The feature id for the '<em><b>RDF</b></em>' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT__RDF = 8;
-
-	/**
-	 * The number of structural features of the '<em>RDF Root</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT_FEATURE_COUNT = 9;
-
-	/**
-	 * The number of operations of the '<em>RDF Root</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int RDF_ROOT_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.impl.DescriptionImpl <em>Description</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.impl.DescriptionImpl
-	 * @see rdf.impl.RdfPackageImpl#getDescription()
+	 * @see rdf.Datatype
+	 * @see rdf.impl.RdfPackageImpl#getDatatype()
 	 * @generated
 	 */
-	int DESCRIPTION = 12;
-
-	/**
-	 * The feature id for the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DESCRIPTION__ABOUT = 0;
-
-	/**
-	 * The feature id for the '<em><b>Mixed</b></em>' attribute list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DESCRIPTION__MIXED = 1;
-
-	/**
-	 * The number of structural features of the '<em>Description</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DESCRIPTION_FEATURE_COUNT = 2;
-
-	/**
-	 * The number of operations of the '<em>Description</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DESCRIPTION_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link rdf.DatatypeType <em>Datatype Type</em>}' enum.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.DatatypeType
-	 * @see rdf.impl.RdfPackageImpl#getDatatypeType()
-	 * @generated
-	 */
-	int DATATYPE_TYPE = 13;
-
-	/**
-	 * The meta object id for the '<em>Datatype Type Object</em>' data type.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see rdf.DatatypeType
-	 * @see rdf.impl.RdfPackageImpl#getDatatypeTypeObject()
-	 * @generated
-	 */
-	int DATATYPE_TYPE_OBJECT = 14;
+	int DATATYPE = 4;
 
 	/**
 	 * The meta object id for the '<em>Date Or Date Time</em>' data type.
@@ -892,40 +368,8 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see rdf.impl.RdfPackageImpl#getDateOrDateTime()
 	 * @generated
 	 */
-	int DATE_OR_DATE_TIME = 15;
+	int DATE_OR_DATE_TIME = 5;
 
-
-	/**
-	 * Returns the meta object for class '{@link rdf.DateLiteral <em>Date Literal</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Date Literal</em>'.
-	 * @see rdf.DateLiteral
-	 * @generated
-	 */
-	EClass getDateLiteral();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.DateLiteral#getValue <em>Value</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Value</em>'.
-	 * @see rdf.DateLiteral#getValue()
-	 * @see #getDateLiteral()
-	 * @generated
-	 */
-	EAttribute getDateLiteral_Value();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.DateLiteral#getDatatype <em>Datatype</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Datatype</em>'.
-	 * @see rdf.DateLiteral#getDatatype()
-	 * @see #getDateLiteral()
-	 * @generated
-	 */
-	EAttribute getDateLiteral_Datatype();
 
 	/**
 	 * Returns the meta object for class '{@link rdf.DateOrDateTimeLiteral <em>Date Or Date Time Literal</em>}'.
@@ -960,70 +404,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getDateOrDateTimeLiteral_Datatype();
 
 	/**
-	 * Returns the meta object for class '{@link rdf.DateTimeLiteral <em>Date Time Literal</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Date Time Literal</em>'.
-	 * @see rdf.DateTimeLiteral
-	 * @generated
-	 */
-	EClass getDateTimeLiteral();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.DateTimeLiteral#getValue <em>Value</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Value</em>'.
-	 * @see rdf.DateTimeLiteral#getValue()
-	 * @see #getDateTimeLiteral()
-	 * @generated
-	 */
-	EAttribute getDateTimeLiteral_Value();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.DateTimeLiteral#getDatatype <em>Datatype</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Datatype</em>'.
-	 * @see rdf.DateTimeLiteral#getDatatype()
-	 * @see #getDateTimeLiteral()
-	 * @generated
-	 */
-	EAttribute getDateTimeLiteral_Datatype();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.ObjectType <em>Object Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Object Type</em>'.
-	 * @see rdf.ObjectType
-	 * @generated
-	 */
-	EClass getObjectType();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.ObjectType#getValue <em>Value</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Value</em>'.
-	 * @see rdf.ObjectType#getValue()
-	 * @see #getObjectType()
-	 * @generated
-	 */
-	EAttribute getObjectType_Value();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.ObjectType#getDatatype <em>Datatype</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Datatype</em>'.
-	 * @see rdf.ObjectType#getDatatype()
-	 * @see #getObjectType()
-	 * @generated
-	 */
-	EAttribute getObjectType_Datatype();
-
-	/**
 	 * Returns the meta object for class '{@link rdf.PlainLiteral <em>Plain Literal</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1054,133 +434,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 */
 	EAttribute getPlainLiteral_Lang();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.PredicateType <em>Predicate Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Predicate Type</em>'.
-	 * @see rdf.PredicateType
-	 * @generated
-	 */
-	EClass getPredicateType();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.Resource <em>Resource</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Resource</em>'.
-	 * @see rdf.Resource
-	 * @generated
-	 */
-	EClass getResource();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.Resource#getResource <em>Resource</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Resource</em>'.
-	 * @see rdf.Resource#getResource()
-	 * @see #getResource()
-	 * @generated
-	 */
-	EAttribute getResource_Resource();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.Resource#getAbout <em>About</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>About</em>'.
-	 * @see rdf.Resource#getAbout()
-	 * @see #getResource()
-	 * @generated
-	 */
-	EAttribute getResource_About();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.Statement <em>Statement</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Statement</em>'.
-	 * @see rdf.Statement
-	 * @generated
-	 */
-	EClass getStatement();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link rdf.Statement#getStatement <em>Statement</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Statement</em>'.
-	 * @see rdf.Statement#getStatement()
-	 * @see #getStatement()
-	 * @generated
-	 */
-	EReference getStatement_Statement();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.StatementType <em>Statement Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Statement Type</em>'.
-	 * @see rdf.StatementType
-	 * @generated
-	 */
-	EClass getStatementType();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link rdf.StatementType#getSubject <em>Subject</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Subject</em>'.
-	 * @see rdf.StatementType#getSubject()
-	 * @see #getStatementType()
-	 * @generated
-	 */
-	EReference getStatementType_Subject();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link rdf.StatementType#getPredicate <em>Predicate</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Predicate</em>'.
-	 * @see rdf.StatementType#getPredicate()
-	 * @see #getStatementType()
-	 * @generated
-	 */
-	EReference getStatementType_Predicate();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link rdf.StatementType#getObject <em>Object</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Object</em>'.
-	 * @see rdf.StatementType#getObject()
-	 * @see #getStatementType()
-	 * @generated
-	 */
-	EReference getStatementType_Object();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.StatementType#getAbout <em>About</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>About</em>'.
-	 * @see rdf.StatementType#getAbout()
-	 * @see #getStatementType()
-	 * @generated
-	 */
-	EAttribute getStatementType_About();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.SubjectType <em>Subject Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Subject Type</em>'.
-	 * @see rdf.SubjectType
-	 * @generated
-	 */
-	EClass getSubjectType();
 
 	/**
 	 * Returns the meta object for class '{@link rdf.TypedLiteral <em>Typed Literal</em>}'.
@@ -1215,167 +468,35 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getTypedLiteral_Datatype();
 
 	/**
-	 * Returns the meta object for class '{@link rdf.RDFRoot <em>RDF Root</em>}'.
+	 * Returns the meta object for class '{@link rdf.IdentifiedResource <em>Identified Resource</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>RDF Root</em>'.
-	 * @see rdf.RDFRoot
+	 * @return the meta object for class '<em>Identified Resource</em>'.
+	 * @see rdf.IdentifiedResource
 	 * @generated
 	 */
-	EClass getRDFRoot();
+	EClass getIdentifiedResource();
 
 	/**
-	 * Returns the meta object for the attribute list '{@link rdf.RDFRoot#getMixed <em>Mixed</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Mixed</em>'.
-	 * @see rdf.RDFRoot#getMixed()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EAttribute getRDFRoot_Mixed();
-
-	/**
-	 * Returns the meta object for the map '{@link rdf.RDFRoot#getXMLNSPrefixMap <em>XMLNS Prefix Map</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the map '<em>XMLNS Prefix Map</em>'.
-	 * @see rdf.RDFRoot#getXMLNSPrefixMap()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EReference getRDFRoot_XMLNSPrefixMap();
-
-	/**
-	 * Returns the meta object for the map '{@link rdf.RDFRoot#getXSISchemaLocation <em>XSI Schema Location</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the map '<em>XSI Schema Location</em>'.
-	 * @see rdf.RDFRoot#getXSISchemaLocation()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EReference getRDFRoot_XSISchemaLocation();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link rdf.RDFRoot#getType <em>Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Type</em>'.
-	 * @see rdf.RDFRoot#getType()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EReference getRDFRoot_Type();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.RDFRoot#getAbout <em>About</em>}'.
+	 * Returns the meta object for the attribute '{@link rdf.IdentifiedResource#getAbout <em>About</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>About</em>'.
-	 * @see rdf.RDFRoot#getAbout()
-	 * @see #getRDFRoot()
+	 * @see rdf.IdentifiedResource#getAbout()
+	 * @see #getIdentifiedResource()
 	 * @generated
 	 */
-	EAttribute getRDFRoot_About();
+	EAttribute getIdentifiedResource_About();
 
 	/**
-	 * Returns the meta object for the attribute '{@link rdf.RDFRoot#getDatatype <em>Datatype</em>}'.
+	 * Returns the meta object for enum '{@link rdf.Datatype <em>Datatype</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Datatype</em>'.
-	 * @see rdf.RDFRoot#getDatatype()
-	 * @see #getRDFRoot()
+	 * @return the meta object for enum '<em>Datatype</em>'.
+	 * @see rdf.Datatype
 	 * @generated
 	 */
-	EAttribute getRDFRoot_Datatype();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.RDFRoot#getNodeID <em>Node ID</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Node ID</em>'.
-	 * @see rdf.RDFRoot#getNodeID()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EAttribute getRDFRoot_NodeID();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.RDFRoot#getResource <em>Resource</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Resource</em>'.
-	 * @see rdf.RDFRoot#getResource()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EAttribute getRDFRoot_Resource();
-
-	/**
-	 * Returns the meta object for the containment reference list '{@link rdf.RDFRoot#getRDF <em>RDF</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>RDF</em>'.
-	 * @see rdf.RDFRoot#getRDF()
-	 * @see #getRDFRoot()
-	 * @generated
-	 */
-	EReference getRDFRoot_RDF();
-
-	/**
-	 * Returns the meta object for class '{@link rdf.Description <em>Description</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Description</em>'.
-	 * @see rdf.Description
-	 * @generated
-	 */
-	EClass getDescription();
-
-	/**
-	 * Returns the meta object for the attribute '{@link rdf.Description#getAbout <em>About</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>About</em>'.
-	 * @see rdf.Description#getAbout()
-	 * @see #getDescription()
-	 * @generated
-	 */
-	EAttribute getDescription_About();
-
-	/**
-	 * Returns the meta object for the attribute list '{@link rdf.Description#getMixed <em>Mixed</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Mixed</em>'.
-	 * @see rdf.Description#getMixed()
-	 * @see #getDescription()
-	 * @generated
-	 */
-	EAttribute getDescription_Mixed();
-
-	/**
-	 * Returns the meta object for enum '{@link rdf.DatatypeType <em>Datatype Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for enum '<em>Datatype Type</em>'.
-	 * @see rdf.DatatypeType
-	 * @generated
-	 */
-	EEnum getDatatypeType();
-
-	/**
-	 * Returns the meta object for data type '{@link rdf.DatatypeType <em>Datatype Type Object</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for data type '<em>Datatype Type Object</em>'.
-	 * @see rdf.DatatypeType
-	 * @model instanceClass="rdf.DatatypeType"
-	 *        extendedMetaData="name='datatype_._type:Object' baseType='datatype_._type'"
-	 * @generated
-	 */
-	EDataType getDatatypeTypeObject();
+	EEnum getDatatype();
 
 	/**
 	 * Returns the meta object for data type '{@link javax.xml.datatype.XMLGregorianCalendar <em>Date Or Date Time</em>}'.
@@ -1413,32 +534,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	 */
 	interface Literals {
 		/**
-		 * The meta object literal for the '{@link rdf.impl.DateLiteralImpl <em>Date Literal</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.DateLiteralImpl
-		 * @see rdf.impl.RdfPackageImpl#getDateLiteral()
-		 * @generated
-		 */
-		EClass DATE_LITERAL = eINSTANCE.getDateLiteral();
-
-		/**
-		 * The meta object literal for the '<em><b>Value</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATE_LITERAL__VALUE = eINSTANCE.getDateLiteral_Value();
-
-		/**
-		 * The meta object literal for the '<em><b>Datatype</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATE_LITERAL__DATATYPE = eINSTANCE.getDateLiteral_Datatype();
-
-		/**
 		 * The meta object literal for the '{@link rdf.impl.DateOrDateTimeLiteralImpl <em>Date Or Date Time Literal</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -1463,58 +558,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 		 * @generated
 		 */
 		EAttribute DATE_OR_DATE_TIME_LITERAL__DATATYPE = eINSTANCE.getDateOrDateTimeLiteral_Datatype();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.DateTimeLiteralImpl <em>Date Time Literal</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.DateTimeLiteralImpl
-		 * @see rdf.impl.RdfPackageImpl#getDateTimeLiteral()
-		 * @generated
-		 */
-		EClass DATE_TIME_LITERAL = eINSTANCE.getDateTimeLiteral();
-
-		/**
-		 * The meta object literal for the '<em><b>Value</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATE_TIME_LITERAL__VALUE = eINSTANCE.getDateTimeLiteral_Value();
-
-		/**
-		 * The meta object literal for the '<em><b>Datatype</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DATE_TIME_LITERAL__DATATYPE = eINSTANCE.getDateTimeLiteral_Datatype();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.ObjectTypeImpl <em>Object Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.ObjectTypeImpl
-		 * @see rdf.impl.RdfPackageImpl#getObjectType()
-		 * @generated
-		 */
-		EClass OBJECT_TYPE = eINSTANCE.getObjectType();
-
-		/**
-		 * The meta object literal for the '<em><b>Value</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute OBJECT_TYPE__VALUE = eINSTANCE.getObjectType_Value();
-
-		/**
-		 * The meta object literal for the '<em><b>Datatype</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute OBJECT_TYPE__DATATYPE = eINSTANCE.getObjectType_Datatype();
 
 		/**
 		 * The meta object literal for the '{@link rdf.impl.PlainLiteralImpl <em>Plain Literal</em>}' class.
@@ -1543,112 +586,6 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute PLAIN_LITERAL__LANG = eINSTANCE.getPlainLiteral_Lang();
 
 		/**
-		 * The meta object literal for the '{@link rdf.impl.PredicateTypeImpl <em>Predicate Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.PredicateTypeImpl
-		 * @see rdf.impl.RdfPackageImpl#getPredicateType()
-		 * @generated
-		 */
-		EClass PREDICATE_TYPE = eINSTANCE.getPredicateType();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.ResourceImpl <em>Resource</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.ResourceImpl
-		 * @see rdf.impl.RdfPackageImpl#getResource()
-		 * @generated
-		 */
-		EClass RESOURCE = eINSTANCE.getResource();
-
-		/**
-		 * The meta object literal for the '<em><b>Resource</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute RESOURCE__RESOURCE = eINSTANCE.getResource_Resource();
-
-		/**
-		 * The meta object literal for the '<em><b>About</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute RESOURCE__ABOUT = eINSTANCE.getResource_About();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.StatementImpl <em>Statement</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.StatementImpl
-		 * @see rdf.impl.RdfPackageImpl#getStatement()
-		 * @generated
-		 */
-		EClass STATEMENT = eINSTANCE.getStatement();
-
-		/**
-		 * The meta object literal for the '<em><b>Statement</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference STATEMENT__STATEMENT = eINSTANCE.getStatement_Statement();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.StatementTypeImpl <em>Statement Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.StatementTypeImpl
-		 * @see rdf.impl.RdfPackageImpl#getStatementType()
-		 * @generated
-		 */
-		EClass STATEMENT_TYPE = eINSTANCE.getStatementType();
-
-		/**
-		 * The meta object literal for the '<em><b>Subject</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference STATEMENT_TYPE__SUBJECT = eINSTANCE.getStatementType_Subject();
-
-		/**
-		 * The meta object literal for the '<em><b>Predicate</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference STATEMENT_TYPE__PREDICATE = eINSTANCE.getStatementType_Predicate();
-
-		/**
-		 * The meta object literal for the '<em><b>Object</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference STATEMENT_TYPE__OBJECT = eINSTANCE.getStatementType_Object();
-
-		/**
-		 * The meta object literal for the '<em><b>About</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute STATEMENT_TYPE__ABOUT = eINSTANCE.getStatementType_About();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.SubjectTypeImpl <em>Subject Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.SubjectTypeImpl
-		 * @see rdf.impl.RdfPackageImpl#getSubjectType()
-		 * @generated
-		 */
-		EClass SUBJECT_TYPE = eINSTANCE.getSubjectType();
-
-		/**
 		 * The meta object literal for the '{@link rdf.impl.TypedLiteralImpl <em>Typed Literal</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -1675,46 +612,14 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute TYPED_LITERAL__DATATYPE = eINSTANCE.getTypedLiteral_Datatype();
 
 		/**
-		 * The meta object literal for the '{@link rdf.impl.RDFRootImpl <em>RDF Root</em>}' class.
+		 * The meta object literal for the '{@link rdf.impl.IdentifiedResourceImpl <em>Identified Resource</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
-		 * @see rdf.impl.RDFRootImpl
-		 * @see rdf.impl.RdfPackageImpl#getRDFRoot()
+		 * @see rdf.impl.IdentifiedResourceImpl
+		 * @see rdf.impl.RdfPackageImpl#getIdentifiedResource()
 		 * @generated
 		 */
-		EClass RDF_ROOT = eINSTANCE.getRDFRoot();
-
-		/**
-		 * The meta object literal for the '<em><b>Mixed</b></em>' attribute list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute RDF_ROOT__MIXED = eINSTANCE.getRDFRoot_Mixed();
-
-		/**
-		 * The meta object literal for the '<em><b>XMLNS Prefix Map</b></em>' map feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference RDF_ROOT__XMLNS_PREFIX_MAP = eINSTANCE.getRDFRoot_XMLNSPrefixMap();
-
-		/**
-		 * The meta object literal for the '<em><b>XSI Schema Location</b></em>' map feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference RDF_ROOT__XSI_SCHEMA_LOCATION = eINSTANCE.getRDFRoot_XSISchemaLocation();
-
-		/**
-		 * The meta object literal for the '<em><b>Type</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference RDF_ROOT__TYPE = eINSTANCE.getRDFRoot_Type();
+		EClass IDENTIFIED_RESOURCE = eINSTANCE.getIdentifiedResource();
 
 		/**
 		 * The meta object literal for the '<em><b>About</b></em>' attribute feature.
@@ -1722,85 +627,17 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute RDF_ROOT__ABOUT = eINSTANCE.getRDFRoot_About();
+		EAttribute IDENTIFIED_RESOURCE__ABOUT = eINSTANCE.getIdentifiedResource_About();
 
 		/**
-		 * The meta object literal for the '<em><b>Datatype</b></em>' attribute feature.
+		 * The meta object literal for the '{@link rdf.Datatype <em>Datatype</em>}' enum.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
+		 * @see rdf.Datatype
+		 * @see rdf.impl.RdfPackageImpl#getDatatype()
 		 * @generated
 		 */
-		EAttribute RDF_ROOT__DATATYPE = eINSTANCE.getRDFRoot_Datatype();
-
-		/**
-		 * The meta object literal for the '<em><b>Node ID</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute RDF_ROOT__NODE_ID = eINSTANCE.getRDFRoot_NodeID();
-
-		/**
-		 * The meta object literal for the '<em><b>Resource</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute RDF_ROOT__RESOURCE = eINSTANCE.getRDFRoot_Resource();
-
-		/**
-		 * The meta object literal for the '<em><b>RDF</b></em>' containment reference list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference RDF_ROOT__RDF = eINSTANCE.getRDFRoot_RDF();
-
-		/**
-		 * The meta object literal for the '{@link rdf.impl.DescriptionImpl <em>Description</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.impl.DescriptionImpl
-		 * @see rdf.impl.RdfPackageImpl#getDescription()
-		 * @generated
-		 */
-		EClass DESCRIPTION = eINSTANCE.getDescription();
-
-		/**
-		 * The meta object literal for the '<em><b>About</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DESCRIPTION__ABOUT = eINSTANCE.getDescription_About();
-
-		/**
-		 * The meta object literal for the '<em><b>Mixed</b></em>' attribute list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DESCRIPTION__MIXED = eINSTANCE.getDescription_Mixed();
-
-		/**
-		 * The meta object literal for the '{@link rdf.DatatypeType <em>Datatype Type</em>}' enum.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.DatatypeType
-		 * @see rdf.impl.RdfPackageImpl#getDatatypeType()
-		 * @generated
-		 */
-		EEnum DATATYPE_TYPE = eINSTANCE.getDatatypeType();
-
-		/**
-		 * The meta object literal for the '<em>Datatype Type Object</em>' data type.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see rdf.DatatypeType
-		 * @see rdf.impl.RdfPackageImpl#getDatatypeTypeObject()
-		 * @generated
-		 */
-		EDataType DATATYPE_TYPE_OBJECT = eINSTANCE.getDatatypeTypeObject();
+		EEnum DATATYPE = eINSTANCE.getDatatype();
 
 		/**
 		 * The meta object literal for the '<em>Date Or Date Time</em>' data type.

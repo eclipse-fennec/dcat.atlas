@@ -19,7 +19,7 @@ import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 /**
  * <!-- begin-user-doc -->
@@ -83,7 +83,7 @@ public class DcatSwitch<T> extends Switch<T> {
 				T result = caseCatalog(catalog);
 				if (result == null) result = caseDataset(catalog);
 				if (result == null) result = caseDcatResource(catalog);
-				if (result == null) result = caseResource(catalog);
+				if (result == null) result = caseIdentifiedResource(catalog);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -91,26 +91,28 @@ public class DcatSwitch<T> extends Switch<T> {
 				Dataset dataset = (Dataset)theEObject;
 				T result = caseDataset(dataset);
 				if (result == null) result = caseDcatResource(dataset);
-				if (result == null) result = caseResource(dataset);
+				if (result == null) result = caseIdentifiedResource(dataset);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case DcatPackage.DISTRIBUTION: {
 				Distribution distribution = (Distribution)theEObject;
 				T result = caseDistribution(distribution);
-				if (result == null) result = caseResource(distribution);
+				if (result == null) result = caseIdentifiedResource(distribution);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case DcatPackage.RELATIONSHIP: {
 				Relationship relationship = (Relationship)theEObject;
 				T result = caseRelationship(relationship);
+				if (result == null) result = caseIdentifiedResource(relationship);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case DcatPackage.CATALOG_RECORD: {
 				CatalogRecord catalogRecord = (CatalogRecord)theEObject;
 				T result = caseCatalogRecord(catalogRecord);
+				if (result == null) result = caseIdentifiedResource(catalogRecord);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -118,34 +120,23 @@ public class DcatSwitch<T> extends Switch<T> {
 				DataService dataService = (DataService)theEObject;
 				T result = caseDataService(dataService);
 				if (result == null) result = caseDcatResource(dataService);
-				if (result == null) result = caseResource(dataService);
+				if (result == null) result = caseIdentifiedResource(dataService);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case DcatPackage.DCAT_RESOURCE: {
 				DcatResource dcatResource = (DcatResource)theEObject;
 				T result = caseDcatResource(dcatResource);
-				if (result == null) result = caseResource(dcatResource);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case DcatPackage.DCATAP_ROOT: {
-				DCATAPRoot dcatapRoot = (DCATAPRoot)theEObject;
-				T result = caseDCATAPRoot(dcatapRoot);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case DcatPackage.DATASET_CONTAINER: {
-				DatasetContainer datasetContainer = (DatasetContainer)theEObject;
-				T result = caseDatasetContainer(datasetContainer);
+				if (result == null) result = caseIdentifiedResource(dcatResource);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case DcatPackage.DATASET_SERIES: {
 				DatasetSeries datasetSeries = (DatasetSeries)theEObject;
 				T result = caseDatasetSeries(datasetSeries);
+				if (result == null) result = caseDataset(datasetSeries);
 				if (result == null) result = caseDcatResource(datasetSeries);
-				if (result == null) result = caseResource(datasetSeries);
+				if (result == null) result = caseIdentifiedResource(datasetSeries);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -259,36 +250,6 @@ public class DcatSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>DCATAP Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>DCATAP Root</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDCATAPRoot(DCATAPRoot object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Dataset Container</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Dataset Container</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDatasetContainer(DatasetContainer object) {
-		return null;
-	}
-
-	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Dataset Series</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -304,17 +265,17 @@ public class DcatSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Resource</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Resource</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseResource(Resource object) {
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

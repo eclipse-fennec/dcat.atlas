@@ -12,6 +12,8 @@
  */
 package dcat;
 
+import adms.Identifier;
+
 import foaf.Agent;
 import foaf.Document;
 
@@ -20,12 +22,11 @@ import org.eclipse.emf.common.util.EList;
 import org.osgi.annotation.versioning.ProviderType;
 
 import rdf.DateOrDateTimeLiteral;
+import rdf.IdentifiedResource;
 import rdf.PlainLiteral;
-import rdf.Resource;
-
-import skos.Concept;
 
 import terms.LicenseDocument;
+import terms.ProvenanceStatement;
 import terms.RightsStatement;
 import terms.Standard;
 
@@ -67,7 +68,6 @@ import vcard.Organization;
  *   <li>{@link dcat.DcatResource#getContactPoint <em>Contact Point</em>}</li>
  *   <li>{@link dcat.DcatResource#getCreator <em>Creator</em>}</li>
  *   <li>{@link dcat.DcatResource#getPublisher <em>Publisher</em>}</li>
- *   <li>{@link dcat.DcatResource#getApplicableLegislation <em>Applicable Legislation</em>}</li>
  *   <li>{@link dcat.DcatResource#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.DcatResource#getModified <em>Modified</em>}</li>
  *   <li>{@link dcat.DcatResource#getLandingPage <em>Landing Page</em>}</li>
@@ -77,10 +77,17 @@ import vcard.Organization;
  *   <li>{@link dcat.DcatResource#getRights <em>Rights</em>}</li>
  *   <li>{@link dcat.DcatResource#getHasPolicy <em>Has Policy</em>}</li>
  *   <li>{@link dcat.DcatResource#getQualifiedAttribution <em>Qualified Attribution</em>}</li>
- *   <li>{@link dcat.DcatResource#getRelation <em>Relation</em>}</li>
  *   <li>{@link dcat.DcatResource#getQualifiedRelation <em>Qualified Relation</em>}</li>
+ *   <li>{@link dcat.DcatResource#getRelation <em>Relation</em>}</li>
  *   <li>{@link dcat.DcatResource#getIsReferencedBy <em>Is Referenced By</em>}</li>
  *   <li>{@link dcat.DcatResource#getLanguage <em>Language</em>}</li>
+ *   <li>{@link dcat.DcatResource#getContributorID <em>Contributor ID</em>}</li>
+ *   <li>{@link dcat.DcatResource#getApplicableLegislation <em>Applicable Legislation</em>}</li>
+ *   <li>{@link dcat.DcatResource#getOriginator <em>Originator</em>}</li>
+ *   <li>{@link dcat.DcatResource#getCustodian <em>Custodian</em>}</li>
+ *   <li>{@link dcat.DcatResource#getPoliticalGeocodingLevelURI <em>Political Geocoding Level URI</em>}</li>
+ *   <li>{@link dcat.DcatResource#getAdmsIdentifier <em>Adms Identifier</em>}</li>
+ *   <li>{@link dcat.DcatResource#getProvenance <em>Provenance</em>}</li>
  * </ul>
  *
  * @see dcat.DcatPackage#getDcatResource()
@@ -89,7 +96,7 @@ import vcard.Organization;
  * @generated
  */
 @ProviderType
-public interface DcatResource extends Resource {
+public interface DcatResource extends IdentifiedResource {
 	/**
 	 * Returns the value of the '<em><b>Identifier</b></em>' containment reference list.
 	 * The list contents are of type {@link rdf.PlainLiteral}.
@@ -130,17 +137,17 @@ public interface DcatResource extends Resource {
 	EList<PlainLiteral> getDescription();
 
 	/**
-	 * Returns the value of the '<em><b>Theme</b></em>' containment reference list.
-	 * The list contents are of type {@link skos.Concept}.
+	 * Returns the value of the '<em><b>Theme</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Theme</em>' containment reference list.
+	 * @return the value of the '<em>Theme</em>' attribute list.
 	 * @see dcat.DcatPackage#getDcatResource_Theme()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='theme' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<Concept> getTheme();
+	EList<String> getTheme();
 
 	/**
 	 * Returns the value of the '<em><b>Keyword</b></em>' containment reference list.
@@ -156,17 +163,17 @@ public interface DcatResource extends Resource {
 	EList<PlainLiteral> getKeyword();
 
 	/**
-	 * Returns the value of the '<em><b>Type</b></em>' containment reference list.
-	 * The list contents are of type {@link skos.Concept}.
+	 * Returns the value of the '<em><b>Type</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Type</em>' containment reference list.
+	 * @return the value of the '<em>Type</em>' attribute list.
 	 * @see dcat.DcatPackage#getDcatResource_Type()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='type' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Concept> getType();
+	EList<String> getType();
 
 	/**
 	 * Returns the value of the '<em><b>Contact Point</b></em>' containment reference list.
@@ -228,22 +235,6 @@ public interface DcatResource extends Resource {
 	void setPublisher(Agent value);
 
 	/**
-	 * Returns the value of the '<em><b>Applicable Legislation</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * <!-- begin-model-doc -->
-	 * dcatap:applicableLegislation — the legislation that mandates the resource. New in DCAT-AP.de 3.0; inherited by Catalog, Dataset, DataService and DatasetSeries.
-	 * <!-- end-model-doc -->
-	 * @return the value of the '<em>Applicable Legislation</em>' containment reference list.
-	 * @see dcat.DcatPackage#getDcatResource_ApplicableLegislation()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='applicableLegislation' namespace='http://data.europa.eu/r5r/'"
-	 * @generated
-	 */
-	EList<Resource> getApplicableLegislation();
-
-	/**
 	 * Returns the value of the '<em><b>Issued</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -303,27 +294,27 @@ public interface DcatResource extends Resource {
 	EList<Document> getLandingPage();
 
 	/**
-	 * Returns the value of the '<em><b>Access Rights</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Access Rights</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Access Rights</em>' containment reference.
-	 * @see #setAccessRights(Concept)
+	 * @return the value of the '<em>Access Rights</em>' attribute.
+	 * @see #setAccessRights(String)
 	 * @see dcat.DcatPackage#getDcatResource_AccessRights()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='accessRights' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	Concept getAccessRights();
+	String getAccessRights();
 
 	/**
-	 * Sets the value of the '{@link dcat.DcatResource#getAccessRights <em>Access Rights</em>}' containment reference.
+	 * Sets the value of the '{@link dcat.DcatResource#getAccessRights <em>Access Rights</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Access Rights</em>' containment reference.
+	 * @param value the new value of the '<em>Access Rights</em>' attribute.
 	 * @see #getAccessRights()
 	 * @generated
 	 */
-	void setAccessRights(Concept value);
+	void setAccessRights(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Conforms To</b></em>' containment reference list.
@@ -411,19 +402,6 @@ public interface DcatResource extends Resource {
 	EList<String> getQualifiedAttribution();
 
 	/**
-	 * Returns the value of the '<em><b>Relation</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Relation</em>' containment reference list.
-	 * @see dcat.DcatPackage#getDcatResource_Relation()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='relation' namespace='http://purl.org/dc/terms/'"
-	 * @generated
-	 */
-	EList<Resource> getRelation();
-
-	/**
 	 * Returns the value of the '<em><b>Qualified Relation</b></em>' containment reference list.
 	 * The list contents are of type {@link dcat.Relationship}.
 	 * <!-- begin-user-doc -->
@@ -437,29 +415,152 @@ public interface DcatResource extends Resource {
 	EList<Relationship> getQualifiedRelation();
 
 	/**
-	 * Returns the value of the '<em><b>Is Referenced By</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
+	 * Returns the value of the '<em><b>Relation</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Is Referenced By</em>' containment reference list.
+	 * @return the value of the '<em>Relation</em>' attribute list.
+	 * @see dcat.DcatPackage#getDcatResource_Relation()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='relation' namespace='http://purl.org/dc/terms/'"
+	 * @generated
+	 */
+	EList<String> getRelation();
+
+	/**
+	 * Returns the value of the '<em><b>Is Referenced By</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Is Referenced By</em>' attribute list.
 	 * @see dcat.DcatPackage#getDcatResource_IsReferencedBy()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='isReferencedBy' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Resource> getIsReferencedBy();
+	EList<String> getIsReferencedBy();
 
 	/**
-	 * Returns the value of the '<em><b>Language</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
+	 * Returns the value of the '<em><b>Language</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Language</em>' containment reference list.
+	 * @return the value of the '<em>Language</em>' attribute list.
 	 * @see dcat.DcatPackage#getDcatResource_Language()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='language' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Resource> getLanguage();
+	EList<String> getLanguage();
+
+	/**
+	 * Returns the value of the '<em><b>Contributor ID</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Contributor ID</em>' attribute list.
+	 * @see dcat.DcatPackage#getDcatResource_ContributorID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' namespace='http://dcat-ap.de/def/dcatde/' name='null'"
+	 * @generated
+	 */
+	EList<String> getContributorID();
+
+	/**
+	 * Returns the value of the '<em><b>Applicable Legislation</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * dcatap:applicableLegislation — the legislation that mandates the resource. New in DCAT-AP.de 3.0; inherited by Catalog, Dataset, DataService and DatasetSeries.
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Applicable Legislation</em>' attribute list.
+	 * @see dcat.DcatPackage#getDcatResource_ApplicableLegislation()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='applicableLegislation' namespace='http://data.europa.eu/r5r/'"
+	 * @generated
+	 */
+	EList<String> getApplicableLegislation();
+
+	/**
+	 * Returns the value of the '<em><b>Originator</b></em>' containment reference list.
+	 * The list contents are of type {@link foaf.Agent}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * geodcatap:originator — the party that created the resource. New in DCAT-AP.de 3.0 (replaces the deprecated dcatde:originator).
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Originator</em>' containment reference list.
+	 * @see dcat.DcatPackage#getDcatResource_Originator()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='originator' namespace='http://data.europa.eu/930/'"
+	 * @generated
+	 */
+	EList<Agent> getOriginator();
+
+	/**
+	 * Returns the value of the '<em><b>Custodian</b></em>' containment reference list.
+	 * The list contents are of type {@link foaf.Agent}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * geodcatap:custodian — the party accountable for managing the resource. New in DCAT-AP.de 3.0 (replaces the deprecated dcatde:maintainer).
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Custodian</em>' containment reference list.
+	 * @see dcat.DcatPackage#getDcatResource_Custodian()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='custodian' namespace='http://data.europa.eu/930/'"
+	 * @generated
+	 */
+	EList<Agent> getCustodian();
+
+	/**
+	 * Returns the value of the '<em><b>Political Geocoding Level URI</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * dcatde:politicalGeocodingLevelURI — the administrative level (Bund, Bundesland, Kreis, Kommune) covered by the resource, as a DCAT-AP.de code-list 
+	 *   URI. Recommended, [*].
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Political Geocoding Level URI</em>' attribute list.
+	 * @see dcat.DcatPackage#getDcatResource_PoliticalGeocodingLevelURI()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='politicalGeocodingLevelURI' namespace='http://dcat-ap.de/def/dcatde/'"
+	 * @generated
+	 */
+	EList<String> getPoliticalGeocodingLevelURI();
+
+	/**
+	 * Returns the value of the '<em><b>Adms Identifier</b></em>' containment reference list.
+	 * The list contents are of type {@link adms.Identifier}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * adms:identifier - secondary identifiers of the resource (DOI, DataCite, EZID, W3ID, domain-specific ids). Spec 4.3.16, Optional, [*]. Distinct from dcterms:identifier, which is a literal.
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Adms Identifier</em>' containment reference list.
+	 * @see dcat.DcatPackage#getDcatResource_AdmsIdentifier()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='identifier' namespace='http://www.w3.org/ns/adms#'"
+	 * @generated
+	 */
+	EList<Identifier> getAdmsIdentifier();
+
+	/**
+	 * Returns the value of the '<em><b>Provenance</b></em>' containment reference list.
+	 * The list contents are of type {@link terms.ProvenanceStatement}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * dcterms:provenance - a statement about the resource's development history, in particular custody changes affecting authenticity, integrity or interpretability. Spec 4.3.30, Optional, [*].
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Provenance</em>' containment reference list.
+	 * @see dcat.DcatPackage#getDcatResource_Provenance()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='provenance' namespace='http://purl.org/dc/terms/'"
+	 * @generated
+	 */
+	EList<ProvenanceStatement> getProvenance();
 
 } // DcatResource

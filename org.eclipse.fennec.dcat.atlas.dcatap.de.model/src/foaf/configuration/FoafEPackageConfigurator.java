@@ -140,6 +140,14 @@ import org.eclipse.fennec.emf.osgi.constants.EMFNamespaces;
  */
 public class FoafEPackageConfigurator implements EPackageConfigurator {
 	
+	/**
+	 * The fingerprint of this model version, computed from the <code>.ecore</code> at build
+	 * time. It identifies the model content, not the artifact - see the <code>emf.fingerprint</code>
+	 * service property.
+	 * @generated
+	 */
+	public static final String FINGERPRINT = "fp1:53826c1edeb0d65aac8317ac9bad4f9033ecee9070f9ca418a964bc3c0b72301";
+
 	private FoafPackage ePackage;
 
 	protected FoafEPackageConfigurator(FoafPackage ePackage){
@@ -177,6 +185,7 @@ public class FoafEPackageConfigurator implements EPackageConfigurator {
 		properties.put(EMFNamespaces.EMF_MODEL_REGISTRATION, EMFNamespaces.MODEL_REGISTRATION_PROVIDED);
 		properties.put(EMFNamespaces.EMF_MODEL_FILE_EXT, "foaf");
 		properties.put(EMFNamespaces.EMF_MODEL_VERSION, "1.0");
+		properties.put(EMFNamespaces.EMF_MODEL_FINGERPRINT, FINGERPRINT);
 		return properties;
 	}
 }

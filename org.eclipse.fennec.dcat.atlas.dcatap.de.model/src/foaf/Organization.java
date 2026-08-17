@@ -25,5 +25,5 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface Organization extends AgentType {
+public interface Organization extends Agent {
 } // Organization

@@ -24,14 +24,12 @@ import org.eclipse.emf.ecore.EObject;
 import org.osgi.annotation.versioning.ProviderType;
 
 import rdf.DateOrDateTimeLiteral;
+import rdf.IdentifiedResource;
 import rdf.PlainLiteral;
-import rdf.Resource;
-
-import skos.Concept;
 
 import spdx.Checksum;
 
-import terms.LicenseDocumentType;
+import terms.LicenseDocument;
 import terms.RightsStatement;
 import terms.Standard;
 
@@ -62,13 +60,13 @@ import terms.Standard;
  *   <li>{@link dcat.Distribution#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.Distribution#getModified <em>Modified</em>}</li>
  *   <li>{@link dcat.Distribution#getNodeID <em>Node ID</em>}</li>
- *   <li>{@link dcat.Distribution#getDownloadURL <em>Download URL</em>}</li>
- *   <li>{@link dcat.Distribution#getAccessURL <em>Access URL</em>}</li>
  *   <li>{@link dcat.Distribution#getLicenseAttributionByText <em>License Attribution By Text</em>}</li>
  *   <li>{@link dcat.Distribution#getAvailability <em>Availability</em>}</li>
  *   <li>{@link dcat.Distribution#getStatus <em>Status</em>}</li>
- *   <li>{@link dcat.Distribution#getApplicableLegislation <em>Applicable Legislation</em>}</li>
  *   <li>{@link dcat.Distribution#getChecksum <em>Checksum</em>}</li>
+ *   <li>{@link dcat.Distribution#getApplicableLegislation <em>Applicable Legislation</em>}</li>
+ *   <li>{@link dcat.Distribution#getDownloadURL <em>Download URL</em>}</li>
+ *   <li>{@link dcat.Distribution#getAccessURL <em>Access URL</em>}</li>
  * </ul>
  *
  * @see dcat.DcatPackage#getDistribution()
@@ -76,7 +74,7 @@ import terms.Standard;
  * @generated
  */
 @ProviderType
-public interface Distribution extends Resource {
+public interface Distribution extends IdentifiedResource {
 	/**
 	 * Returns the value of the '<em><b>Title</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
@@ -114,40 +112,39 @@ public interface Distribution extends Resource {
 	EList<PlainLiteral> getDescription();
 
 	/**
-	 * Returns the value of the '<em><b>Access Service</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
+	 * Returns the value of the '<em><b>Access Service</b></em>' reference list.
+	 * The list contents are of type {@link dcat.DataService}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Access Service</em>' containment reference list.
+	 * @return the value of the '<em>Access Service</em>' reference list.
 	 * @see dcat.DcatPackage#getDistribution_AccessService()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='accessService' namespace='##targetNamespace'"
+	 * @model extendedMetaData="kind='element' name='accessService' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<Resource> getAccessService();
+	EList<DataService> getAccessService();
 
 	/**
-	 * Returns the value of the '<em><b>Format</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Format</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Format</em>' containment reference.
-	 * @see #setFormat(Concept)
+	 * @return the value of the '<em>Format</em>' attribute.
+	 * @see #setFormat(String)
 	 * @see dcat.DcatPackage#getDistribution_Format()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='format' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	Concept getFormat();
+	String getFormat();
 
 	/**
-	 * Sets the value of the '{@link dcat.Distribution#getFormat <em>Format</em>}' containment reference.
+	 * Sets the value of the '{@link dcat.Distribution#getFormat <em>Format</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Format</em>' containment reference.
+	 * @param value the new value of the '<em>Format</em>' attribute.
 	 * @see #getFormat()
 	 * @generated
 	 */
-	void setFormat(Concept value);
+	void setFormat(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Media Type</b></em>' attribute list.
@@ -156,7 +153,7 @@ public interface Distribution extends Resource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Media Type</em>' attribute list.
 	 * @see dcat.DcatPackage#getDistribution_MediaType()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.String" required="true"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
 	 *        extendedMetaData="kind='element' name='mediaType' namespace='##targetNamespace'"
 	 * @generated
 	 */
@@ -169,7 +166,7 @@ public interface Distribution extends Resource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Package Format</em>' attribute list.
 	 * @see dcat.DcatPackage#getDistribution_PackageFormat()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.String" required="true"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
 	 *        extendedMetaData="kind='element' name='packageFormat' namespace='##targetNamespace'"
 	 * @generated
 	 */
@@ -258,30 +255,30 @@ public interface Distribution extends Resource {
 	void setTemporalResolution(Duration value);
 
 	/**
-	 * Returns the value of the '<em><b>Access Rights</b></em>' containment reference list.
-	 * The list contents are of type {@link skos.Concept}.
+	 * Returns the value of the '<em><b>Access Rights</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Access Rights</em>' containment reference list.
+	 * @return the value of the '<em>Access Rights</em>' attribute list.
 	 * @see dcat.DcatPackage#getDistribution_AccessRights()
-	 * @model containment="true" required="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
 	 *        extendedMetaData="kind='element' name='accessRights' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Concept> getAccessRights();
+	EList<String> getAccessRights();
 
 	/**
 	 * Returns the value of the '<em><b>License</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>License</em>' containment reference.
-	 * @see #setLicense(LicenseDocumentType)
+	 * @see #setLicense(LicenseDocument)
 	 * @see dcat.DcatPackage#getDistribution_License()
 	 * @model containment="true" required="true"
 	 *        extendedMetaData="kind='element' name='license' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	LicenseDocumentType getLicense();
+	LicenseDocument getLicense();
 
 	/**
 	 * Sets the value of the '{@link dcat.Distribution#getLicense <em>License</em>}' containment reference.
@@ -291,7 +288,7 @@ public interface Distribution extends Resource {
 	 * @see #getLicense()
 	 * @generated
 	 */
-	void setLicense(LicenseDocumentType value);
+	void setLicense(LicenseDocument value);
 
 	/**
 	 * Returns the value of the '<em><b>Conforms To</b></em>' containment reference list.
@@ -422,32 +419,6 @@ public interface Distribution extends Resource {
 	void setNodeID(String value);
 
 	/**
-	 * Returns the value of the '<em><b>Download URL</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Download URL</em>' containment reference list.
-	 * @see dcat.DcatPackage#getDistribution_DownloadURL()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='downloadURL' namespace='##targetNamespace'"
-	 * @generated
-	 */
-	EList<Resource> getDownloadURL();
-
-	/**
-	 * Returns the value of the '<em><b>Access URL</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Access URL</em>' containment reference list.
-	 * @see dcat.DcatPackage#getDistribution_AccessURL()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='accessURL' namespace='##targetNamespace'"
-	 * @generated
-	 */
-	EList<Resource> getAccessURL();
-
-	/**
 	 * Returns the value of the '<em><b>License Attribution By Text</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -471,72 +442,56 @@ public interface Distribution extends Resource {
 	void setLicenseAttributionByText(PlainLiteral value);
 
 	/**
-	 * Returns the value of the '<em><b>Availability</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Availability</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * <!-- begin-model-doc -->
 	 * dcatap:availability — the intended availability/planned retention of the distribution. New in DCAT-AP.de 3.0 (replaces the removed dcatde:plannedAvailability).
 	 * <!-- end-model-doc -->
-	 * @return the value of the '<em>Availability</em>' containment reference.
-	 * @see #setAvailability(Concept)
+	 * @return the value of the '<em>Availability</em>' attribute.
+	 * @see #setAvailability(String)
 	 * @see dcat.DcatPackage#getDistribution_Availability()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='availability' namespace='http://data.europa.eu/r5r/'"
 	 * @generated
 	 */
-	Concept getAvailability();
+	String getAvailability();
 
 	/**
-	 * Sets the value of the '{@link dcat.Distribution#getAvailability <em>Availability</em>}' containment reference.
+	 * Sets the value of the '{@link dcat.Distribution#getAvailability <em>Availability</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Availability</em>' containment reference.
+	 * @param value the new value of the '<em>Availability</em>' attribute.
 	 * @see #getAvailability()
 	 * @generated
 	 */
-	void setAvailability(Concept value);
+	void setAvailability(String value);
 
 	/**
-	 * Returns the value of the '<em><b>Status</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Status</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * <!-- begin-model-doc -->
 	 * adms:status — the maturity of the distribution, from the EU Distribution Status vocabulary. New in DCAT-AP.de 3.0.
 	 * <!-- end-model-doc -->
-	 * @return the value of the '<em>Status</em>' containment reference.
-	 * @see #setStatus(Concept)
+	 * @return the value of the '<em>Status</em>' attribute.
+	 * @see #setStatus(String)
 	 * @see dcat.DcatPackage#getDistribution_Status()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='status' namespace='http://www.w3.org/ns/adms#'"
 	 * @generated
 	 */
-	Concept getStatus();
+	String getStatus();
 
 	/**
-	 * Sets the value of the '{@link dcat.Distribution#getStatus <em>Status</em>}' containment reference.
+	 * Sets the value of the '{@link dcat.Distribution#getStatus <em>Status</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Status</em>' containment reference.
+	 * @param value the new value of the '<em>Status</em>' attribute.
 	 * @see #getStatus()
 	 * @generated
 	 */
-	void setStatus(Concept value);
-
-	/**
-	 * Returns the value of the '<em><b>Applicable Legislation</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * <!-- begin-model-doc -->
-	 * dcatap:applicableLegislation — the legislation that mandates the distribution. New in DCAT-AP.de 3.0.
-	 * <!-- end-model-doc -->
-	 * @return the value of the '<em>Applicable Legislation</em>' containment reference list.
-	 * @see dcat.DcatPackage#getDistribution_ApplicableLegislation()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='applicableLegislation' namespace='http://data.europa.eu/r5r/'"
-	 * @generated
-	 */
-	EList<Resource> getApplicableLegislation();
+	void setStatus(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Checksum</b></em>' containment reference.
@@ -563,5 +518,47 @@ public interface Distribution extends Resource {
 	 * @generated
 	 */
 	void setChecksum(Checksum value);
+
+	/**
+	 * Returns the value of the '<em><b>Applicable Legislation</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * dcatap:applicableLegislation — the legislation that mandates the distribution. New in DCAT-AP.de 3.0.
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Applicable Legislation</em>' attribute list.
+	 * @see dcat.DcatPackage#getDistribution_ApplicableLegislation()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='applicableLegislation' namespace='http://data.europa.eu/r5r/'"
+	 * @generated
+	 */
+	EList<String> getApplicableLegislation();
+
+	/**
+	 * Returns the value of the '<em><b>Download URL</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Download URL</em>' attribute list.
+	 * @see dcat.DcatPackage#getDistribution_DownloadURL()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='downloadURL' namespace='##targetNamespace'"
+	 * @generated
+	 */
+	EList<String> getDownloadURL();
+
+	/**
+	 * Returns the value of the '<em><b>Access URL</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Access URL</em>' attribute list.
+	 * @see dcat.DcatPackage#getDistribution_AccessURL()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='accessURL' namespace='##targetNamespace'"
+	 * @generated
+	 */
+	EList<String> getAccessURL();
 
 } // Distribution

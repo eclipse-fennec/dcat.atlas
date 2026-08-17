@@ -13,16 +13,14 @@
 package vcard.impl;
 
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
 
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 import vcard.Address;
-import vcard.AddressType;
 import vcard.VcardPackage;
 
 /**
@@ -33,21 +31,115 @@ import vcard.VcardPackage;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link vcard.impl.AddressImpl#getAddress <em>Address</em>}</li>
+ *   <li>{@link vcard.impl.AddressImpl#getStreetAddress <em>Street Address</em>}</li>
+ *   <li>{@link vcard.impl.AddressImpl#getLocality <em>Locality</em>}</li>
+ *   <li>{@link vcard.impl.AddressImpl#getPostalCode <em>Postal Code</em>}</li>
+ *   <li>{@link vcard.impl.AddressImpl#getCountryName <em>Country Name</em>}</li>
+ *   <li>{@link vcard.impl.AddressImpl#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class AddressImpl extends MinimalEObjectImpl.Container implements Address {
+public class AddressImpl extends IdentifiedResourceImpl implements Address {
 	/**
-	 * The cached value of the '{@link #getAddress() <em>Address</em>}' containment reference.
+	 * The default value of the '{@link #getStreetAddress() <em>Street Address</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getAddress()
+	 * @see #getStreetAddress()
 	 * @generated
 	 * @ordered
 	 */
-	protected AddressType address;
+	protected static final String STREET_ADDRESS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getStreetAddress() <em>Street Address</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getStreetAddress()
+	 * @generated
+	 * @ordered
+	 */
+	protected String streetAddress = STREET_ADDRESS_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getLocality() <em>Locality</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLocality()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String LOCALITY_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getLocality() <em>Locality</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getLocality()
+	 * @generated
+	 * @ordered
+	 */
+	protected String locality = LOCALITY_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPostalCode() <em>Postal Code</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPostalCode()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String POSTAL_CODE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPostalCode() <em>Postal Code</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPostalCode()
+	 * @generated
+	 * @ordered
+	 */
+	protected String postalCode = POSTAL_CODE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getCountryName() <em>Country Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCountryName()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String COUNTRY_NAME_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getCountryName() <em>Country Name</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCountryName()
+	 * @generated
+	 * @ordered
+	 */
+	protected String countryName = COUNTRY_NAME_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NODE_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -73,8 +165,8 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public AddressType getAddress() {
-		return address;
+	public String getStreetAddress() {
+		return streetAddress;
 	}
 
 	/**
@@ -82,14 +174,11 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetAddress(AddressType newAddress, NotificationChain msgs) {
-		AddressType oldAddress = address;
-		address = newAddress;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__ADDRESS, oldAddress, newAddress);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
+	public void setStreetAddress(String newStreetAddress) {
+		String oldStreetAddress = streetAddress;
+		streetAddress = newStreetAddress;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__STREET_ADDRESS, oldStreetAddress, streetAddress));
 	}
 
 	/**
@@ -97,18 +186,8 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setAddress(AddressType newAddress) {
-		if (newAddress != address) {
-			NotificationChain msgs = null;
-			if (address != null)
-				msgs = ((InternalEObject)address).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - VcardPackage.ADDRESS__ADDRESS, null, msgs);
-			if (newAddress != null)
-				msgs = ((InternalEObject)newAddress).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - VcardPackage.ADDRESS__ADDRESS, null, msgs);
-			msgs = basicSetAddress(newAddress, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__ADDRESS, newAddress, newAddress));
+	public String getLocality() {
+		return locality;
 	}
 
 	/**
@@ -116,13 +195,74 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
-		switch (featureID) {
-			case VcardPackage.ADDRESS__ADDRESS:
-				return basicSetAddress(null, msgs);
-		}
-		return super.eInverseRemove(otherEnd, featureID, msgs);
+	public void setLocality(String newLocality) {
+		String oldLocality = locality;
+		locality = newLocality;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__LOCALITY, oldLocality, locality));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String getPostalCode() {
+		return postalCode;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setPostalCode(String newPostalCode) {
+		String oldPostalCode = postalCode;
+		postalCode = newPostalCode;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__POSTAL_CODE, oldPostalCode, postalCode));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String getCountryName() {
+		return countryName;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setCountryName(String newCountryName) {
+		String oldCountryName = countryName;
+		countryName = newCountryName;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__COUNTRY_NAME, oldCountryName, countryName));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String getNodeID() {
+		return nodeID;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setNodeID(String newNodeID) {
+		String oldNodeID = nodeID;
+		nodeID = newNodeID;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, VcardPackage.ADDRESS__NODE_ID, oldNodeID, nodeID));
 	}
 
 	/**
@@ -133,8 +273,16 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case VcardPackage.ADDRESS__ADDRESS:
-				return getAddress();
+			case VcardPackage.ADDRESS__STREET_ADDRESS:
+				return getStreetAddress();
+			case VcardPackage.ADDRESS__LOCALITY:
+				return getLocality();
+			case VcardPackage.ADDRESS__POSTAL_CODE:
+				return getPostalCode();
+			case VcardPackage.ADDRESS__COUNTRY_NAME:
+				return getCountryName();
+			case VcardPackage.ADDRESS__NODE_ID:
+				return getNodeID();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -147,8 +295,20 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case VcardPackage.ADDRESS__ADDRESS:
-				setAddress((AddressType)newValue);
+			case VcardPackage.ADDRESS__STREET_ADDRESS:
+				setStreetAddress((String)newValue);
+				return;
+			case VcardPackage.ADDRESS__LOCALITY:
+				setLocality((String)newValue);
+				return;
+			case VcardPackage.ADDRESS__POSTAL_CODE:
+				setPostalCode((String)newValue);
+				return;
+			case VcardPackage.ADDRESS__COUNTRY_NAME:
+				setCountryName((String)newValue);
+				return;
+			case VcardPackage.ADDRESS__NODE_ID:
+				setNodeID((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -162,8 +322,20 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case VcardPackage.ADDRESS__ADDRESS:
-				setAddress((AddressType)null);
+			case VcardPackage.ADDRESS__STREET_ADDRESS:
+				setStreetAddress(STREET_ADDRESS_EDEFAULT);
+				return;
+			case VcardPackage.ADDRESS__LOCALITY:
+				setLocality(LOCALITY_EDEFAULT);
+				return;
+			case VcardPackage.ADDRESS__POSTAL_CODE:
+				setPostalCode(POSTAL_CODE_EDEFAULT);
+				return;
+			case VcardPackage.ADDRESS__COUNTRY_NAME:
+				setCountryName(COUNTRY_NAME_EDEFAULT);
+				return;
+			case VcardPackage.ADDRESS__NODE_ID:
+				setNodeID(NODE_ID_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -177,10 +349,42 @@ public class AddressImpl extends MinimalEObjectImpl.Container implements Address
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case VcardPackage.ADDRESS__ADDRESS:
-				return address != null;
+			case VcardPackage.ADDRESS__STREET_ADDRESS:
+				return STREET_ADDRESS_EDEFAULT == null ? streetAddress != null : !STREET_ADDRESS_EDEFAULT.equals(streetAddress);
+			case VcardPackage.ADDRESS__LOCALITY:
+				return LOCALITY_EDEFAULT == null ? locality != null : !LOCALITY_EDEFAULT.equals(locality);
+			case VcardPackage.ADDRESS__POSTAL_CODE:
+				return POSTAL_CODE_EDEFAULT == null ? postalCode != null : !POSTAL_CODE_EDEFAULT.equals(postalCode);
+			case VcardPackage.ADDRESS__COUNTRY_NAME:
+				return COUNTRY_NAME_EDEFAULT == null ? countryName != null : !COUNTRY_NAME_EDEFAULT.equals(countryName);
+			case VcardPackage.ADDRESS__NODE_ID:
+				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (streetAddress: ");
+		result.append(streetAddress);
+		result.append(", locality: ");
+		result.append(locality);
+		result.append(", postalCode: ");
+		result.append(postalCode);
+		result.append(", countryName: ");
+		result.append(countryName);
+		result.append(", nodeID: ");
+		result.append(nodeID);
+		result.append(')');
+		return result.toString();
 	}
 
 } //AddressImpl

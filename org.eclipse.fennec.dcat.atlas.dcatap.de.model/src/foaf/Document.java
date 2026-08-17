@@ -12,9 +12,12 @@
  */
 package foaf;
 
-import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.IdentifiedResource;
+import rdf.PlainLiteral;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +28,8 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link foaf.Document#getDocument <em>Document</em>}</li>
+ *   <li>{@link foaf.Document#getName <em>Name</em>}</li>
+ *   <li>{@link foaf.Document#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @see foaf.FoafPackage#getDocument()
@@ -33,28 +37,41 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface Document extends EObject {
+public interface Document extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Document</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Name</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Document</em>' containment reference.
-	 * @see #setDocument(DocumentType)
-	 * @see foaf.FoafPackage#getDocument_Document()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='Document' namespace='##targetNamespace'"
+	 * @return the value of the '<em>Name</em>' containment reference list.
+	 * @see foaf.FoafPackage#getDocument_Name()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='name' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	DocumentType getDocument();
+	EList<PlainLiteral> getName();
 
 	/**
-	 * Sets the value of the '{@link foaf.Document#getDocument <em>Document</em>}' containment reference.
+	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Document</em>' containment reference.
-	 * @see #getDocument()
+	 * @return the value of the '<em>Node ID</em>' attribute.
+	 * @see #setNodeID(String)
+	 * @see foaf.FoafPackage#getDocument_NodeID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.NCName"
+	 *        extendedMetaData="kind='attribute' name='nodeID' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
 	 * @generated
 	 */
-	void setDocument(DocumentType value);
+	String getNodeID();
+
+	/**
+	 * Sets the value of the '{@link foaf.Document#getNodeID <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Node ID</em>' attribute.
+	 * @see #getNodeID()
+	 * @generated
+	 */
+	void setNodeID(String value);
 
 } // Document

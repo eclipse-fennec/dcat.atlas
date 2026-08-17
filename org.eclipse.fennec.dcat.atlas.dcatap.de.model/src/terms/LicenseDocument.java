@@ -12,9 +12,12 @@
  */
 package terms;
 
-import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.IdentifiedResource;
+import rdf.PlainLiteral;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +28,11 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link terms.LicenseDocument#getLicenseDocument <em>License Document</em>}</li>
+ *   <li>{@link terms.LicenseDocument#getType <em>Type</em>}</li>
+ *   <li>{@link terms.LicenseDocument#getTitle <em>Title</em>}</li>
+ *   <li>{@link terms.LicenseDocument#getDescription <em>Description</em>}</li>
+ *   <li>{@link terms.LicenseDocument#getIdentifier <em>Identifier</em>}</li>
+ *   <li>{@link terms.LicenseDocument#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @see terms.TermsPackage#getLicenseDocument()
@@ -33,28 +40,80 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface LicenseDocument extends EObject {
+public interface LicenseDocument extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>License Document</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Type</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>License Document</em>' containment reference.
-	 * @see #setLicenseDocument(LicenseDocumentType)
-	 * @see terms.TermsPackage#getLicenseDocument_LicenseDocument()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='LicenseDocument' namespace='##targetNamespace'"
+	 * @return the value of the '<em>Type</em>' attribute list.
+	 * @see terms.TermsPackage#getLicenseDocument_Type()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='type' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	LicenseDocumentType getLicenseDocument();
+	EList<String> getType();
 
 	/**
-	 * Sets the value of the '{@link terms.LicenseDocument#getLicenseDocument <em>License Document</em>}' containment reference.
+	 * Returns the value of the '<em><b>Title</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>License Document</em>' containment reference.
-	 * @see #getLicenseDocument()
+	 * @return the value of the '<em>Title</em>' containment reference list.
+	 * @see terms.TermsPackage#getLicenseDocument_Title()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='title' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	void setLicenseDocument(LicenseDocumentType value);
+	EList<PlainLiteral> getTitle();
+
+	/**
+	 * Returns the value of the '<em><b>Description</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Description</em>' containment reference list.
+	 * @see terms.TermsPackage#getLicenseDocument_Description()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='description' namespace='##targetNamespace'"
+	 * @generated
+	 */
+	EList<PlainLiteral> getDescription();
+
+	/**
+	 * Returns the value of the '<em><b>Identifier</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Identifier</em>' containment reference list.
+	 * @see terms.TermsPackage#getLicenseDocument_Identifier()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='identifier' namespace='##targetNamespace'"
+	 * @generated
+	 */
+	EList<PlainLiteral> getIdentifier();
+
+	/**
+	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Node ID</em>' attribute.
+	 * @see #setNodeID(String)
+	 * @see terms.TermsPackage#getLicenseDocument_NodeID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.NCName"
+	 *        extendedMetaData="kind='attribute' name='nodeID' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+	 * @generated
+	 */
+	String getNodeID();
+
+	/**
+	 * Sets the value of the '{@link terms.LicenseDocument#getNodeID <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Node ID</em>' attribute.
+	 * @see #getNodeID()
+	 * @generated
+	 */
+	void setNodeID(String value);
 
 } // LicenseDocument

@@ -17,14 +17,10 @@ import adms.AdmsPackage;
 
 import adms.impl.AdmsPackageImpl;
 
-import adms.util.AdmsResourceFactoryImpl;
-
 import java.util.Hashtable;
 
 import org.eclipse.emf.ecore.EFactory;
 import org.eclipse.emf.ecore.EPackage;
-
-import org.eclipse.emf.ecore.resource.Resource.Factory;
 
 import org.eclipse.fennec.emf.osgi.configurator.EPackageConfigurator;
 
@@ -47,7 +43,6 @@ import org.osgi.service.condition.Condition;
  * @generated
  */
 @Component(name = "AdmsConfigurator")
-@Capability( namespace = "osgi.service", attribute = { "objectClass:List<String>=\"adms.util.AdmsResourceFactoryImpl, org.eclipse.emf.ecore.resource.Resource$Factory\"" , "uses:=\"org.eclipse.emf.ecore.resource,adms.util\"" })
 @Capability( namespace = "osgi.service", attribute = { "objectClass:List<String>=\"adms.AdmsFactory, org.eclipse.emf.ecore.EFactory\"" , "uses:=\"org.eclipse.emf.ecore,adms\"" })
 @Capability( namespace = "osgi.service", attribute = { "objectClass:List<String>=\"adms.AdmsPackage, org.eclipse.emf.ecore.EPackage\"" , "uses:=\"org.eclipse.emf.ecore,adms\"" })
 @Capability( namespace = "osgi.service", attribute = { "objectClass:List<String>=\"org.eclipse.fennec.emf.osgi.configurator.EPackageConfigurator\"" , "uses:=\"org.eclipse.emf.ecore,adms\"" })
@@ -58,7 +53,6 @@ public class AdmsConfigurationComponent {
 	private ServiceRegistration<EPackageConfigurator> ePackageConfiguratorRegistration = null;
 	private ServiceRegistration<?> eFactoryRegistration = null;
 	private ServiceRegistration<?> conditionRegistration = null;
-	private ServiceRegistration<?> resourceFactoryRegistration = null;
 
 	/**
 	 * Activates the Configuration Component.
@@ -76,7 +70,6 @@ public class AdmsConfigurationComponent {
 		}
 		
 		AdmsEPackageConfigurator packageConfigurator = registerEPackageConfiguratorService(ePackage, ctx);
-		registerResourceFactoryService(ctx);
 		registerEPackageService(ePackage, packageConfigurator, ctx);
 		registerEFactoryService(ePackage, packageConfigurator, ctx);
 		registerConditionService(packageConfigurator, ctx);
@@ -95,8 +88,7 @@ public class AdmsConfigurationComponent {
 				try {
 					bundle.start();
 				} catch (BundleException e) {
-					System.err.println("Could not start Bundle org.eclipse.emf.ecore, something seems seriously wrong: " + e.getMessage());
-					e.printStackTrace();
+					System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, "Could not start Bundle org.eclipse.emf.ecore, something seems seriously wrong", e);
 				}
 				break;
 			}
@@ -118,18 +110,6 @@ public class AdmsConfigurationComponent {
 		return packageConfigurator;
 	}
 
-	/**
-	 * Registers the AdmsResourceFactoryImpl as a service.
-	 *
-	 * @generated
-	 */
-	private void registerResourceFactoryService(BundleContext ctx){
-		AdmsResourceFactoryImpl factory = new AdmsResourceFactoryImpl();
-		Hashtable<String, Object> properties = new Hashtable<String, Object>();
-		properties.putAll(factory.getServiceProperties());
-		String[] serviceClasses = new String[] {AdmsResourceFactoryImpl.class.getName(), Factory.class.getName()};
-		resourceFactoryRegistration = ctx.registerService(serviceClasses, factory, properties);
-	}
 
 	/**
 	 * Registers the AdmsPackage as a service.
@@ -173,7 +153,6 @@ public class AdmsConfigurationComponent {
 		conditionRegistration.unregister();
 		eFactoryRegistration.unregister();
 		packageRegistration.unregister();
-		resourceFactoryRegistration.unregister();
 
 		ePackageConfiguratorRegistration.unregister();
 		EPackage.Registry.INSTANCE.remove(AdmsPackage.eNS_URI);

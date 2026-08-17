@@ -34,6 +34,14 @@ import org.eclipse.fennec.emf.osgi.constants.EMFNamespaces;
  */
 public class DcatEPackageConfigurator implements EPackageConfigurator {
 	
+	/**
+	 * The fingerprint of this model version, computed from the <code>.ecore</code> at build
+	 * time. It identifies the model content, not the artifact - see the <code>emf.fingerprint</code>
+	 * service property.
+	 * @generated
+	 */
+	public static final String FINGERPRINT = "fp1:a91106873628f6d04268d8afb4af82353b9785547e16d0327455557a45367b8c";
+
 	private DcatPackage ePackage;
 
 	protected DcatEPackageConfigurator(DcatPackage ePackage){
@@ -71,6 +79,7 @@ public class DcatEPackageConfigurator implements EPackageConfigurator {
 		properties.put(EMFNamespaces.EMF_MODEL_REGISTRATION, EMFNamespaces.MODEL_REGISTRATION_PROVIDED);
 		properties.put(EMFNamespaces.EMF_MODEL_FILE_EXT, "rdf");
 		properties.put(EMFNamespaces.EMF_MODEL_VERSION, "1.0");
+		properties.put(EMFNamespaces.EMF_MODEL_FINGERPRINT, FINGERPRINT);
 		return properties;
 	}
 }

@@ -15,7 +15,7 @@ package dcat.impl;
 import dcat.Catalog;
 import dcat.CatalogRecord;
 import dcat.DataService;
-import dcat.DatasetContainer;
+import dcat.Dataset;
 import dcat.DcatPackage;
 
 import java.util.Collection;
@@ -30,12 +30,10 @@ import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.EObjectResolvingEList;
 import org.eclipse.emf.ecore.util.InternalEList;
-
-import rdf.Resource;
-
-import skos.ConceptScheme;
 
 /**
  * <!-- begin-user-doc -->
@@ -58,7 +56,7 @@ import skos.ConceptScheme;
  */
 public class CatalogImpl extends DatasetImpl implements Catalog {
 	/**
-	 * The cached value of the '{@link #getCatalog() <em>Catalog</em>}' containment reference list.
+	 * The cached value of the '{@link #getCatalog() <em>Catalog</em>}' reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getCatalog()
@@ -78,17 +76,17 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	protected EList<CatalogRecord> record;
 
 	/**
-	 * The cached value of the '{@link #getDataset() <em>Dataset</em>}' containment reference list.
+	 * The cached value of the '{@link #getDataset() <em>Dataset</em>}' reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getDataset()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<DatasetContainer> dataset;
+	protected EList<Dataset> dataset;
 
 	/**
-	 * The cached value of the '{@link #getService() <em>Service</em>}' containment reference list.
+	 * The cached value of the '{@link #getService() <em>Service</em>}' reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getService()
@@ -98,34 +96,44 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	protected EList<DataService> service;
 
 	/**
-	 * The cached value of the '{@link #getThemeTaxonomy() <em>Theme Taxonomy</em>}' containment reference list.
+	 * The cached value of the '{@link #getThemeTaxonomy() <em>Theme Taxonomy</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getThemeTaxonomy()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<ConceptScheme> themeTaxonomy;
+	protected EList<String> themeTaxonomy;
 
 	/**
-	 * The cached value of the '{@link #getHasPart() <em>Has Part</em>}' containment reference list.
+	 * The cached value of the '{@link #getHasPart() <em>Has Part</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getHasPart()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Resource> hasPart;
+	protected EList<String> hasPart;
 
 	/**
-	 * The cached value of the '{@link #getHomepage() <em>Homepage</em>}' containment reference.
+	 * The default value of the '{@link #getHomepage() <em>Homepage</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getHomepage()
 	 * @generated
 	 * @ordered
 	 */
-	protected Resource homepage;
+	protected static final String HOMEPAGE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getHomepage() <em>Homepage</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getHomepage()
+	 * @generated
+	 * @ordered
+	 */
+	protected String homepage = HOMEPAGE_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -153,7 +161,7 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 */
 	public EList<Catalog> getCatalog() {
 		if (catalog == null) {
-			catalog = new EObjectContainmentEList<Catalog>(Catalog.class, this, DcatPackage.CATALOG__CATALOG);
+			catalog = new EObjectResolvingEList<Catalog>(Catalog.class, this, DcatPackage.CATALOG__CATALOG);
 		}
 		return catalog;
 	}
@@ -175,9 +183,9 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<DatasetContainer> getDataset() {
+	public EList<Dataset> getDataset() {
 		if (dataset == null) {
-			dataset = new EObjectContainmentEList<DatasetContainer>(DatasetContainer.class, this, DcatPackage.CATALOG__DATASET);
+			dataset = new EObjectResolvingEList<Dataset>(Dataset.class, this, DcatPackage.CATALOG__DATASET);
 		}
 		return dataset;
 	}
@@ -189,7 +197,7 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 */
 	public EList<DataService> getService() {
 		if (service == null) {
-			service = new EObjectContainmentEList<DataService>(DataService.class, this, DcatPackage.CATALOG__SERVICE);
+			service = new EObjectResolvingEList<DataService>(DataService.class, this, DcatPackage.CATALOG__SERVICE);
 		}
 		return service;
 	}
@@ -199,9 +207,9 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<ConceptScheme> getThemeTaxonomy() {
+	public EList<String> getThemeTaxonomy() {
 		if (themeTaxonomy == null) {
-			themeTaxonomy = new EObjectContainmentEList<ConceptScheme>(ConceptScheme.class, this, DcatPackage.CATALOG__THEME_TAXONOMY);
+			themeTaxonomy = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.CATALOG__THEME_TAXONOMY);
 		}
 		return themeTaxonomy;
 	}
@@ -211,9 +219,9 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getHasPart() {
+	public EList<String> getHasPart() {
 		if (hasPart == null) {
-			hasPart = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.CATALOG__HAS_PART);
+			hasPart = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.CATALOG__HAS_PART);
 		}
 		return hasPart;
 	}
@@ -223,7 +231,7 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Resource getHomepage() {
+	public String getHomepage() {
 		return homepage;
 	}
 
@@ -232,33 +240,11 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetHomepage(Resource newHomepage, NotificationChain msgs) {
-		Resource oldHomepage = homepage;
+	public void setHomepage(String newHomepage) {
+		String oldHomepage = homepage;
 		homepage = newHomepage;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG__HOMEPAGE, oldHomepage, newHomepage);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setHomepage(Resource newHomepage) {
-		if (newHomepage != homepage) {
-			NotificationChain msgs = null;
-			if (homepage != null)
-				msgs = ((InternalEObject)homepage).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.CATALOG__HOMEPAGE, null, msgs);
-			if (newHomepage != null)
-				msgs = ((InternalEObject)newHomepage).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.CATALOG__HOMEPAGE, null, msgs);
-			msgs = basicSetHomepage(newHomepage, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG__HOMEPAGE, newHomepage, newHomepage));
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG__HOMEPAGE, oldHomepage, homepage));
 	}
 
 	/**
@@ -269,20 +255,8 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case DcatPackage.CATALOG__CATALOG:
-				return ((InternalEList<?>)getCatalog()).basicRemove(otherEnd, msgs);
 			case DcatPackage.CATALOG__RECORD:
 				return ((InternalEList<?>)getRecord()).basicRemove(otherEnd, msgs);
-			case DcatPackage.CATALOG__DATASET:
-				return ((InternalEList<?>)getDataset()).basicRemove(otherEnd, msgs);
-			case DcatPackage.CATALOG__SERVICE:
-				return ((InternalEList<?>)getService()).basicRemove(otherEnd, msgs);
-			case DcatPackage.CATALOG__THEME_TAXONOMY:
-				return ((InternalEList<?>)getThemeTaxonomy()).basicRemove(otherEnd, msgs);
-			case DcatPackage.CATALOG__HAS_PART:
-				return ((InternalEList<?>)getHasPart()).basicRemove(otherEnd, msgs);
-			case DcatPackage.CATALOG__HOMEPAGE:
-				return basicSetHomepage(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -332,7 +306,7 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 				return;
 			case DcatPackage.CATALOG__DATASET:
 				getDataset().clear();
-				getDataset().addAll((Collection<? extends DatasetContainer>)newValue);
+				getDataset().addAll((Collection<? extends Dataset>)newValue);
 				return;
 			case DcatPackage.CATALOG__SERVICE:
 				getService().clear();
@@ -340,14 +314,14 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 				return;
 			case DcatPackage.CATALOG__THEME_TAXONOMY:
 				getThemeTaxonomy().clear();
-				getThemeTaxonomy().addAll((Collection<? extends ConceptScheme>)newValue);
+				getThemeTaxonomy().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.CATALOG__HAS_PART:
 				getHasPart().clear();
-				getHasPart().addAll((Collection<? extends Resource>)newValue);
+				getHasPart().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.CATALOG__HOMEPAGE:
-				setHomepage((Resource)newValue);
+				setHomepage((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -380,7 +354,7 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 				getHasPart().clear();
 				return;
 			case DcatPackage.CATALOG__HOMEPAGE:
-				setHomepage((Resource)null);
+				setHomepage(HOMEPAGE_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -407,9 +381,29 @@ public class CatalogImpl extends DatasetImpl implements Catalog {
 			case DcatPackage.CATALOG__HAS_PART:
 				return hasPart != null && !hasPart.isEmpty();
 			case DcatPackage.CATALOG__HOMEPAGE:
-				return homepage != null;
+				return HOMEPAGE_EDEFAULT == null ? homepage != null : !HOMEPAGE_EDEFAULT.equals(homepage);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (themeTaxonomy: ");
+		result.append(themeTaxonomy);
+		result.append(", hasPart: ");
+		result.append(hasPart);
+		result.append(", homepage: ");
+		result.append(homepage);
+		result.append(')');
+		return result.toString();
 	}
 
 } //CatalogImpl

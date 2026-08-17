@@ -112,50 +112,21 @@ public class RdfValidator extends EObjectValidator {
 	@Override
 	protected boolean validate(int classifierID, Object value, DiagnosticChain diagnostics, Map<Object, Object> context) {
 		switch (classifierID) {
-			case RdfPackage.DATE_LITERAL:
-				return validateDateLiteral((DateLiteral)value, diagnostics, context);
 			case RdfPackage.DATE_OR_DATE_TIME_LITERAL:
 				return validateDateOrDateTimeLiteral((DateOrDateTimeLiteral)value, diagnostics, context);
-			case RdfPackage.DATE_TIME_LITERAL:
-				return validateDateTimeLiteral((DateTimeLiteral)value, diagnostics, context);
-			case RdfPackage.OBJECT_TYPE:
-				return validateObjectType((ObjectType)value, diagnostics, context);
 			case RdfPackage.PLAIN_LITERAL:
 				return validatePlainLiteral((PlainLiteral)value, diagnostics, context);
-			case RdfPackage.PREDICATE_TYPE:
-				return validatePredicateType((PredicateType)value, diagnostics, context);
-			case RdfPackage.RESOURCE:
-				return validateResource((Resource)value, diagnostics, context);
-			case RdfPackage.STATEMENT:
-				return validateStatement((Statement)value, diagnostics, context);
-			case RdfPackage.STATEMENT_TYPE:
-				return validateStatementType((StatementType)value, diagnostics, context);
-			case RdfPackage.SUBJECT_TYPE:
-				return validateSubjectType((SubjectType)value, diagnostics, context);
 			case RdfPackage.TYPED_LITERAL:
 				return validateTypedLiteral((TypedLiteral)value, diagnostics, context);
-			case RdfPackage.RDF_ROOT:
-				return validateRDFRoot((RDFRoot)value, diagnostics, context);
-			case RdfPackage.DESCRIPTION:
-				return validateDescription((Description)value, diagnostics, context);
-			case RdfPackage.DATATYPE_TYPE:
-				return validateDatatypeType((DatatypeType)value, diagnostics, context);
-			case RdfPackage.DATATYPE_TYPE_OBJECT:
-				return validateDatatypeTypeObject((DatatypeType)value, diagnostics, context);
+			case RdfPackage.IDENTIFIED_RESOURCE:
+				return validateIdentifiedResource((IdentifiedResource)value, diagnostics, context);
+			case RdfPackage.DATATYPE:
+				return validateDatatype((Datatype)value, diagnostics, context);
 			case RdfPackage.DATE_OR_DATE_TIME:
 				return validateDateOrDateTime((XMLGregorianCalendar)value, diagnostics, context);
 			default:
 				return true;
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateDateLiteral(DateLiteral dateLiteral, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(dateLiteral, diagnostics, context);
 	}
 
 	/**
@@ -172,71 +143,8 @@ public class RdfValidator extends EObjectValidator {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public boolean validateDateTimeLiteral(DateTimeLiteral dateTimeLiteral, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(dateTimeLiteral, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateObjectType(ObjectType objectType, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(objectType, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public boolean validatePlainLiteral(PlainLiteral plainLiteral, DiagnosticChain diagnostics, Map<Object, Object> context) {
 		return validate_EveryDefaultConstraint(plainLiteral, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validatePredicateType(PredicateType predicateType, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(predicateType, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateResource(Resource resource, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(resource, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateStatement(Statement statement, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(statement, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateStatementType(StatementType statementType, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(statementType, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateSubjectType(SubjectType subjectType, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(subjectType, diagnostics, context);
 	}
 
 	/**
@@ -253,8 +161,8 @@ public class RdfValidator extends EObjectValidator {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public boolean validateRDFRoot(RDFRoot rdfRoot, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(rdfRoot, diagnostics, context);
+	public boolean validateIdentifiedResource(IdentifiedResource identifiedResource, DiagnosticChain diagnostics, Map<Object, Object> context) {
+		return validate_EveryDefaultConstraint(identifiedResource, diagnostics, context);
 	}
 
 	/**
@@ -262,25 +170,7 @@ public class RdfValidator extends EObjectValidator {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public boolean validateDescription(Description description, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return validate_EveryDefaultConstraint(description, diagnostics, context);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateDatatypeType(DatatypeType datatypeType, DiagnosticChain diagnostics, Map<Object, Object> context) {
-		return true;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public boolean validateDatatypeTypeObject(DatatypeType datatypeTypeObject, DiagnosticChain diagnostics, Map<Object, Object> context) {
+	public boolean validateDatatype(Datatype datatype, DiagnosticChain diagnostics, Map<Object, Object> context) {
 		return true;
 	}
 

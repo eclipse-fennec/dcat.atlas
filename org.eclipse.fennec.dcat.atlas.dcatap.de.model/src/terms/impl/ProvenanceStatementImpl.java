@@ -12,17 +12,26 @@
  */
 package terms.impl;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
+import rdf.PlainLiteral;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 import terms.ProvenanceStatement;
-import terms.ProvenanceStatementType;
 import terms.TermsPackage;
 
 /**
@@ -33,21 +42,42 @@ import terms.TermsPackage;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link terms.impl.ProvenanceStatementImpl#getProvenanceStatement <em>Provenance Statement</em>}</li>
+ *   <li>{@link terms.impl.ProvenanceStatementImpl#getDescription <em>Description</em>}</li>
+ *   <li>{@link terms.impl.ProvenanceStatementImpl#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implements ProvenanceStatement {
+public class ProvenanceStatementImpl extends IdentifiedResourceImpl implements ProvenanceStatement {
 	/**
-	 * The cached value of the '{@link #getProvenanceStatement() <em>Provenance Statement</em>}' containment reference.
+	 * The cached value of the '{@link #getDescription() <em>Description</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getProvenanceStatement()
+	 * @see #getDescription()
 	 * @generated
 	 * @ordered
 	 */
-	protected ProvenanceStatementType provenanceStatement;
+	protected EList<PlainLiteral> description;
+
+	/**
+	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NODE_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -73,8 +103,11 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public ProvenanceStatementType getProvenanceStatement() {
-		return provenanceStatement;
+	public EList<PlainLiteral> getDescription() {
+		if (description == null) {
+			description = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.PROVENANCE_STATEMENT__DESCRIPTION);
+		}
+		return description;
 	}
 
 	/**
@@ -82,14 +115,8 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetProvenanceStatement(ProvenanceStatementType newProvenanceStatement, NotificationChain msgs) {
-		ProvenanceStatementType oldProvenanceStatement = provenanceStatement;
-		provenanceStatement = newProvenanceStatement;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT, oldProvenanceStatement, newProvenanceStatement);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
+	public String getNodeID() {
+		return nodeID;
 	}
 
 	/**
@@ -97,18 +124,11 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setProvenanceStatement(ProvenanceStatementType newProvenanceStatement) {
-		if (newProvenanceStatement != provenanceStatement) {
-			NotificationChain msgs = null;
-			if (provenanceStatement != null)
-				msgs = ((InternalEObject)provenanceStatement).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT, null, msgs);
-			if (newProvenanceStatement != null)
-				msgs = ((InternalEObject)newProvenanceStatement).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT, null, msgs);
-			msgs = basicSetProvenanceStatement(newProvenanceStatement, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT, newProvenanceStatement, newProvenanceStatement));
+	public void setNodeID(String newNodeID) {
+		String oldNodeID = nodeID;
+		nodeID = newNodeID;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.PROVENANCE_STATEMENT__NODE_ID, oldNodeID, nodeID));
 	}
 
 	/**
@@ -119,8 +139,8 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT:
-				return basicSetProvenanceStatement(null, msgs);
+			case TermsPackage.PROVENANCE_STATEMENT__DESCRIPTION:
+				return ((InternalEList<?>)getDescription()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -133,8 +153,10 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT:
-				return getProvenanceStatement();
+			case TermsPackage.PROVENANCE_STATEMENT__DESCRIPTION:
+				return getDescription();
+			case TermsPackage.PROVENANCE_STATEMENT__NODE_ID:
+				return getNodeID();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -144,11 +166,16 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT:
-				setProvenanceStatement((ProvenanceStatementType)newValue);
+			case TermsPackage.PROVENANCE_STATEMENT__DESCRIPTION:
+				getDescription().clear();
+				getDescription().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.PROVENANCE_STATEMENT__NODE_ID:
+				setNodeID((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -162,8 +189,11 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT:
-				setProvenanceStatement((ProvenanceStatementType)null);
+			case TermsPackage.PROVENANCE_STATEMENT__DESCRIPTION:
+				getDescription().clear();
+				return;
+			case TermsPackage.PROVENANCE_STATEMENT__NODE_ID:
+				setNodeID(NODE_ID_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -177,10 +207,28 @@ public class ProvenanceStatementImpl extends MinimalEObjectImpl.Container implem
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case TermsPackage.PROVENANCE_STATEMENT__PROVENANCE_STATEMENT:
-				return provenanceStatement != null;
+			case TermsPackage.PROVENANCE_STATEMENT__DESCRIPTION:
+				return description != null && !description.isEmpty();
+			case TermsPackage.PROVENANCE_STATEMENT__NODE_ID:
+				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (nodeID: ");
+		result.append(nodeID);
+		result.append(')');
+		return result.toString();
 	}
 
 } //ProvenanceStatementImpl

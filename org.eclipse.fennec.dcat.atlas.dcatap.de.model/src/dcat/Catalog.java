@@ -16,10 +16,6 @@ import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import rdf.Resource;
-
-import skos.ConceptScheme;
-
 /**
  * <!-- begin-user-doc -->
  * A representation of the model object '<em><b>Catalog</b></em>'.
@@ -54,14 +50,13 @@ import skos.ConceptScheme;
 @ProviderType
 public interface Catalog extends Dataset {
 	/**
-	 * Returns the value of the '<em><b>Catalog</b></em>' containment reference list.
+	 * Returns the value of the '<em><b>Catalog</b></em>' reference list.
 	 * The list contents are of type {@link dcat.Catalog}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Catalog</em>' containment reference list.
+	 * @return the value of the '<em>Catalog</em>' reference list.
 	 * @see dcat.DcatPackage#getCatalog_Catalog()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='catalog' namespace='##targetNamespace'"
+	 * @model extendedMetaData="kind='element' name='catalog' namespace='##targetNamespace'"
 	 * @generated
 	 */
 	EList<Catalog> getCatalog();
@@ -80,78 +75,76 @@ public interface Catalog extends Dataset {
 	EList<CatalogRecord> getRecord();
 
 	/**
-	 * Returns the value of the '<em><b>Dataset</b></em>' containment reference list.
-	 * The list contents are of type {@link dcat.DatasetContainer}.
+	 * Returns the value of the '<em><b>Dataset</b></em>' reference list.
+	 * The list contents are of type {@link dcat.Dataset}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Dataset</em>' containment reference list.
+	 * @return the value of the '<em>Dataset</em>' reference list.
 	 * @see dcat.DcatPackage#getCatalog_Dataset()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='dataset' namespace='##targetNamespace'"
+	 * @model extendedMetaData="kind='element' name='dataset' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<DatasetContainer> getDataset();
+	EList<Dataset> getDataset();
 
 	/**
-	 * Returns the value of the '<em><b>Service</b></em>' containment reference list.
+	 * Returns the value of the '<em><b>Service</b></em>' reference list.
 	 * The list contents are of type {@link dcat.DataService}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Service</em>' containment reference list.
+	 * @return the value of the '<em>Service</em>' reference list.
 	 * @see dcat.DcatPackage#getCatalog_Service()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='service' namespace='##targetNamespace'"
+	 * @model extendedMetaData="kind='element' name='service' namespace='##targetNamespace'"
 	 * @generated
 	 */
 	EList<DataService> getService();
 
 	/**
-	 * Returns the value of the '<em><b>Theme Taxonomy</b></em>' containment reference list.
-	 * The list contents are of type {@link skos.ConceptScheme}.
+	 * Returns the value of the '<em><b>Theme Taxonomy</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Theme Taxonomy</em>' containment reference list.
+	 * @return the value of the '<em>Theme Taxonomy</em>' attribute list.
 	 * @see dcat.DcatPackage#getCatalog_ThemeTaxonomy()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='themeTaxonomy' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<ConceptScheme> getThemeTaxonomy();
+	EList<String> getThemeTaxonomy();
 
 	/**
-	 * Returns the value of the '<em><b>Has Part</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
+	 * Returns the value of the '<em><b>Has Part</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Has Part</em>' containment reference list.
+	 * @return the value of the '<em>Has Part</em>' attribute list.
 	 * @see dcat.DcatPackage#getCatalog_HasPart()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='hasPart' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Resource> getHasPart();
+	EList<String> getHasPart();
 
 	/**
-	 * Returns the value of the '<em><b>Homepage</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Homepage</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Homepage</em>' containment reference.
-	 * @see #setHomepage(Resource)
+	 * @return the value of the '<em>Homepage</em>' attribute.
+	 * @see #setHomepage(String)
 	 * @see dcat.DcatPackage#getCatalog_Homepage()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='homepage' namespace='http://xmlns.com/foaf/0.1/'"
 	 * @generated
 	 */
-	Resource getHomepage();
+	String getHomepage();
 
 	/**
-	 * Sets the value of the '{@link dcat.Catalog#getHomepage <em>Homepage</em>}' containment reference.
+	 * Sets the value of the '{@link dcat.Catalog#getHomepage <em>Homepage</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Homepage</em>' containment reference.
+	 * @param value the new value of the '<em>Homepage</em>' attribute.
 	 * @see #getHomepage()
 	 * @generated
 	 */
-	void setHomepage(Resource value);
+	void setHomepage(String value);
 
 } // Catalog

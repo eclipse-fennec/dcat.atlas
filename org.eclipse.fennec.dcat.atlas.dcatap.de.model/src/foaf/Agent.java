@@ -12,9 +12,12 @@
  */
 package foaf;
 
-import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.IdentifiedResource;
+import rdf.PlainLiteral;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,9 +28,11 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link foaf.Agent#getAgent <em>Agent</em>}</li>
- *   <li>{@link foaf.Agent#getOrganization <em>Organization</em>}</li>
- *   <li>{@link foaf.Agent#getPerson <em>Person</em>}</li>
+ *   <li>{@link foaf.Agent#getName <em>Name</em>}</li>
+ *   <li>{@link foaf.Agent#getType <em>Type</em>}</li>
+ *   <li>{@link foaf.Agent#getNodeID <em>Node ID</em>}</li>
+ *   <li>{@link foaf.Agent#getPhone <em>Phone</em>}</li>
+ *   <li>{@link foaf.Agent#getMbox <em>Mbox</em>}</li>
  * </ul>
  *
  * @see foaf.FoafPackage#getAgent()
@@ -35,74 +40,110 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface Agent extends EObject {
+public interface Agent extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Agent</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Name</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Agent</em>' containment reference.
-	 * @see #setAgent(AgentType)
-	 * @see foaf.FoafPackage#getAgent_Agent()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='Agent' namespace='##targetNamespace'"
+	 * @return the value of the '<em>Name</em>' containment reference list.
+	 * @see foaf.FoafPackage#getAgent_Name()
+	 * @model containment="true" required="true"
+	 *        extendedMetaData="kind='element' name='name' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	AgentType getAgent();
+	EList<PlainLiteral> getName();
 
 	/**
-	 * Sets the value of the '{@link foaf.Agent#getAgent <em>Agent</em>}' containment reference.
+	 * Returns the value of the '<em><b>Type</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Agent</em>' containment reference.
-	 * @see #getAgent()
+	 * @return the value of the '<em>Type</em>' attribute.
+	 * @see #setType(String)
+	 * @see foaf.FoafPackage#getAgent_Type()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='type' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	void setAgent(AgentType value);
+	String getType();
 
 	/**
-	 * Returns the value of the '<em><b>Organization</b></em>' containment reference.
+	 * Sets the value of the '{@link foaf.Agent#getType <em>Type</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Organization</em>' containment reference.
-	 * @see #setOrganization(Organization)
-	 * @see foaf.FoafPackage#getAgent_Organization()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='Organization' namespace='##targetNamespace'"
+	 * @param value the new value of the '<em>Type</em>' attribute.
+	 * @see #getType()
 	 * @generated
 	 */
-	Organization getOrganization();
+	void setType(String value);
 
 	/**
-	 * Sets the value of the '{@link foaf.Agent#getOrganization <em>Organization</em>}' containment reference.
+	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Organization</em>' containment reference.
-	 * @see #getOrganization()
+	 * @return the value of the '<em>Node ID</em>' attribute.
+	 * @see #setNodeID(String)
+	 * @see foaf.FoafPackage#getAgent_NodeID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.NCName"
+	 *        extendedMetaData="kind='attribute' name='nodeID' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
 	 * @generated
 	 */
-	void setOrganization(Organization value);
+	String getNodeID();
 
 	/**
-	 * Returns the value of the '<em><b>Person</b></em>' containment reference.
+	 * Sets the value of the '{@link foaf.Agent#getNodeID <em>Node ID</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Person</em>' containment reference.
-	 * @see #setPerson(Person)
-	 * @see foaf.FoafPackage#getAgent_Person()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='Person' namespace='##targetNamespace'"
+	 * @param value the new value of the '<em>Node ID</em>' attribute.
+	 * @see #getNodeID()
 	 * @generated
 	 */
-	Person getPerson();
+	void setNodeID(String value);
 
 	/**
-	 * Sets the value of the '{@link foaf.Agent#getPerson <em>Person</em>}' containment reference.
+	 * Returns the value of the '<em><b>Phone</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Person</em>' containment reference.
-	 * @see #getPerson()
+	 * @return the value of the '<em>Phone</em>' attribute.
+	 * @see #setPhone(String)
+	 * @see foaf.FoafPackage#getAgent_Phone()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='phone' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	void setPerson(Person value);
+	String getPhone();
+
+	/**
+	 * Sets the value of the '{@link foaf.Agent#getPhone <em>Phone</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Phone</em>' attribute.
+	 * @see #getPhone()
+	 * @generated
+	 */
+	void setPhone(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Mbox</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Mbox</em>' attribute.
+	 * @see #setMbox(String)
+	 * @see foaf.FoafPackage#getAgent_Mbox()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='mbox' namespace='##targetNamespace'"
+	 * @generated
+	 */
+	String getMbox();
+
+	/**
+	 * Sets the value of the '{@link foaf.Agent#getMbox <em>Mbox</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Mbox</em>' attribute.
+	 * @see #getMbox()
+	 * @generated
+	 */
+	void setMbox(String value);
 
 } // Agent

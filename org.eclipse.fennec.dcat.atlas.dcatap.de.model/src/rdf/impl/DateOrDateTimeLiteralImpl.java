@@ -21,7 +21,7 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
-import rdf.DatatypeType;
+import rdf.Datatype;
 import rdf.DateOrDateTimeLiteral;
 import rdf.RdfPackage;
 
@@ -68,7 +68,7 @@ public class DateOrDateTimeLiteralImpl extends MinimalEObjectImpl.Container impl
 	 * @generated
 	 * @ordered
 	 */
-	protected static final DatatypeType DATATYPE_EDEFAULT = DatatypeType.HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE;
+	protected static final Datatype DATATYPE_EDEFAULT = Datatype.HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE;
 
 	/**
 	 * The cached value of the '{@link #getDatatype() <em>Datatype</em>}' attribute.
@@ -78,7 +78,7 @@ public class DateOrDateTimeLiteralImpl extends MinimalEObjectImpl.Container impl
 	 * @generated
 	 * @ordered
 	 */
-	protected DatatypeType datatype = DATATYPE_EDEFAULT;
+	protected Datatype datatype = DATATYPE_EDEFAULT;
 
 	/**
 	 * This is true if the Datatype attribute has been set.
@@ -134,7 +134,7 @@ public class DateOrDateTimeLiteralImpl extends MinimalEObjectImpl.Container impl
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public DatatypeType getDatatype() {
+	public Datatype getDatatype() {
 		return datatype;
 	}
 
@@ -143,8 +143,8 @@ public class DateOrDateTimeLiteralImpl extends MinimalEObjectImpl.Container impl
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setDatatype(DatatypeType newDatatype) {
-		DatatypeType oldDatatype = datatype;
+	public void setDatatype(Datatype newDatatype) {
+		Datatype oldDatatype = datatype;
 		datatype = newDatatype == null ? DATATYPE_EDEFAULT : newDatatype;
 		boolean oldDatatypeESet = datatypeESet;
 		datatypeESet = true;
@@ -158,7 +158,7 @@ public class DateOrDateTimeLiteralImpl extends MinimalEObjectImpl.Container impl
 	 * @generated
 	 */
 	public void unsetDatatype() {
-		DatatypeType oldDatatype = datatype;
+		Datatype oldDatatype = datatype;
 		boolean oldDatatypeESet = datatypeESet;
 		datatype = DATATYPE_EDEFAULT;
 		datatypeESet = false;
@@ -203,7 +203,7 @@ public class DateOrDateTimeLiteralImpl extends MinimalEObjectImpl.Container impl
 				setValue((XMLGregorianCalendar)newValue);
 				return;
 			case RdfPackage.DATE_OR_DATE_TIME_LITERAL__DATATYPE:
-				setDatatype((DatatypeType)newValue);
+				setDatatype((Datatype)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);

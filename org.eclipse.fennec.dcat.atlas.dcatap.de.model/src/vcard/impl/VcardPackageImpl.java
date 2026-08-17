@@ -20,21 +20,9 @@ import dcat.DcatPackage;
 
 import dcat.impl.DcatPackageImpl;
 
-import dcatde.DcatDEPackage;
-
-import dcatde.impl.DcatDEPackageImpl;
-
 import foaf.FoafPackage;
 
 import foaf.impl.FoafPackageImpl;
-
-import locn.LocnPackage;
-
-import locn.impl.LocnPackageImpl;
-
-import odrl.OdrlPackage;
-
-import odrl.impl.OdrlPackageImpl;
 
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -45,25 +33,9 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage;
 
-import owl.OwlPackage;
-
-import owl.impl.OwlPackageImpl;
-
-import prov.ProvPackage;
-
-import prov.impl.ProvPackageImpl;
-
 import rdf.RdfPackage;
 
 import rdf.impl.RdfPackageImpl;
-
-import schema.SchemaPackage;
-
-import schema.impl.SchemaPackageImpl;
-
-import skos.SkosPackage;
-
-import skos.impl.SkosPackageImpl;
 
 import spdx.SpdxPackage;
 
@@ -74,10 +46,7 @@ import terms.TermsPackage;
 import terms.impl.TermsPackageImpl;
 
 import vcard.Address;
-import vcard.AddressType;
-import vcard.DocumentRoot;
 import vcard.Organization;
-import vcard.OrganizationType;
 import vcard.VcardFactory;
 import vcard.VcardPackage;
 
@@ -100,28 +69,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass addressTypeEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass organizationEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass organizationTypeEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass documentRootEClass = null;
 
 	/**
 	 * Creates an instance of the model <b>Package</b>, registered with
@@ -179,58 +127,30 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 		FoafPackageImpl theFoafPackage = (FoafPackageImpl)(registeredPackage instanceof FoafPackageImpl ? registeredPackage : FoafPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
 		RdfPackageImpl theRdfPackage = (RdfPackageImpl)(registeredPackage instanceof RdfPackageImpl ? registeredPackage : RdfPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SkosPackage.eNS_URI);
-		SkosPackageImpl theSkosPackage = (SkosPackageImpl)(registeredPackage instanceof SkosPackageImpl ? registeredPackage : SkosPackage.eINSTANCE);
+		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
+		SpdxPackageImpl theSpdxPackage = (SpdxPackageImpl)(registeredPackage instanceof SpdxPackageImpl ? registeredPackage : SpdxPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(TermsPackage.eNS_URI);
 		TermsPackageImpl theTermsPackage = (TermsPackageImpl)(registeredPackage instanceof TermsPackageImpl ? registeredPackage : TermsPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(AdmsPackage.eNS_URI);
 		AdmsPackageImpl theAdmsPackage = (AdmsPackageImpl)(registeredPackage instanceof AdmsPackageImpl ? registeredPackage : AdmsPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(LocnPackage.eNS_URI);
-		LocnPackageImpl theLocnPackage = (LocnPackageImpl)(registeredPackage instanceof LocnPackageImpl ? registeredPackage : LocnPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OdrlPackage.eNS_URI);
-		OdrlPackageImpl theOdrlPackage = (OdrlPackageImpl)(registeredPackage instanceof OdrlPackageImpl ? registeredPackage : OdrlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OwlPackage.eNS_URI);
-		OwlPackageImpl theOwlPackage = (OwlPackageImpl)(registeredPackage instanceof OwlPackageImpl ? registeredPackage : OwlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(ProvPackage.eNS_URI);
-		ProvPackageImpl theProvPackage = (ProvPackageImpl)(registeredPackage instanceof ProvPackageImpl ? registeredPackage : ProvPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SchemaPackage.eNS_URI);
-		SchemaPackageImpl theSchemaPackage = (SchemaPackageImpl)(registeredPackage instanceof SchemaPackageImpl ? registeredPackage : SchemaPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(DcatDEPackage.eNS_URI);
-		DcatDEPackageImpl theDcatDEPackage = (DcatDEPackageImpl)(registeredPackage instanceof DcatDEPackageImpl ? registeredPackage : DcatDEPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
-		SpdxPackageImpl theSpdxPackage = (SpdxPackageImpl)(registeredPackage instanceof SpdxPackageImpl ? registeredPackage : SpdxPackage.eINSTANCE);
 
 		// Create package meta-data objects
 		theVcardPackage.createPackageContents();
 		theDcatPackage.createPackageContents();
 		theFoafPackage.createPackageContents();
 		theRdfPackage.createPackageContents();
-		theSkosPackage.createPackageContents();
+		theSpdxPackage.createPackageContents();
 		theTermsPackage.createPackageContents();
 		theAdmsPackage.createPackageContents();
-		theLocnPackage.createPackageContents();
-		theOdrlPackage.createPackageContents();
-		theOwlPackage.createPackageContents();
-		theProvPackage.createPackageContents();
-		theSchemaPackage.createPackageContents();
-		theDcatDEPackage.createPackageContents();
-		theSpdxPackage.createPackageContents();
 
 		// Initialize created meta-data
 		theVcardPackage.initializePackageContents();
 		theDcatPackage.initializePackageContents();
 		theFoafPackage.initializePackageContents();
 		theRdfPackage.initializePackageContents();
-		theSkosPackage.initializePackageContents();
+		theSpdxPackage.initializePackageContents();
 		theTermsPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
-		theLocnPackage.initializePackageContents();
-		theOdrlPackage.initializePackageContents();
-		theOwlPackage.initializePackageContents();
-		theProvPackage.initializePackageContents();
-		theSchemaPackage.initializePackageContents();
-		theDcatDEPackage.initializePackageContents();
-		theSpdxPackage.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
 		theVcardPackage.freeze();
@@ -254,8 +174,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getAddress_Address() {
-		return (EReference)addressEClass.getEStructuralFeatures().get(0);
+	public EAttribute getAddress_StreetAddress() {
+		return (EAttribute)addressEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -263,8 +183,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EClass getAddressType() {
-		return addressTypeEClass;
+	public EAttribute getAddress_Locality() {
+		return (EAttribute)addressEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -272,8 +192,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getAddressType_StreetAddress() {
-		return (EAttribute)addressTypeEClass.getEStructuralFeatures().get(0);
+	public EAttribute getAddress_PostalCode() {
+		return (EAttribute)addressEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -281,8 +201,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getAddressType_Locality() {
-		return (EAttribute)addressTypeEClass.getEStructuralFeatures().get(1);
+	public EAttribute getAddress_CountryName() {
+		return (EAttribute)addressEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -290,35 +210,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getAddressType_PostalCode() {
-		return (EAttribute)addressTypeEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getAddressType_CountryName() {
-		return (EAttribute)addressTypeEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getAddressType_About() {
-		return (EAttribute)addressTypeEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getAddressType_NodeID() {
-		return (EAttribute)addressTypeEClass.getEStructuralFeatures().get(5);
+	public EAttribute getAddress_NodeID() {
+		return (EAttribute)addressEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -335,8 +228,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getOrganization_Organization() {
-		return (EReference)organizationEClass.getEStructuralFeatures().get(0);
+	public EAttribute getOrganization_Fn() {
+		return (EAttribute)organizationEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -344,8 +237,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getOrganization_Individual() {
-		return (EReference)organizationEClass.getEStructuralFeatures().get(1);
+	public EAttribute getOrganization_OrganizationName() {
+		return (EAttribute)organizationEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -353,8 +246,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EClass getOrganizationType() {
-		return organizationTypeEClass;
+	public EReference getOrganization_HasAddress() {
+		return (EReference)organizationEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -362,8 +255,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getOrganizationType_Fn() {
-		return (EAttribute)organizationTypeEClass.getEStructuralFeatures().get(0);
+	public EAttribute getOrganization_HasTelephone() {
+		return (EAttribute)organizationEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -371,8 +264,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getOrganizationType_OrganizationName() {
-		return (EAttribute)organizationTypeEClass.getEStructuralFeatures().get(1);
+	public EAttribute getOrganization_NodeID() {
+		return (EAttribute)organizationEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -380,8 +273,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getOrganizationType_HasAddress() {
-		return (EReference)organizationTypeEClass.getEStructuralFeatures().get(2);
+	public EAttribute getOrganization_HasEmail() {
+		return (EAttribute)organizationEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -389,89 +282,8 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getOrganizationType_HasEmail() {
-		return (EReference)organizationTypeEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getOrganizationType_HasURL() {
-		return (EReference)organizationTypeEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getOrganizationType_HasTelephone() {
-		return (EAttribute)organizationTypeEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getOrganizationType_About() {
-		return (EAttribute)organizationTypeEClass.getEStructuralFeatures().get(6);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getOrganizationType_NodeID() {
-		return (EAttribute)organizationTypeEClass.getEStructuralFeatures().get(7);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EClass getDocumentRoot() {
-		return documentRootEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getDocumentRoot_Mixed() {
-		return (EAttribute)documentRootEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_XMLNSPrefixMap() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_XSISchemaLocation() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_HasAddress() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(3);
+	public EAttribute getOrganization_HasURL() {
+		return (EAttribute)organizationEClass.getEStructuralFeatures().get(6);
 	}
 
 	/**
@@ -503,35 +315,20 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 
 		// Create classes and their features
 		addressEClass = createEClass(ADDRESS);
-		createEReference(addressEClass, ADDRESS__ADDRESS);
-
-		addressTypeEClass = createEClass(ADDRESS_TYPE);
-		createEAttribute(addressTypeEClass, ADDRESS_TYPE__STREET_ADDRESS);
-		createEAttribute(addressTypeEClass, ADDRESS_TYPE__LOCALITY);
-		createEAttribute(addressTypeEClass, ADDRESS_TYPE__POSTAL_CODE);
-		createEAttribute(addressTypeEClass, ADDRESS_TYPE__COUNTRY_NAME);
-		createEAttribute(addressTypeEClass, ADDRESS_TYPE__ABOUT);
-		createEAttribute(addressTypeEClass, ADDRESS_TYPE__NODE_ID);
+		createEAttribute(addressEClass, ADDRESS__STREET_ADDRESS);
+		createEAttribute(addressEClass, ADDRESS__LOCALITY);
+		createEAttribute(addressEClass, ADDRESS__POSTAL_CODE);
+		createEAttribute(addressEClass, ADDRESS__COUNTRY_NAME);
+		createEAttribute(addressEClass, ADDRESS__NODE_ID);
 
 		organizationEClass = createEClass(ORGANIZATION);
-		createEReference(organizationEClass, ORGANIZATION__ORGANIZATION);
-		createEReference(organizationEClass, ORGANIZATION__INDIVIDUAL);
-
-		organizationTypeEClass = createEClass(ORGANIZATION_TYPE);
-		createEAttribute(organizationTypeEClass, ORGANIZATION_TYPE__FN);
-		createEAttribute(organizationTypeEClass, ORGANIZATION_TYPE__ORGANIZATION_NAME);
-		createEReference(organizationTypeEClass, ORGANIZATION_TYPE__HAS_ADDRESS);
-		createEReference(organizationTypeEClass, ORGANIZATION_TYPE__HAS_EMAIL);
-		createEReference(organizationTypeEClass, ORGANIZATION_TYPE__HAS_URL);
-		createEAttribute(organizationTypeEClass, ORGANIZATION_TYPE__HAS_TELEPHONE);
-		createEAttribute(organizationTypeEClass, ORGANIZATION_TYPE__ABOUT);
-		createEAttribute(organizationTypeEClass, ORGANIZATION_TYPE__NODE_ID);
-
-		documentRootEClass = createEClass(DOCUMENT_ROOT);
-		createEAttribute(documentRootEClass, DOCUMENT_ROOT__MIXED);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__XMLNS_PREFIX_MAP);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__XSI_SCHEMA_LOCATION);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__HAS_ADDRESS);
+		createEAttribute(organizationEClass, ORGANIZATION__FN);
+		createEAttribute(organizationEClass, ORGANIZATION__ORGANIZATION_NAME);
+		createEReference(organizationEClass, ORGANIZATION__HAS_ADDRESS);
+		createEAttribute(organizationEClass, ORGANIZATION__HAS_TELEPHONE);
+		createEAttribute(organizationEClass, ORGANIZATION__NODE_ID);
+		createEAttribute(organizationEClass, ORGANIZATION__HAS_EMAIL);
+		createEAttribute(organizationEClass, ORGANIZATION__HAS_URL);
 	}
 
 	/**
@@ -558,46 +355,33 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 		setNsURI(eNS_URI);
 
 		// Obtain other dependent packages
-		XMLTypePackage theXMLTypePackage = (XMLTypePackage)EPackage.Registry.INSTANCE.getEPackage(XMLTypePackage.eNS_URI);
 		RdfPackage theRdfPackage = (RdfPackage)EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
+		XMLTypePackage theXMLTypePackage = (XMLTypePackage)EPackage.Registry.INSTANCE.getEPackage(XMLTypePackage.eNS_URI);
 
 		// Create type parameters
 
 		// Set bounds for type parameters
 
 		// Add supertypes to classes
+		addressEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
+		organizationEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
 
 		// Initialize classes, features, and operations; add parameters
 		initEClass(addressEClass, Address.class, "Address", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getAddress_Address(), this.getAddressType(), null, "address", null, 1, 1, Address.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(addressTypeEClass, AddressType.class, "AddressType", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getAddressType_StreetAddress(), theXMLTypePackage.getString(), "streetAddress", null, 1, 1, AddressType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAddressType_Locality(), theXMLTypePackage.getString(), "locality", null, 1, 1, AddressType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAddressType_PostalCode(), theXMLTypePackage.getString(), "postalCode", null, 1, 1, AddressType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAddressType_CountryName(), theXMLTypePackage.getString(), "countryName", null, 0, 1, AddressType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAddressType_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, AddressType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAddressType_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, AddressType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAddress_StreetAddress(), theXMLTypePackage.getString(), "streetAddress", null, 1, 1, Address.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAddress_Locality(), theXMLTypePackage.getString(), "locality", null, 1, 1, Address.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAddress_PostalCode(), theXMLTypePackage.getString(), "postalCode", null, 1, 1, Address.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAddress_CountryName(), theXMLTypePackage.getString(), "countryName", null, 0, 1, Address.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAddress_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Address.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(organizationEClass, Organization.class, "Organization", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getOrganization_Organization(), this.getOrganizationType(), null, "organization", null, 1, 1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getOrganization_Individual(), this.getOrganizationType(), null, "individual", null, 1, 1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(organizationTypeEClass, OrganizationType.class, "OrganizationType", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getOrganizationType_Fn(), theXMLTypePackage.getString(), "fn", null, 0, 1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrganizationType_OrganizationName(), theXMLTypePackage.getString(), "organizationName", null, 0, 1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getOrganizationType_HasAddress(), this.getAddress(), null, "hasAddress", null, 0, 1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getOrganizationType_HasEmail(), theRdfPackage.getResource(), null, "hasEmail", null, 0, -1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getOrganizationType_HasURL(), theRdfPackage.getResource(), null, "hasURL", null, 0, -1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrganizationType_HasTelephone(), theXMLTypePackage.getAnyURI(), "hasTelephone", null, 0, -1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrganizationType_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getOrganizationType_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, OrganizationType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(documentRootEClass, DocumentRoot.class, "DocumentRoot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getDocumentRoot_Mixed(), ecorePackage.getEFeatureMapEntry(), "mixed", null, 0, -1, null, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_XMLNSPrefixMap(), ecorePackage.getEStringToStringMapEntry(), null, "xMLNSPrefixMap", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_XSISchemaLocation(), ecorePackage.getEStringToStringMapEntry(), null, "xSISchemaLocation", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_HasAddress(), this.getAddress(), null, "hasAddress", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrganization_Fn(), theXMLTypePackage.getString(), "fn", null, 0, 1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrganization_OrganizationName(), theXMLTypePackage.getString(), "organizationName", null, 0, 1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getOrganization_HasAddress(), this.getAddress(), null, "hasAddress", null, 0, 1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrganization_HasTelephone(), theXMLTypePackage.getAnyURI(), "hasTelephone", null, 0, -1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrganization_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrganization_HasEmail(), theXMLTypePackage.getAnyURI(), "hasEmail", null, 0, -1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getOrganization_HasURL(), theXMLTypePackage.getAnyURI(), "hasURL", null, 0, -1, Organization.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Create resource
 		createResource(eNS_URI);
@@ -623,22 +407,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "kind", "elementOnly"
 		   });
 		addAnnotation
-		  (getAddress_Address(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Address",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (addressTypeEClass,
-		   source,
-		   new String[] {
-			   "name", "Address_._type",
-			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getAddressType_StreetAddress(),
+		  (getAddress_StreetAddress(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -646,7 +415,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getAddressType_Locality(),
+		  (getAddress_Locality(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -654,7 +423,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getAddressType_PostalCode(),
+		  (getAddress_PostalCode(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -662,7 +431,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getAddressType_CountryName(),
+		  (getAddress_CountryName(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -670,15 +439,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getAddressType_About(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "about",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		   });
-		addAnnotation
-		  (getAddressType_NodeID(),
+		  (getAddress_NodeID(),
 		   source,
 		   new String[] {
 			   "kind", "attribute",
@@ -693,30 +454,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "kind", "elementOnly"
 		   });
 		addAnnotation
-		  (getOrganization_Organization(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Organization",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getOrganization_Individual(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Individual",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (organizationTypeEClass,
-		   source,
-		   new String[] {
-			   "name", "Organization_._type",
-			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getOrganizationType_Fn(),
+		  (getOrganization_Fn(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -724,7 +462,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getOrganizationType_OrganizationName(),
+		  (getOrganization_OrganizationName(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -732,7 +470,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getOrganizationType_HasAddress(),
+		  (getOrganization_HasAddress(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -740,23 +478,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getOrganizationType_HasEmail(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "hasEmail",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getOrganizationType_HasURL(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "hasURL",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getOrganizationType_HasTelephone(),
+		  (getOrganization_HasTelephone(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -764,15 +486,7 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getOrganizationType_About(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "about",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		   });
-		addAnnotation
-		  (getOrganizationType_NodeID(),
+		  (getOrganization_NodeID(),
 		   source,
 		   new String[] {
 			   "kind", "attribute",
@@ -780,39 +494,19 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 		   });
 		addAnnotation
-		  (documentRootEClass,
-		   source,
-		   new String[] {
-			   "name", "",
-			   "kind", "mixed"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Mixed(),
-		   source,
-		   new String[] {
-			   "kind", "elementWildcard",
-			   "name", ":mixed"
-		   });
-		addAnnotation
-		  (getDocumentRoot_XMLNSPrefixMap(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xmlns:prefix"
-		   });
-		addAnnotation
-		  (getDocumentRoot_XSISchemaLocation(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xsi:schemaLocation"
-		   });
-		addAnnotation
-		  (getDocumentRoot_HasAddress(),
+		  (getOrganization_HasEmail(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "hasAddress",
+			   "name", "hasEmail",
+			   "namespace", "##targetNamespace"
+		   });
+		addAnnotation
+		  (getOrganization_HasURL(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "hasURL",
 			   "namespace", "##targetNamespace"
 		   });
 	}

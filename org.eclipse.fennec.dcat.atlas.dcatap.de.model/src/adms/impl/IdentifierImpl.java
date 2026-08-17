@@ -14,7 +14,6 @@ package adms.impl;
 
 import adms.AdmsPackage;
 import adms.Identifier;
-import adms.IdentifierType;
 
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
@@ -23,7 +22,10 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import rdf.TypedLiteral;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -33,21 +35,21 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link adms.impl.IdentifierImpl#getIdentifier <em>Identifier</em>}</li>
+ *   <li>{@link adms.impl.IdentifierImpl#getNotation <em>Notation</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class IdentifierImpl extends MinimalEObjectImpl.Container implements Identifier {
+public class IdentifierImpl extends IdentifiedResourceImpl implements Identifier {
 	/**
-	 * The cached value of the '{@link #getIdentifier() <em>Identifier</em>}' containment reference.
+	 * The cached value of the '{@link #getNotation() <em>Notation</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getIdentifier()
+	 * @see #getNotation()
 	 * @generated
 	 * @ordered
 	 */
-	protected IdentifierType identifier;
+	protected TypedLiteral notation;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -73,8 +75,8 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public IdentifierType getIdentifier() {
-		return identifier;
+	public TypedLiteral getNotation() {
+		return notation;
 	}
 
 	/**
@@ -82,11 +84,11 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetIdentifier(IdentifierType newIdentifier, NotificationChain msgs) {
-		IdentifierType oldIdentifier = identifier;
-		identifier = newIdentifier;
+	public NotificationChain basicSetNotation(TypedLiteral newNotation, NotificationChain msgs) {
+		TypedLiteral oldNotation = notation;
+		notation = newNotation;
 		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, AdmsPackage.IDENTIFIER__IDENTIFIER, oldIdentifier, newIdentifier);
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, AdmsPackage.IDENTIFIER__NOTATION, oldNotation, newNotation);
 			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
@@ -97,18 +99,18 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setIdentifier(IdentifierType newIdentifier) {
-		if (newIdentifier != identifier) {
+	public void setNotation(TypedLiteral newNotation) {
+		if (newNotation != notation) {
 			NotificationChain msgs = null;
-			if (identifier != null)
-				msgs = ((InternalEObject)identifier).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - AdmsPackage.IDENTIFIER__IDENTIFIER, null, msgs);
-			if (newIdentifier != null)
-				msgs = ((InternalEObject)newIdentifier).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - AdmsPackage.IDENTIFIER__IDENTIFIER, null, msgs);
-			msgs = basicSetIdentifier(newIdentifier, msgs);
+			if (notation != null)
+				msgs = ((InternalEObject)notation).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - AdmsPackage.IDENTIFIER__NOTATION, null, msgs);
+			if (newNotation != null)
+				msgs = ((InternalEObject)newNotation).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - AdmsPackage.IDENTIFIER__NOTATION, null, msgs);
+			msgs = basicSetNotation(newNotation, msgs);
 			if (msgs != null) msgs.dispatch();
 		}
 		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, AdmsPackage.IDENTIFIER__IDENTIFIER, newIdentifier, newIdentifier));
+			eNotify(new ENotificationImpl(this, Notification.SET, AdmsPackage.IDENTIFIER__NOTATION, newNotation, newNotation));
 	}
 
 	/**
@@ -119,8 +121,8 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case AdmsPackage.IDENTIFIER__IDENTIFIER:
-				return basicSetIdentifier(null, msgs);
+			case AdmsPackage.IDENTIFIER__NOTATION:
+				return basicSetNotation(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -133,8 +135,8 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case AdmsPackage.IDENTIFIER__IDENTIFIER:
-				return getIdentifier();
+			case AdmsPackage.IDENTIFIER__NOTATION:
+				return getNotation();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -147,8 +149,8 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case AdmsPackage.IDENTIFIER__IDENTIFIER:
-				setIdentifier((IdentifierType)newValue);
+			case AdmsPackage.IDENTIFIER__NOTATION:
+				setNotation((TypedLiteral)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -162,8 +164,8 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case AdmsPackage.IDENTIFIER__IDENTIFIER:
-				setIdentifier((IdentifierType)null);
+			case AdmsPackage.IDENTIFIER__NOTATION:
+				setNotation((TypedLiteral)null);
 				return;
 		}
 		super.eUnset(featureID);
@@ -177,8 +179,8 @@ public class IdentifierImpl extends MinimalEObjectImpl.Container implements Iden
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case AdmsPackage.IDENTIFIER__IDENTIFIER:
-				return identifier != null;
+			case AdmsPackage.IDENTIFIER__NOTATION:
+				return notation != null;
 		}
 		return super.eIsSet(featureID);
 	}

@@ -149,7 +149,7 @@ import rdf.RdfPackage;
  * @generated
  */
 @ProviderType
-@EPackage(uri = FoafPackage.eNS_URI, genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/foaf.ecore", ecoreSourceLocations = "/model/foaf.ecore")
+@EPackage(uri = FoafPackage.eNS_URI, fingerprint = "fp1:53826c1edeb0d65aac8317ac9bad4f9033ecee9070f9ca418a964bc3c0b72301", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/foaf.ecore", ecoreSourceLocations = "/model/foaf.ecore")
 public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -194,113 +194,31 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	int AGENT = 0;
 
 	/**
-	 * The feature id for the '<em><b>Agent</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT__AGENT = 0;
-
-	/**
-	 * The feature id for the '<em><b>Organization</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT__ORGANIZATION = 1;
-
-	/**
-	 * The feature id for the '<em><b>Person</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT__PERSON = 2;
-
-	/**
-	 * The number of structural features of the '<em>Agent</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT_FEATURE_COUNT = 3;
-
-	/**
-	 * The number of operations of the '<em>Agent</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link foaf.impl.AgentTypeImpl <em>Agent Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see foaf.impl.AgentTypeImpl
-	 * @see foaf.impl.FoafPackageImpl#getAgentType()
-	 * @generated
-	 */
-	int AGENT_TYPE = 1;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT_TYPE__RESOURCE = RdfPackage.RESOURCE__RESOURCE;
-
-	/**
 	 * The feature id for the '<em><b>About</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_TYPE__ABOUT = RdfPackage.RESOURCE__ABOUT;
+	int AGENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
-	 * The feature id for the '<em><b>Name</b></em>' containment reference.
+	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_TYPE__NAME = RdfPackage.RESOURCE_FEATURE_COUNT + 0;
+	int AGENT__NAME = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 0;
 
 	/**
-	 * The feature id for the '<em><b>Type</b></em>' containment reference.
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_TYPE__TYPE = RdfPackage.RESOURCE_FEATURE_COUNT + 1;
-
-	/**
-	 * The feature id for the '<em><b>Phone</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT_TYPE__PHONE = RdfPackage.RESOURCE_FEATURE_COUNT + 2;
-
-	/**
-	 * The feature id for the '<em><b>Mbox</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int AGENT_TYPE__MBOX = RdfPackage.RESOURCE_FEATURE_COUNT + 3;
+	int AGENT__TYPE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 1;
 
 	/**
 	 * The feature id for the '<em><b>Node ID</b></em>' attribute.
@@ -309,25 +227,43 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_TYPE__NODE_ID = RdfPackage.RESOURCE_FEATURE_COUNT + 4;
+	int AGENT__NODE_ID = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 2;
 
 	/**
-	 * The number of structural features of the '<em>Agent Type</em>' class.
+	 * The feature id for the '<em><b>Phone</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_TYPE_FEATURE_COUNT = RdfPackage.RESOURCE_FEATURE_COUNT + 5;
+	int AGENT__PHONE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 3;
 
 	/**
-	 * The number of operations of the '<em>Agent Type</em>' class.
+	 * The feature id for the '<em><b>Mbox</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int AGENT_TYPE_OPERATION_COUNT = RdfPackage.RESOURCE_OPERATION_COUNT + 0;
+	int AGENT__MBOX = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 4;
+
+	/**
+	 * The number of structural features of the '<em>Agent</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AGENT_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 5;
+
+	/**
+	 * The number of operations of the '<em>Agent</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AGENT_OPERATION_COUNT = RdfPackage.IDENTIFIED_RESOURCE_OPERATION_COUNT + 0;
 
 	/**
 	 * The meta object id for the '{@link foaf.impl.DocumentImpl <em>Document</em>}' class.
@@ -337,53 +273,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see foaf.impl.FoafPackageImpl#getDocument()
 	 * @generated
 	 */
-	int DOCUMENT = 2;
-
-	/**
-	 * The feature id for the '<em><b>Document</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT__DOCUMENT = 0;
-
-	/**
-	 * The number of structural features of the '<em>Document</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_FEATURE_COUNT = 1;
-
-	/**
-	 * The number of operations of the '<em>Document</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link foaf.impl.DocumentTypeImpl <em>Document Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see foaf.impl.DocumentTypeImpl
-	 * @see foaf.impl.FoafPackageImpl#getDocumentType()
-	 * @generated
-	 */
-	int DOCUMENT_TYPE = 3;
-
-	/**
-	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_TYPE__NAME = 0;
+	int DOCUMENT = 1;
 
 	/**
 	 * The feature id for the '<em><b>About</b></em>' attribute.
@@ -392,7 +282,16 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DOCUMENT_TYPE__ABOUT = 1;
+	int DOCUMENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DOCUMENT__NAME = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 0;
 
 	/**
 	 * The feature id for the '<em><b>Node ID</b></em>' attribute.
@@ -401,152 +300,25 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DOCUMENT_TYPE__NODE_ID = 2;
+	int DOCUMENT__NODE_ID = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 1;
 
 	/**
-	 * The number of structural features of the '<em>Document Type</em>' class.
+	 * The number of structural features of the '<em>Document</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int DOCUMENT_TYPE_FEATURE_COUNT = 3;
+	int DOCUMENT_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 2;
 
 	/**
-	 * The number of operations of the '<em>Document Type</em>' class.
+	 * The number of operations of the '<em>Document</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int DOCUMENT_TYPE_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link foaf.impl.DocumentRootImpl <em>Document Root</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see foaf.impl.DocumentRootImpl
-	 * @see foaf.impl.FoafPackageImpl#getDocumentRoot()
-	 * @generated
-	 */
-	int DOCUMENT_ROOT = 4;
-
-	/**
-	 * The feature id for the '<em><b>Mixed</b></em>' attribute list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__MIXED = 0;
-
-	/**
-	 * The feature id for the '<em><b>XMLNS Prefix Map</b></em>' map.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__XMLNS_PREFIX_MAP = 1;
-
-	/**
-	 * The feature id for the '<em><b>XSI Schema Location</b></em>' map.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__XSI_SCHEMA_LOCATION = 2;
-
-	/**
-	 * The feature id for the '<em><b>Homepage</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__HOMEPAGE = 3;
-
-	/**
-	 * The feature id for the '<em><b>Mbox</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__MBOX = 4;
-
-	/**
-	 * The feature id for the '<em><b>Name</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__NAME = 5;
-
-	/**
-	 * The feature id for the '<em><b>Page</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__PAGE = 6;
-
-	/**
-	 * The feature id for the '<em><b>Phone</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__PHONE = 7;
-
-	/**
-	 * The feature id for the '<em><b>Primary Topic</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__PRIMARY_TOPIC = 8;
-
-	/**
-	 * The feature id for the '<em><b>Organisation</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__ORGANISATION = 9;
-
-	/**
-	 * The feature id for the '<em><b>Person</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__PERSON = 10;
-
-	/**
-	 * The number of structural features of the '<em>Document Root</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT_FEATURE_COUNT = 11;
-
-	/**
-	 * The number of operations of the '<em>Document Root</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT_OPERATION_COUNT = 0;
+	int DOCUMENT_OPERATION_COUNT = RdfPackage.IDENTIFIED_RESOURCE_OPERATION_COUNT + 0;
 
 	/**
 	 * The meta object id for the '{@link foaf.impl.OrganizationImpl <em>Organization</em>}' class.
@@ -556,16 +328,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see foaf.impl.FoafPackageImpl#getOrganization()
 	 * @generated
 	 */
-	int ORGANIZATION = 5;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORGANIZATION__RESOURCE = AGENT_TYPE__RESOURCE;
+	int ORGANIZATION = 2;
 
 	/**
 	 * The feature id for the '<em><b>About</b></em>' attribute.
@@ -574,43 +337,25 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORGANIZATION__ABOUT = AGENT_TYPE__ABOUT;
+	int ORGANIZATION__ABOUT = AGENT__ABOUT;
 
 	/**
-	 * The feature id for the '<em><b>Name</b></em>' containment reference.
+	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORGANIZATION__NAME = AGENT_TYPE__NAME;
+	int ORGANIZATION__NAME = AGENT__NAME;
 
 	/**
-	 * The feature id for the '<em><b>Type</b></em>' containment reference.
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int ORGANIZATION__TYPE = AGENT_TYPE__TYPE;
-
-	/**
-	 * The feature id for the '<em><b>Phone</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORGANIZATION__PHONE = AGENT_TYPE__PHONE;
-
-	/**
-	 * The feature id for the '<em><b>Mbox</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int ORGANIZATION__MBOX = AGENT_TYPE__MBOX;
+	int ORGANIZATION__TYPE = AGENT__TYPE;
 
 	/**
 	 * The feature id for the '<em><b>Node ID</b></em>' attribute.
@@ -619,7 +364,25 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORGANIZATION__NODE_ID = AGENT_TYPE__NODE_ID;
+	int ORGANIZATION__NODE_ID = AGENT__NODE_ID;
+
+	/**
+	 * The feature id for the '<em><b>Phone</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORGANIZATION__PHONE = AGENT__PHONE;
+
+	/**
+	 * The feature id for the '<em><b>Mbox</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORGANIZATION__MBOX = AGENT__MBOX;
 
 	/**
 	 * The number of structural features of the '<em>Organization</em>' class.
@@ -628,7 +391,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORGANIZATION_FEATURE_COUNT = AGENT_TYPE_FEATURE_COUNT + 0;
+	int ORGANIZATION_FEATURE_COUNT = AGENT_FEATURE_COUNT + 0;
 
 	/**
 	 * The number of operations of the '<em>Organization</em>' class.
@@ -637,7 +400,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int ORGANIZATION_OPERATION_COUNT = AGENT_TYPE_OPERATION_COUNT + 0;
+	int ORGANIZATION_OPERATION_COUNT = AGENT_OPERATION_COUNT + 0;
 
 	/**
 	 * The meta object id for the '{@link foaf.impl.PersonImpl <em>Person</em>}' class.
@@ -647,16 +410,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see foaf.impl.FoafPackageImpl#getPerson()
 	 * @generated
 	 */
-	int PERSON = 6;
-
-	/**
-	 * The feature id for the '<em><b>Resource</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PERSON__RESOURCE = AGENT_TYPE__RESOURCE;
+	int PERSON = 3;
 
 	/**
 	 * The feature id for the '<em><b>About</b></em>' attribute.
@@ -665,43 +419,25 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int PERSON__ABOUT = AGENT_TYPE__ABOUT;
+	int PERSON__ABOUT = AGENT__ABOUT;
 
 	/**
-	 * The feature id for the '<em><b>Name</b></em>' containment reference.
+	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int PERSON__NAME = AGENT_TYPE__NAME;
+	int PERSON__NAME = AGENT__NAME;
 
 	/**
-	 * The feature id for the '<em><b>Type</b></em>' containment reference.
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int PERSON__TYPE = AGENT_TYPE__TYPE;
-
-	/**
-	 * The feature id for the '<em><b>Phone</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PERSON__PHONE = AGENT_TYPE__PHONE;
-
-	/**
-	 * The feature id for the '<em><b>Mbox</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int PERSON__MBOX = AGENT_TYPE__MBOX;
+	int PERSON__TYPE = AGENT__TYPE;
 
 	/**
 	 * The feature id for the '<em><b>Node ID</b></em>' attribute.
@@ -710,7 +446,25 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int PERSON__NODE_ID = AGENT_TYPE__NODE_ID;
+	int PERSON__NODE_ID = AGENT__NODE_ID;
+
+	/**
+	 * The feature id for the '<em><b>Phone</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PERSON__PHONE = AGENT__PHONE;
+
+	/**
+	 * The feature id for the '<em><b>Mbox</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PERSON__MBOX = AGENT__MBOX;
 
 	/**
 	 * The number of structural features of the '<em>Person</em>' class.
@@ -719,7 +473,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int PERSON_FEATURE_COUNT = AGENT_TYPE_FEATURE_COUNT + 0;
+	int PERSON_FEATURE_COUNT = AGENT_FEATURE_COUNT + 0;
 
 	/**
 	 * The number of operations of the '<em>Person</em>' class.
@@ -728,7 +482,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int PERSON_OPERATION_COUNT = AGENT_TYPE_OPERATION_COUNT + 0;
+	int PERSON_OPERATION_COUNT = AGENT_OPERATION_COUNT + 0;
 
 
 	/**
@@ -742,102 +496,59 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	EClass getAgent();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link foaf.Agent#getAgent <em>Agent</em>}'.
+	 * Returns the meta object for the containment reference list '{@link foaf.Agent#getName <em>Name</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Agent</em>'.
-	 * @see foaf.Agent#getAgent()
+	 * @return the meta object for the containment reference list '<em>Name</em>'.
+	 * @see foaf.Agent#getName()
 	 * @see #getAgent()
 	 * @generated
 	 */
-	EReference getAgent_Agent();
+	EReference getAgent_Name();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link foaf.Agent#getOrganization <em>Organization</em>}'.
+	 * Returns the meta object for the attribute '{@link foaf.Agent#getType <em>Type</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Organization</em>'.
-	 * @see foaf.Agent#getOrganization()
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see foaf.Agent#getType()
 	 * @see #getAgent()
 	 * @generated
 	 */
-	EReference getAgent_Organization();
+	EAttribute getAgent_Type();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link foaf.Agent#getPerson <em>Person</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Person</em>'.
-	 * @see foaf.Agent#getPerson()
-	 * @see #getAgent()
-	 * @generated
-	 */
-	EReference getAgent_Person();
-
-	/**
-	 * Returns the meta object for class '{@link foaf.AgentType <em>Agent Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Agent Type</em>'.
-	 * @see foaf.AgentType
-	 * @generated
-	 */
-	EClass getAgentType();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.AgentType#getName <em>Name</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Name</em>'.
-	 * @see foaf.AgentType#getName()
-	 * @see #getAgentType()
-	 * @generated
-	 */
-	EReference getAgentType_Name();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.AgentType#getType <em>Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Type</em>'.
-	 * @see foaf.AgentType#getType()
-	 * @see #getAgentType()
-	 * @generated
-	 */
-	EReference getAgentType_Type();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.AgentType#getPhone <em>Phone</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Phone</em>'.
-	 * @see foaf.AgentType#getPhone()
-	 * @see #getAgentType()
-	 * @generated
-	 */
-	EReference getAgentType_Phone();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.AgentType#getMbox <em>Mbox</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Mbox</em>'.
-	 * @see foaf.AgentType#getMbox()
-	 * @see #getAgentType()
-	 * @generated
-	 */
-	EReference getAgentType_Mbox();
-
-	/**
-	 * Returns the meta object for the attribute '{@link foaf.AgentType#getNodeID <em>Node ID</em>}'.
+	 * Returns the meta object for the attribute '{@link foaf.Agent#getNodeID <em>Node ID</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Node ID</em>'.
-	 * @see foaf.AgentType#getNodeID()
-	 * @see #getAgentType()
+	 * @see foaf.Agent#getNodeID()
+	 * @see #getAgent()
 	 * @generated
 	 */
-	EAttribute getAgentType_NodeID();
+	EAttribute getAgent_NodeID();
+
+	/**
+	 * Returns the meta object for the attribute '{@link foaf.Agent#getPhone <em>Phone</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Phone</em>'.
+	 * @see foaf.Agent#getPhone()
+	 * @see #getAgent()
+	 * @generated
+	 */
+	EAttribute getAgent_Phone();
+
+	/**
+	 * Returns the meta object for the attribute '{@link foaf.Agent#getMbox <em>Mbox</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Mbox</em>'.
+	 * @see foaf.Agent#getMbox()
+	 * @see #getAgent()
+	 * @generated
+	 */
+	EAttribute getAgent_Mbox();
 
 	/**
 	 * Returns the meta object for class '{@link foaf.Document <em>Document</em>}'.
@@ -850,189 +561,26 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	EClass getDocument();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link foaf.Document#getDocument <em>Document</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Document</em>'.
-	 * @see foaf.Document#getDocument()
-	 * @see #getDocument()
-	 * @generated
-	 */
-	EReference getDocument_Document();
-
-	/**
-	 * Returns the meta object for class '{@link foaf.DocumentType <em>Document Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Document Type</em>'.
-	 * @see foaf.DocumentType
-	 * @generated
-	 */
-	EClass getDocumentType();
-
-	/**
-	 * Returns the meta object for the containment reference list '{@link foaf.DocumentType#getName <em>Name</em>}'.
+	 * Returns the meta object for the containment reference list '{@link foaf.Document#getName <em>Name</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the containment reference list '<em>Name</em>'.
-	 * @see foaf.DocumentType#getName()
-	 * @see #getDocumentType()
+	 * @see foaf.Document#getName()
+	 * @see #getDocument()
 	 * @generated
 	 */
-	EReference getDocumentType_Name();
+	EReference getDocument_Name();
 
 	/**
-	 * Returns the meta object for the attribute '{@link foaf.DocumentType#getAbout <em>About</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>About</em>'.
-	 * @see foaf.DocumentType#getAbout()
-	 * @see #getDocumentType()
-	 * @generated
-	 */
-	EAttribute getDocumentType_About();
-
-	/**
-	 * Returns the meta object for the attribute '{@link foaf.DocumentType#getNodeID <em>Node ID</em>}'.
+	 * Returns the meta object for the attribute '{@link foaf.Document#getNodeID <em>Node ID</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the attribute '<em>Node ID</em>'.
-	 * @see foaf.DocumentType#getNodeID()
-	 * @see #getDocumentType()
+	 * @see foaf.Document#getNodeID()
+	 * @see #getDocument()
 	 * @generated
 	 */
-	EAttribute getDocumentType_NodeID();
-
-	/**
-	 * Returns the meta object for class '{@link foaf.DocumentRoot <em>Document Root</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Document Root</em>'.
-	 * @see foaf.DocumentRoot
-	 * @generated
-	 */
-	EClass getDocumentRoot();
-
-	/**
-	 * Returns the meta object for the attribute list '{@link foaf.DocumentRoot#getMixed <em>Mixed</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Mixed</em>'.
-	 * @see foaf.DocumentRoot#getMixed()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EAttribute getDocumentRoot_Mixed();
-
-	/**
-	 * Returns the meta object for the map '{@link foaf.DocumentRoot#getXMLNSPrefixMap <em>XMLNS Prefix Map</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the map '<em>XMLNS Prefix Map</em>'.
-	 * @see foaf.DocumentRoot#getXMLNSPrefixMap()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_XMLNSPrefixMap();
-
-	/**
-	 * Returns the meta object for the map '{@link foaf.DocumentRoot#getXSISchemaLocation <em>XSI Schema Location</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the map '<em>XSI Schema Location</em>'.
-	 * @see foaf.DocumentRoot#getXSISchemaLocation()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_XSISchemaLocation();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getHomepage <em>Homepage</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Homepage</em>'.
-	 * @see foaf.DocumentRoot#getHomepage()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Homepage();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getMbox <em>Mbox</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Mbox</em>'.
-	 * @see foaf.DocumentRoot#getMbox()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Mbox();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getName <em>Name</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Name</em>'.
-	 * @see foaf.DocumentRoot#getName()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Name();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getPage <em>Page</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Page</em>'.
-	 * @see foaf.DocumentRoot#getPage()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Page();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getPhone <em>Phone</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Phone</em>'.
-	 * @see foaf.DocumentRoot#getPhone()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Phone();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getPrimaryTopic <em>Primary Topic</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Primary Topic</em>'.
-	 * @see foaf.DocumentRoot#getPrimaryTopic()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_PrimaryTopic();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getOrganisation <em>Organisation</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Organisation</em>'.
-	 * @see foaf.DocumentRoot#getOrganisation()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Organisation();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link foaf.DocumentRoot#getPerson <em>Person</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Person</em>'.
-	 * @see foaf.DocumentRoot#getPerson()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Person();
+	EAttribute getDocument_NodeID();
 
 	/**
 	 * Returns the meta object for class '{@link foaf.Organization <em>Organization</em>}'.
@@ -1088,70 +636,20 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 		EClass AGENT = eINSTANCE.getAgent();
 
 		/**
-		 * The meta object literal for the '<em><b>Agent</b></em>' containment reference feature.
+		 * The meta object literal for the '<em><b>Name</b></em>' containment reference list feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference AGENT__AGENT = eINSTANCE.getAgent_Agent();
+		EReference AGENT__NAME = eINSTANCE.getAgent_Name();
 
 		/**
-		 * The meta object literal for the '<em><b>Organization</b></em>' containment reference feature.
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference AGENT__ORGANIZATION = eINSTANCE.getAgent_Organization();
-
-		/**
-		 * The meta object literal for the '<em><b>Person</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference AGENT__PERSON = eINSTANCE.getAgent_Person();
-
-		/**
-		 * The meta object literal for the '{@link foaf.impl.AgentTypeImpl <em>Agent Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see foaf.impl.AgentTypeImpl
-		 * @see foaf.impl.FoafPackageImpl#getAgentType()
-		 * @generated
-		 */
-		EClass AGENT_TYPE = eINSTANCE.getAgentType();
-
-		/**
-		 * The meta object literal for the '<em><b>Name</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference AGENT_TYPE__NAME = eINSTANCE.getAgentType_Name();
-
-		/**
-		 * The meta object literal for the '<em><b>Type</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference AGENT_TYPE__TYPE = eINSTANCE.getAgentType_Type();
-
-		/**
-		 * The meta object literal for the '<em><b>Phone</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference AGENT_TYPE__PHONE = eINSTANCE.getAgentType_Phone();
-
-		/**
-		 * The meta object literal for the '<em><b>Mbox</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference AGENT_TYPE__MBOX = eINSTANCE.getAgentType_Mbox();
+		EAttribute AGENT__TYPE = eINSTANCE.getAgent_Type();
 
 		/**
 		 * The meta object literal for the '<em><b>Node ID</b></em>' attribute feature.
@@ -1159,7 +657,23 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute AGENT_TYPE__NODE_ID = eINSTANCE.getAgentType_NodeID();
+		EAttribute AGENT__NODE_ID = eINSTANCE.getAgent_NodeID();
+
+		/**
+		 * The meta object literal for the '<em><b>Phone</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AGENT__PHONE = eINSTANCE.getAgent_Phone();
+
+		/**
+		 * The meta object literal for the '<em><b>Mbox</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute AGENT__MBOX = eINSTANCE.getAgent_Mbox();
 
 		/**
 		 * The meta object literal for the '{@link foaf.impl.DocumentImpl <em>Document</em>}' class.
@@ -1172,38 +686,12 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 		EClass DOCUMENT = eINSTANCE.getDocument();
 
 		/**
-		 * The meta object literal for the '<em><b>Document</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT__DOCUMENT = eINSTANCE.getDocument_Document();
-
-		/**
-		 * The meta object literal for the '{@link foaf.impl.DocumentTypeImpl <em>Document Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see foaf.impl.DocumentTypeImpl
-		 * @see foaf.impl.FoafPackageImpl#getDocumentType()
-		 * @generated
-		 */
-		EClass DOCUMENT_TYPE = eINSTANCE.getDocumentType();
-
-		/**
 		 * The meta object literal for the '<em><b>Name</b></em>' containment reference list feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference DOCUMENT_TYPE__NAME = eINSTANCE.getDocumentType_Name();
-
-		/**
-		 * The meta object literal for the '<em><b>About</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DOCUMENT_TYPE__ABOUT = eINSTANCE.getDocumentType_About();
+		EReference DOCUMENT__NAME = eINSTANCE.getDocument_Name();
 
 		/**
 		 * The meta object literal for the '<em><b>Node ID</b></em>' attribute feature.
@@ -1211,105 +699,7 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EAttribute DOCUMENT_TYPE__NODE_ID = eINSTANCE.getDocumentType_NodeID();
-
-		/**
-		 * The meta object literal for the '{@link foaf.impl.DocumentRootImpl <em>Document Root</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see foaf.impl.DocumentRootImpl
-		 * @see foaf.impl.FoafPackageImpl#getDocumentRoot()
-		 * @generated
-		 */
-		EClass DOCUMENT_ROOT = eINSTANCE.getDocumentRoot();
-
-		/**
-		 * The meta object literal for the '<em><b>Mixed</b></em>' attribute list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DOCUMENT_ROOT__MIXED = eINSTANCE.getDocumentRoot_Mixed();
-
-		/**
-		 * The meta object literal for the '<em><b>XMLNS Prefix Map</b></em>' map feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__XMLNS_PREFIX_MAP = eINSTANCE.getDocumentRoot_XMLNSPrefixMap();
-
-		/**
-		 * The meta object literal for the '<em><b>XSI Schema Location</b></em>' map feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__XSI_SCHEMA_LOCATION = eINSTANCE.getDocumentRoot_XSISchemaLocation();
-
-		/**
-		 * The meta object literal for the '<em><b>Homepage</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__HOMEPAGE = eINSTANCE.getDocumentRoot_Homepage();
-
-		/**
-		 * The meta object literal for the '<em><b>Mbox</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__MBOX = eINSTANCE.getDocumentRoot_Mbox();
-
-		/**
-		 * The meta object literal for the '<em><b>Name</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__NAME = eINSTANCE.getDocumentRoot_Name();
-
-		/**
-		 * The meta object literal for the '<em><b>Page</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__PAGE = eINSTANCE.getDocumentRoot_Page();
-
-		/**
-		 * The meta object literal for the '<em><b>Phone</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__PHONE = eINSTANCE.getDocumentRoot_Phone();
-
-		/**
-		 * The meta object literal for the '<em><b>Primary Topic</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__PRIMARY_TOPIC = eINSTANCE.getDocumentRoot_PrimaryTopic();
-
-		/**
-		 * The meta object literal for the '<em><b>Organisation</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__ORGANISATION = eINSTANCE.getDocumentRoot_Organisation();
-
-		/**
-		 * The meta object literal for the '<em><b>Person</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__PERSON = eINSTANCE.getDocumentRoot_Person();
+		EAttribute DOCUMENT__NODE_ID = eINSTANCE.getDocument_NodeID();
 
 		/**
 		 * The meta object literal for the '{@link foaf.impl.OrganizationImpl <em>Organization</em>}' class.

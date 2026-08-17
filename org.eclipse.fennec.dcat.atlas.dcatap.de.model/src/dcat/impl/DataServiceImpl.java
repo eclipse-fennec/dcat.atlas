@@ -18,21 +18,13 @@ import dcat.DcatPackage;
 
 import java.util.Collection;
 
-import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
-
 import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
-
-import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
 import org.eclipse.emf.ecore.util.EDataTypeEList;
-import org.eclipse.emf.ecore.util.EObjectContainmentEList;
-import org.eclipse.emf.ecore.util.InternalEList;
-
-import skos.Concept;
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
+import org.eclipse.emf.ecore.util.EObjectResolvingEList;
 
 /**
  * <!-- begin-user-doc -->
@@ -72,24 +64,24 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 	protected EList<String> endpointURL;
 
 	/**
-	 * The cached value of the '{@link #getServesDataset() <em>Serves Dataset</em>}' containment reference.
+	 * The cached value of the '{@link #getServesDataset() <em>Serves Dataset</em>}' reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getServesDataset()
 	 * @generated
 	 * @ordered
 	 */
-	protected Dataset servesDataset;
+	protected EList<Dataset> servesDataset;
 
 	/**
-	 * The cached value of the '{@link #getFormat() <em>Format</em>}' containment reference list.
+	 * The cached value of the '{@link #getFormat() <em>Format</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getFormat()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Concept> format;
+	protected EList<String> format;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -139,7 +131,10 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Dataset getServesDataset() {
+	public EList<Dataset> getServesDataset() {
+		if (servesDataset == null) {
+			servesDataset = new EObjectResolvingEList<Dataset>(Dataset.class, this, DcatPackage.DATA_SERVICE__SERVES_DATASET);
+		}
 		return servesDataset;
 	}
 
@@ -148,61 +143,11 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetServesDataset(Dataset newServesDataset, NotificationChain msgs) {
-		Dataset oldServesDataset = servesDataset;
-		servesDataset = newServesDataset;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DATA_SERVICE__SERVES_DATASET, oldServesDataset, newServesDataset);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setServesDataset(Dataset newServesDataset) {
-		if (newServesDataset != servesDataset) {
-			NotificationChain msgs = null;
-			if (servesDataset != null)
-				msgs = ((InternalEObject)servesDataset).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DATA_SERVICE__SERVES_DATASET, null, msgs);
-			if (newServesDataset != null)
-				msgs = ((InternalEObject)newServesDataset).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DATA_SERVICE__SERVES_DATASET, null, msgs);
-			msgs = basicSetServesDataset(newServesDataset, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DATA_SERVICE__SERVES_DATASET, newServesDataset, newServesDataset));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EList<Concept> getFormat() {
+	public EList<String> getFormat() {
 		if (format == null) {
-			format = new EObjectContainmentEList<Concept>(Concept.class, this, DcatPackage.DATA_SERVICE__FORMAT);
+			format = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DATA_SERVICE__FORMAT);
 		}
 		return format;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	@Override
-	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
-		switch (featureID) {
-			case DcatPackage.DATA_SERVICE__SERVES_DATASET:
-				return basicSetServesDataset(null, msgs);
-			case DcatPackage.DATA_SERVICE__FORMAT:
-				return ((InternalEList<?>)getFormat()).basicRemove(otherEnd, msgs);
-		}
-		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
 
 	/**
@@ -243,11 +188,12 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 				getEndpointURL().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.DATA_SERVICE__SERVES_DATASET:
-				setServesDataset((Dataset)newValue);
+				getServesDataset().clear();
+				getServesDataset().addAll((Collection<? extends Dataset>)newValue);
 				return;
 			case DcatPackage.DATA_SERVICE__FORMAT:
 				getFormat().clear();
-				getFormat().addAll((Collection<? extends Concept>)newValue);
+				getFormat().addAll((Collection<? extends String>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -268,7 +214,7 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 				getEndpointURL().clear();
 				return;
 			case DcatPackage.DATA_SERVICE__SERVES_DATASET:
-				setServesDataset((Dataset)null);
+				getServesDataset().clear();
 				return;
 			case DcatPackage.DATA_SERVICE__FORMAT:
 				getFormat().clear();
@@ -290,7 +236,7 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 			case DcatPackage.DATA_SERVICE__ENDPOINT_URL:
 				return endpointURL != null && !endpointURL.isEmpty();
 			case DcatPackage.DATA_SERVICE__SERVES_DATASET:
-				return servesDataset != null;
+				return servesDataset != null && !servesDataset.isEmpty();
 			case DcatPackage.DATA_SERVICE__FORMAT:
 				return format != null && !format.isEmpty();
 		}
@@ -311,6 +257,8 @@ public class DataServiceImpl extends DcatResourceImpl implements DataService {
 		result.append(endpointDescription);
 		result.append(", endpointURL: ");
 		result.append(endpointURL);
+		result.append(", format: ");
+		result.append(format);
 		result.append(')');
 		return result.toString();
 	}

@@ -19,7 +19,7 @@ import org.eclipse.emf.common.notify.impl.AdapterFactoryImpl;
 
 import org.eclipse.emf.ecore.EObject;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 import terms.*;
 
@@ -80,60 +80,32 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	protected TermsSwitch<Adapter> modelSwitch =
 		new TermsSwitch<Adapter>() {
 			@Override
-			public Adapter caseDocumentRoot(DocumentRoot object) {
-				return createDocumentRootAdapter();
-			}
-			@Override
 			public Adapter caseLicenseDocument(LicenseDocument object) {
 				return createLicenseDocumentAdapter();
-			}
-			@Override
-			public Adapter caseLicenseDocumentType(LicenseDocumentType object) {
-				return createLicenseDocumentTypeAdapter();
 			}
 			@Override
 			public Adapter caseLocation(Location object) {
 				return createLocationAdapter();
 			}
 			@Override
-			public Adapter caseLocationType(LocationType object) {
-				return createLocationTypeAdapter();
-			}
-			@Override
 			public Adapter casePeriodOfTime(PeriodOfTime object) {
 				return createPeriodOfTimeAdapter();
-			}
-			@Override
-			public Adapter casePeriodOfTimeType(PeriodOfTimeType object) {
-				return createPeriodOfTimeTypeAdapter();
 			}
 			@Override
 			public Adapter caseProvenanceStatement(ProvenanceStatement object) {
 				return createProvenanceStatementAdapter();
 			}
 			@Override
-			public Adapter caseProvenanceStatementType(ProvenanceStatementType object) {
-				return createProvenanceStatementTypeAdapter();
-			}
-			@Override
 			public Adapter caseRightsStatement(RightsStatement object) {
 				return createRightsStatementAdapter();
-			}
-			@Override
-			public Adapter caseRightsStatementType(RightsStatementType object) {
-				return createRightsStatementTypeAdapter();
 			}
 			@Override
 			public Adapter caseStandard(Standard object) {
 				return createStandardAdapter();
 			}
 			@Override
-			public Adapter caseStandardType(StandardType object) {
-				return createStandardTypeAdapter();
-			}
-			@Override
-			public Adapter caseResource(Resource object) {
-				return createResourceAdapter();
+			public Adapter caseIdentifiedResource(IdentifiedResource object) {
+				return createIdentifiedResourceAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -156,20 +128,6 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 
 
 	/**
-	 * Creates a new adapter for an object of class '{@link terms.DocumentRoot <em>Document Root</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see terms.DocumentRoot
-	 * @generated
-	 */
-	public Adapter createDocumentRootAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link terms.LicenseDocument <em>License Document</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -180,20 +138,6 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createLicenseDocumentAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link terms.LicenseDocumentType <em>License Document Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see terms.LicenseDocumentType
-	 * @generated
-	 */
-	public Adapter createLicenseDocumentTypeAdapter() {
 		return null;
 	}
 
@@ -212,20 +156,6 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link terms.LocationType <em>Location Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see terms.LocationType
-	 * @generated
-	 */
-	public Adapter createLocationTypeAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link terms.PeriodOfTime <em>Period Of Time</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -236,20 +166,6 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createPeriodOfTimeAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link terms.PeriodOfTimeType <em>Period Of Time Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see terms.PeriodOfTimeType
-	 * @generated
-	 */
-	public Adapter createPeriodOfTimeTypeAdapter() {
 		return null;
 	}
 
@@ -268,20 +184,6 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link terms.ProvenanceStatementType <em>Provenance Statement Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see terms.ProvenanceStatementType
-	 * @generated
-	 */
-	public Adapter createProvenanceStatementTypeAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link terms.RightsStatement <em>Rights Statement</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -292,20 +194,6 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createRightsStatementAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link terms.RightsStatementType <em>Rights Statement Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see terms.RightsStatementType
-	 * @generated
-	 */
-	public Adapter createRightsStatementTypeAdapter() {
 		return null;
 	}
 
@@ -324,30 +212,16 @@ public class TermsAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link terms.StandardType <em>Standard Type</em>}'.
+	 * Creates a new adapter for an object of class '{@link rdf.IdentifiedResource <em>Identified Resource</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
 	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
 	 * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see terms.StandardType
+	 * @see rdf.IdentifiedResource
 	 * @generated
 	 */
-	public Adapter createStandardTypeAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.Resource <em>Resource</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.Resource
-	 * @generated
-	 */
-	public Adapter createResourceAdapter() {
+	public Adapter createIdentifiedResourceAdapter() {
 		return null;
 	}
 

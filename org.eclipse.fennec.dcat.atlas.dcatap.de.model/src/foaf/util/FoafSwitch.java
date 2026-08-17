@@ -19,7 +19,7 @@ import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 /**
  * <!-- begin-user-doc -->
@@ -81,47 +81,30 @@ public class FoafSwitch<T> extends Switch<T> {
 			case FoafPackage.AGENT: {
 				Agent agent = (Agent)theEObject;
 				T result = caseAgent(agent);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case FoafPackage.AGENT_TYPE: {
-				AgentType agentType = (AgentType)theEObject;
-				T result = caseAgentType(agentType);
-				if (result == null) result = caseResource(agentType);
+				if (result == null) result = caseIdentifiedResource(agent);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case FoafPackage.DOCUMENT: {
 				Document document = (Document)theEObject;
 				T result = caseDocument(document);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case FoafPackage.DOCUMENT_TYPE: {
-				DocumentType documentType = (DocumentType)theEObject;
-				T result = caseDocumentType(documentType);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case FoafPackage.DOCUMENT_ROOT: {
-				DocumentRoot documentRoot = (DocumentRoot)theEObject;
-				T result = caseDocumentRoot(documentRoot);
+				if (result == null) result = caseIdentifiedResource(document);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case FoafPackage.ORGANIZATION: {
 				Organization organization = (Organization)theEObject;
 				T result = caseOrganization(organization);
-				if (result == null) result = caseAgentType(organization);
-				if (result == null) result = caseResource(organization);
+				if (result == null) result = caseAgent(organization);
+				if (result == null) result = caseIdentifiedResource(organization);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case FoafPackage.PERSON: {
 				Person person = (Person)theEObject;
 				T result = casePerson(person);
-				if (result == null) result = caseAgentType(person);
-				if (result == null) result = caseResource(person);
+				if (result == null) result = caseAgent(person);
+				if (result == null) result = caseIdentifiedResource(person);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -145,21 +128,6 @@ public class FoafSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Agent Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Agent Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseAgentType(AgentType object) {
-		return null;
-	}
-
-	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Document</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -171,36 +139,6 @@ public class FoafSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseDocument(Document object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Document Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Document Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDocumentType(DocumentType object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDocumentRoot(DocumentRoot object) {
 		return null;
 	}
 
@@ -235,17 +173,17 @@ public class FoafSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Resource</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Resource</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseResource(Resource object) {
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

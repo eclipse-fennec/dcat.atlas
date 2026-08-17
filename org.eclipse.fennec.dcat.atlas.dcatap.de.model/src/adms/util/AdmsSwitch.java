@@ -19,6 +19,8 @@ import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
 
+import rdf.IdentifiedResource;
+
 /**
  * <!-- begin-user-doc -->
  * The <b>Switch</b> for the model's inheritance hierarchy.
@@ -76,41 +78,15 @@ public class AdmsSwitch<T> extends Switch<T> {
 	@Override
 	protected T doSwitch(int classifierID, EObject theEObject) {
 		switch (classifierID) {
-			case AdmsPackage.DOCUMENT_ROOT: {
-				DocumentRoot documentRoot = (DocumentRoot)theEObject;
-				T result = caseDocumentRoot(documentRoot);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
 			case AdmsPackage.IDENTIFIER: {
 				Identifier identifier = (Identifier)theEObject;
 				T result = caseIdentifier(identifier);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case AdmsPackage.IDENTIFIER_TYPE: {
-				IdentifierType identifierType = (IdentifierType)theEObject;
-				T result = caseIdentifierType(identifierType);
+				if (result == null) result = caseIdentifiedResource(identifier);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			default: return defaultCase(theEObject);
 		}
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDocumentRoot(DocumentRoot object) {
-		return null;
 	}
 
 	/**
@@ -129,17 +105,17 @@ public class AdmsSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Identifier Type</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Identifier Type</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseIdentifierType(IdentifierType object) {
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

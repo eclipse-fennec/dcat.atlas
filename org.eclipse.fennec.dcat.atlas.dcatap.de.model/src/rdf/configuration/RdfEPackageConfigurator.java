@@ -125,6 +125,14 @@ import rdf.RdfPackage;
  */
 public class RdfEPackageConfigurator implements EPackageConfigurator {
 	
+	/**
+	 * The fingerprint of this model version, computed from the <code>.ecore</code> at build
+	 * time. It identifies the model content, not the artifact - see the <code>emf.fingerprint</code>
+	 * service property.
+	 * @generated
+	 */
+	public static final String FINGERPRINT = "fp1:1791d7852e7ba108bbe3ed6c9db3a118ee00f63c2af996b177b2f7d0dc96ee4b";
+
 	private RdfPackage ePackage;
 
 	protected RdfEPackageConfigurator(RdfPackage ePackage){
@@ -163,6 +171,7 @@ public class RdfEPackageConfigurator implements EPackageConfigurator {
 		properties.put(EMFNamespaces.EMF_MODEL_FILE_EXT, "rdf");
 		properties.put(EMFNamespaces.EMF_MODEL_CONTENT_TYPE, "dcat.rdf");
 		properties.put(EMFNamespaces.EMF_MODEL_VERSION, "1.0");
+		properties.put(EMFNamespaces.EMF_MODEL_FINGERPRINT, FINGERPRINT);
 		return properties;
 	}
 }

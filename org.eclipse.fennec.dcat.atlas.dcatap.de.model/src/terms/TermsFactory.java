@@ -35,15 +35,6 @@ public interface TermsFactory extends EFactory {
 	TermsFactory eINSTANCE = terms.impl.TermsFactoryImpl.init();
 
 	/**
-	 * Returns a new object of class '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Document Root</em>'.
-	 * @generated
-	 */
-	DocumentRoot createDocumentRoot();
-
-	/**
 	 * Returns a new object of class '<em>License Document</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -51,15 +42,6 @@ public interface TermsFactory extends EFactory {
 	 * @generated
 	 */
 	LicenseDocument createLicenseDocument();
-
-	/**
-	 * Returns a new object of class '<em>License Document Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>License Document Type</em>'.
-	 * @generated
-	 */
-	LicenseDocumentType createLicenseDocumentType();
 
 	/**
 	 * Returns a new object of class '<em>Location</em>'.
@@ -71,15 +53,6 @@ public interface TermsFactory extends EFactory {
 	Location createLocation();
 
 	/**
-	 * Returns a new object of class '<em>Location Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Location Type</em>'.
-	 * @generated
-	 */
-	LocationType createLocationType();
-
-	/**
 	 * Returns a new object of class '<em>Period Of Time</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -87,15 +60,6 @@ public interface TermsFactory extends EFactory {
 	 * @generated
 	 */
 	PeriodOfTime createPeriodOfTime();
-
-	/**
-	 * Returns a new object of class '<em>Period Of Time Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Period Of Time Type</em>'.
-	 * @generated
-	 */
-	PeriodOfTimeType createPeriodOfTimeType();
 
 	/**
 	 * Returns a new object of class '<em>Provenance Statement</em>'.
@@ -107,15 +71,6 @@ public interface TermsFactory extends EFactory {
 	ProvenanceStatement createProvenanceStatement();
 
 	/**
-	 * Returns a new object of class '<em>Provenance Statement Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Provenance Statement Type</em>'.
-	 * @generated
-	 */
-	ProvenanceStatementType createProvenanceStatementType();
-
-	/**
 	 * Returns a new object of class '<em>Rights Statement</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -125,15 +80,6 @@ public interface TermsFactory extends EFactory {
 	RightsStatement createRightsStatement();
 
 	/**
-	 * Returns a new object of class '<em>Rights Statement Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Rights Statement Type</em>'.
-	 * @generated
-	 */
-	RightsStatementType createRightsStatementType();
-
-	/**
 	 * Returns a new object of class '<em>Standard</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -141,15 +87,6 @@ public interface TermsFactory extends EFactory {
 	 * @generated
 	 */
 	Standard createStandard();
-
-	/**
-	 * Returns a new object of class '<em>Standard Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Standard Type</em>'.
-	 * @generated
-	 */
-	StandardType createStandardType();
 
 	/**
 	 * Returns the package supported by this factory.

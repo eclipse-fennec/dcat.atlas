@@ -12,9 +12,10 @@
  */
 package adms;
 
-import org.eclipse.emf.ecore.EObject;
-
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.IdentifiedResource;
+import rdf.TypedLiteral;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +26,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link adms.Identifier#getIdentifier <em>Identifier</em>}</li>
+ *   <li>{@link adms.Identifier#getNotation <em>Notation</em>}</li>
  * </ul>
  *
  * @see adms.AdmsPackage#getIdentifier()
@@ -33,28 +34,28 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface Identifier extends EObject {
+public interface Identifier extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Identifier</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Notation</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Identifier</em>' containment reference.
-	 * @see #setIdentifier(IdentifierType)
-	 * @see adms.AdmsPackage#getIdentifier_Identifier()
+	 * @return the value of the '<em>Notation</em>' containment reference.
+	 * @see #setNotation(TypedLiteral)
+	 * @see adms.AdmsPackage#getIdentifier_Notation()
 	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='Identifier' namespace='##targetNamespace'"
+	 *        extendedMetaData="kind='element' name='notation' namespace='http://www.w3.org/2004/02/skos/core#'"
 	 * @generated
 	 */
-	IdentifierType getIdentifier();
+	TypedLiteral getNotation();
 
 	/**
-	 * Sets the value of the '{@link adms.Identifier#getIdentifier <em>Identifier</em>}' containment reference.
+	 * Sets the value of the '{@link adms.Identifier#getNotation <em>Notation</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Identifier</em>' containment reference.
-	 * @see #getIdentifier()
+	 * @param value the new value of the '<em>Notation</em>' containment reference.
+	 * @see #getNotation()
 	 * @generated
 	 */
-	void setIdentifier(IdentifierType value);
+	void setNotation(TypedLiteral value);
 
 } // Identifier

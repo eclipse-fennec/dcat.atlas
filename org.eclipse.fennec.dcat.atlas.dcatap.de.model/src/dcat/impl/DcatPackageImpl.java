@@ -18,10 +18,8 @@ import adms.impl.AdmsPackageImpl;
 
 import dcat.Catalog;
 import dcat.CatalogRecord;
-import dcat.DCATAPRoot;
 import dcat.DataService;
 import dcat.Dataset;
-import dcat.DatasetContainer;
 import dcat.DatasetSeries;
 import dcat.DcatFactory;
 import dcat.DcatPackage;
@@ -29,21 +27,9 @@ import dcat.DcatResource;
 import dcat.Distribution;
 import dcat.Relationship;
 
-import dcatde.DcatDEPackage;
-
-import dcatde.impl.DcatDEPackageImpl;
-
 import foaf.FoafPackage;
 
 import foaf.impl.FoafPackageImpl;
-
-import locn.LocnPackage;
-
-import locn.impl.LocnPackageImpl;
-
-import odrl.OdrlPackage;
-
-import odrl.impl.OdrlPackageImpl;
 
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -54,25 +40,9 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage;
 
-import owl.OwlPackage;
-
-import owl.impl.OwlPackageImpl;
-
-import prov.ProvPackage;
-
-import prov.impl.ProvPackageImpl;
-
 import rdf.RdfPackage;
 
 import rdf.impl.RdfPackageImpl;
-
-import schema.SchemaPackage;
-
-import schema.impl.SchemaPackageImpl;
-
-import skos.SkosPackage;
-
-import skos.impl.SkosPackageImpl;
 
 import spdx.SpdxPackage;
 
@@ -147,20 +117,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass dcatapRootEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass datasetContainerEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass datasetSeriesEClass = null;
 
 	/**
@@ -217,60 +173,32 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		FoafPackageImpl theFoafPackage = (FoafPackageImpl)(registeredPackage instanceof FoafPackageImpl ? registeredPackage : FoafPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
 		RdfPackageImpl theRdfPackage = (RdfPackageImpl)(registeredPackage instanceof RdfPackageImpl ? registeredPackage : RdfPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SkosPackage.eNS_URI);
-		SkosPackageImpl theSkosPackage = (SkosPackageImpl)(registeredPackage instanceof SkosPackageImpl ? registeredPackage : SkosPackage.eINSTANCE);
+		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
+		SpdxPackageImpl theSpdxPackage = (SpdxPackageImpl)(registeredPackage instanceof SpdxPackageImpl ? registeredPackage : SpdxPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(TermsPackage.eNS_URI);
 		TermsPackageImpl theTermsPackage = (TermsPackageImpl)(registeredPackage instanceof TermsPackageImpl ? registeredPackage : TermsPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(VcardPackage.eNS_URI);
 		VcardPackageImpl theVcardPackage = (VcardPackageImpl)(registeredPackage instanceof VcardPackageImpl ? registeredPackage : VcardPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(AdmsPackage.eNS_URI);
 		AdmsPackageImpl theAdmsPackage = (AdmsPackageImpl)(registeredPackage instanceof AdmsPackageImpl ? registeredPackage : AdmsPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(LocnPackage.eNS_URI);
-		LocnPackageImpl theLocnPackage = (LocnPackageImpl)(registeredPackage instanceof LocnPackageImpl ? registeredPackage : LocnPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OdrlPackage.eNS_URI);
-		OdrlPackageImpl theOdrlPackage = (OdrlPackageImpl)(registeredPackage instanceof OdrlPackageImpl ? registeredPackage : OdrlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OwlPackage.eNS_URI);
-		OwlPackageImpl theOwlPackage = (OwlPackageImpl)(registeredPackage instanceof OwlPackageImpl ? registeredPackage : OwlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(ProvPackage.eNS_URI);
-		ProvPackageImpl theProvPackage = (ProvPackageImpl)(registeredPackage instanceof ProvPackageImpl ? registeredPackage : ProvPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SchemaPackage.eNS_URI);
-		SchemaPackageImpl theSchemaPackage = (SchemaPackageImpl)(registeredPackage instanceof SchemaPackageImpl ? registeredPackage : SchemaPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(DcatDEPackage.eNS_URI);
-		DcatDEPackageImpl theDcatDEPackage = (DcatDEPackageImpl)(registeredPackage instanceof DcatDEPackageImpl ? registeredPackage : DcatDEPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
-		SpdxPackageImpl theSpdxPackage = (SpdxPackageImpl)(registeredPackage instanceof SpdxPackageImpl ? registeredPackage : SpdxPackage.eINSTANCE);
 
 		// Create package meta-data objects
 		theDcatPackage.createPackageContents();
 		theFoafPackage.createPackageContents();
 		theRdfPackage.createPackageContents();
-		theSkosPackage.createPackageContents();
+		theSpdxPackage.createPackageContents();
 		theTermsPackage.createPackageContents();
 		theVcardPackage.createPackageContents();
 		theAdmsPackage.createPackageContents();
-		theLocnPackage.createPackageContents();
-		theOdrlPackage.createPackageContents();
-		theOwlPackage.createPackageContents();
-		theProvPackage.createPackageContents();
-		theSchemaPackage.createPackageContents();
-		theDcatDEPackage.createPackageContents();
-		theSpdxPackage.createPackageContents();
 
 		// Initialize created meta-data
 		theDcatPackage.initializePackageContents();
 		theFoafPackage.initializePackageContents();
 		theRdfPackage.initializePackageContents();
-		theSkosPackage.initializePackageContents();
+		theSpdxPackage.initializePackageContents();
 		theTermsPackage.initializePackageContents();
 		theVcardPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
-		theLocnPackage.initializePackageContents();
-		theOdrlPackage.initializePackageContents();
-		theOwlPackage.initializePackageContents();
-		theProvPackage.initializePackageContents();
-		theSchemaPackage.initializePackageContents();
-		theDcatDEPackage.initializePackageContents();
-		theSpdxPackage.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
 		theDcatPackage.freeze();
@@ -330,8 +258,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getCatalog_ThemeTaxonomy() {
-		return (EReference)catalogEClass.getEStructuralFeatures().get(4);
+	public EAttribute getCatalog_ThemeTaxonomy() {
+		return (EAttribute)catalogEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -339,8 +267,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getCatalog_HasPart() {
-		return (EReference)catalogEClass.getEStructuralFeatures().get(5);
+	public EAttribute getCatalog_HasPart() {
+		return (EAttribute)catalogEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -348,8 +276,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getCatalog_Homepage() {
-		return (EReference)catalogEClass.getEStructuralFeatures().get(6);
+	public EAttribute getCatalog_Homepage() {
+		return (EAttribute)catalogEClass.getEStructuralFeatures().get(6);
 	}
 
 	/**
@@ -393,8 +321,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDataset_AccrualPeriodicity() {
-		return (EReference)datasetEClass.getEStructuralFeatures().get(3);
+	public EAttribute getDataset_AccrualPeriodicity() {
+		return (EAttribute)datasetEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -429,7 +357,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDataset_ContributorID() {
+	public EReference getDataset_InSeries() {
 		return (EReference)datasetEClass.getEStructuralFeatures().get(7);
 	}
 
@@ -438,44 +366,17 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDataset_InSeries() {
-		return (EReference)datasetEClass.getEStructuralFeatures().get(8);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public EAttribute getDataset_Version() {
+		return (EAttribute)datasetEClass.getEStructuralFeatures().get(8);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getDataset_HasVersion() {
 		return (EAttribute)datasetEClass.getEStructuralFeatures().get(9);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDataset_HasVersion() {
-		return (EReference)datasetEClass.getEStructuralFeatures().get(10);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDataset_Originator() {
-		return (EReference)datasetEClass.getEStructuralFeatures().get(11);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDataset_Custodian() {
-		return (EReference)datasetEClass.getEStructuralFeatures().get(12);
 	}
 
 	/**
@@ -519,8 +420,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDistribution_Format() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(3);
+	public EAttribute getDistribution_Format() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -582,8 +483,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDistribution_AccessRights() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(10);
+	public EAttribute getDistribution_AccessRights() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(10);
 	}
 
 	/**
@@ -654,7 +555,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDistribution_DownloadURL() {
+	public EReference getDistribution_LicenseAttributionByText() {
 		return (EReference)distributionEClass.getEStructuralFeatures().get(18);
 	}
 
@@ -663,8 +564,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDistribution_AccessURL() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(19);
+	public EAttribute getDistribution_Availability() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(19);
 	}
 
 	/**
@@ -672,35 +573,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDistribution_LicenseAttributionByText() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(20);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDistribution_Availability() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(21);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDistribution_Status() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(22);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDistribution_ApplicableLegislation() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(23);
+	public EAttribute getDistribution_Status() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(20);
 	}
 
 	/**
@@ -709,7 +583,34 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDistribution_Checksum() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(24);
+		return (EReference)distributionEClass.getEStructuralFeatures().get(21);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getDistribution_ApplicableLegislation() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(22);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getDistribution_DownloadURL() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(23);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getDistribution_AccessURL() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(24);
 	}
 
 	/**
@@ -744,17 +645,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getRelationship_About() {
-		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public EAttribute getRelationship_NodeID() {
-		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(3);
+		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -807,7 +699,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getCatalogRecord_PrimaryTopic() {
+	public EReference getCatalogRecord_ConformsTo() {
 		return (EReference)catalogRecordEClass.getEStructuralFeatures().get(4);
 	}
 
@@ -816,8 +708,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getCatalogRecord_ConformsTo() {
-		return (EReference)catalogRecordEClass.getEStructuralFeatures().get(5);
+	public EAttribute getCatalogRecord_Language() {
+		return (EAttribute)catalogRecordEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -825,17 +717,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getCatalogRecord_Language() {
+	public EReference getCatalogRecord_PrimaryTopic() {
 		return (EReference)catalogRecordEClass.getEStructuralFeatures().get(6);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getCatalogRecord_About() {
-		return (EAttribute)catalogRecordEClass.getEStructuralFeatures().get(7);
 	}
 
 	/**
@@ -879,8 +762,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDataService_Format() {
-		return (EReference)dataServiceEClass.getEStructuralFeatures().get(3);
+	public EAttribute getDataService_Format() {
+		return (EAttribute)dataServiceEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -924,8 +807,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Theme() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(3);
+	public EAttribute getDcatResource_Theme() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -942,8 +825,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Type() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(5);
+	public EAttribute getDcatResource_Type() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(5);
 	}
 
 	/**
@@ -978,7 +861,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_ApplicableLegislation() {
+	public EReference getDcatResource_Issued() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(9);
 	}
 
@@ -987,7 +870,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Issued() {
+	public EReference getDcatResource_Modified() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(10);
 	}
 
@@ -996,7 +879,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Modified() {
+	public EReference getDcatResource_LandingPage() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(11);
 	}
 
@@ -1005,17 +888,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_LandingPage() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(12);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDcatResource_AccessRights() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(13);
+	public EAttribute getDcatResource_AccessRights() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(12);
 	}
 
 	/**
@@ -1024,7 +898,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_ConformsTo() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(14);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(13);
 	}
 
 	/**
@@ -1033,7 +907,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_License() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(15);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(14);
 	}
 
 	/**
@@ -1042,7 +916,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_Rights() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(16);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(15);
 	}
 
 	/**
@@ -1051,7 +925,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EAttribute getDcatResource_HasPolicy() {
-		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(17);
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(16);
 	}
 
 	/**
@@ -1060,16 +934,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EAttribute getDcatResource_QualifiedAttribution() {
-		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(18);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDcatResource_Relation() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(19);
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(17);
 	}
 
 	/**
@@ -1078,7 +943,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_QualifiedRelation() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(20);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(18);
 	}
 
 	/**
@@ -1086,8 +951,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_IsReferencedBy() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(21);
+	public EAttribute getDcatResource_Relation() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(19);
 	}
 
 	/**
@@ -1095,8 +960,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Language() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(22);
+	public EAttribute getDcatResource_IsReferencedBy() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(20);
 	}
 
 	/**
@@ -1104,8 +969,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EClass getDCATAPRoot() {
-		return dcatapRootEClass;
+	public EAttribute getDcatResource_Language() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(21);
 	}
 
 	/**
@@ -1113,8 +978,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getDCATAPRoot_Mixed() {
-		return (EAttribute)dcatapRootEClass.getEStructuralFeatures().get(0);
+	public EAttribute getDcatResource_ContributorID() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(22);
 	}
 
 	/**
@@ -1122,8 +987,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDCATAPRoot_XMLNSPrefixMap() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(1);
+	public EAttribute getDcatResource_ApplicableLegislation() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(23);
 	}
 
 	/**
@@ -1131,8 +996,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDCATAPRoot_XSISchemaLocation() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(2);
+	public EReference getDcatResource_Originator() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(24);
 	}
 
 	/**
@@ -1140,8 +1005,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDCATAPRoot_Catalog() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(3);
+	public EReference getDcatResource_Custodian() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(25);
 	}
 
 	/**
@@ -1149,8 +1014,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDCATAPRoot_CatalogRecord() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(4);
+	public EAttribute getDcatResource_PoliticalGeocodingLevelURI() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(26);
 	}
 
 	/**
@@ -1158,8 +1023,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDCATAPRoot_DataService() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(5);
+	public EReference getDcatResource_AdmsIdentifier() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(27);
 	}
 
 	/**
@@ -1167,44 +1032,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDCATAPRoot_Dataset() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(6);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDCATAPRoot_Distribution() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(7);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDCATAPRoot_DatasetSeries() {
-		return (EReference)dcatapRootEClass.getEStructuralFeatures().get(8);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EClass getDatasetContainer() {
-		return datasetContainerEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDatasetContainer_Dataset() {
-		return (EReference)datasetContainerEClass.getEStructuralFeatures().get(0);
+	public EReference getDcatResource_Provenance() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(28);
 	}
 
 	/**
@@ -1214,33 +1043,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 */
 	public EClass getDatasetSeries() {
 		return datasetSeriesEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDatasetSeries_AccrualPeriodicity() {
-		return (EReference)datasetSeriesEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDatasetSeries_Spatial() {
-		return (EReference)datasetSeriesEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDatasetSeries_Temporal() {
-		return (EReference)datasetSeriesEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -1276,37 +1078,34 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEReference(catalogEClass, CATALOG__RECORD);
 		createEReference(catalogEClass, CATALOG__DATASET);
 		createEReference(catalogEClass, CATALOG__SERVICE);
-		createEReference(catalogEClass, CATALOG__THEME_TAXONOMY);
-		createEReference(catalogEClass, CATALOG__HAS_PART);
-		createEReference(catalogEClass, CATALOG__HOMEPAGE);
+		createEAttribute(catalogEClass, CATALOG__THEME_TAXONOMY);
+		createEAttribute(catalogEClass, CATALOG__HAS_PART);
+		createEAttribute(catalogEClass, CATALOG__HOMEPAGE);
 
 		datasetEClass = createEClass(DATASET);
 		createEReference(datasetEClass, DATASET__DISTRIBUTION);
 		createEAttribute(datasetEClass, DATASET__SPATIAL_RESOLUTION_IN_METERS);
 		createEAttribute(datasetEClass, DATASET__TEMPORAL_RESOLUTION);
-		createEReference(datasetEClass, DATASET__ACCRUAL_PERIODICITY);
+		createEAttribute(datasetEClass, DATASET__ACCRUAL_PERIODICITY);
 		createEReference(datasetEClass, DATASET__SPATIAL);
 		createEReference(datasetEClass, DATASET__TEMPORAL);
 		createEAttribute(datasetEClass, DATASET__WAS_GENERATED_BY);
-		createEReference(datasetEClass, DATASET__CONTRIBUTOR_ID);
 		createEReference(datasetEClass, DATASET__IN_SERIES);
 		createEAttribute(datasetEClass, DATASET__VERSION);
-		createEReference(datasetEClass, DATASET__HAS_VERSION);
-		createEReference(datasetEClass, DATASET__ORIGINATOR);
-		createEReference(datasetEClass, DATASET__CUSTODIAN);
+		createEAttribute(datasetEClass, DATASET__HAS_VERSION);
 
 		distributionEClass = createEClass(DISTRIBUTION);
 		createEReference(distributionEClass, DISTRIBUTION__TITLE);
 		createEReference(distributionEClass, DISTRIBUTION__DESCRIPTION);
 		createEReference(distributionEClass, DISTRIBUTION__ACCESS_SERVICE);
-		createEReference(distributionEClass, DISTRIBUTION__FORMAT);
+		createEAttribute(distributionEClass, DISTRIBUTION__FORMAT);
 		createEAttribute(distributionEClass, DISTRIBUTION__MEDIA_TYPE);
 		createEAttribute(distributionEClass, DISTRIBUTION__PACKAGE_FORMAT);
 		createEAttribute(distributionEClass, DISTRIBUTION__BYTE_SIZE);
 		createEReference(distributionEClass, DISTRIBUTION__COMPRESS_FORMAT);
 		createEAttribute(distributionEClass, DISTRIBUTION__SPATIAL_RESOLUTION_IN_METERS);
 		createEAttribute(distributionEClass, DISTRIBUTION__TEMPORAL_RESOLUTION);
-		createEReference(distributionEClass, DISTRIBUTION__ACCESS_RIGHTS);
+		createEAttribute(distributionEClass, DISTRIBUTION__ACCESS_RIGHTS);
 		createEReference(distributionEClass, DISTRIBUTION__LICENSE);
 		createEReference(distributionEClass, DISTRIBUTION__CONFORMS_TO);
 		createEReference(distributionEClass, DISTRIBUTION__RIGHTS);
@@ -1314,18 +1113,17 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEReference(distributionEClass, DISTRIBUTION__ISSUED);
 		createEReference(distributionEClass, DISTRIBUTION__MODIFIED);
 		createEAttribute(distributionEClass, DISTRIBUTION__NODE_ID);
-		createEReference(distributionEClass, DISTRIBUTION__DOWNLOAD_URL);
-		createEReference(distributionEClass, DISTRIBUTION__ACCESS_URL);
 		createEReference(distributionEClass, DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT);
-		createEReference(distributionEClass, DISTRIBUTION__AVAILABILITY);
-		createEReference(distributionEClass, DISTRIBUTION__STATUS);
-		createEReference(distributionEClass, DISTRIBUTION__APPLICABLE_LEGISLATION);
+		createEAttribute(distributionEClass, DISTRIBUTION__AVAILABILITY);
+		createEAttribute(distributionEClass, DISTRIBUTION__STATUS);
 		createEReference(distributionEClass, DISTRIBUTION__CHECKSUM);
+		createEAttribute(distributionEClass, DISTRIBUTION__APPLICABLE_LEGISLATION);
+		createEAttribute(distributionEClass, DISTRIBUTION__DOWNLOAD_URL);
+		createEAttribute(distributionEClass, DISTRIBUTION__ACCESS_URL);
 
 		relationshipEClass = createEClass(RELATIONSHIP);
 		createEReference(relationshipEClass, RELATIONSHIP__HAD_ROLE);
 		createEReference(relationshipEClass, RELATIONSHIP__DESCRIPTION);
-		createEAttribute(relationshipEClass, RELATIONSHIP__ABOUT);
 		createEAttribute(relationshipEClass, RELATIONSHIP__NODE_ID);
 
 		catalogRecordEClass = createEClass(CATALOG_RECORD);
@@ -1333,60 +1131,48 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEReference(catalogRecordEClass, CATALOG_RECORD__DESCRIPTION);
 		createEReference(catalogRecordEClass, CATALOG_RECORD__ISSUED);
 		createEReference(catalogRecordEClass, CATALOG_RECORD__MODIFIED);
-		createEReference(catalogRecordEClass, CATALOG_RECORD__PRIMARY_TOPIC);
 		createEReference(catalogRecordEClass, CATALOG_RECORD__CONFORMS_TO);
-		createEReference(catalogRecordEClass, CATALOG_RECORD__LANGUAGE);
-		createEAttribute(catalogRecordEClass, CATALOG_RECORD__ABOUT);
+		createEAttribute(catalogRecordEClass, CATALOG_RECORD__LANGUAGE);
+		createEReference(catalogRecordEClass, CATALOG_RECORD__PRIMARY_TOPIC);
 
 		dataServiceEClass = createEClass(DATA_SERVICE);
 		createEAttribute(dataServiceEClass, DATA_SERVICE__ENDPOINT_DESCRIPTION);
 		createEAttribute(dataServiceEClass, DATA_SERVICE__ENDPOINT_URL);
 		createEReference(dataServiceEClass, DATA_SERVICE__SERVES_DATASET);
-		createEReference(dataServiceEClass, DATA_SERVICE__FORMAT);
+		createEAttribute(dataServiceEClass, DATA_SERVICE__FORMAT);
 
 		dcatResourceEClass = createEClass(DCAT_RESOURCE);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__IDENTIFIER);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__TITLE);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__DESCRIPTION);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__THEME);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__THEME);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__KEYWORD);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__TYPE);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__TYPE);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__CONTACT_POINT);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__CREATOR);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__PUBLISHER);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__APPLICABLE_LEGISLATION);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__ISSUED);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__MODIFIED);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__LANDING_PAGE);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__ACCESS_RIGHTS);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__ACCESS_RIGHTS);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__CONFORMS_TO);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__LICENSE);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__RIGHTS);
 		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__HAS_POLICY);
 		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__QUALIFIED_ATTRIBUTION);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__RELATION);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__QUALIFIED_RELATION);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__IS_REFERENCED_BY);
-		createEReference(dcatResourceEClass, DCAT_RESOURCE__LANGUAGE);
-
-		dcatapRootEClass = createEClass(DCATAP_ROOT);
-		createEAttribute(dcatapRootEClass, DCATAP_ROOT__MIXED);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__XMLNS_PREFIX_MAP);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__XSI_SCHEMA_LOCATION);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__CATALOG);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__CATALOG_RECORD);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__DATA_SERVICE);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__DATASET);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__DISTRIBUTION);
-		createEReference(dcatapRootEClass, DCATAP_ROOT__DATASET_SERIES);
-
-		datasetContainerEClass = createEClass(DATASET_CONTAINER);
-		createEReference(datasetContainerEClass, DATASET_CONTAINER__DATASET);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__RELATION);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__IS_REFERENCED_BY);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__LANGUAGE);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__CONTRIBUTOR_ID);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__APPLICABLE_LEGISLATION);
+		createEReference(dcatResourceEClass, DCAT_RESOURCE__ORIGINATOR);
+		createEReference(dcatResourceEClass, DCAT_RESOURCE__CUSTODIAN);
+		createEAttribute(dcatResourceEClass, DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI);
+		createEReference(dcatResourceEClass, DCAT_RESOURCE__ADMS_IDENTIFIER);
+		createEReference(dcatResourceEClass, DCAT_RESOURCE__PROVENANCE);
 
 		datasetSeriesEClass = createEClass(DATASET_SERIES);
-		createEReference(datasetSeriesEClass, DATASET_SERIES__ACCRUAL_PERIODICITY);
-		createEReference(datasetSeriesEClass, DATASET_SERIES__SPATIAL);
-		createEReference(datasetSeriesEClass, DATASET_SERIES__TEMPORAL);
 	}
 
 	/**
@@ -1413,14 +1199,13 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		setNsURI(eNS_URI);
 
 		// Obtain other dependent packages
-		SkosPackage theSkosPackage = (SkosPackage)EPackage.Registry.INSTANCE.getEPackage(SkosPackage.eNS_URI);
-		RdfPackage theRdfPackage = (RdfPackage)EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
 		XMLTypePackage theXMLTypePackage = (XMLTypePackage)EPackage.Registry.INSTANCE.getEPackage(XMLTypePackage.eNS_URI);
 		TermsPackage theTermsPackage = (TermsPackage)EPackage.Registry.INSTANCE.getEPackage(TermsPackage.eNS_URI);
-		DcatDEPackage theDcatDEPackage = (DcatDEPackage)EPackage.Registry.INSTANCE.getEPackage(DcatDEPackage.eNS_URI);
-		FoafPackage theFoafPackage = (FoafPackage)EPackage.Registry.INSTANCE.getEPackage(FoafPackage.eNS_URI);
+		RdfPackage theRdfPackage = (RdfPackage)EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
 		SpdxPackage theSpdxPackage = (SpdxPackage)EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
 		VcardPackage theVcardPackage = (VcardPackage)EPackage.Registry.INSTANCE.getEPackage(VcardPackage.eNS_URI);
+		FoafPackage theFoafPackage = (FoafPackage)EPackage.Registry.INSTANCE.getEPackage(FoafPackage.eNS_URI);
+		AdmsPackage theAdmsPackage = (AdmsPackage)EPackage.Registry.INSTANCE.getEPackage(AdmsPackage.eNS_URI);
 
 		// Create type parameters
 
@@ -1429,67 +1214,65 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		// Add supertypes to classes
 		catalogEClass.getESuperTypes().add(this.getDataset());
 		datasetEClass.getESuperTypes().add(this.getDcatResource());
-		distributionEClass.getESuperTypes().add(theRdfPackage.getResource());
+		distributionEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
+		relationshipEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
+		catalogRecordEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
 		dataServiceEClass.getESuperTypes().add(this.getDcatResource());
-		dcatResourceEClass.getESuperTypes().add(theRdfPackage.getResource());
-		datasetSeriesEClass.getESuperTypes().add(this.getDcatResource());
+		dcatResourceEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
+		datasetSeriesEClass.getESuperTypes().add(this.getDataset());
 
 		// Initialize classes, features, and operations; add parameters
 		initEClass(catalogEClass, Catalog.class, "Catalog", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getCatalog_Catalog(), this.getCatalog(), null, "catalog", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getCatalog_Catalog(), this.getCatalog(), null, "catalog", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getCatalog_Record(), this.getCatalogRecord(), null, "record", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalog_Dataset(), this.getDatasetContainer(), null, "dataset", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalog_Service(), this.getDataService(), null, "service", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalog_ThemeTaxonomy(), theSkosPackage.getConceptScheme(), null, "themeTaxonomy", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalog_HasPart(), theRdfPackage.getResource(), null, "hasPart", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalog_Homepage(), theRdfPackage.getResource(), null, "homepage", null, 0, 1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getCatalog_Dataset(), this.getDataset(), null, "dataset", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getCatalog_Service(), this.getDataService(), null, "service", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getCatalog_ThemeTaxonomy(), theXMLTypePackage.getAnyURI(), "themeTaxonomy", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getCatalog_HasPart(), theXMLTypePackage.getAnyURI(), "hasPart", null, 0, -1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getCatalog_Homepage(), theXMLTypePackage.getAnyURI(), "homepage", null, 0, 1, Catalog.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(datasetEClass, Dataset.class, "Dataset", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getDataset_Distribution(), theRdfPackage.getResource(), null, "distribution", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDataset_Distribution(), this.getDistribution(), null, "distribution", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDataset_SpatialResolutionInMeters(), theXMLTypePackage.getDecimal(), "spatialResolutionInMeters", null, 0, 1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDataset_TemporalResolution(), theXMLTypePackage.getDuration(), "temporalResolution", null, 0, 1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataset_AccrualPeriodicity(), theSkosPackage.getConcept(), null, "accrualPeriodicity", null, 0, 1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDataset_AccrualPeriodicity(), theXMLTypePackage.getAnyURI(), "accrualPeriodicity", null, 0, 1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDataset_Spatial(), theTermsPackage.getLocation(), null, "spatial", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDataset_Temporal(), theTermsPackage.getPeriodOfTime(), null, "temporal", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDataset_WasGeneratedBy(), theXMLTypePackage.getAnyURI(), "wasGeneratedBy", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataset_ContributorID(), theDcatDEPackage.getContributorID(), null, "contributorID", null, 0, 1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataset_InSeries(), this.getDatasetSeries(), null, "inSeries", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDataset_InSeries(), this.getDatasetSeries(), null, "inSeries", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDataset_Version(), theXMLTypePackage.getString(), "version", null, 0, 1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataset_HasVersion(), this.getDataset(), null, "hasVersion", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataset_Originator(), theFoafPackage.getAgent(), null, "originator", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataset_Custodian(), theFoafPackage.getAgent(), null, "custodian", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDataset_HasVersion(), theXMLTypePackage.getAnyURI(), "hasVersion", null, 0, -1, Dataset.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(distributionEClass, Distribution.class, "Distribution", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getDistribution_Title(), theRdfPackage.getPlainLiteral(), null, "title", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_AccessService(), theRdfPackage.getResource(), null, "accessService", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_Format(), theSkosPackage.getConcept(), null, "format", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDistribution_MediaType(), theXMLTypePackage.getString(), "mediaType", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDistribution_PackageFormat(), theXMLTypePackage.getString(), "packageFormat", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDistribution_AccessService(), this.getDataService(), null, "accessService", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_Format(), theXMLTypePackage.getAnyURI(), "format", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_MediaType(), theXMLTypePackage.getAnyURI(), "mediaType", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_PackageFormat(), theXMLTypePackage.getAnyURI(), "packageFormat", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_ByteSize(), theXMLTypePackage.getNonNegativeInteger(), "byteSize", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_CompressFormat(), ecorePackage.getEObject(), null, "compressFormat", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_SpatialResolutionInMeters(), theXMLTypePackage.getDecimal(), "spatialResolutionInMeters", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_TemporalResolution(), theXMLTypePackage.getDuration(), "temporalResolution", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_AccessRights(), theSkosPackage.getConcept(), null, "accessRights", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_License(), theTermsPackage.getLicenseDocumentType(), null, "license", null, 1, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_AccessRights(), theXMLTypePackage.getAnyURI(), "accessRights", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDistribution_License(), theTermsPackage.getLicenseDocument(), null, "license", null, 1, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_ConformsTo(), theTermsPackage.getStandard(), null, "conformsTo", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_Rights(), theTermsPackage.getRightsStatement(), null, "rights", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_HasPolicy(), theXMLTypePackage.getAnyURI(), "hasPolicy", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_Issued(), theRdfPackage.getDateOrDateTimeLiteral(), null, "issued", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_Modified(), theRdfPackage.getDateOrDateTimeLiteral(), null, "modified", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_DownloadURL(), theRdfPackage.getResource(), null, "downloadURL", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_AccessURL(), theRdfPackage.getResource(), null, "accessURL", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_LicenseAttributionByText(), theRdfPackage.getPlainLiteral(), null, "licenseAttributionByText", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_Availability(), theSkosPackage.getConcept(), null, "availability", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_Status(), theSkosPackage.getConcept(), null, "status", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_ApplicableLegislation(), theRdfPackage.getResource(), null, "applicableLegislation", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_Availability(), theXMLTypePackage.getAnyURI(), "availability", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_Status(), theXMLTypePackage.getAnyURI(), "status", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_Checksum(), theSpdxPackage.getChecksum(), null, "checksum", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_ApplicableLegislation(), theXMLTypePackage.getAnyURI(), "applicableLegislation", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_DownloadURL(), theXMLTypePackage.getAnyURI(), "downloadURL", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_AccessURL(), theXMLTypePackage.getAnyURI(), "accessURL", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(relationshipEClass, Relationship.class, "Relationship", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getRelationship_HadRole(), ecorePackage.getEObject(), null, "hadRole", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getRelationship_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getRelationship_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getRelationship_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(catalogRecordEClass, CatalogRecord.class, "CatalogRecord", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -1497,60 +1280,48 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		initEReference(getCatalogRecord_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 0, -1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getCatalogRecord_Issued(), theRdfPackage.getDateOrDateTimeLiteral(), null, "issued", null, 0, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getCatalogRecord_Modified(), theRdfPackage.getDateOrDateTimeLiteral(), null, "modified", null, 1, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalogRecord_PrimaryTopic(), theRdfPackage.getResource(), null, "primaryTopic", null, 1, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getCatalogRecord_ConformsTo(), theTermsPackage.getStandard(), null, "conformsTo", null, 0, -1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getCatalogRecord_Language(), theRdfPackage.getResource(), null, "language", null, 0, -1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getCatalogRecord_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getCatalogRecord_Language(), theXMLTypePackage.getAnyURI(), "language", null, 0, -1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getCatalogRecord_PrimaryTopic(), this.getDcatResource(), null, "primaryTopic", null, 1, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(dataServiceEClass, DataService.class, "DataService", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getDataService_EndpointDescription(), theXMLTypePackage.getString(), "endpointDescription", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDataService_EndpointURL(), theXMLTypePackage.getString(), "endpointURL", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataService_ServesDataset(), this.getDataset(), null, "servesDataset", null, 0, 1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDataService_Format(), theSkosPackage.getConcept(), null, "format", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDataService_EndpointDescription(), theXMLTypePackage.getAnyURI(), "endpointDescription", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDataService_EndpointURL(), theXMLTypePackage.getAnyURI(), "endpointURL", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDataService_ServesDataset(), this.getDataset(), null, "servesDataset", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDataService_Format(), theXMLTypePackage.getAnyURI(), "format", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(dcatResourceEClass, DcatResource.class, "DcatResource", IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getDcatResource_Identifier(), theRdfPackage.getPlainLiteral(), null, "identifier", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Title(), theRdfPackage.getPlainLiteral(), null, "title", null, 1, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 1, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_Theme(), theSkosPackage.getConcept(), null, "theme", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_Theme(), theXMLTypePackage.getAnyURI(), "theme", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Keyword(), theRdfPackage.getPlainLiteral(), null, "keyword", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_Type(), theSkosPackage.getConcept(), null, "type", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_Type(), theXMLTypePackage.getAnyURI(), "type", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_ContactPoint(), theVcardPackage.getOrganization(), null, "contactPoint", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Creator(), theFoafPackage.getAgent(), null, "creator", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Publisher(), theFoafPackage.getAgent(), null, "publisher", null, 1, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_ApplicableLegislation(), theRdfPackage.getResource(), null, "applicableLegislation", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Issued(), theRdfPackage.getDateOrDateTimeLiteral(), null, "issued", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Modified(), theRdfPackage.getDateOrDateTimeLiteral(), null, "modified", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_LandingPage(), theFoafPackage.getDocument(), null, "landingPage", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_AccessRights(), theSkosPackage.getConcept(), null, "accessRights", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_AccessRights(), theXMLTypePackage.getAnyURI(), "accessRights", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_ConformsTo(), theTermsPackage.getStandard(), null, "conformsTo", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_License(), theTermsPackage.getLicenseDocument(), null, "license", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Rights(), theTermsPackage.getRightsStatement(), null, "rights", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDcatResource_HasPolicy(), theXMLTypePackage.getAnyURI(), "hasPolicy", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDcatResource_QualifiedAttribution(), theXMLTypePackage.getAnyURI(), "qualifiedAttribution", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_Relation(), theRdfPackage.getResource(), null, "relation", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_QualifiedRelation(), this.getRelationship(), null, "qualifiedRelation", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_IsReferencedBy(), theRdfPackage.getResource(), null, "isReferencedBy", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_Language(), theRdfPackage.getResource(), null, "language", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(dcatapRootEClass, DCATAPRoot.class, "DCATAPRoot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getDCATAPRoot_Mixed(), ecorePackage.getEFeatureMapEntry(), "mixed", null, 0, -1, null, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_XMLNSPrefixMap(), ecorePackage.getEStringToStringMapEntry(), null, "xMLNSPrefixMap", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_XSISchemaLocation(), ecorePackage.getEStringToStringMapEntry(), null, "xSISchemaLocation", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_Catalog(), this.getCatalog(), null, "catalog", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_CatalogRecord(), this.getCatalogRecord(), null, "catalogRecord", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_DataService(), this.getDataService(), null, "dataService", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_Dataset(), this.getDataset(), null, "dataset", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_Distribution(), this.getDistribution(), null, "distribution", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDCATAPRoot_DatasetSeries(), this.getDatasetSeries(), null, "datasetSeries", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-
-		initEClass(datasetContainerEClass, DatasetContainer.class, "DatasetContainer", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getDatasetContainer_Dataset(), this.getDataset(), null, "dataset", null, 1, 1, DatasetContainer.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_Relation(), theXMLTypePackage.getAnyURI(), "relation", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_IsReferencedBy(), theXMLTypePackage.getAnyURI(), "isReferencedBy", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_Language(), theXMLTypePackage.getAnyURI(), "language", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_ContributorID(), theXMLTypePackage.getAnyURI(), "contributorID", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_ApplicableLegislation(), theXMLTypePackage.getAnyURI(), "applicableLegislation", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDcatResource_Originator(), theFoafPackage.getAgent(), null, "originator", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDcatResource_Custodian(), theFoafPackage.getAgent(), null, "custodian", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDcatResource_PoliticalGeocodingLevelURI(), theXMLTypePackage.getAnyURI(), "politicalGeocodingLevelURI", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDcatResource_AdmsIdentifier(), theAdmsPackage.getIdentifier(), null, "admsIdentifier", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDcatResource_Provenance(), theTermsPackage.getProvenanceStatement(), null, "provenance", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(datasetSeriesEClass, DatasetSeries.class, "DatasetSeries", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getDatasetSeries_AccrualPeriodicity(), theSkosPackage.getConcept(), null, "accrualPeriodicity", null, 0, 1, DatasetSeries.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDatasetSeries_Spatial(), theTermsPackage.getLocation(), null, "spatial", null, 0, -1, DatasetSeries.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDatasetSeries_Temporal(), theTermsPackage.getPeriodOfTime(), null, "temporal", null, 0, -1, DatasetSeries.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Create resource
 		createResource(eNS_URI);
@@ -1695,13 +1466,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://www.w3.org/ns/prov#"
 		   });
 		addAnnotation
-		  (getDataset_ContributorID(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "namespace", "http://dcat-ap.de/def/dcatde/"
-		   });
-		addAnnotation
 		  (getDataset_InSeries(),
 		   source,
 		   new String[] {
@@ -1724,22 +1488,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "kind", "element",
 			   "name", "hasVersion",
 			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDataset_Originator(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "originator",
-			   "namespace", "http://data.europa.eu/930/"
-		   });
-		addAnnotation
-		  (getDataset_Custodian(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "custodian",
-			   "namespace", "http://data.europa.eu/930/"
 		   });
 		addAnnotation
 		  (distributionEClass,
@@ -1893,22 +1641,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 		   });
 		addAnnotation
-		  (getDistribution_DownloadURL(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "downloadURL",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDistribution_AccessURL(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "accessURL",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
 		  (getDistribution_LicenseAttributionByText(),
 		   source,
 		   new String[] {
@@ -1933,6 +1665,14 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://www.w3.org/ns/adms#"
 		   });
 		addAnnotation
+		  (getDistribution_Checksum(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "checksum",
+			   "namespace", "http://spdx.org/rdf/terms#"
+		   });
+		addAnnotation
 		  (getDistribution_ApplicableLegislation(),
 		   source,
 		   new String[] {
@@ -1941,12 +1681,20 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://data.europa.eu/r5r/"
 		   });
 		addAnnotation
-		  (getDistribution_Checksum(),
+		  (getDistribution_DownloadURL(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "checksum",
-			   "namespace", "http://spdx.org/rdf/terms#"
+			   "name", "downloadURL",
+			   "namespace", "##targetNamespace"
+		   });
+		addAnnotation
+		  (getDistribution_AccessURL(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "accessURL",
+			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
 		  (relationshipEClass,
@@ -1970,14 +1718,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "kind", "element",
 			   "name", "description",
 			   "namespace", "http://purl.org/dc/terms/"
-		   });
-		addAnnotation
-		  (getRelationship_About(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "about",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 		   });
 		addAnnotation
 		  (getRelationship_NodeID(),
@@ -2027,14 +1767,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
-		  (getCatalogRecord_PrimaryTopic(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "primaryTopic",
-			   "namespace", "http://xmlns.com/foaf/0.1/"
-		   });
-		addAnnotation
 		  (getCatalogRecord_ConformsTo(),
 		   source,
 		   new String[] {
@@ -2051,12 +1783,12 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
-		  (getCatalogRecord_About(),
+		  (getCatalogRecord_PrimaryTopic(),
 		   source,
 		   new String[] {
-			   "kind", "attribute",
-			   "name", "about",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+			   "kind", "element",
+			   "name", "primaryTopic",
+			   "namespace", "http://xmlns.com/foaf/0.1/"
 		   });
 		addAnnotation
 		  (dataServiceEClass,
@@ -2177,14 +1909,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
-		  (getDcatResource_ApplicableLegislation(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "applicableLegislation",
-			   "namespace", "http://data.europa.eu/r5r/"
-		   });
-		addAnnotation
 		  (getDcatResource_Issued(),
 		   source,
 		   new String[] {
@@ -2257,20 +1981,20 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://www.w3.org/ns/prov#"
 		   });
 		addAnnotation
-		  (getDcatResource_Relation(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "relation",
-			   "namespace", "http://purl.org/dc/terms/"
-		   });
-		addAnnotation
 		  (getDcatResource_QualifiedRelation(),
 		   source,
 		   new String[] {
 			   "kind", "element",
 			   "name", "qualifiedRelation",
 			   "namespace", "##targetNamespace"
+		   });
+		addAnnotation
+		  (getDcatResource_Relation(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "relation",
+			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
 		  (getDcatResource_IsReferencedBy(),
@@ -2289,95 +2013,60 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
-		  (dcatapRootEClass,
-		   source,
-		   new String[] {
-			   "name", "",
-			   "kind", "mixed"
-		   });
-		addAnnotation
-		  (getDCATAPRoot_Mixed(),
-		   source,
-		   new String[] {
-			   "kind", "elementWildcard",
-			   "name", ":mixed"
-		   });
-		addAnnotation
-		  (getDCATAPRoot_XMLNSPrefixMap(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xmlns:prefix"
-		   });
-		addAnnotation
-		  (getDCATAPRoot_XSISchemaLocation(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xsi:schemaLocation"
-		   });
-		addAnnotation
-		  (getDCATAPRoot_Catalog(),
+		  (getDcatResource_ContributorID(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "Catalog",
-			   "namespace", "##targetNamespace"
+			   "namespace", "http://dcat-ap.de/def/dcatde/",
+			   "name", null
 		   });
 		addAnnotation
-		  (getDCATAPRoot_CatalogRecord(),
+		  (getDcatResource_ApplicableLegislation(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "CatalogRecord",
-			   "namespace", "##targetNamespace"
+			   "name", "applicableLegislation",
+			   "namespace", "http://data.europa.eu/r5r/"
 		   });
 		addAnnotation
-		  (getDCATAPRoot_DataService(),
+		  (getDcatResource_Originator(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "DataService",
-			   "namespace", "##targetNamespace"
+			   "name", "originator",
+			   "namespace", "http://data.europa.eu/930/"
 		   });
 		addAnnotation
-		  (getDCATAPRoot_Dataset(),
+		  (getDcatResource_Custodian(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "Dataset",
-			   "namespace", "##targetNamespace"
+			   "name", "custodian",
+			   "namespace", "http://data.europa.eu/930/"
 		   });
 		addAnnotation
-		  (getDCATAPRoot_Distribution(),
+		  (getDcatResource_PoliticalGeocodingLevelURI(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "Distribution",
-			   "namespace", "##targetNamespace"
+			   "name", "politicalGeocodingLevelURI",
+			   "namespace", "http://dcat-ap.de/def/dcatde/"
 		   });
 		addAnnotation
-		  (getDCATAPRoot_DatasetSeries(),
+		  (getDcatResource_AdmsIdentifier(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "name", "DatasetSeries",
-			   "namespace", "##targetNamespace"
+			   "name", "identifier",
+			   "namespace", "http://www.w3.org/ns/adms#"
 		   });
 		addAnnotation
-		  (datasetContainerEClass,
-		   source,
-		   new String[] {
-			   "name", "dataset",
-			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getDatasetContainer_Dataset(),
+		  (getDcatResource_Provenance(),
 		   source,
 		   new String[] {
 			   "kind", "element",
-			   "namespace", "##targetNamespace",
-			   "name", "Dataset"
+			   "name", "provenance",
+			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
 		  (datasetSeriesEClass,
@@ -2385,30 +2074,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		   new String[] {
 			   "name", "DatasetSeries",
 			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getDatasetSeries_AccrualPeriodicity(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "accrualPeriodicity",
-			   "namespace", "http://purl.org/dc/terms/"
-		   });
-		addAnnotation
-		  (getDatasetSeries_Spatial(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "spatial",
-			   "namespace", "http://purl.org/dc/terms/"
-		   });
-		addAnnotation
-		  (getDatasetSeries_Temporal(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "temporal",
-			   "namespace", "http://purl.org/dc/terms/"
 		   });
 	}
 

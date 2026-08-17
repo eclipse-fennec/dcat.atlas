@@ -67,10 +67,7 @@ public class VcardFactoryImpl extends EFactoryImpl implements VcardFactory {
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
 			case VcardPackage.ADDRESS: return createAddress();
-			case VcardPackage.ADDRESS_TYPE: return createAddressType();
 			case VcardPackage.ORGANIZATION: return createOrganization();
-			case VcardPackage.ORGANIZATION_TYPE: return createOrganizationType();
-			case VcardPackage.DOCUMENT_ROOT: return createDocumentRoot();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -91,39 +88,9 @@ public class VcardFactoryImpl extends EFactoryImpl implements VcardFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public AddressType createAddressType() {
-		AddressTypeImpl addressType = new AddressTypeImpl();
-		return addressType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public Organization createOrganization() {
 		OrganizationImpl organization = new OrganizationImpl();
 		return organization;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public OrganizationType createOrganizationType() {
-		OrganizationTypeImpl organizationType = new OrganizationTypeImpl();
-		return organizationType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DocumentRoot createDocumentRoot() {
-		DocumentRootImpl documentRoot = new DocumentRootImpl();
-		return documentRoot;
 	}
 
 	/**

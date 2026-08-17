@@ -14,44 +14,41 @@ package rdf;
 
 import org.eclipse.emf.ecore.EObject;
 
-import org.eclipse.emf.ecore.util.FeatureMap;
-
 import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * <!-- begin-user-doc -->
- * A representation of the model object '<em><b>Description</b></em>'.
+ * A representation of the model object '<em><b>Identified Resource</b></em>'.
  * <!-- end-user-doc -->
  *
  * <p>
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link rdf.Description#getAbout <em>About</em>}</li>
- *   <li>{@link rdf.Description#getMixed <em>Mixed</em>}</li>
+ *   <li>{@link rdf.IdentifiedResource#getAbout <em>About</em>}</li>
  * </ul>
  *
- * @see rdf.RdfPackage#getDescription()
- * @model extendedMetaData="name='Description' kind='empty'"
+ * @see rdf.RdfPackage#getIdentifiedResource()
+ * @model abstract="true"
  * @generated
  */
 @ProviderType
-public interface Description extends EObject {
+public interface IdentifiedResource extends EObject {
 	/**
 	 * Returns the value of the '<em><b>About</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>About</em>' attribute.
 	 * @see #setAbout(String)
-	 * @see rdf.RdfPackage#getDescription_About()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 * @see rdf.RdfPackage#getIdentifiedResource_About()
+	 * @model id="true" dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='attribute' name='about' namespace='##targetNamespace'"
 	 * @generated
 	 */
 	String getAbout();
 
 	/**
-	 * Sets the value of the '{@link rdf.Description#getAbout <em>About</em>}' attribute.
+	 * Sets the value of the '{@link rdf.IdentifiedResource#getAbout <em>About</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>About</em>' attribute.
@@ -60,17 +57,4 @@ public interface Description extends EObject {
 	 */
 	void setAbout(String value);
 
-	/**
-	 * Returns the value of the '<em><b>Mixed</b></em>' attribute list.
-	 * The list contents are of type {@link org.eclipse.emf.ecore.util.FeatureMap.Entry}.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Mixed</em>' attribute list.
-	 * @see rdf.RdfPackage#getDescription_Mixed()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.EFeatureMapEntry" many="true"
-	 *        extendedMetaData="kind='elementWildcard' name=':mixed'"
-	 * @generated
-	 */
-	FeatureMap getMixed();
-
-} // Description
+} // IdentifiedResource

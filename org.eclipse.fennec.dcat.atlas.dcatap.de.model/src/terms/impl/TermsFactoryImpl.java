@@ -66,32 +66,15 @@ public class TermsFactoryImpl extends EFactoryImpl implements TermsFactory {
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case TermsPackage.DOCUMENT_ROOT: return createDocumentRoot();
 			case TermsPackage.LICENSE_DOCUMENT: return createLicenseDocument();
-			case TermsPackage.LICENSE_DOCUMENT_TYPE: return createLicenseDocumentType();
 			case TermsPackage.LOCATION: return createLocation();
-			case TermsPackage.LOCATION_TYPE: return createLocationType();
 			case TermsPackage.PERIOD_OF_TIME: return createPeriodOfTime();
-			case TermsPackage.PERIOD_OF_TIME_TYPE: return createPeriodOfTimeType();
 			case TermsPackage.PROVENANCE_STATEMENT: return createProvenanceStatement();
-			case TermsPackage.PROVENANCE_STATEMENT_TYPE: return createProvenanceStatementType();
 			case TermsPackage.RIGHTS_STATEMENT: return createRightsStatement();
-			case TermsPackage.RIGHTS_STATEMENT_TYPE: return createRightsStatementType();
 			case TermsPackage.STANDARD: return createStandard();
-			case TermsPackage.STANDARD_TYPE: return createStandardType();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DocumentRoot createDocumentRoot() {
-		DocumentRootImpl documentRoot = new DocumentRootImpl();
-		return documentRoot;
 	}
 
 	/**
@@ -109,29 +92,9 @@ public class TermsFactoryImpl extends EFactoryImpl implements TermsFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public LicenseDocumentType createLicenseDocumentType() {
-		LicenseDocumentTypeImpl licenseDocumentType = new LicenseDocumentTypeImpl();
-		return licenseDocumentType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public Location createLocation() {
 		LocationImpl location = new LocationImpl();
 		return location;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public LocationType createLocationType() {
-		LocationTypeImpl locationType = new LocationTypeImpl();
-		return locationType;
 	}
 
 	/**
@@ -149,29 +112,9 @@ public class TermsFactoryImpl extends EFactoryImpl implements TermsFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public PeriodOfTimeType createPeriodOfTimeType() {
-		PeriodOfTimeTypeImpl periodOfTimeType = new PeriodOfTimeTypeImpl();
-		return periodOfTimeType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public ProvenanceStatement createProvenanceStatement() {
 		ProvenanceStatementImpl provenanceStatement = new ProvenanceStatementImpl();
 		return provenanceStatement;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public ProvenanceStatementType createProvenanceStatementType() {
-		ProvenanceStatementTypeImpl provenanceStatementType = new ProvenanceStatementTypeImpl();
-		return provenanceStatementType;
 	}
 
 	/**
@@ -189,29 +132,9 @@ public class TermsFactoryImpl extends EFactoryImpl implements TermsFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public RightsStatementType createRightsStatementType() {
-		RightsStatementTypeImpl rightsStatementType = new RightsStatementTypeImpl();
-		return rightsStatementType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public Standard createStandard() {
 		StandardImpl standard = new StandardImpl();
 		return standard;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public StandardType createStandardType() {
-		StandardTypeImpl standardType = new StandardTypeImpl();
-		return standardType;
 	}
 
 	/**

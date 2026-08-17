@@ -12,17 +12,27 @@
  */
 package terms.impl;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
+import rdf.PlainLiteral;
+import rdf.TypedLiteral;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 import terms.Location;
-import terms.LocationType;
 import terms.TermsPackage;
 
 /**
@@ -33,21 +43,53 @@ import terms.TermsPackage;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link terms.impl.LocationImpl#getLocation <em>Location</em>}</li>
+ *   <li>{@link terms.impl.LocationImpl#getGeometry <em>Geometry</em>}</li>
+ *   <li>{@link terms.impl.LocationImpl#getPrefLabel <em>Pref Label</em>}</li>
+ *   <li>{@link terms.impl.LocationImpl#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class LocationImpl extends MinimalEObjectImpl.Container implements Location {
+public class LocationImpl extends IdentifiedResourceImpl implements Location {
 	/**
-	 * The cached value of the '{@link #getLocation() <em>Location</em>}' containment reference.
+	 * The cached value of the '{@link #getGeometry() <em>Geometry</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getLocation()
+	 * @see #getGeometry()
 	 * @generated
 	 * @ordered
 	 */
-	protected LocationType location;
+	protected EList<TypedLiteral> geometry;
+
+	/**
+	 * The cached value of the '{@link #getPrefLabel() <em>Pref Label</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPrefLabel()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<PlainLiteral> prefLabel;
+
+	/**
+	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NODE_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -73,8 +115,11 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public LocationType getLocation() {
-		return location;
+	public EList<TypedLiteral> getGeometry() {
+		if (geometry == null) {
+			geometry = new EObjectContainmentEList<TypedLiteral>(TypedLiteral.class, this, TermsPackage.LOCATION__GEOMETRY);
+		}
+		return geometry;
 	}
 
 	/**
@@ -82,14 +127,11 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetLocation(LocationType newLocation, NotificationChain msgs) {
-		LocationType oldLocation = location;
-		location = newLocation;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, TermsPackage.LOCATION__LOCATION, oldLocation, newLocation);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+	public EList<PlainLiteral> getPrefLabel() {
+		if (prefLabel == null) {
+			prefLabel = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.LOCATION__PREF_LABEL);
 		}
-		return msgs;
+		return prefLabel;
 	}
 
 	/**
@@ -97,18 +139,20 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setLocation(LocationType newLocation) {
-		if (newLocation != location) {
-			NotificationChain msgs = null;
-			if (location != null)
-				msgs = ((InternalEObject)location).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - TermsPackage.LOCATION__LOCATION, null, msgs);
-			if (newLocation != null)
-				msgs = ((InternalEObject)newLocation).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - TermsPackage.LOCATION__LOCATION, null, msgs);
-			msgs = basicSetLocation(newLocation, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.LOCATION__LOCATION, newLocation, newLocation));
+	public String getNodeID() {
+		return nodeID;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setNodeID(String newNodeID) {
+		String oldNodeID = nodeID;
+		nodeID = newNodeID;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.LOCATION__NODE_ID, oldNodeID, nodeID));
 	}
 
 	/**
@@ -119,8 +163,10 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case TermsPackage.LOCATION__LOCATION:
-				return basicSetLocation(null, msgs);
+			case TermsPackage.LOCATION__GEOMETRY:
+				return ((InternalEList<?>)getGeometry()).basicRemove(otherEnd, msgs);
+			case TermsPackage.LOCATION__PREF_LABEL:
+				return ((InternalEList<?>)getPrefLabel()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -133,8 +179,12 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case TermsPackage.LOCATION__LOCATION:
-				return getLocation();
+			case TermsPackage.LOCATION__GEOMETRY:
+				return getGeometry();
+			case TermsPackage.LOCATION__PREF_LABEL:
+				return getPrefLabel();
+			case TermsPackage.LOCATION__NODE_ID:
+				return getNodeID();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -144,11 +194,20 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case TermsPackage.LOCATION__LOCATION:
-				setLocation((LocationType)newValue);
+			case TermsPackage.LOCATION__GEOMETRY:
+				getGeometry().clear();
+				getGeometry().addAll((Collection<? extends TypedLiteral>)newValue);
+				return;
+			case TermsPackage.LOCATION__PREF_LABEL:
+				getPrefLabel().clear();
+				getPrefLabel().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.LOCATION__NODE_ID:
+				setNodeID((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -162,8 +221,14 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case TermsPackage.LOCATION__LOCATION:
-				setLocation((LocationType)null);
+			case TermsPackage.LOCATION__GEOMETRY:
+				getGeometry().clear();
+				return;
+			case TermsPackage.LOCATION__PREF_LABEL:
+				getPrefLabel().clear();
+				return;
+			case TermsPackage.LOCATION__NODE_ID:
+				setNodeID(NODE_ID_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -177,10 +242,30 @@ public class LocationImpl extends MinimalEObjectImpl.Container implements Locati
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case TermsPackage.LOCATION__LOCATION:
-				return location != null;
+			case TermsPackage.LOCATION__GEOMETRY:
+				return geometry != null && !geometry.isEmpty();
+			case TermsPackage.LOCATION__PREF_LABEL:
+				return prefLabel != null && !prefLabel.isEmpty();
+			case TermsPackage.LOCATION__NODE_ID:
+				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (nodeID: ");
+		result.append(nodeID);
+		result.append(')');
+		return result.toString();
 	}
 
 } //LocationImpl

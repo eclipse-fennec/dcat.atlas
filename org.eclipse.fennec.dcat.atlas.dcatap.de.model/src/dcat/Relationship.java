@@ -16,6 +16,7 @@ import org.eclipse.emf.ecore.EObject;
 
 import org.osgi.annotation.versioning.ProviderType;
 
+import rdf.IdentifiedResource;
 import rdf.PlainLiteral;
 
 /**
@@ -29,7 +30,6 @@ import rdf.PlainLiteral;
  * <ul>
  *   <li>{@link dcat.Relationship#getHadRole <em>Had Role</em>}</li>
  *   <li>{@link dcat.Relationship#getDescription <em>Description</em>}</li>
- *   <li>{@link dcat.Relationship#getAbout <em>About</em>}</li>
  *   <li>{@link dcat.Relationship#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
@@ -38,7 +38,7 @@ import rdf.PlainLiteral;
  * @generated
  */
 @ProviderType
-public interface Relationship extends EObject {
+public interface Relationship extends IdentifiedResource {
 	/**
 	 * Returns the value of the '<em><b>Had Role</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
@@ -84,29 +84,6 @@ public interface Relationship extends EObject {
 	 * @generated
 	 */
 	void setDescription(PlainLiteral value);
-
-	/**
-	 * Returns the value of the '<em><b>About</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>About</em>' attribute.
-	 * @see #setAbout(String)
-	 * @see dcat.DcatPackage#getRelationship_About()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
-	 *        extendedMetaData="kind='attribute' name='about' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
-	 * @generated
-	 */
-	String getAbout();
-
-	/**
-	 * Sets the value of the '{@link dcat.Relationship#getAbout <em>About</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>About</em>' attribute.
-	 * @see #getAbout()
-	 * @generated
-	 */
-	void setAbout(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.

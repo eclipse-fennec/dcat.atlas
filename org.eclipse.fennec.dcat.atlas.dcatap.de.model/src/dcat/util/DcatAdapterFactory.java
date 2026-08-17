@@ -21,7 +21,7 @@ import org.eclipse.emf.common.notify.impl.AdapterFactoryImpl;
 
 import org.eclipse.emf.ecore.EObject;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 /**
  * <!-- begin-user-doc -->
@@ -108,20 +108,12 @@ public class DcatAdapterFactory extends AdapterFactoryImpl {
 				return createDcatResourceAdapter();
 			}
 			@Override
-			public Adapter caseDCATAPRoot(DCATAPRoot object) {
-				return createDCATAPRootAdapter();
-			}
-			@Override
-			public Adapter caseDatasetContainer(DatasetContainer object) {
-				return createDatasetContainerAdapter();
-			}
-			@Override
 			public Adapter caseDatasetSeries(DatasetSeries object) {
 				return createDatasetSeriesAdapter();
 			}
 			@Override
-			public Adapter caseResource(Resource object) {
-				return createResourceAdapter();
+			public Adapter caseIdentifiedResource(IdentifiedResource object) {
+				return createIdentifiedResourceAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -242,34 +234,6 @@ public class DcatAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link dcat.DCATAPRoot <em>DCATAP Root</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see dcat.DCATAPRoot
-	 * @generated
-	 */
-	public Adapter createDCATAPRootAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link dcat.DatasetContainer <em>Dataset Container</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see dcat.DatasetContainer
-	 * @generated
-	 */
-	public Adapter createDatasetContainerAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link dcat.DatasetSeries <em>Dataset Series</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -284,16 +248,16 @@ public class DcatAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link rdf.Resource <em>Resource</em>}'.
+	 * Creates a new adapter for an object of class '{@link rdf.IdentifiedResource <em>Identified Resource</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
 	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
 	 * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see rdf.Resource
+	 * @see rdf.IdentifiedResource
 	 * @generated
 	 */
-	public Adapter createResourceAdapter() {
+	public Adapter createIdentifiedResourceAdapter() {
 		return null;
 	}
 

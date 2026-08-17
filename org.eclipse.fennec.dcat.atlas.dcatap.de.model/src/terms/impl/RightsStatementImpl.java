@@ -12,17 +12,26 @@
  */
 package terms.impl;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
+import rdf.PlainLiteral;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 import terms.RightsStatement;
-import terms.RightsStatementType;
 import terms.TermsPackage;
 
 /**
@@ -33,21 +42,53 @@ import terms.TermsPackage;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link terms.impl.RightsStatementImpl#getRightsStatement <em>Rights Statement</em>}</li>
+ *   <li>{@link terms.impl.RightsStatementImpl#getTitle <em>Title</em>}</li>
+ *   <li>{@link terms.impl.RightsStatementImpl#getDescription <em>Description</em>}</li>
+ *   <li>{@link terms.impl.RightsStatementImpl#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class RightsStatementImpl extends MinimalEObjectImpl.Container implements RightsStatement {
+public class RightsStatementImpl extends IdentifiedResourceImpl implements RightsStatement {
 	/**
-	 * The cached value of the '{@link #getRightsStatement() <em>Rights Statement</em>}' containment reference.
+	 * The cached value of the '{@link #getTitle() <em>Title</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getRightsStatement()
+	 * @see #getTitle()
 	 * @generated
 	 * @ordered
 	 */
-	protected RightsStatementType rightsStatement;
+	protected EList<PlainLiteral> title;
+
+	/**
+	 * The cached value of the '{@link #getDescription() <em>Description</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDescription()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<PlainLiteral> description;
+
+	/**
+	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NODE_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -73,8 +114,11 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public RightsStatementType getRightsStatement() {
-		return rightsStatement;
+	public EList<PlainLiteral> getTitle() {
+		if (title == null) {
+			title = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.RIGHTS_STATEMENT__TITLE);
+		}
+		return title;
 	}
 
 	/**
@@ -82,14 +126,11 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetRightsStatement(RightsStatementType newRightsStatement, NotificationChain msgs) {
-		RightsStatementType oldRightsStatement = rightsStatement;
-		rightsStatement = newRightsStatement;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT, oldRightsStatement, newRightsStatement);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+	public EList<PlainLiteral> getDescription() {
+		if (description == null) {
+			description = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.RIGHTS_STATEMENT__DESCRIPTION);
 		}
-		return msgs;
+		return description;
 	}
 
 	/**
@@ -97,18 +138,20 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setRightsStatement(RightsStatementType newRightsStatement) {
-		if (newRightsStatement != rightsStatement) {
-			NotificationChain msgs = null;
-			if (rightsStatement != null)
-				msgs = ((InternalEObject)rightsStatement).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT, null, msgs);
-			if (newRightsStatement != null)
-				msgs = ((InternalEObject)newRightsStatement).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT, null, msgs);
-			msgs = basicSetRightsStatement(newRightsStatement, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT, newRightsStatement, newRightsStatement));
+	public String getNodeID() {
+		return nodeID;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setNodeID(String newNodeID) {
+		String oldNodeID = nodeID;
+		nodeID = newNodeID;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.RIGHTS_STATEMENT__NODE_ID, oldNodeID, nodeID));
 	}
 
 	/**
@@ -119,8 +162,10 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT:
-				return basicSetRightsStatement(null, msgs);
+			case TermsPackage.RIGHTS_STATEMENT__TITLE:
+				return ((InternalEList<?>)getTitle()).basicRemove(otherEnd, msgs);
+			case TermsPackage.RIGHTS_STATEMENT__DESCRIPTION:
+				return ((InternalEList<?>)getDescription()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -133,8 +178,12 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT:
-				return getRightsStatement();
+			case TermsPackage.RIGHTS_STATEMENT__TITLE:
+				return getTitle();
+			case TermsPackage.RIGHTS_STATEMENT__DESCRIPTION:
+				return getDescription();
+			case TermsPackage.RIGHTS_STATEMENT__NODE_ID:
+				return getNodeID();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -144,11 +193,20 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT:
-				setRightsStatement((RightsStatementType)newValue);
+			case TermsPackage.RIGHTS_STATEMENT__TITLE:
+				getTitle().clear();
+				getTitle().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.RIGHTS_STATEMENT__DESCRIPTION:
+				getDescription().clear();
+				getDescription().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.RIGHTS_STATEMENT__NODE_ID:
+				setNodeID((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -162,8 +220,14 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT:
-				setRightsStatement((RightsStatementType)null);
+			case TermsPackage.RIGHTS_STATEMENT__TITLE:
+				getTitle().clear();
+				return;
+			case TermsPackage.RIGHTS_STATEMENT__DESCRIPTION:
+				getDescription().clear();
+				return;
+			case TermsPackage.RIGHTS_STATEMENT__NODE_ID:
+				setNodeID(NODE_ID_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -177,10 +241,30 @@ public class RightsStatementImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case TermsPackage.RIGHTS_STATEMENT__RIGHTS_STATEMENT:
-				return rightsStatement != null;
+			case TermsPackage.RIGHTS_STATEMENT__TITLE:
+				return title != null && !title.isEmpty();
+			case TermsPackage.RIGHTS_STATEMENT__DESCRIPTION:
+				return description != null && !description.isEmpty();
+			case TermsPackage.RIGHTS_STATEMENT__NODE_ID:
+				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (nodeID: ");
+		result.append(nodeID);
+		result.append(')');
+		return result.toString();
 	}
 
 } //RightsStatementImpl

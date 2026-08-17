@@ -17,6 +17,8 @@ import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
 
+import rdf.IdentifiedResource;
+
 import vcard.*;
 
 /**
@@ -79,30 +81,14 @@ public class VcardSwitch<T> extends Switch<T> {
 			case VcardPackage.ADDRESS: {
 				Address address = (Address)theEObject;
 				T result = caseAddress(address);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case VcardPackage.ADDRESS_TYPE: {
-				AddressType addressType = (AddressType)theEObject;
-				T result = caseAddressType(addressType);
+				if (result == null) result = caseIdentifiedResource(address);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case VcardPackage.ORGANIZATION: {
 				Organization organization = (Organization)theEObject;
 				T result = caseOrganization(organization);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case VcardPackage.ORGANIZATION_TYPE: {
-				OrganizationType organizationType = (OrganizationType)theEObject;
-				T result = caseOrganizationType(organizationType);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case VcardPackage.DOCUMENT_ROOT: {
-				DocumentRoot documentRoot = (DocumentRoot)theEObject;
-				T result = caseDocumentRoot(documentRoot);
+				if (result == null) result = caseIdentifiedResource(organization);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -126,21 +112,6 @@ public class VcardSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Address Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Address Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseAddressType(AddressType object) {
-		return null;
-	}
-
-	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Organization</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -156,32 +127,17 @@ public class VcardSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Organization Type</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Organization Type</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseOrganizationType(OrganizationType object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDocumentRoot(DocumentRoot object) {
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

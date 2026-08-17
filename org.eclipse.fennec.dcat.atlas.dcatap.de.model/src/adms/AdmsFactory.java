@@ -35,15 +35,6 @@ public interface AdmsFactory extends EFactory {
 	AdmsFactory eINSTANCE = adms.impl.AdmsFactoryImpl.init();
 
 	/**
-	 * Returns a new object of class '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Document Root</em>'.
-	 * @generated
-	 */
-	DocumentRoot createDocumentRoot();
-
-	/**
 	 * Returns a new object of class '<em>Identifier</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -51,15 +42,6 @@ public interface AdmsFactory extends EFactory {
 	 * @generated
 	 */
 	Identifier createIdentifier();
-
-	/**
-	 * Returns a new object of class '<em>Identifier Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Identifier Type</em>'.
-	 * @generated
-	 */
-	IdentifierType createIdentifierType();
 
 	/**
 	 * Returns the package supported by this factory.

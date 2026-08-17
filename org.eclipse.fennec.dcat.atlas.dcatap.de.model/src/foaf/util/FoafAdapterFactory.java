@@ -21,7 +21,7 @@ import org.eclipse.emf.common.notify.impl.AdapterFactoryImpl;
 
 import org.eclipse.emf.ecore.EObject;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 /**
  * <!-- begin-user-doc -->
@@ -84,20 +84,8 @@ public class FoafAdapterFactory extends AdapterFactoryImpl {
 				return createAgentAdapter();
 			}
 			@Override
-			public Adapter caseAgentType(AgentType object) {
-				return createAgentTypeAdapter();
-			}
-			@Override
 			public Adapter caseDocument(Document object) {
 				return createDocumentAdapter();
-			}
-			@Override
-			public Adapter caseDocumentType(DocumentType object) {
-				return createDocumentTypeAdapter();
-			}
-			@Override
-			public Adapter caseDocumentRoot(DocumentRoot object) {
-				return createDocumentRootAdapter();
 			}
 			@Override
 			public Adapter caseOrganization(Organization object) {
@@ -108,8 +96,8 @@ public class FoafAdapterFactory extends AdapterFactoryImpl {
 				return createPersonAdapter();
 			}
 			@Override
-			public Adapter caseResource(Resource object) {
-				return createResourceAdapter();
+			public Adapter caseIdentifiedResource(IdentifiedResource object) {
+				return createIdentifiedResourceAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -146,20 +134,6 @@ public class FoafAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link foaf.AgentType <em>Agent Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see foaf.AgentType
-	 * @generated
-	 */
-	public Adapter createAgentTypeAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link foaf.Document <em>Document</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -170,34 +144,6 @@ public class FoafAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createDocumentAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link foaf.DocumentType <em>Document Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see foaf.DocumentType
-	 * @generated
-	 */
-	public Adapter createDocumentTypeAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link foaf.DocumentRoot <em>Document Root</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see foaf.DocumentRoot
-	 * @generated
-	 */
-	public Adapter createDocumentRootAdapter() {
 		return null;
 	}
 
@@ -230,16 +176,16 @@ public class FoafAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link rdf.Resource <em>Resource</em>}'.
+	 * Creates a new adapter for an object of class '{@link rdf.IdentifiedResource <em>Identified Resource</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
 	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
 	 * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see rdf.Resource
+	 * @see rdf.IdentifiedResource
 	 * @generated
 	 */
-	public Adapter createResourceAdapter() {
+	public Adapter createIdentifiedResourceAdapter() {
 		return null;
 	}
 

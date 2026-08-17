@@ -89,24 +89,6 @@ public interface DcatFactory extends EFactory {
 	DataService createDataService();
 
 	/**
-	 * Returns a new object of class '<em>DCATAP Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>DCATAP Root</em>'.
-	 * @generated
-	 */
-	DCATAPRoot createDCATAPRoot();
-
-	/**
-	 * Returns a new object of class '<em>Dataset Container</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Dataset Container</em>'.
-	 * @generated
-	 */
-	DatasetContainer createDatasetContainer();
-
-	/**
 	 * Returns a new object of class '<em>Dataset Series</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

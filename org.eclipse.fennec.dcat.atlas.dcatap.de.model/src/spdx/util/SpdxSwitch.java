@@ -17,6 +17,8 @@ import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
 
+import rdf.IdentifiedResource;
+
 import spdx.*;
 
 /**
@@ -76,35 +78,15 @@ public class SpdxSwitch<T> extends Switch<T> {
 	@Override
 	protected T doSwitch(int classifierID, EObject theEObject) {
 		switch (classifierID) {
-			case SpdxPackage.DOCUMENT_ROOT: {
-				DocumentRoot documentRoot = (DocumentRoot)theEObject;
-				T result = caseDocumentRoot(documentRoot);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
 			case SpdxPackage.CHECKSUM: {
 				Checksum checksum = (Checksum)theEObject;
 				T result = caseChecksum(checksum);
+				if (result == null) result = caseIdentifiedResource(checksum);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			default: return defaultCase(theEObject);
 		}
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDocumentRoot(DocumentRoot object) {
-		return null;
 	}
 
 	/**
@@ -119,6 +101,21 @@ public class SpdxSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseChecksum(Checksum object) {
+		return null;
+	}
+
+	/**
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
+	 * <!-- begin-user-doc -->
+	 * This implementation returns null;
+	 * returning a non-null result will terminate the switch.
+	 * <!-- end-user-doc -->
+	 * @param object the target of the switch.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
+	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+	 * @generated
+	 */
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

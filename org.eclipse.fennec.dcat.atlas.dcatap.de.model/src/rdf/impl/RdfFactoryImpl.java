@@ -74,19 +74,9 @@ public class RdfFactoryImpl extends EFactoryImpl implements RdfFactory {
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case RdfPackage.DATE_LITERAL: return createDateLiteral();
 			case RdfPackage.DATE_OR_DATE_TIME_LITERAL: return createDateOrDateTimeLiteral();
-			case RdfPackage.DATE_TIME_LITERAL: return createDateTimeLiteral();
-			case RdfPackage.OBJECT_TYPE: return createObjectType();
 			case RdfPackage.PLAIN_LITERAL: return createPlainLiteral();
-			case RdfPackage.PREDICATE_TYPE: return createPredicateType();
-			case RdfPackage.RESOURCE: return createResource();
-			case RdfPackage.STATEMENT: return createStatement();
-			case RdfPackage.STATEMENT_TYPE: return createStatementType();
-			case RdfPackage.SUBJECT_TYPE: return createSubjectType();
 			case RdfPackage.TYPED_LITERAL: return createTypedLiteral();
-			case RdfPackage.RDF_ROOT: return createRDFRoot();
-			case RdfPackage.DESCRIPTION: return createDescription();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -100,10 +90,8 @@ public class RdfFactoryImpl extends EFactoryImpl implements RdfFactory {
 	@Override
 	public Object createFromString(EDataType eDataType, String initialValue) {
 		switch (eDataType.getClassifierID()) {
-			case RdfPackage.DATATYPE_TYPE:
-				return createDatatypeTypeFromString(eDataType, initialValue);
-			case RdfPackage.DATATYPE_TYPE_OBJECT:
-				return createDatatypeTypeObjectFromString(eDataType, initialValue);
+			case RdfPackage.DATATYPE:
+				return createDatatypeFromString(eDataType, initialValue);
 			case RdfPackage.DATE_OR_DATE_TIME:
 				return createDateOrDateTimeFromString(eDataType, initialValue);
 			default:
@@ -119,25 +107,13 @@ public class RdfFactoryImpl extends EFactoryImpl implements RdfFactory {
 	@Override
 	public String convertToString(EDataType eDataType, Object instanceValue) {
 		switch (eDataType.getClassifierID()) {
-			case RdfPackage.DATATYPE_TYPE:
-				return convertDatatypeTypeToString(eDataType, instanceValue);
-			case RdfPackage.DATATYPE_TYPE_OBJECT:
-				return convertDatatypeTypeObjectToString(eDataType, instanceValue);
+			case RdfPackage.DATATYPE:
+				return convertDatatypeToString(eDataType, instanceValue);
 			case RdfPackage.DATE_OR_DATE_TIME:
 				return convertDateOrDateTimeToString(eDataType, instanceValue);
 			default:
 				throw new IllegalArgumentException("The datatype '" + eDataType.getName() + "' is not a valid classifier");
 		}
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DateLiteral createDateLiteral() {
-		DateLiteralImpl dateLiteral = new DateLiteralImpl();
-		return dateLiteral;
 	}
 
 	/**
@@ -155,79 +131,9 @@ public class RdfFactoryImpl extends EFactoryImpl implements RdfFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public DateTimeLiteral createDateTimeLiteral() {
-		DateTimeLiteralImpl dateTimeLiteral = new DateTimeLiteralImpl();
-		return dateTimeLiteral;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public ObjectType createObjectType() {
-		ObjectTypeImpl objectType = new ObjectTypeImpl();
-		return objectType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public PlainLiteral createPlainLiteral() {
 		PlainLiteralImpl plainLiteral = new PlainLiteralImpl();
 		return plainLiteral;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public PredicateType createPredicateType() {
-		PredicateTypeImpl predicateType = new PredicateTypeImpl();
-		return predicateType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public Resource createResource() {
-		ResourceImpl resource = new ResourceImpl();
-		return resource;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public Statement createStatement() {
-		StatementImpl statement = new StatementImpl();
-		return statement;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public StatementType createStatementType() {
-		StatementTypeImpl statementType = new StatementTypeImpl();
-		return statementType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public SubjectType createSubjectType() {
-		SubjectTypeImpl subjectType = new SubjectTypeImpl();
-		return subjectType;
 	}
 
 	/**
@@ -245,28 +151,8 @@ public class RdfFactoryImpl extends EFactoryImpl implements RdfFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public RDFRoot createRDFRoot() {
-		RDFRootImpl rdfRoot = new RDFRootImpl();
-		return rdfRoot;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public Description createDescription() {
-		DescriptionImpl description = new DescriptionImpl();
-		return description;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DatatypeType createDatatypeTypeFromString(EDataType eDataType, String initialValue) {
-		DatatypeType result = DatatypeType.get(initialValue);
+	public Datatype createDatatypeFromString(EDataType eDataType, String initialValue) {
+		Datatype result = Datatype.get(initialValue);
 		if (result == null) throw new IllegalArgumentException("The value '" + initialValue + "' is not a valid enumerator of '" + eDataType.getName() + "'");
 		return result;
 	}
@@ -276,26 +162,8 @@ public class RdfFactoryImpl extends EFactoryImpl implements RdfFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public String convertDatatypeTypeToString(EDataType eDataType, Object instanceValue) {
+	public String convertDatatypeToString(EDataType eDataType, Object instanceValue) {
 		return instanceValue == null ? null : instanceValue.toString();
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DatatypeType createDatatypeTypeObjectFromString(EDataType eDataType, String initialValue) {
-		return createDatatypeTypeFromString(RdfPackage.Literals.DATATYPE_TYPE, initialValue);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public String convertDatatypeTypeObjectToString(EDataType eDataType, Object instanceValue) {
-		return convertDatatypeTypeToString(RdfPackage.Literals.DATATYPE_TYPE, instanceValue);
 	}
 
 	/**

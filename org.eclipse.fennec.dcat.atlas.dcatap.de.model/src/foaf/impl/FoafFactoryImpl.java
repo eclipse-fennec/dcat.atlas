@@ -67,10 +67,7 @@ public class FoafFactoryImpl extends EFactoryImpl implements FoafFactory {
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
 			case FoafPackage.AGENT: return createAgent();
-			case FoafPackage.AGENT_TYPE: return createAgentType();
 			case FoafPackage.DOCUMENT: return createDocument();
-			case FoafPackage.DOCUMENT_TYPE: return createDocumentType();
-			case FoafPackage.DOCUMENT_ROOT: return createDocumentRoot();
 			case FoafPackage.ORGANIZATION: return createOrganization();
 			case FoafPackage.PERSON: return createPerson();
 			default:
@@ -93,39 +90,9 @@ public class FoafFactoryImpl extends EFactoryImpl implements FoafFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public AgentType createAgentType() {
-		AgentTypeImpl agentType = new AgentTypeImpl();
-		return agentType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public Document createDocument() {
 		DocumentImpl document = new DocumentImpl();
 		return document;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DocumentType createDocumentType() {
-		DocumentTypeImpl documentType = new DocumentTypeImpl();
-		return documentType;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DocumentRoot createDocumentRoot() {
-		DocumentRootImpl documentRoot = new DocumentRootImpl();
-		return documentRoot;
 	}
 
 	/**

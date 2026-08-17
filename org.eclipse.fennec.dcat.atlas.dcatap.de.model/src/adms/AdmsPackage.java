@@ -13,13 +13,14 @@
 package adms;
 
 
-import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EReference;
 
 import org.eclipse.fennec.emf.osgi.annotation.provide.EPackage;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.RdfPackage;
 
 /**
  * <!-- begin-user-doc -->
@@ -172,7 +173,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-@EPackage(uri = AdmsPackage.eNS_URI, genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/adms.ecore", ecoreSourceLocations = "/model/adms.ecore")
+@EPackage(uri = AdmsPackage.eNS_URI, fingerprint = "fp1:863579a43c85b838e564495133911ef50bbefc5e91fac2cbb3a6a51f7a3198d1", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/adms.ecore", ecoreSourceLocations = "/model/adms.ecore")
 public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -207,88 +208,6 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	AdmsPackage eINSTANCE = adms.impl.AdmsPackageImpl.init();
 
 	/**
-	 * The meta object id for the '{@link adms.impl.DocumentRootImpl <em>Document Root</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see adms.impl.DocumentRootImpl
-	 * @see adms.impl.AdmsPackageImpl#getDocumentRoot()
-	 * @generated
-	 */
-	int DOCUMENT_ROOT = 0;
-
-	/**
-	 * The feature id for the '<em><b>Mixed</b></em>' attribute list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__MIXED = 0;
-
-	/**
-	 * The feature id for the '<em><b>XMLNS Prefix Map</b></em>' map.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__XMLNS_PREFIX_MAP = 1;
-
-	/**
-	 * The feature id for the '<em><b>XSI Schema Location</b></em>' map.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__XSI_SCHEMA_LOCATION = 2;
-
-	/**
-	 * The feature id for the '<em><b>Identifier</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__IDENTIFIER = 3;
-
-	/**
-	 * The feature id for the '<em><b>Status</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__STATUS = 4;
-
-	/**
-	 * The feature id for the '<em><b>Version Notes</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT__VERSION_NOTES = 5;
-
-	/**
-	 * The number of structural features of the '<em>Document Root</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT_FEATURE_COUNT = 6;
-
-	/**
-	 * The number of operations of the '<em>Document Root</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int DOCUMENT_ROOT_OPERATION_COUNT = 0;
-
-	/**
 	 * The meta object id for the '{@link adms.impl.IdentifierImpl <em>Identifier</em>}' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -296,53 +215,7 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @see adms.impl.AdmsPackageImpl#getIdentifier()
 	 * @generated
 	 */
-	int IDENTIFIER = 1;
-
-	/**
-	 * The feature id for the '<em><b>Identifier</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int IDENTIFIER__IDENTIFIER = 0;
-
-	/**
-	 * The number of structural features of the '<em>Identifier</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int IDENTIFIER_FEATURE_COUNT = 1;
-
-	/**
-	 * The number of operations of the '<em>Identifier</em>' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int IDENTIFIER_OPERATION_COUNT = 0;
-
-	/**
-	 * The meta object id for the '{@link adms.impl.IdentifierTypeImpl <em>Identifier Type</em>}' class.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see adms.impl.IdentifierTypeImpl
-	 * @see adms.impl.AdmsPackageImpl#getIdentifierType()
-	 * @generated
-	 */
-	int IDENTIFIER_TYPE = 2;
-
-	/**
-	 * The feature id for the '<em><b>Notation</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 * @ordered
-	 */
-	int IDENTIFIER_TYPE__NOTATION = 0;
+	int IDENTIFIER = 0;
 
 	/**
 	 * The feature id for the '<em><b>About</b></em>' attribute.
@@ -351,102 +224,35 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int IDENTIFIER_TYPE__ABOUT = 1;
+	int IDENTIFIER__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
-	 * The number of structural features of the '<em>Identifier Type</em>' class.
+	 * The feature id for the '<em><b>Notation</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int IDENTIFIER_TYPE_FEATURE_COUNT = 2;
+	int IDENTIFIER__NOTATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 0;
 
 	/**
-	 * The number of operations of the '<em>Identifier Type</em>' class.
+	 * The number of structural features of the '<em>Identifier</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int IDENTIFIER_TYPE_OPERATION_COUNT = 0;
-
-
-	/**
-	 * Returns the meta object for class '{@link adms.DocumentRoot <em>Document Root</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Document Root</em>'.
-	 * @see adms.DocumentRoot
-	 * @generated
-	 */
-	EClass getDocumentRoot();
+	int IDENTIFIER_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 1;
 
 	/**
-	 * Returns the meta object for the attribute list '{@link adms.DocumentRoot#getMixed <em>Mixed</em>}'.
+	 * The number of operations of the '<em>Identifier</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Mixed</em>'.
-	 * @see adms.DocumentRoot#getMixed()
-	 * @see #getDocumentRoot()
 	 * @generated
+	 * @ordered
 	 */
-	EAttribute getDocumentRoot_Mixed();
+	int IDENTIFIER_OPERATION_COUNT = RdfPackage.IDENTIFIED_RESOURCE_OPERATION_COUNT + 0;
 
-	/**
-	 * Returns the meta object for the map '{@link adms.DocumentRoot#getXMLNSPrefixMap <em>XMLNS Prefix Map</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the map '<em>XMLNS Prefix Map</em>'.
-	 * @see adms.DocumentRoot#getXMLNSPrefixMap()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_XMLNSPrefixMap();
-
-	/**
-	 * Returns the meta object for the map '{@link adms.DocumentRoot#getXSISchemaLocation <em>XSI Schema Location</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the map '<em>XSI Schema Location</em>'.
-	 * @see adms.DocumentRoot#getXSISchemaLocation()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_XSISchemaLocation();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link adms.DocumentRoot#getIdentifier <em>Identifier</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Identifier</em>'.
-	 * @see adms.DocumentRoot#getIdentifier()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Identifier();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link adms.DocumentRoot#getStatus <em>Status</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Status</em>'.
-	 * @see adms.DocumentRoot#getStatus()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_Status();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link adms.DocumentRoot#getVersionNotes <em>Version Notes</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Version Notes</em>'.
-	 * @see adms.DocumentRoot#getVersionNotes()
-	 * @see #getDocumentRoot()
-	 * @generated
-	 */
-	EReference getDocumentRoot_VersionNotes();
 
 	/**
 	 * Returns the meta object for class '{@link adms.Identifier <em>Identifier</em>}'.
@@ -459,47 +265,15 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	EClass getIdentifier();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link adms.Identifier#getIdentifier <em>Identifier</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Identifier</em>'.
-	 * @see adms.Identifier#getIdentifier()
-	 * @see #getIdentifier()
-	 * @generated
-	 */
-	EReference getIdentifier_Identifier();
-
-	/**
-	 * Returns the meta object for class '{@link adms.IdentifierType <em>Identifier Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for class '<em>Identifier Type</em>'.
-	 * @see adms.IdentifierType
-	 * @generated
-	 */
-	EClass getIdentifierType();
-
-	/**
-	 * Returns the meta object for the containment reference '{@link adms.IdentifierType#getNotation <em>Notation</em>}'.
+	 * Returns the meta object for the containment reference '{@link adms.Identifier#getNotation <em>Notation</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the meta object for the containment reference '<em>Notation</em>'.
-	 * @see adms.IdentifierType#getNotation()
-	 * @see #getIdentifierType()
+	 * @see adms.Identifier#getNotation()
+	 * @see #getIdentifier()
 	 * @generated
 	 */
-	EReference getIdentifierType_Notation();
-
-	/**
-	 * Returns the meta object for the attribute '{@link adms.IdentifierType#getAbout <em>About</em>}'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>About</em>'.
-	 * @see adms.IdentifierType#getAbout()
-	 * @see #getIdentifierType()
-	 * @generated
-	 */
-	EAttribute getIdentifierType_About();
+	EReference getIdentifier_Notation();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -525,64 +299,6 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	 */
 	interface Literals {
 		/**
-		 * The meta object literal for the '{@link adms.impl.DocumentRootImpl <em>Document Root</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see adms.impl.DocumentRootImpl
-		 * @see adms.impl.AdmsPackageImpl#getDocumentRoot()
-		 * @generated
-		 */
-		EClass DOCUMENT_ROOT = eINSTANCE.getDocumentRoot();
-
-		/**
-		 * The meta object literal for the '<em><b>Mixed</b></em>' attribute list feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute DOCUMENT_ROOT__MIXED = eINSTANCE.getDocumentRoot_Mixed();
-
-		/**
-		 * The meta object literal for the '<em><b>XMLNS Prefix Map</b></em>' map feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__XMLNS_PREFIX_MAP = eINSTANCE.getDocumentRoot_XMLNSPrefixMap();
-
-		/**
-		 * The meta object literal for the '<em><b>XSI Schema Location</b></em>' map feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__XSI_SCHEMA_LOCATION = eINSTANCE.getDocumentRoot_XSISchemaLocation();
-
-		/**
-		 * The meta object literal for the '<em><b>Identifier</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__IDENTIFIER = eINSTANCE.getDocumentRoot_Identifier();
-
-		/**
-		 * The meta object literal for the '<em><b>Status</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__STATUS = eINSTANCE.getDocumentRoot_Status();
-
-		/**
-		 * The meta object literal for the '<em><b>Version Notes</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference DOCUMENT_ROOT__VERSION_NOTES = eINSTANCE.getDocumentRoot_VersionNotes();
-
-		/**
 		 * The meta object literal for the '{@link adms.impl.IdentifierImpl <em>Identifier</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -593,38 +309,12 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 		EClass IDENTIFIER = eINSTANCE.getIdentifier();
 
 		/**
-		 * The meta object literal for the '<em><b>Identifier</b></em>' containment reference feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EReference IDENTIFIER__IDENTIFIER = eINSTANCE.getIdentifier_Identifier();
-
-		/**
-		 * The meta object literal for the '{@link adms.impl.IdentifierTypeImpl <em>Identifier Type</em>}' class.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @see adms.impl.IdentifierTypeImpl
-		 * @see adms.impl.AdmsPackageImpl#getIdentifierType()
-		 * @generated
-		 */
-		EClass IDENTIFIER_TYPE = eINSTANCE.getIdentifierType();
-
-		/**
 		 * The meta object literal for the '<em><b>Notation</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference IDENTIFIER_TYPE__NOTATION = eINSTANCE.getIdentifierType_Notation();
-
-		/**
-		 * The meta object literal for the '<em><b>About</b></em>' attribute feature.
-		 * <!-- begin-user-doc -->
-		 * <!-- end-user-doc -->
-		 * @generated
-		 */
-		EAttribute IDENTIFIER_TYPE__ABOUT = eINSTANCE.getIdentifierType_About();
+		EReference IDENTIFIER__NOTATION = eINSTANCE.getIdentifier_Notation();
 
 	}
 

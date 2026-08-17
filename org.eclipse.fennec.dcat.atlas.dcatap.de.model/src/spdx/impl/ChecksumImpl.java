@@ -13,15 +13,12 @@
 package spdx.impl;
 
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.NotificationChain;
 
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
-import rdf.Resource;
+import rdf.impl.IdentifiedResourceImpl;
 
 import spdx.Checksum;
 import spdx.SpdxPackage;
@@ -34,25 +31,14 @@ import spdx.SpdxPackage;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link spdx.impl.ChecksumImpl#getAlgorithm <em>Algorithm</em>}</li>
  *   <li>{@link spdx.impl.ChecksumImpl#getChecksumValue <em>Checksum Value</em>}</li>
- *   <li>{@link spdx.impl.ChecksumImpl#getAbout <em>About</em>}</li>
  *   <li>{@link spdx.impl.ChecksumImpl#getNodeID <em>Node ID</em>}</li>
+ *   <li>{@link spdx.impl.ChecksumImpl#getAlgorithm <em>Algorithm</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checksum {
-	/**
-	 * The cached value of the '{@link #getAlgorithm() <em>Algorithm</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAlgorithm()
-	 * @generated
-	 * @ordered
-	 */
-	protected Resource algorithm;
-
+public class ChecksumImpl extends IdentifiedResourceImpl implements Checksum {
 	/**
 	 * The default value of the '{@link #getChecksumValue() <em>Checksum Value</em>}' attribute.
 	 * <!-- begin-user-doc -->
@@ -72,26 +58,6 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	 * @ordered
 	 */
 	protected byte[] checksumValue = CHECKSUM_VALUE_EDEFAULT;
-
-	/**
-	 * The default value of the '{@link #getAbout() <em>About</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAbout()
-	 * @generated
-	 * @ordered
-	 */
-	protected static final String ABOUT_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getAbout() <em>About</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAbout()
-	 * @generated
-	 * @ordered
-	 */
-	protected String about = ABOUT_EDEFAULT;
 
 	/**
 	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
@@ -114,6 +80,26 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getAlgorithm() <em>Algorithm</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAlgorithm()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String ALGORITHM_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getAlgorithm() <em>Algorithm</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAlgorithm()
+	 * @generated
+	 * @ordered
+	 */
+	protected String algorithm = ALGORITHM_EDEFAULT;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -130,49 +116,6 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	@Override
 	protected EClass eStaticClass() {
 		return SpdxPackage.Literals.CHECKSUM;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public Resource getAlgorithm() {
-		return algorithm;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetAlgorithm(Resource newAlgorithm, NotificationChain msgs) {
-		Resource oldAlgorithm = algorithm;
-		algorithm = newAlgorithm;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, SpdxPackage.CHECKSUM__ALGORITHM, oldAlgorithm, newAlgorithm);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setAlgorithm(Resource newAlgorithm) {
-		if (newAlgorithm != algorithm) {
-			NotificationChain msgs = null;
-			if (algorithm != null)
-				msgs = ((InternalEObject)algorithm).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - SpdxPackage.CHECKSUM__ALGORITHM, null, msgs);
-			if (newAlgorithm != null)
-				msgs = ((InternalEObject)newAlgorithm).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - SpdxPackage.CHECKSUM__ALGORITHM, null, msgs);
-			msgs = basicSetAlgorithm(newAlgorithm, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, SpdxPackage.CHECKSUM__ALGORITHM, newAlgorithm, newAlgorithm));
 	}
 
 	/**
@@ -201,27 +144,6 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public String getAbout() {
-		return about;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setAbout(String newAbout) {
-		String oldAbout = about;
-		about = newAbout;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, SpdxPackage.CHECKSUM__ABOUT, oldAbout, about));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public String getNodeID() {
 		return nodeID;
 	}
@@ -243,13 +165,20 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@Override
-	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
-		switch (featureID) {
-			case SpdxPackage.CHECKSUM__ALGORITHM:
-				return basicSetAlgorithm(null, msgs);
-		}
-		return super.eInverseRemove(otherEnd, featureID, msgs);
+	public String getAlgorithm() {
+		return algorithm;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setAlgorithm(String newAlgorithm) {
+		String oldAlgorithm = algorithm;
+		algorithm = newAlgorithm;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, SpdxPackage.CHECKSUM__ALGORITHM, oldAlgorithm, algorithm));
 	}
 
 	/**
@@ -260,14 +189,12 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case SpdxPackage.CHECKSUM__ALGORITHM:
-				return getAlgorithm();
 			case SpdxPackage.CHECKSUM__CHECKSUM_VALUE:
 				return getChecksumValue();
-			case SpdxPackage.CHECKSUM__ABOUT:
-				return getAbout();
 			case SpdxPackage.CHECKSUM__NODE_ID:
 				return getNodeID();
+			case SpdxPackage.CHECKSUM__ALGORITHM:
+				return getAlgorithm();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -280,17 +207,14 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case SpdxPackage.CHECKSUM__ALGORITHM:
-				setAlgorithm((Resource)newValue);
-				return;
 			case SpdxPackage.CHECKSUM__CHECKSUM_VALUE:
 				setChecksumValue((byte[])newValue);
 				return;
-			case SpdxPackage.CHECKSUM__ABOUT:
-				setAbout((String)newValue);
-				return;
 			case SpdxPackage.CHECKSUM__NODE_ID:
 				setNodeID((String)newValue);
+				return;
+			case SpdxPackage.CHECKSUM__ALGORITHM:
+				setAlgorithm((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -304,17 +228,14 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case SpdxPackage.CHECKSUM__ALGORITHM:
-				setAlgorithm((Resource)null);
-				return;
 			case SpdxPackage.CHECKSUM__CHECKSUM_VALUE:
 				setChecksumValue(CHECKSUM_VALUE_EDEFAULT);
 				return;
-			case SpdxPackage.CHECKSUM__ABOUT:
-				setAbout(ABOUT_EDEFAULT);
-				return;
 			case SpdxPackage.CHECKSUM__NODE_ID:
 				setNodeID(NODE_ID_EDEFAULT);
+				return;
+			case SpdxPackage.CHECKSUM__ALGORITHM:
+				setAlgorithm(ALGORITHM_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -328,14 +249,12 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case SpdxPackage.CHECKSUM__ALGORITHM:
-				return algorithm != null;
 			case SpdxPackage.CHECKSUM__CHECKSUM_VALUE:
 				return CHECKSUM_VALUE_EDEFAULT == null ? checksumValue != null : !CHECKSUM_VALUE_EDEFAULT.equals(checksumValue);
-			case SpdxPackage.CHECKSUM__ABOUT:
-				return ABOUT_EDEFAULT == null ? about != null : !ABOUT_EDEFAULT.equals(about);
 			case SpdxPackage.CHECKSUM__NODE_ID:
 				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
+			case SpdxPackage.CHECKSUM__ALGORITHM:
+				return ALGORITHM_EDEFAULT == null ? algorithm != null : !ALGORITHM_EDEFAULT.equals(algorithm);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -352,10 +271,10 @@ public class ChecksumImpl extends MinimalEObjectImpl.Container implements Checks
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (checksumValue: ");
 		result.append(checksumValue);
-		result.append(", about: ");
-		result.append(about);
 		result.append(", nodeID: ");
 		result.append(nodeID);
+		result.append(", algorithm: ");
+		result.append(algorithm);
 		result.append(')');
 		return result.toString();
 	}

@@ -62,33 +62,33 @@ public interface DateOrDateTimeLiteral extends EObject {
 
 	/**
 	 * Returns the value of the '<em><b>Datatype</b></em>' attribute.
-	 * The literals are from the enumeration {@link rdf.DatatypeType}.
+	 * The literals are from the enumeration {@link rdf.Datatype}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Datatype</em>' attribute.
-	 * @see rdf.DatatypeType
+	 * @see rdf.Datatype
 	 * @see #isSetDatatype()
 	 * @see #unsetDatatype()
-	 * @see #setDatatype(DatatypeType)
+	 * @see #setDatatype(Datatype)
 	 * @see rdf.RdfPackage#getDateOrDateTimeLiteral_Datatype()
 	 * @model unsettable="true"
 	 *        extendedMetaData="kind='attribute' name='datatype' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	DatatypeType getDatatype();
+	Datatype getDatatype();
 
 	/**
 	 * Sets the value of the '{@link rdf.DateOrDateTimeLiteral#getDatatype <em>Datatype</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the new value of the '<em>Datatype</em>' attribute.
-	 * @see rdf.DatatypeType
+	 * @see rdf.Datatype
 	 * @see #isSetDatatype()
 	 * @see #unsetDatatype()
 	 * @see #getDatatype()
 	 * @generated
 	 */
-	void setDatatype(DatatypeType value);
+	void setDatatype(Datatype value);
 
 	/**
 	 * Unsets the value of the '{@link rdf.DateOrDateTimeLiteral#getDatatype <em>Datatype</em>}' attribute.
@@ -96,7 +96,7 @@ public interface DateOrDateTimeLiteral extends EObject {
 	 * <!-- end-user-doc -->
 	 * @see #isSetDatatype()
 	 * @see #getDatatype()
-	 * @see #setDatatype(DatatypeType)
+	 * @see #setDatatype(Datatype)
 	 * @generated
 	 */
 	void unsetDatatype();
@@ -108,7 +108,7 @@ public interface DateOrDateTimeLiteral extends EObject {
 	 * @return whether the value of the '<em>Datatype</em>' attribute is set.
 	 * @see #unsetDatatype()
 	 * @see #getDatatype()
-	 * @see #setDatatype(DatatypeType)
+	 * @see #setDatatype(Datatype)
 	 * @generated
 	 */
 	boolean isSetDatatype();

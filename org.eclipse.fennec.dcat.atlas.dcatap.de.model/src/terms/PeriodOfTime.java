@@ -12,9 +12,10 @@
  */
 package terms;
 
-import org.eclipse.emf.ecore.EObject;
-
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.DateOrDateTimeLiteral;
+import rdf.IdentifiedResource;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +26,9 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link terms.PeriodOfTime#getPeriodOfTime <em>Period Of Time</em>}</li>
+ *   <li>{@link terms.PeriodOfTime#getStartDate <em>Start Date</em>}</li>
+ *   <li>{@link terms.PeriodOfTime#getEndDate <em>End Date</em>}</li>
+ *   <li>{@link terms.PeriodOfTime#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @see terms.TermsPackage#getPeriodOfTime()
@@ -33,28 +36,74 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface PeriodOfTime extends EObject {
+public interface PeriodOfTime extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Period Of Time</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Start Date</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Period Of Time</em>' containment reference.
-	 * @see #setPeriodOfTime(PeriodOfTimeType)
-	 * @see terms.TermsPackage#getPeriodOfTime_PeriodOfTime()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='PeriodOfTime' namespace='##targetNamespace'"
+	 * @return the value of the '<em>Start Date</em>' containment reference.
+	 * @see #setStartDate(DateOrDateTimeLiteral)
+	 * @see terms.TermsPackage#getPeriodOfTime_StartDate()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='startDate' namespace='http://www.w3.org/ns/dcat#'"
 	 * @generated
 	 */
-	PeriodOfTimeType getPeriodOfTime();
+	DateOrDateTimeLiteral getStartDate();
 
 	/**
-	 * Sets the value of the '{@link terms.PeriodOfTime#getPeriodOfTime <em>Period Of Time</em>}' containment reference.
+	 * Sets the value of the '{@link terms.PeriodOfTime#getStartDate <em>Start Date</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Period Of Time</em>' containment reference.
-	 * @see #getPeriodOfTime()
+	 * @param value the new value of the '<em>Start Date</em>' containment reference.
+	 * @see #getStartDate()
 	 * @generated
 	 */
-	void setPeriodOfTime(PeriodOfTimeType value);
+	void setStartDate(DateOrDateTimeLiteral value);
+
+	/**
+	 * Returns the value of the '<em><b>End Date</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>End Date</em>' containment reference.
+	 * @see #setEndDate(DateOrDateTimeLiteral)
+	 * @see terms.TermsPackage#getPeriodOfTime_EndDate()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='endDate' namespace='http://www.w3.org/ns/dcat#'"
+	 * @generated
+	 */
+	DateOrDateTimeLiteral getEndDate();
+
+	/**
+	 * Sets the value of the '{@link terms.PeriodOfTime#getEndDate <em>End Date</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>End Date</em>' containment reference.
+	 * @see #getEndDate()
+	 * @generated
+	 */
+	void setEndDate(DateOrDateTimeLiteral value);
+
+	/**
+	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Node ID</em>' attribute.
+	 * @see #setNodeID(String)
+	 * @see terms.TermsPackage#getPeriodOfTime_NodeID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.NCName"
+	 *        extendedMetaData="kind='attribute' name='nodeID' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+	 * @generated
+	 */
+	String getNodeID();
+
+	/**
+	 * Sets the value of the '{@link terms.PeriodOfTime#getNodeID <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Node ID</em>' attribute.
+	 * @see #getNodeID()
+	 * @generated
+	 */
+	void setNodeID(String value);
 
 } // PeriodOfTime

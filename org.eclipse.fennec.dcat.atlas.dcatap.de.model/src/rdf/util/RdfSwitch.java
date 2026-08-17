@@ -76,28 +76,9 @@ public class RdfSwitch<T> extends Switch<T> {
 	@Override
 	protected T doSwitch(int classifierID, EObject theEObject) {
 		switch (classifierID) {
-			case RdfPackage.DATE_LITERAL: {
-				DateLiteral dateLiteral = (DateLiteral)theEObject;
-				T result = caseDateLiteral(dateLiteral);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
 			case RdfPackage.DATE_OR_DATE_TIME_LITERAL: {
 				DateOrDateTimeLiteral dateOrDateTimeLiteral = (DateOrDateTimeLiteral)theEObject;
 				T result = caseDateOrDateTimeLiteral(dateOrDateTimeLiteral);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.DATE_TIME_LITERAL: {
-				DateTimeLiteral dateTimeLiteral = (DateTimeLiteral)theEObject;
-				T result = caseDateTimeLiteral(dateTimeLiteral);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.OBJECT_TYPE: {
-				ObjectType objectType = (ObjectType)theEObject;
-				T result = caseObjectType(objectType);
-				if (result == null) result = caseResource(objectType);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
@@ -107,73 +88,20 @@ public class RdfSwitch<T> extends Switch<T> {
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case RdfPackage.PREDICATE_TYPE: {
-				PredicateType predicateType = (PredicateType)theEObject;
-				T result = casePredicateType(predicateType);
-				if (result == null) result = caseResource(predicateType);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.RESOURCE: {
-				Resource resource = (Resource)theEObject;
-				T result = caseResource(resource);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.STATEMENT: {
-				Statement statement = (Statement)theEObject;
-				T result = caseStatement(statement);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.STATEMENT_TYPE: {
-				StatementType statementType = (StatementType)theEObject;
-				T result = caseStatementType(statementType);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.SUBJECT_TYPE: {
-				SubjectType subjectType = (SubjectType)theEObject;
-				T result = caseSubjectType(subjectType);
-				if (result == null) result = caseResource(subjectType);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
 			case RdfPackage.TYPED_LITERAL: {
 				TypedLiteral typedLiteral = (TypedLiteral)theEObject;
 				T result = caseTypedLiteral(typedLiteral);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
-			case RdfPackage.RDF_ROOT: {
-				RDFRoot rdfRoot = (RDFRoot)theEObject;
-				T result = caseRDFRoot(rdfRoot);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case RdfPackage.DESCRIPTION: {
-				Description description = (Description)theEObject;
-				T result = caseDescription(description);
+			case RdfPackage.IDENTIFIED_RESOURCE: {
+				IdentifiedResource identifiedResource = (IdentifiedResource)theEObject;
+				T result = caseIdentifiedResource(identifiedResource);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			default: return defaultCase(theEObject);
 		}
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Date Literal</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Date Literal</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDateLiteral(DateLiteral object) {
-		return null;
 	}
 
 	/**
@@ -188,36 +116,6 @@ public class RdfSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseDateOrDateTimeLiteral(DateOrDateTimeLiteral object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Date Time Literal</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Date Time Literal</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDateTimeLiteral(DateTimeLiteral object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Object Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Object Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseObjectType(ObjectType object) {
 		return null;
 	}
 
@@ -237,81 +135,6 @@ public class RdfSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Predicate Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Predicate Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T casePredicateType(PredicateType object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Resource</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Resource</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseResource(Resource object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Statement</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Statement</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseStatement(Statement object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Statement Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Statement Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseStatementType(StatementType object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Subject Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Subject Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseSubjectType(SubjectType object) {
-		return null;
-	}
-
-	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Typed Literal</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -327,32 +150,17 @@ public class RdfSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>RDF Root</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>RDF Root</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseRDFRoot(RDFRoot object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Description</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Description</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDescription(Description object) {
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

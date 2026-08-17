@@ -19,6 +19,8 @@ import org.eclipse.emf.common.notify.impl.AdapterFactoryImpl;
 
 import org.eclipse.emf.ecore.EObject;
 
+import rdf.IdentifiedResource;
+
 import vcard.*;
 
 /**
@@ -82,20 +84,12 @@ public class VcardAdapterFactory extends AdapterFactoryImpl {
 				return createAddressAdapter();
 			}
 			@Override
-			public Adapter caseAddressType(AddressType object) {
-				return createAddressTypeAdapter();
-			}
-			@Override
 			public Adapter caseOrganization(Organization object) {
 				return createOrganizationAdapter();
 			}
 			@Override
-			public Adapter caseOrganizationType(OrganizationType object) {
-				return createOrganizationTypeAdapter();
-			}
-			@Override
-			public Adapter caseDocumentRoot(DocumentRoot object) {
-				return createDocumentRootAdapter();
+			public Adapter caseIdentifiedResource(IdentifiedResource object) {
+				return createIdentifiedResourceAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -132,20 +126,6 @@ public class VcardAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link vcard.AddressType <em>Address Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see vcard.AddressType
-	 * @generated
-	 */
-	public Adapter createAddressTypeAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link vcard.Organization <em>Organization</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -160,30 +140,16 @@ public class VcardAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link vcard.OrganizationType <em>Organization Type</em>}'.
+	 * Creates a new adapter for an object of class '{@link rdf.IdentifiedResource <em>Identified Resource</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
 	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
 	 * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see vcard.OrganizationType
+	 * @see rdf.IdentifiedResource
 	 * @generated
 	 */
-	public Adapter createOrganizationTypeAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link vcard.DocumentRoot <em>Document Root</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see vcard.DocumentRoot
-	 * @generated
-	 */
-	public Adapter createDocumentRootAdapter() {
+	public Adapter createIdentifiedResourceAdapter() {
 		return null;
 	}
 

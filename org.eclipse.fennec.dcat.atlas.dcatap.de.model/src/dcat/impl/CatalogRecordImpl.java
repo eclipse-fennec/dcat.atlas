@@ -14,6 +14,7 @@ package dcat.impl;
 
 import dcat.CatalogRecord;
 import dcat.DcatPackage;
+import dcat.DcatResource;
 
 import java.util.Collection;
 
@@ -26,14 +27,15 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
 
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 import rdf.DateOrDateTimeLiteral;
 import rdf.PlainLiteral;
-import rdf.Resource;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 import terms.Standard;
 
@@ -49,15 +51,14 @@ import terms.Standard;
  *   <li>{@link dcat.impl.CatalogRecordImpl#getDescription <em>Description</em>}</li>
  *   <li>{@link dcat.impl.CatalogRecordImpl#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.impl.CatalogRecordImpl#getModified <em>Modified</em>}</li>
- *   <li>{@link dcat.impl.CatalogRecordImpl#getPrimaryTopic <em>Primary Topic</em>}</li>
  *   <li>{@link dcat.impl.CatalogRecordImpl#getConformsTo <em>Conforms To</em>}</li>
  *   <li>{@link dcat.impl.CatalogRecordImpl#getLanguage <em>Language</em>}</li>
- *   <li>{@link dcat.impl.CatalogRecordImpl#getAbout <em>About</em>}</li>
+ *   <li>{@link dcat.impl.CatalogRecordImpl#getPrimaryTopic <em>Primary Topic</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements CatalogRecord {
+public class CatalogRecordImpl extends IdentifiedResourceImpl implements CatalogRecord {
 	/**
 	 * The cached value of the '{@link #getTitle() <em>Title</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
@@ -99,16 +100,6 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 	protected DateOrDateTimeLiteral modified;
 
 	/**
-	 * The cached value of the '{@link #getPrimaryTopic() <em>Primary Topic</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getPrimaryTopic()
-	 * @generated
-	 * @ordered
-	 */
-	protected Resource primaryTopic;
-
-	/**
 	 * The cached value of the '{@link #getConformsTo() <em>Conforms To</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -119,34 +110,24 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 	protected EList<Standard> conformsTo;
 
 	/**
-	 * The cached value of the '{@link #getLanguage() <em>Language</em>}' containment reference list.
+	 * The cached value of the '{@link #getLanguage() <em>Language</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getLanguage()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Resource> language;
+	protected EList<String> language;
 
 	/**
-	 * The default value of the '{@link #getAbout() <em>About</em>}' attribute.
+	 * The cached value of the '{@link #getPrimaryTopic() <em>Primary Topic</em>}' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getAbout()
+	 * @see #getPrimaryTopic()
 	 * @generated
 	 * @ordered
 	 */
-	protected static final String ABOUT_EDEFAULT = null;
-
-	/**
-	 * The cached value of the '{@link #getAbout() <em>About</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAbout()
-	 * @generated
-	 * @ordered
-	 */
-	protected String about = ABOUT_EDEFAULT;
+	protected DcatResource primaryTopic;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -282,49 +263,6 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Resource getPrimaryTopic() {
-		return primaryTopic;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetPrimaryTopic(Resource newPrimaryTopic, NotificationChain msgs) {
-		Resource oldPrimaryTopic = primaryTopic;
-		primaryTopic = newPrimaryTopic;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC, oldPrimaryTopic, newPrimaryTopic);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setPrimaryTopic(Resource newPrimaryTopic) {
-		if (newPrimaryTopic != primaryTopic) {
-			NotificationChain msgs = null;
-			if (primaryTopic != null)
-				msgs = ((InternalEObject)primaryTopic).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC, null, msgs);
-			if (newPrimaryTopic != null)
-				msgs = ((InternalEObject)newPrimaryTopic).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC, null, msgs);
-			msgs = basicSetPrimaryTopic(newPrimaryTopic, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC, newPrimaryTopic, newPrimaryTopic));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public EList<Standard> getConformsTo() {
 		if (conformsTo == null) {
 			conformsTo = new EObjectContainmentEList<Standard>(Standard.class, this, DcatPackage.CATALOG_RECORD__CONFORMS_TO);
@@ -337,9 +275,9 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getLanguage() {
+	public EList<String> getLanguage() {
 		if (language == null) {
-			language = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.CATALOG_RECORD__LANGUAGE);
+			language = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.CATALOG_RECORD__LANGUAGE);
 		}
 		return language;
 	}
@@ -349,8 +287,16 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public String getAbout() {
-		return about;
+	public DcatResource getPrimaryTopic() {
+		if (primaryTopic != null && primaryTopic.eIsProxy()) {
+			InternalEObject oldPrimaryTopic = (InternalEObject)primaryTopic;
+			primaryTopic = (DcatResource)eResolveProxy(oldPrimaryTopic);
+			if (primaryTopic != oldPrimaryTopic) {
+				if (eNotificationRequired())
+					eNotify(new ENotificationImpl(this, Notification.RESOLVE, DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC, oldPrimaryTopic, primaryTopic));
+			}
+		}
+		return primaryTopic;
 	}
 
 	/**
@@ -358,11 +304,20 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setAbout(String newAbout) {
-		String oldAbout = about;
-		about = newAbout;
+	public DcatResource basicGetPrimaryTopic() {
+		return primaryTopic;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setPrimaryTopic(DcatResource newPrimaryTopic) {
+		DcatResource oldPrimaryTopic = primaryTopic;
+		primaryTopic = newPrimaryTopic;
 		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG_RECORD__ABOUT, oldAbout, about));
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC, oldPrimaryTopic, primaryTopic));
 	}
 
 	/**
@@ -381,12 +336,8 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 				return basicSetIssued(null, msgs);
 			case DcatPackage.CATALOG_RECORD__MODIFIED:
 				return basicSetModified(null, msgs);
-			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
-				return basicSetPrimaryTopic(null, msgs);
 			case DcatPackage.CATALOG_RECORD__CONFORMS_TO:
 				return ((InternalEList<?>)getConformsTo()).basicRemove(otherEnd, msgs);
-			case DcatPackage.CATALOG_RECORD__LANGUAGE:
-				return ((InternalEList<?>)getLanguage()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -407,14 +358,13 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 				return getIssued();
 			case DcatPackage.CATALOG_RECORD__MODIFIED:
 				return getModified();
-			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
-				return getPrimaryTopic();
 			case DcatPackage.CATALOG_RECORD__CONFORMS_TO:
 				return getConformsTo();
 			case DcatPackage.CATALOG_RECORD__LANGUAGE:
 				return getLanguage();
-			case DcatPackage.CATALOG_RECORD__ABOUT:
-				return getAbout();
+			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
+				if (resolve) return getPrimaryTopic();
+				return basicGetPrimaryTopic();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -442,19 +392,16 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 			case DcatPackage.CATALOG_RECORD__MODIFIED:
 				setModified((DateOrDateTimeLiteral)newValue);
 				return;
-			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
-				setPrimaryTopic((Resource)newValue);
-				return;
 			case DcatPackage.CATALOG_RECORD__CONFORMS_TO:
 				getConformsTo().clear();
 				getConformsTo().addAll((Collection<? extends Standard>)newValue);
 				return;
 			case DcatPackage.CATALOG_RECORD__LANGUAGE:
 				getLanguage().clear();
-				getLanguage().addAll((Collection<? extends Resource>)newValue);
+				getLanguage().addAll((Collection<? extends String>)newValue);
 				return;
-			case DcatPackage.CATALOG_RECORD__ABOUT:
-				setAbout((String)newValue);
+			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
+				setPrimaryTopic((DcatResource)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -480,17 +427,14 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 			case DcatPackage.CATALOG_RECORD__MODIFIED:
 				setModified((DateOrDateTimeLiteral)null);
 				return;
-			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
-				setPrimaryTopic((Resource)null);
-				return;
 			case DcatPackage.CATALOG_RECORD__CONFORMS_TO:
 				getConformsTo().clear();
 				return;
 			case DcatPackage.CATALOG_RECORD__LANGUAGE:
 				getLanguage().clear();
 				return;
-			case DcatPackage.CATALOG_RECORD__ABOUT:
-				setAbout(ABOUT_EDEFAULT);
+			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
+				setPrimaryTopic((DcatResource)null);
 				return;
 		}
 		super.eUnset(featureID);
@@ -512,14 +456,12 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 				return issued != null;
 			case DcatPackage.CATALOG_RECORD__MODIFIED:
 				return modified != null;
-			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
-				return primaryTopic != null;
 			case DcatPackage.CATALOG_RECORD__CONFORMS_TO:
 				return conformsTo != null && !conformsTo.isEmpty();
 			case DcatPackage.CATALOG_RECORD__LANGUAGE:
 				return language != null && !language.isEmpty();
-			case DcatPackage.CATALOG_RECORD__ABOUT:
-				return ABOUT_EDEFAULT == null ? about != null : !ABOUT_EDEFAULT.equals(about);
+			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
+				return primaryTopic != null;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -534,8 +476,8 @@ public class CatalogRecordImpl extends MinimalEObjectImpl.Container implements C
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (about: ");
-		result.append(about);
+		result.append(" (language: ");
+		result.append(language);
 		result.append(')');
 		return result.toString();
 	}

@@ -16,8 +16,6 @@ import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
 
-import skos.Concept;
-
 /**
  * <!-- begin-user-doc -->
  * A representation of the model object '<em><b>Data Service</b></em>'.
@@ -53,7 +51,7 @@ public interface DataService extends DcatResource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Endpoint Description</em>' attribute list.
 	 * @see dcat.DcatPackage#getDataService_EndpointDescription()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.String"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='endpointDescription' namespace='##targetNamespace'"
 	 * @generated
 	 */
@@ -66,49 +64,38 @@ public interface DataService extends DcatResource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Endpoint URL</em>' attribute list.
 	 * @see dcat.DcatPackage#getDataService_EndpointURL()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.String"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='endpointURL' namespace='##targetNamespace'"
 	 * @generated
 	 */
 	EList<String> getEndpointURL();
 
 	/**
-	 * Returns the value of the '<em><b>Serves Dataset</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Serves Dataset</b></em>' reference list.
+	 * The list contents are of type {@link dcat.Dataset}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Serves Dataset</em>' containment reference.
-	 * @see #setServesDataset(Dataset)
+	 * @return the value of the '<em>Serves Dataset</em>' reference list.
 	 * @see dcat.DcatPackage#getDataService_ServesDataset()
-	 * @model containment="true"
-	 *        extendedMetaData="kind='element' name='servesDataset' namespace='##targetNamespace'"
+	 * @model extendedMetaData="kind='element' name='servesDataset' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	Dataset getServesDataset();
+	EList<Dataset> getServesDataset();
 
 	/**
-	 * Sets the value of the '{@link dcat.DataService#getServesDataset <em>Serves Dataset</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Serves Dataset</em>' containment reference.
-	 * @see #getServesDataset()
-	 * @generated
-	 */
-	void setServesDataset(Dataset value);
-
-	/**
-	 * Returns the value of the '<em><b>Format</b></em>' containment reference list.
-	 * The list contents are of type {@link skos.Concept}.
+	 * Returns the value of the '<em><b>Format</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * <!-- begin-model-doc -->
 	 * dcterms:format — the format(s) in which the data service delivers data. New in DCAT-AP.de 3.0.
 	 * <!-- end-model-doc -->
-	 * @return the value of the '<em>Format</em>' containment reference list.
+	 * @return the value of the '<em>Format</em>' attribute list.
 	 * @see dcat.DcatPackage#getDataService_Format()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='format' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Concept> getFormat();
+	EList<String> getFormat();
 
 } // DataService

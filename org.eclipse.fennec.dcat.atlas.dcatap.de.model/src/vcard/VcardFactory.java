@@ -44,15 +44,6 @@ public interface VcardFactory extends EFactory {
 	Address createAddress();
 
 	/**
-	 * Returns a new object of class '<em>Address Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Address Type</em>'.
-	 * @generated
-	 */
-	AddressType createAddressType();
-
-	/**
 	 * Returns a new object of class '<em>Organization</em>'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -60,24 +51,6 @@ public interface VcardFactory extends EFactory {
 	 * @generated
 	 */
 	Organization createOrganization();
-
-	/**
-	 * Returns a new object of class '<em>Organization Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Organization Type</em>'.
-	 * @generated
-	 */
-	OrganizationType createOrganizationType();
-
-	/**
-	 * Returns a new object of class '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return a new object of class '<em>Document Root</em>'.
-	 * @generated
-	 */
-	DocumentRoot createDocumentRoot();
 
 	/**
 	 * Returns the package supported by this factory.

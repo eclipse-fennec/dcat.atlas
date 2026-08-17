@@ -12,6 +12,8 @@
  */
 package dcat.impl;
 
+import adms.Identifier;
+
 import dcat.DcatPackage;
 import dcat.DcatResource;
 import dcat.Relationship;
@@ -32,18 +34,17 @@ import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
 import org.eclipse.emf.ecore.util.EDataTypeEList;
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 import rdf.DateOrDateTimeLiteral;
 import rdf.PlainLiteral;
-import rdf.Resource;
 
-import rdf.impl.ResourceImpl;
-
-import skos.Concept;
+import rdf.impl.IdentifiedResourceImpl;
 
 import terms.LicenseDocument;
+import terms.ProvenanceStatement;
 import terms.RightsStatement;
 import terms.Standard;
 
@@ -66,7 +67,6 @@ import vcard.Organization;
  *   <li>{@link dcat.impl.DcatResourceImpl#getContactPoint <em>Contact Point</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getCreator <em>Creator</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getPublisher <em>Publisher</em>}</li>
- *   <li>{@link dcat.impl.DcatResourceImpl#getApplicableLegislation <em>Applicable Legislation</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getModified <em>Modified</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getLandingPage <em>Landing Page</em>}</li>
@@ -76,15 +76,22 @@ import vcard.Organization;
  *   <li>{@link dcat.impl.DcatResourceImpl#getRights <em>Rights</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getHasPolicy <em>Has Policy</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getQualifiedAttribution <em>Qualified Attribution</em>}</li>
- *   <li>{@link dcat.impl.DcatResourceImpl#getRelation <em>Relation</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getQualifiedRelation <em>Qualified Relation</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getRelation <em>Relation</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getIsReferencedBy <em>Is Referenced By</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getLanguage <em>Language</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getContributorID <em>Contributor ID</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getApplicableLegislation <em>Applicable Legislation</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getOriginator <em>Originator</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getCustodian <em>Custodian</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getPoliticalGeocodingLevelURI <em>Political Geocoding Level URI</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getAdmsIdentifier <em>Adms Identifier</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getProvenance <em>Provenance</em>}</li>
  * </ul>
  *
  * @generated
  */
-public abstract class DcatResourceImpl extends ResourceImpl implements DcatResource {
+public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements DcatResource {
 	/**
 	 * The cached value of the '{@link #getIdentifier() <em>Identifier</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
@@ -116,14 +123,14 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	protected EList<PlainLiteral> description;
 
 	/**
-	 * The cached value of the '{@link #getTheme() <em>Theme</em>}' containment reference list.
+	 * The cached value of the '{@link #getTheme() <em>Theme</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getTheme()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Concept> theme;
+	protected EList<String> theme;
 
 	/**
 	 * The cached value of the '{@link #getKeyword() <em>Keyword</em>}' containment reference list.
@@ -136,14 +143,14 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	protected EList<PlainLiteral> keyword;
 
 	/**
-	 * The cached value of the '{@link #getType() <em>Type</em>}' containment reference list.
+	 * The cached value of the '{@link #getType() <em>Type</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getType()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Concept> type;
+	protected EList<String> type;
 
 	/**
 	 * The cached value of the '{@link #getContactPoint() <em>Contact Point</em>}' containment reference list.
@@ -176,16 +183,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	protected Agent publisher;
 
 	/**
-	 * The cached value of the '{@link #getApplicableLegislation() <em>Applicable Legislation</em>}' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getApplicableLegislation()
-	 * @generated
-	 * @ordered
-	 */
-	protected EList<Resource> applicableLegislation;
-
-	/**
 	 * The cached value of the '{@link #getIssued() <em>Issued</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -216,14 +213,24 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	protected EList<Document> landingPage;
 
 	/**
-	 * The cached value of the '{@link #getAccessRights() <em>Access Rights</em>}' containment reference.
+	 * The default value of the '{@link #getAccessRights() <em>Access Rights</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getAccessRights()
 	 * @generated
 	 * @ordered
 	 */
-	protected Concept accessRights;
+	protected static final String ACCESS_RIGHTS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getAccessRights() <em>Access Rights</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAccessRights()
+	 * @generated
+	 * @ordered
+	 */
+	protected String accessRights = ACCESS_RIGHTS_EDEFAULT;
 
 	/**
 	 * The cached value of the '{@link #getConformsTo() <em>Conforms To</em>}' containment reference list.
@@ -286,16 +293,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	protected EList<String> qualifiedAttribution;
 
 	/**
-	 * The cached value of the '{@link #getRelation() <em>Relation</em>}' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getRelation()
-	 * @generated
-	 * @ordered
-	 */
-	protected EList<Resource> relation;
-
-	/**
 	 * The cached value of the '{@link #getQualifiedRelation() <em>Qualified Relation</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -306,24 +303,104 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	protected EList<Relationship> qualifiedRelation;
 
 	/**
-	 * The cached value of the '{@link #getIsReferencedBy() <em>Is Referenced By</em>}' containment reference list.
+	 * The cached value of the '{@link #getRelation() <em>Relation</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRelation()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> relation;
+
+	/**
+	 * The cached value of the '{@link #getIsReferencedBy() <em>Is Referenced By</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getIsReferencedBy()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Resource> isReferencedBy;
+	protected EList<String> isReferencedBy;
 
 	/**
-	 * The cached value of the '{@link #getLanguage() <em>Language</em>}' containment reference list.
+	 * The cached value of the '{@link #getLanguage() <em>Language</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getLanguage()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Resource> language;
+	protected EList<String> language;
+
+	/**
+	 * The cached value of the '{@link #getContributorID() <em>Contributor ID</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getContributorID()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> contributorID;
+
+	/**
+	 * The cached value of the '{@link #getApplicableLegislation() <em>Applicable Legislation</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getApplicableLegislation()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> applicableLegislation;
+
+	/**
+	 * The cached value of the '{@link #getOriginator() <em>Originator</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getOriginator()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<Agent> originator;
+
+	/**
+	 * The cached value of the '{@link #getCustodian() <em>Custodian</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getCustodian()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<Agent> custodian;
+
+	/**
+	 * The cached value of the '{@link #getPoliticalGeocodingLevelURI() <em>Political Geocoding Level URI</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPoliticalGeocodingLevelURI()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> politicalGeocodingLevelURI;
+
+	/**
+	 * The cached value of the '{@link #getAdmsIdentifier() <em>Adms Identifier</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAdmsIdentifier()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<Identifier> admsIdentifier;
+
+	/**
+	 * The cached value of the '{@link #getProvenance() <em>Provenance</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getProvenance()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<ProvenanceStatement> provenance;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -385,9 +462,9 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Concept> getTheme() {
+	public EList<String> getTheme() {
 		if (theme == null) {
-			theme = new EObjectContainmentEList<Concept>(Concept.class, this, DcatPackage.DCAT_RESOURCE__THEME);
+			theme = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__THEME);
 		}
 		return theme;
 	}
@@ -409,9 +486,9 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Concept> getType() {
+	public EList<String> getType() {
 		if (type == null) {
-			type = new EObjectContainmentEList<Concept>(Concept.class, this, DcatPackage.DCAT_RESOURCE__TYPE);
+			type = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__TYPE);
 		}
 		return type;
 	}
@@ -519,18 +596,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getApplicableLegislation() {
-		if (applicableLegislation == null) {
-			applicableLegislation = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION);
-		}
-		return applicableLegislation;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public DateOrDateTimeLiteral getIssued() {
 		return issued;
 	}
@@ -629,7 +694,7 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Concept getAccessRights() {
+	public String getAccessRights() {
 		return accessRights;
 	}
 
@@ -638,33 +703,11 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetAccessRights(Concept newAccessRights, NotificationChain msgs) {
-		Concept oldAccessRights = accessRights;
+	public void setAccessRights(String newAccessRights) {
+		String oldAccessRights = accessRights;
 		accessRights = newAccessRights;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS, oldAccessRights, newAccessRights);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setAccessRights(Concept newAccessRights) {
-		if (newAccessRights != accessRights) {
-			NotificationChain msgs = null;
-			if (accessRights != null)
-				msgs = ((InternalEObject)accessRights).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS, null, msgs);
-			if (newAccessRights != null)
-				msgs = ((InternalEObject)newAccessRights).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS, null, msgs);
-			msgs = basicSetAccessRights(newAccessRights, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS, newAccessRights, newAccessRights));
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS, oldAccessRights, accessRights));
 	}
 
 	/**
@@ -772,18 +815,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getRelation() {
-		if (relation == null) {
-			relation = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DCAT_RESOURCE__RELATION);
-		}
-		return relation;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public EList<Relationship> getQualifiedRelation() {
 		if (qualifiedRelation == null) {
 			qualifiedRelation = new EObjectContainmentEList<Relationship>(Relationship.class, this, DcatPackage.DCAT_RESOURCE__QUALIFIED_RELATION);
@@ -796,9 +827,21 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getIsReferencedBy() {
+	public EList<String> getRelation() {
+		if (relation == null) {
+			relation = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__RELATION);
+		}
+		return relation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getIsReferencedBy() {
 		if (isReferencedBy == null) {
-			isReferencedBy = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY);
+			isReferencedBy = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY);
 		}
 		return isReferencedBy;
 	}
@@ -808,11 +851,95 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getLanguage() {
+	public EList<String> getLanguage() {
 		if (language == null) {
-			language = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DCAT_RESOURCE__LANGUAGE);
+			language = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__LANGUAGE);
 		}
 		return language;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getContributorID() {
+		if (contributorID == null) {
+			contributorID = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__CONTRIBUTOR_ID);
+		}
+		return contributorID;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getApplicableLegislation() {
+		if (applicableLegislation == null) {
+			applicableLegislation = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION);
+		}
+		return applicableLegislation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<Agent> getOriginator() {
+		if (originator == null) {
+			originator = new EObjectContainmentEList<Agent>(Agent.class, this, DcatPackage.DCAT_RESOURCE__ORIGINATOR);
+		}
+		return originator;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<Agent> getCustodian() {
+		if (custodian == null) {
+			custodian = new EObjectContainmentEList<Agent>(Agent.class, this, DcatPackage.DCAT_RESOURCE__CUSTODIAN);
+		}
+		return custodian;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getPoliticalGeocodingLevelURI() {
+		if (politicalGeocodingLevelURI == null) {
+			politicalGeocodingLevelURI = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI);
+		}
+		return politicalGeocodingLevelURI;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<Identifier> getAdmsIdentifier() {
+		if (admsIdentifier == null) {
+			admsIdentifier = new EObjectContainmentEList<Identifier>(Identifier.class, this, DcatPackage.DCAT_RESOURCE__ADMS_IDENTIFIER);
+		}
+		return admsIdentifier;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<ProvenanceStatement> getProvenance() {
+		if (provenance == null) {
+			provenance = new EObjectContainmentEList<ProvenanceStatement>(ProvenanceStatement.class, this, DcatPackage.DCAT_RESOURCE__PROVENANCE);
+		}
+		return provenance;
 	}
 
 	/**
@@ -829,42 +956,36 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return ((InternalEList<?>)getTitle()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__DESCRIPTION:
 				return ((InternalEList<?>)getDescription()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DCAT_RESOURCE__THEME:
-				return ((InternalEList<?>)getTheme()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__KEYWORD:
 				return ((InternalEList<?>)getKeyword()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DCAT_RESOURCE__TYPE:
-				return ((InternalEList<?>)getType()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__CONTACT_POINT:
 				return ((InternalEList<?>)getContactPoint()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__CREATOR:
 				return basicSetCreator(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				return basicSetPublisher(null, msgs);
-			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
-				return ((InternalEList<?>)getApplicableLegislation()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				return basicSetIssued(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__MODIFIED:
 				return basicSetModified(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__LANDING_PAGE:
 				return ((InternalEList<?>)getLandingPage()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS:
-				return basicSetAccessRights(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__CONFORMS_TO:
 				return ((InternalEList<?>)getConformsTo()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__LICENSE:
 				return basicSetLicense(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__RIGHTS:
 				return ((InternalEList<?>)getRights()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DCAT_RESOURCE__RELATION:
-				return ((InternalEList<?>)getRelation()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_RELATION:
 				return ((InternalEList<?>)getQualifiedRelation()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY:
-				return ((InternalEList<?>)getIsReferencedBy()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DCAT_RESOURCE__LANGUAGE:
-				return ((InternalEList<?>)getLanguage()).basicRemove(otherEnd, msgs);
+			case DcatPackage.DCAT_RESOURCE__ORIGINATOR:
+				return ((InternalEList<?>)getOriginator()).basicRemove(otherEnd, msgs);
+			case DcatPackage.DCAT_RESOURCE__CUSTODIAN:
+				return ((InternalEList<?>)getCustodian()).basicRemove(otherEnd, msgs);
+			case DcatPackage.DCAT_RESOURCE__ADMS_IDENTIFIER:
+				return ((InternalEList<?>)getAdmsIdentifier()).basicRemove(otherEnd, msgs);
+			case DcatPackage.DCAT_RESOURCE__PROVENANCE:
+				return ((InternalEList<?>)getProvenance()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -895,8 +1016,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return getCreator();
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				return getPublisher();
-			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
-				return getApplicableLegislation();
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				return getIssued();
 			case DcatPackage.DCAT_RESOURCE__MODIFIED:
@@ -915,14 +1034,28 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return getHasPolicy();
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_ATTRIBUTION:
 				return getQualifiedAttribution();
-			case DcatPackage.DCAT_RESOURCE__RELATION:
-				return getRelation();
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_RELATION:
 				return getQualifiedRelation();
+			case DcatPackage.DCAT_RESOURCE__RELATION:
+				return getRelation();
 			case DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY:
 				return getIsReferencedBy();
 			case DcatPackage.DCAT_RESOURCE__LANGUAGE:
 				return getLanguage();
+			case DcatPackage.DCAT_RESOURCE__CONTRIBUTOR_ID:
+				return getContributorID();
+			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
+				return getApplicableLegislation();
+			case DcatPackage.DCAT_RESOURCE__ORIGINATOR:
+				return getOriginator();
+			case DcatPackage.DCAT_RESOURCE__CUSTODIAN:
+				return getCustodian();
+			case DcatPackage.DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI:
+				return getPoliticalGeocodingLevelURI();
+			case DcatPackage.DCAT_RESOURCE__ADMS_IDENTIFIER:
+				return getAdmsIdentifier();
+			case DcatPackage.DCAT_RESOURCE__PROVENANCE:
+				return getProvenance();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -950,7 +1083,7 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return;
 			case DcatPackage.DCAT_RESOURCE__THEME:
 				getTheme().clear();
-				getTheme().addAll((Collection<? extends Concept>)newValue);
+				getTheme().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__KEYWORD:
 				getKeyword().clear();
@@ -958,7 +1091,7 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return;
 			case DcatPackage.DCAT_RESOURCE__TYPE:
 				getType().clear();
-				getType().addAll((Collection<? extends Concept>)newValue);
+				getType().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__CONTACT_POINT:
 				getContactPoint().clear();
@@ -969,10 +1102,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return;
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				setPublisher((Agent)newValue);
-				return;
-			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
-				getApplicableLegislation().clear();
-				getApplicableLegislation().addAll((Collection<? extends Resource>)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				setIssued((DateOrDateTimeLiteral)newValue);
@@ -985,7 +1114,7 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				getLandingPage().addAll((Collection<? extends Document>)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS:
-				setAccessRights((Concept)newValue);
+				setAccessRights((String)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__CONFORMS_TO:
 				getConformsTo().clear();
@@ -1005,21 +1134,49 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				getQualifiedAttribution().clear();
 				getQualifiedAttribution().addAll((Collection<? extends String>)newValue);
 				return;
-			case DcatPackage.DCAT_RESOURCE__RELATION:
-				getRelation().clear();
-				getRelation().addAll((Collection<? extends Resource>)newValue);
-				return;
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_RELATION:
 				getQualifiedRelation().clear();
 				getQualifiedRelation().addAll((Collection<? extends Relationship>)newValue);
 				return;
+			case DcatPackage.DCAT_RESOURCE__RELATION:
+				getRelation().clear();
+				getRelation().addAll((Collection<? extends String>)newValue);
+				return;
 			case DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY:
 				getIsReferencedBy().clear();
-				getIsReferencedBy().addAll((Collection<? extends Resource>)newValue);
+				getIsReferencedBy().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__LANGUAGE:
 				getLanguage().clear();
-				getLanguage().addAll((Collection<? extends Resource>)newValue);
+				getLanguage().addAll((Collection<? extends String>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__CONTRIBUTOR_ID:
+				getContributorID().clear();
+				getContributorID().addAll((Collection<? extends String>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
+				getApplicableLegislation().clear();
+				getApplicableLegislation().addAll((Collection<? extends String>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__ORIGINATOR:
+				getOriginator().clear();
+				getOriginator().addAll((Collection<? extends Agent>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__CUSTODIAN:
+				getCustodian().clear();
+				getCustodian().addAll((Collection<? extends Agent>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI:
+				getPoliticalGeocodingLevelURI().clear();
+				getPoliticalGeocodingLevelURI().addAll((Collection<? extends String>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__ADMS_IDENTIFIER:
+				getAdmsIdentifier().clear();
+				getAdmsIdentifier().addAll((Collection<? extends Identifier>)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__PROVENANCE:
+				getProvenance().clear();
+				getProvenance().addAll((Collection<? extends ProvenanceStatement>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1060,9 +1217,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				setPublisher((Agent)null);
 				return;
-			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
-				getApplicableLegislation().clear();
-				return;
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				setIssued((DateOrDateTimeLiteral)null);
 				return;
@@ -1073,7 +1227,7 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				getLandingPage().clear();
 				return;
 			case DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS:
-				setAccessRights((Concept)null);
+				setAccessRights(ACCESS_RIGHTS_EDEFAULT);
 				return;
 			case DcatPackage.DCAT_RESOURCE__CONFORMS_TO:
 				getConformsTo().clear();
@@ -1090,17 +1244,38 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_ATTRIBUTION:
 				getQualifiedAttribution().clear();
 				return;
-			case DcatPackage.DCAT_RESOURCE__RELATION:
-				getRelation().clear();
-				return;
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_RELATION:
 				getQualifiedRelation().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__RELATION:
+				getRelation().clear();
 				return;
 			case DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY:
 				getIsReferencedBy().clear();
 				return;
 			case DcatPackage.DCAT_RESOURCE__LANGUAGE:
 				getLanguage().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__CONTRIBUTOR_ID:
+				getContributorID().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
+				getApplicableLegislation().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__ORIGINATOR:
+				getOriginator().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__CUSTODIAN:
+				getCustodian().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI:
+				getPoliticalGeocodingLevelURI().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__ADMS_IDENTIFIER:
+				getAdmsIdentifier().clear();
+				return;
+			case DcatPackage.DCAT_RESOURCE__PROVENANCE:
+				getProvenance().clear();
 				return;
 		}
 		super.eUnset(featureID);
@@ -1132,8 +1307,6 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return creator != null;
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				return publisher != null;
-			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
-				return applicableLegislation != null && !applicableLegislation.isEmpty();
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				return issued != null;
 			case DcatPackage.DCAT_RESOURCE__MODIFIED:
@@ -1141,7 +1314,7 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 			case DcatPackage.DCAT_RESOURCE__LANDING_PAGE:
 				return landingPage != null && !landingPage.isEmpty();
 			case DcatPackage.DCAT_RESOURCE__ACCESS_RIGHTS:
-				return accessRights != null;
+				return ACCESS_RIGHTS_EDEFAULT == null ? accessRights != null : !ACCESS_RIGHTS_EDEFAULT.equals(accessRights);
 			case DcatPackage.DCAT_RESOURCE__CONFORMS_TO:
 				return conformsTo != null && !conformsTo.isEmpty();
 			case DcatPackage.DCAT_RESOURCE__LICENSE:
@@ -1152,14 +1325,28 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 				return HAS_POLICY_EDEFAULT == null ? hasPolicy != null : !HAS_POLICY_EDEFAULT.equals(hasPolicy);
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_ATTRIBUTION:
 				return qualifiedAttribution != null && !qualifiedAttribution.isEmpty();
-			case DcatPackage.DCAT_RESOURCE__RELATION:
-				return relation != null && !relation.isEmpty();
 			case DcatPackage.DCAT_RESOURCE__QUALIFIED_RELATION:
 				return qualifiedRelation != null && !qualifiedRelation.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__RELATION:
+				return relation != null && !relation.isEmpty();
 			case DcatPackage.DCAT_RESOURCE__IS_REFERENCED_BY:
 				return isReferencedBy != null && !isReferencedBy.isEmpty();
 			case DcatPackage.DCAT_RESOURCE__LANGUAGE:
 				return language != null && !language.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__CONTRIBUTOR_ID:
+				return contributorID != null && !contributorID.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__APPLICABLE_LEGISLATION:
+				return applicableLegislation != null && !applicableLegislation.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__ORIGINATOR:
+				return originator != null && !originator.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__CUSTODIAN:
+				return custodian != null && !custodian.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI:
+				return politicalGeocodingLevelURI != null && !politicalGeocodingLevelURI.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__ADMS_IDENTIFIER:
+				return admsIdentifier != null && !admsIdentifier.isEmpty();
+			case DcatPackage.DCAT_RESOURCE__PROVENANCE:
+				return provenance != null && !provenance.isEmpty();
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1174,10 +1361,28 @@ public abstract class DcatResourceImpl extends ResourceImpl implements DcatResou
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (hasPolicy: ");
+		result.append(" (theme: ");
+		result.append(theme);
+		result.append(", type: ");
+		result.append(type);
+		result.append(", accessRights: ");
+		result.append(accessRights);
+		result.append(", hasPolicy: ");
 		result.append(hasPolicy);
 		result.append(", qualifiedAttribution: ");
 		result.append(qualifiedAttribution);
+		result.append(", relation: ");
+		result.append(relation);
+		result.append(", isReferencedBy: ");
+		result.append(isReferencedBy);
+		result.append(", language: ");
+		result.append(language);
+		result.append(", contributorID: ");
+		result.append(contributorID);
+		result.append(", applicableLegislation: ");
+		result.append(applicableLegislation);
+		result.append(", politicalGeocodingLevelURI: ");
+		result.append(politicalGeocodingLevelURI);
 		result.append(')');
 		return result.toString();
 	}

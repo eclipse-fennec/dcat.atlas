@@ -13,19 +13,26 @@
 package foaf.impl;
 
 import foaf.Agent;
-import foaf.AgentType;
 import foaf.FoafPackage;
-import foaf.Organization;
-import foaf.Person;
+
+import java.util.Collection;
 
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
+import rdf.PlainLiteral;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 /**
  * <!-- begin-user-doc -->
@@ -35,43 +42,105 @@ import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link foaf.impl.AgentImpl#getAgent <em>Agent</em>}</li>
- *   <li>{@link foaf.impl.AgentImpl#getOrganization <em>Organization</em>}</li>
- *   <li>{@link foaf.impl.AgentImpl#getPerson <em>Person</em>}</li>
+ *   <li>{@link foaf.impl.AgentImpl#getName <em>Name</em>}</li>
+ *   <li>{@link foaf.impl.AgentImpl#getType <em>Type</em>}</li>
+ *   <li>{@link foaf.impl.AgentImpl#getNodeID <em>Node ID</em>}</li>
+ *   <li>{@link foaf.impl.AgentImpl#getPhone <em>Phone</em>}</li>
+ *   <li>{@link foaf.impl.AgentImpl#getMbox <em>Mbox</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
+public class AgentImpl extends IdentifiedResourceImpl implements Agent {
 	/**
-	 * The cached value of the '{@link #getAgent() <em>Agent</em>}' containment reference.
+	 * The cached value of the '{@link #getName() <em>Name</em>}' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getAgent()
+	 * @see #getName()
 	 * @generated
 	 * @ordered
 	 */
-	protected AgentType agent;
+	protected EList<PlainLiteral> name;
 
 	/**
-	 * The cached value of the '{@link #getOrganization() <em>Organization</em>}' containment reference.
+	 * The default value of the '{@link #getType() <em>Type</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getOrganization()
+	 * @see #getType()
 	 * @generated
 	 * @ordered
 	 */
-	protected Organization organization;
+	protected static final String TYPE_EDEFAULT = null;
 
 	/**
-	 * The cached value of the '{@link #getPerson() <em>Person</em>}' containment reference.
+	 * The cached value of the '{@link #getType() <em>Type</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getPerson()
+	 * @see #getType()
 	 * @generated
 	 * @ordered
 	 */
-	protected Person person;
+	protected String type = TYPE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NODE_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected String nodeID = NODE_ID_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPhone() <em>Phone</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPhone()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String PHONE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPhone() <em>Phone</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPhone()
+	 * @generated
+	 * @ordered
+	 */
+	protected String phone = PHONE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getMbox() <em>Mbox</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMbox()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String MBOX_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getMbox() <em>Mbox</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMbox()
+	 * @generated
+	 * @ordered
+	 */
+	protected String mbox = MBOX_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -97,23 +166,11 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public AgentType getAgent() {
-		return agent;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetAgent(AgentType newAgent, NotificationChain msgs) {
-		AgentType oldAgent = agent;
-		agent = newAgent;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__AGENT, oldAgent, newAgent);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+	public EList<PlainLiteral> getName() {
+		if (name == null) {
+			name = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, FoafPackage.AGENT__NAME);
 		}
-		return msgs;
+		return name;
 	}
 
 	/**
@@ -121,18 +178,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setAgent(AgentType newAgent) {
-		if (newAgent != agent) {
-			NotificationChain msgs = null;
-			if (agent != null)
-				msgs = ((InternalEObject)agent).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - FoafPackage.AGENT__AGENT, null, msgs);
-			if (newAgent != null)
-				msgs = ((InternalEObject)newAgent).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - FoafPackage.AGENT__AGENT, null, msgs);
-			msgs = basicSetAgent(newAgent, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__AGENT, newAgent, newAgent));
+	public String getType() {
+		return type;
 	}
 
 	/**
@@ -140,8 +187,11 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Organization getOrganization() {
-		return organization;
+	public void setType(String newType) {
+		String oldType = type;
+		type = newType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__TYPE, oldType, type));
 	}
 
 	/**
@@ -149,14 +199,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetOrganization(Organization newOrganization, NotificationChain msgs) {
-		Organization oldOrganization = organization;
-		organization = newOrganization;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__ORGANIZATION, oldOrganization, newOrganization);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
+	public String getNodeID() {
+		return nodeID;
 	}
 
 	/**
@@ -164,18 +208,11 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setOrganization(Organization newOrganization) {
-		if (newOrganization != organization) {
-			NotificationChain msgs = null;
-			if (organization != null)
-				msgs = ((InternalEObject)organization).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - FoafPackage.AGENT__ORGANIZATION, null, msgs);
-			if (newOrganization != null)
-				msgs = ((InternalEObject)newOrganization).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - FoafPackage.AGENT__ORGANIZATION, null, msgs);
-			msgs = basicSetOrganization(newOrganization, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__ORGANIZATION, newOrganization, newOrganization));
+	public void setNodeID(String newNodeID) {
+		String oldNodeID = nodeID;
+		nodeID = newNodeID;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__NODE_ID, oldNodeID, nodeID));
 	}
 
 	/**
@@ -183,8 +220,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Person getPerson() {
-		return person;
+	public String getPhone() {
+		return phone;
 	}
 
 	/**
@@ -192,14 +229,11 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetPerson(Person newPerson, NotificationChain msgs) {
-		Person oldPerson = person;
-		person = newPerson;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__PERSON, oldPerson, newPerson);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
+	public void setPhone(String newPhone) {
+		String oldPhone = phone;
+		phone = newPhone;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__PHONE, oldPhone, phone));
 	}
 
 	/**
@@ -207,18 +241,20 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setPerson(Person newPerson) {
-		if (newPerson != person) {
-			NotificationChain msgs = null;
-			if (person != null)
-				msgs = ((InternalEObject)person).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - FoafPackage.AGENT__PERSON, null, msgs);
-			if (newPerson != null)
-				msgs = ((InternalEObject)newPerson).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - FoafPackage.AGENT__PERSON, null, msgs);
-			msgs = basicSetPerson(newPerson, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__PERSON, newPerson, newPerson));
+	public String getMbox() {
+		return mbox;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setMbox(String newMbox) {
+		String oldMbox = mbox;
+		mbox = newMbox;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, FoafPackage.AGENT__MBOX, oldMbox, mbox));
 	}
 
 	/**
@@ -229,12 +265,8 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case FoafPackage.AGENT__AGENT:
-				return basicSetAgent(null, msgs);
-			case FoafPackage.AGENT__ORGANIZATION:
-				return basicSetOrganization(null, msgs);
-			case FoafPackage.AGENT__PERSON:
-				return basicSetPerson(null, msgs);
+			case FoafPackage.AGENT__NAME:
+				return ((InternalEList<?>)getName()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -247,12 +279,16 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case FoafPackage.AGENT__AGENT:
-				return getAgent();
-			case FoafPackage.AGENT__ORGANIZATION:
-				return getOrganization();
-			case FoafPackage.AGENT__PERSON:
-				return getPerson();
+			case FoafPackage.AGENT__NAME:
+				return getName();
+			case FoafPackage.AGENT__TYPE:
+				return getType();
+			case FoafPackage.AGENT__NODE_ID:
+				return getNodeID();
+			case FoafPackage.AGENT__PHONE:
+				return getPhone();
+			case FoafPackage.AGENT__MBOX:
+				return getMbox();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -262,17 +298,25 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case FoafPackage.AGENT__AGENT:
-				setAgent((AgentType)newValue);
+			case FoafPackage.AGENT__NAME:
+				getName().clear();
+				getName().addAll((Collection<? extends PlainLiteral>)newValue);
 				return;
-			case FoafPackage.AGENT__ORGANIZATION:
-				setOrganization((Organization)newValue);
+			case FoafPackage.AGENT__TYPE:
+				setType((String)newValue);
 				return;
-			case FoafPackage.AGENT__PERSON:
-				setPerson((Person)newValue);
+			case FoafPackage.AGENT__NODE_ID:
+				setNodeID((String)newValue);
+				return;
+			case FoafPackage.AGENT__PHONE:
+				setPhone((String)newValue);
+				return;
+			case FoafPackage.AGENT__MBOX:
+				setMbox((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -286,14 +330,20 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case FoafPackage.AGENT__AGENT:
-				setAgent((AgentType)null);
+			case FoafPackage.AGENT__NAME:
+				getName().clear();
 				return;
-			case FoafPackage.AGENT__ORGANIZATION:
-				setOrganization((Organization)null);
+			case FoafPackage.AGENT__TYPE:
+				setType(TYPE_EDEFAULT);
 				return;
-			case FoafPackage.AGENT__PERSON:
-				setPerson((Person)null);
+			case FoafPackage.AGENT__NODE_ID:
+				setNodeID(NODE_ID_EDEFAULT);
+				return;
+			case FoafPackage.AGENT__PHONE:
+				setPhone(PHONE_EDEFAULT);
+				return;
+			case FoafPackage.AGENT__MBOX:
+				setMbox(MBOX_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -307,14 +357,40 @@ public class AgentImpl extends MinimalEObjectImpl.Container implements Agent {
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case FoafPackage.AGENT__AGENT:
-				return agent != null;
-			case FoafPackage.AGENT__ORGANIZATION:
-				return organization != null;
-			case FoafPackage.AGENT__PERSON:
-				return person != null;
+			case FoafPackage.AGENT__NAME:
+				return name != null && !name.isEmpty();
+			case FoafPackage.AGENT__TYPE:
+				return TYPE_EDEFAULT == null ? type != null : !TYPE_EDEFAULT.equals(type);
+			case FoafPackage.AGENT__NODE_ID:
+				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
+			case FoafPackage.AGENT__PHONE:
+				return PHONE_EDEFAULT == null ? phone != null : !PHONE_EDEFAULT.equals(phone);
+			case FoafPackage.AGENT__MBOX:
+				return MBOX_EDEFAULT == null ? mbox != null : !MBOX_EDEFAULT.equals(mbox);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (type: ");
+		result.append(type);
+		result.append(", nodeID: ");
+		result.append(nodeID);
+		result.append(", phone: ");
+		result.append(phone);
+		result.append(", mbox: ");
+		result.append(mbox);
+		result.append(')');
+		return result.toString();
 	}
 
 } //AgentImpl

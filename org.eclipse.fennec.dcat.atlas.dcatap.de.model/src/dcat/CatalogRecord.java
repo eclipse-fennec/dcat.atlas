@@ -14,13 +14,11 @@ package dcat;
 
 import org.eclipse.emf.common.util.EList;
 
-import org.eclipse.emf.ecore.EObject;
-
 import org.osgi.annotation.versioning.ProviderType;
 
 import rdf.DateOrDateTimeLiteral;
+import rdf.IdentifiedResource;
 import rdf.PlainLiteral;
-import rdf.Resource;
 
 import terms.Standard;
 
@@ -46,10 +44,9 @@ import terms.Standard;
  *   <li>{@link dcat.CatalogRecord#getDescription <em>Description</em>}</li>
  *   <li>{@link dcat.CatalogRecord#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.CatalogRecord#getModified <em>Modified</em>}</li>
- *   <li>{@link dcat.CatalogRecord#getPrimaryTopic <em>Primary Topic</em>}</li>
  *   <li>{@link dcat.CatalogRecord#getConformsTo <em>Conforms To</em>}</li>
  *   <li>{@link dcat.CatalogRecord#getLanguage <em>Language</em>}</li>
- *   <li>{@link dcat.CatalogRecord#getAbout <em>About</em>}</li>
+ *   <li>{@link dcat.CatalogRecord#getPrimaryTopic <em>Primary Topic</em>}</li>
  * </ul>
  *
  * @see dcat.DcatPackage#getCatalogRecord()
@@ -57,7 +54,7 @@ import terms.Standard;
  * @generated
  */
 @ProviderType
-public interface CatalogRecord extends EObject {
+public interface CatalogRecord extends IdentifiedResource {
 	/**
 	 * Returns the value of the '<em><b>Title</b></em>' containment reference list.
 	 * The list contents are of type {@link rdf.PlainLiteral}.
@@ -131,29 +128,6 @@ public interface CatalogRecord extends EObject {
 	void setModified(DateOrDateTimeLiteral value);
 
 	/**
-	 * Returns the value of the '<em><b>Primary Topic</b></em>' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Primary Topic</em>' containment reference.
-	 * @see #setPrimaryTopic(Resource)
-	 * @see dcat.DcatPackage#getCatalogRecord_PrimaryTopic()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='primaryTopic' namespace='http://xmlns.com/foaf/0.1/'"
-	 * @generated
-	 */
-	Resource getPrimaryTopic();
-
-	/**
-	 * Sets the value of the '{@link dcat.CatalogRecord#getPrimaryTopic <em>Primary Topic</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Primary Topic</em>' containment reference.
-	 * @see #getPrimaryTopic()
-	 * @generated
-	 */
-	void setPrimaryTopic(Resource value);
-
-	/**
 	 * Returns the value of the '<em><b>Conforms To</b></em>' containment reference list.
 	 * The list contents are of type {@link terms.Standard}.
 	 * <!-- begin-user-doc -->
@@ -167,39 +141,39 @@ public interface CatalogRecord extends EObject {
 	EList<Standard> getConformsTo();
 
 	/**
-	 * Returns the value of the '<em><b>Language</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.Resource}.
+	 * Returns the value of the '<em><b>Language</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Language</em>' containment reference list.
+	 * @return the value of the '<em>Language</em>' attribute list.
 	 * @see dcat.DcatPackage#getCatalogRecord_Language()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='language' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<Resource> getLanguage();
+	EList<String> getLanguage();
 
 	/**
-	 * Returns the value of the '<em><b>About</b></em>' attribute.
+	 * Returns the value of the '<em><b>Primary Topic</b></em>' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>About</em>' attribute.
-	 * @see #setAbout(String)
-	 * @see dcat.DcatPackage#getCatalogRecord_About()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
-	 *        extendedMetaData="kind='attribute' name='about' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+	 * @return the value of the '<em>Primary Topic</em>' reference.
+	 * @see #setPrimaryTopic(DcatResource)
+	 * @see dcat.DcatPackage#getCatalogRecord_PrimaryTopic()
+	 * @model required="true"
+	 *        extendedMetaData="kind='element' name='primaryTopic' namespace='http://xmlns.com/foaf/0.1/'"
 	 * @generated
 	 */
-	String getAbout();
+	DcatResource getPrimaryTopic();
 
 	/**
-	 * Sets the value of the '{@link dcat.CatalogRecord#getAbout <em>About</em>}' attribute.
+	 * Sets the value of the '{@link dcat.CatalogRecord#getPrimaryTopic <em>Primary Topic</em>}' reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>About</em>' attribute.
-	 * @see #getAbout()
+	 * @param value the new value of the '<em>Primary Topic</em>' reference.
+	 * @see #getPrimaryTopic()
 	 * @generated
 	 */
-	void setAbout(String value);
+	void setPrimaryTopic(DcatResource value);
 
 } // CatalogRecord

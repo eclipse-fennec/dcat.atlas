@@ -12,17 +12,27 @@
  */
 package terms.impl;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+
+import org.eclipse.emf.common.util.EList;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl;
+
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
+import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.InternalEList;
+
+import rdf.PlainLiteral;
+
+import rdf.impl.IdentifiedResourceImpl;
 
 import terms.LicenseDocument;
-import terms.LicenseDocumentType;
 import terms.TermsPackage;
 
 /**
@@ -33,21 +43,75 @@ import terms.TermsPackage;
  * The following features are implemented:
  * </p>
  * <ul>
- *   <li>{@link terms.impl.LicenseDocumentImpl#getLicenseDocument <em>License Document</em>}</li>
+ *   <li>{@link terms.impl.LicenseDocumentImpl#getType <em>Type</em>}</li>
+ *   <li>{@link terms.impl.LicenseDocumentImpl#getTitle <em>Title</em>}</li>
+ *   <li>{@link terms.impl.LicenseDocumentImpl#getDescription <em>Description</em>}</li>
+ *   <li>{@link terms.impl.LicenseDocumentImpl#getIdentifier <em>Identifier</em>}</li>
+ *   <li>{@link terms.impl.LicenseDocumentImpl#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements LicenseDocument {
+public class LicenseDocumentImpl extends IdentifiedResourceImpl implements LicenseDocument {
 	/**
-	 * The cached value of the '{@link #getLicenseDocument() <em>License Document</em>}' containment reference.
+	 * The cached value of the '{@link #getType() <em>Type</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getLicenseDocument()
+	 * @see #getType()
 	 * @generated
 	 * @ordered
 	 */
-	protected LicenseDocumentType licenseDocument;
+	protected EList<String> type;
+
+	/**
+	 * The cached value of the '{@link #getTitle() <em>Title</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getTitle()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<PlainLiteral> title;
+
+	/**
+	 * The cached value of the '{@link #getDescription() <em>Description</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDescription()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<PlainLiteral> description;
+
+	/**
+	 * The cached value of the '{@link #getIdentifier() <em>Identifier</em>}' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getIdentifier()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<PlainLiteral> identifier;
+
+	/**
+	 * The default value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String NODE_ID_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getNodeID() <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getNodeID()
+	 * @generated
+	 * @ordered
+	 */
+	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -73,8 +137,11 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public LicenseDocumentType getLicenseDocument() {
-		return licenseDocument;
+	public EList<String> getType() {
+		if (type == null) {
+			type = new EDataTypeUniqueEList<String>(String.class, this, TermsPackage.LICENSE_DOCUMENT__TYPE);
+		}
+		return type;
 	}
 
 	/**
@@ -82,14 +149,11 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetLicenseDocument(LicenseDocumentType newLicenseDocument, NotificationChain msgs) {
-		LicenseDocumentType oldLicenseDocument = licenseDocument;
-		licenseDocument = newLicenseDocument;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT, oldLicenseDocument, newLicenseDocument);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+	public EList<PlainLiteral> getTitle() {
+		if (title == null) {
+			title = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.LICENSE_DOCUMENT__TITLE);
 		}
-		return msgs;
+		return title;
 	}
 
 	/**
@@ -97,18 +161,44 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setLicenseDocument(LicenseDocumentType newLicenseDocument) {
-		if (newLicenseDocument != licenseDocument) {
-			NotificationChain msgs = null;
-			if (licenseDocument != null)
-				msgs = ((InternalEObject)licenseDocument).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT, null, msgs);
-			if (newLicenseDocument != null)
-				msgs = ((InternalEObject)newLicenseDocument).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT, null, msgs);
-			msgs = basicSetLicenseDocument(newLicenseDocument, msgs);
-			if (msgs != null) msgs.dispatch();
+	public EList<PlainLiteral> getDescription() {
+		if (description == null) {
+			description = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.LICENSE_DOCUMENT__DESCRIPTION);
 		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT, newLicenseDocument, newLicenseDocument));
+		return description;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<PlainLiteral> getIdentifier() {
+		if (identifier == null) {
+			identifier = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, TermsPackage.LICENSE_DOCUMENT__IDENTIFIER);
+		}
+		return identifier;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String getNodeID() {
+		return nodeID;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setNodeID(String newNodeID) {
+		String oldNodeID = nodeID;
+		nodeID = newNodeID;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, TermsPackage.LICENSE_DOCUMENT__NODE_ID, oldNodeID, nodeID));
 	}
 
 	/**
@@ -119,8 +209,12 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT:
-				return basicSetLicenseDocument(null, msgs);
+			case TermsPackage.LICENSE_DOCUMENT__TITLE:
+				return ((InternalEList<?>)getTitle()).basicRemove(otherEnd, msgs);
+			case TermsPackage.LICENSE_DOCUMENT__DESCRIPTION:
+				return ((InternalEList<?>)getDescription()).basicRemove(otherEnd, msgs);
+			case TermsPackage.LICENSE_DOCUMENT__IDENTIFIER:
+				return ((InternalEList<?>)getIdentifier()).basicRemove(otherEnd, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -133,8 +227,16 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
-			case TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT:
-				return getLicenseDocument();
+			case TermsPackage.LICENSE_DOCUMENT__TYPE:
+				return getType();
+			case TermsPackage.LICENSE_DOCUMENT__TITLE:
+				return getTitle();
+			case TermsPackage.LICENSE_DOCUMENT__DESCRIPTION:
+				return getDescription();
+			case TermsPackage.LICENSE_DOCUMENT__IDENTIFIER:
+				return getIdentifier();
+			case TermsPackage.LICENSE_DOCUMENT__NODE_ID:
+				return getNodeID();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -144,11 +246,28 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
-			case TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT:
-				setLicenseDocument((LicenseDocumentType)newValue);
+			case TermsPackage.LICENSE_DOCUMENT__TYPE:
+				getType().clear();
+				getType().addAll((Collection<? extends String>)newValue);
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__TITLE:
+				getTitle().clear();
+				getTitle().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__DESCRIPTION:
+				getDescription().clear();
+				getDescription().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__IDENTIFIER:
+				getIdentifier().clear();
+				getIdentifier().addAll((Collection<? extends PlainLiteral>)newValue);
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__NODE_ID:
+				setNodeID((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -162,8 +281,20 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
-			case TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT:
-				setLicenseDocument((LicenseDocumentType)null);
+			case TermsPackage.LICENSE_DOCUMENT__TYPE:
+				getType().clear();
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__TITLE:
+				getTitle().clear();
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__DESCRIPTION:
+				getDescription().clear();
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__IDENTIFIER:
+				getIdentifier().clear();
+				return;
+			case TermsPackage.LICENSE_DOCUMENT__NODE_ID:
+				setNodeID(NODE_ID_EDEFAULT);
 				return;
 		}
 		super.eUnset(featureID);
@@ -177,10 +308,36 @@ public class LicenseDocumentImpl extends MinimalEObjectImpl.Container implements
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
-			case TermsPackage.LICENSE_DOCUMENT__LICENSE_DOCUMENT:
-				return licenseDocument != null;
+			case TermsPackage.LICENSE_DOCUMENT__TYPE:
+				return type != null && !type.isEmpty();
+			case TermsPackage.LICENSE_DOCUMENT__TITLE:
+				return title != null && !title.isEmpty();
+			case TermsPackage.LICENSE_DOCUMENT__DESCRIPTION:
+				return description != null && !description.isEmpty();
+			case TermsPackage.LICENSE_DOCUMENT__IDENTIFIER:
+				return identifier != null && !identifier.isEmpty();
+			case TermsPackage.LICENSE_DOCUMENT__NODE_ID:
+				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
 		}
 		return super.eIsSet(featureID);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	@Override
+	public String toString() {
+		if (eIsProxy()) return super.toString();
+
+		StringBuilder result = new StringBuilder(super.toString());
+		result.append(" (type: ");
+		result.append(type);
+		result.append(", nodeID: ");
+		result.append(nodeID);
+		result.append(')');
+		return result.toString();
 	}
 
 } //LicenseDocumentImpl

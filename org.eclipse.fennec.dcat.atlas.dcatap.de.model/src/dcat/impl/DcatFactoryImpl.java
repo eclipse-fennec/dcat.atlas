@@ -72,8 +72,6 @@ public class DcatFactoryImpl extends EFactoryImpl implements DcatFactory {
 			case DcatPackage.RELATIONSHIP: return createRelationship();
 			case DcatPackage.CATALOG_RECORD: return createCatalogRecord();
 			case DcatPackage.DATA_SERVICE: return createDataService();
-			case DcatPackage.DCATAP_ROOT: return createDCATAPRoot();
-			case DcatPackage.DATASET_CONTAINER: return createDatasetContainer();
 			case DcatPackage.DATASET_SERIES: return createDatasetSeries();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
@@ -138,26 +136,6 @@ public class DcatFactoryImpl extends EFactoryImpl implements DcatFactory {
 	public DataService createDataService() {
 		DataServiceImpl dataService = new DataServiceImpl();
 		return dataService;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DCATAPRoot createDCATAPRoot() {
-		DCATAPRootImpl dcatapRoot = new DCATAPRootImpl();
-		return dcatapRoot;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public DatasetContainer createDatasetContainer() {
-		DatasetContainerImpl datasetContainer = new DatasetContainerImpl();
-		return datasetContainer;
 	}
 
 	/**

@@ -22,15 +22,15 @@ import org.osgi.annotation.versioning.ProviderType;
 
 /**
  * <!-- begin-user-doc -->
- * A representation of the literals of the enumeration '<em><b>Datatype Type</b></em>',
+ * A representation of the literals of the enumeration '<em><b>Datatype</b></em>',
  * and utility methods for working with them.
  * <!-- end-user-doc -->
- * @see rdf.RdfPackage#getDatatypeType()
- * @model extendedMetaData="name='datatype_._type'"
+ * @see rdf.RdfPackage#getDatatype()
+ * @model extendedMetaData="name='Datatype'"
  * @generated
  */
 @ProviderType
-public enum DatatypeType implements Enumerator {
+public enum Datatype implements Enumerator {
 	/**
 	 * The '<em><b>Http Www W3 Org2001 XML Schema Date</b></em>' literal object.
 	 * <!-- begin-user-doc -->
@@ -74,36 +74,36 @@ public enum DatatypeType implements Enumerator {
 	public static final int HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE_TIME_VALUE = 1;
 
 	/**
-	 * An array of all the '<em><b>Datatype Type</b></em>' enumerators.
+	 * An array of all the '<em><b>Datatype</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private static final DatatypeType[] VALUES_ARRAY =
-		new DatatypeType[] {
+	private static final Datatype[] VALUES_ARRAY =
+		new Datatype[] {
 			HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE,
 			HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE_TIME,
 		};
 
 	/**
-	 * A public read-only list of all the '<em><b>Datatype Type</b></em>' enumerators.
+	 * A public read-only list of all the '<em><b>Datatype</b></em>' enumerators.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public static final List<DatatypeType> VALUES = Collections.unmodifiableList(Arrays.asList(VALUES_ARRAY));
+	public static final List<Datatype> VALUES = Collections.unmodifiableList(Arrays.asList(VALUES_ARRAY));
 
 	/**
-	 * Returns the '<em><b>Datatype Type</b></em>' literal with the specified literal value.
+	 * Returns the '<em><b>Datatype</b></em>' literal with the specified literal value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param literal the literal.
 	 * @return the matching enumerator or <code>null</code>.
 	 * @generated
 	 */
-	public static DatatypeType get(String literal) {
+	public static Datatype get(String literal) {
 		for (int i = 0; i < VALUES_ARRAY.length; ++i) {
-			DatatypeType result = VALUES_ARRAY[i];
+			Datatype result = VALUES_ARRAY[i];
 			if (result.toString().equals(literal)) {
 				return result;
 			}
@@ -112,16 +112,16 @@ public enum DatatypeType implements Enumerator {
 	}
 
 	/**
-	 * Returns the '<em><b>Datatype Type</b></em>' literal with the specified name.
+	 * Returns the '<em><b>Datatype</b></em>' literal with the specified name.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param name the name.
 	 * @return the matching enumerator or <code>null</code>.
 	 * @generated
 	 */
-	public static DatatypeType getByName(String name) {
+	public static Datatype getByName(String name) {
 		for (int i = 0; i < VALUES_ARRAY.length; ++i) {
-			DatatypeType result = VALUES_ARRAY[i];
+			Datatype result = VALUES_ARRAY[i];
 			if (result.getName().equals(name)) {
 				return result;
 			}
@@ -130,14 +130,14 @@ public enum DatatypeType implements Enumerator {
 	}
 
 	/**
-	 * Returns the '<em><b>Datatype Type</b></em>' literal with the specified integer value.
+	 * Returns the '<em><b>Datatype</b></em>' literal with the specified integer value.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @param value the integer value.
 	 * @return the matching enumerator or <code>null</code>.
 	 * @generated
 	 */
-	public static DatatypeType get(int value) {
+	public static Datatype get(int value) {
 		switch (value) {
 			case HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE_VALUE: return HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE;
 			case HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE_TIME_VALUE: return HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE_TIME;
@@ -172,7 +172,7 @@ public enum DatatypeType implements Enumerator {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private DatatypeType(int value, String name, String literal) {
+	private Datatype(int value, String name, String literal) {
 		this.value = value;
 		this.name = name;
 		this.literal = literal;
@@ -216,4 +216,4 @@ public enum DatatypeType implements Enumerator {
 		return literal;
 	}
 	
-} //DatatypeType
+} //Datatype

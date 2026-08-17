@@ -12,9 +12,12 @@
  */
 package terms;
 
-import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
+
+import rdf.IdentifiedResource;
+import rdf.PlainLiteral;
 
 /**
  * <!-- begin-user-doc -->
@@ -25,7 +28,9 @@ import org.osgi.annotation.versioning.ProviderType;
  * The following features are supported:
  * </p>
  * <ul>
- *   <li>{@link terms.Standard#getStandard <em>Standard</em>}</li>
+ *   <li>{@link terms.Standard#getTitle <em>Title</em>}</li>
+ *   <li>{@link terms.Standard#getDescription <em>Description</em>}</li>
+ *   <li>{@link terms.Standard#getNodeID <em>Node ID</em>}</li>
  * </ul>
  *
  * @see terms.TermsPackage#getStandard()
@@ -33,28 +38,54 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-public interface Standard extends EObject {
+public interface Standard extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Standard</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Title</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Standard</em>' containment reference.
-	 * @see #setStandard(StandardType)
-	 * @see terms.TermsPackage#getStandard_Standard()
-	 * @model containment="true" required="true"
-	 *        extendedMetaData="kind='element' name='Standard' namespace='##targetNamespace'"
+	 * @return the value of the '<em>Title</em>' containment reference list.
+	 * @see terms.TermsPackage#getStandard_Title()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='title' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	StandardType getStandard();
+	EList<PlainLiteral> getTitle();
 
 	/**
-	 * Sets the value of the '{@link terms.Standard#getStandard <em>Standard</em>}' containment reference.
+	 * Returns the value of the '<em><b>Description</b></em>' containment reference list.
+	 * The list contents are of type {@link rdf.PlainLiteral}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Standard</em>' containment reference.
-	 * @see #getStandard()
+	 * @return the value of the '<em>Description</em>' containment reference list.
+	 * @see terms.TermsPackage#getStandard_Description()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='description' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	void setStandard(StandardType value);
+	EList<PlainLiteral> getDescription();
+
+	/**
+	 * Returns the value of the '<em><b>Node ID</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Node ID</em>' attribute.
+	 * @see #setNodeID(String)
+	 * @see terms.TermsPackage#getStandard_NodeID()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.NCName"
+	 *        extendedMetaData="kind='attribute' name='nodeID' namespace='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+	 * @generated
+	 */
+	String getNodeID();
+
+	/**
+	 * Sets the value of the '{@link terms.Standard#getNodeID <em>Node ID</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Node ID</em>' attribute.
+	 * @see #getNodeID()
+	 * @generated
+	 */
+	void setNodeID(String value);
 
 } // Standard

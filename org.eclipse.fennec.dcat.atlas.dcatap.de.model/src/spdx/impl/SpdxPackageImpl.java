@@ -20,53 +20,23 @@ import dcat.DcatPackage;
 
 import dcat.impl.DcatPackageImpl;
 
-import dcatde.DcatDEPackage;
-
-import dcatde.impl.DcatDEPackageImpl;
-
 import foaf.FoafPackage;
 
 import foaf.impl.FoafPackageImpl;
 
-import locn.LocnPackage;
-
-import locn.impl.LocnPackageImpl;
-
-import odrl.OdrlPackage;
-
-import odrl.impl.OdrlPackageImpl;
-
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.EReference;
 
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage;
 
-import owl.OwlPackage;
-
-import owl.impl.OwlPackageImpl;
-
-import prov.ProvPackage;
-
-import prov.impl.ProvPackageImpl;
-
 import rdf.RdfPackage;
 
 import rdf.impl.RdfPackageImpl;
 
-import schema.SchemaPackage;
-
-import schema.impl.SchemaPackageImpl;
-
-import skos.SkosPackage;
-
-import skos.impl.SkosPackageImpl;
-
 import spdx.Checksum;
-import spdx.DocumentRoot;
 import spdx.SpdxFactory;
 import spdx.SpdxPackage;
 
@@ -85,13 +55,6 @@ import vcard.impl.VcardPackageImpl;
  * @generated
  */
 public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass documentRootEClass = null;
-
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -155,58 +118,30 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 		FoafPackageImpl theFoafPackage = (FoafPackageImpl)(registeredPackage instanceof FoafPackageImpl ? registeredPackage : FoafPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
 		RdfPackageImpl theRdfPackage = (RdfPackageImpl)(registeredPackage instanceof RdfPackageImpl ? registeredPackage : RdfPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SkosPackage.eNS_URI);
-		SkosPackageImpl theSkosPackage = (SkosPackageImpl)(registeredPackage instanceof SkosPackageImpl ? registeredPackage : SkosPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(TermsPackage.eNS_URI);
 		TermsPackageImpl theTermsPackage = (TermsPackageImpl)(registeredPackage instanceof TermsPackageImpl ? registeredPackage : TermsPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(VcardPackage.eNS_URI);
 		VcardPackageImpl theVcardPackage = (VcardPackageImpl)(registeredPackage instanceof VcardPackageImpl ? registeredPackage : VcardPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(AdmsPackage.eNS_URI);
 		AdmsPackageImpl theAdmsPackage = (AdmsPackageImpl)(registeredPackage instanceof AdmsPackageImpl ? registeredPackage : AdmsPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(LocnPackage.eNS_URI);
-		LocnPackageImpl theLocnPackage = (LocnPackageImpl)(registeredPackage instanceof LocnPackageImpl ? registeredPackage : LocnPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OdrlPackage.eNS_URI);
-		OdrlPackageImpl theOdrlPackage = (OdrlPackageImpl)(registeredPackage instanceof OdrlPackageImpl ? registeredPackage : OdrlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OwlPackage.eNS_URI);
-		OwlPackageImpl theOwlPackage = (OwlPackageImpl)(registeredPackage instanceof OwlPackageImpl ? registeredPackage : OwlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(ProvPackage.eNS_URI);
-		ProvPackageImpl theProvPackage = (ProvPackageImpl)(registeredPackage instanceof ProvPackageImpl ? registeredPackage : ProvPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SchemaPackage.eNS_URI);
-		SchemaPackageImpl theSchemaPackage = (SchemaPackageImpl)(registeredPackage instanceof SchemaPackageImpl ? registeredPackage : SchemaPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(DcatDEPackage.eNS_URI);
-		DcatDEPackageImpl theDcatDEPackage = (DcatDEPackageImpl)(registeredPackage instanceof DcatDEPackageImpl ? registeredPackage : DcatDEPackage.eINSTANCE);
 
 		// Create package meta-data objects
 		theSpdxPackage.createPackageContents();
 		theDcatPackage.createPackageContents();
 		theFoafPackage.createPackageContents();
 		theRdfPackage.createPackageContents();
-		theSkosPackage.createPackageContents();
 		theTermsPackage.createPackageContents();
 		theVcardPackage.createPackageContents();
 		theAdmsPackage.createPackageContents();
-		theLocnPackage.createPackageContents();
-		theOdrlPackage.createPackageContents();
-		theOwlPackage.createPackageContents();
-		theProvPackage.createPackageContents();
-		theSchemaPackage.createPackageContents();
-		theDcatDEPackage.createPackageContents();
 
 		// Initialize created meta-data
 		theSpdxPackage.initializePackageContents();
 		theDcatPackage.initializePackageContents();
 		theFoafPackage.initializePackageContents();
 		theRdfPackage.initializePackageContents();
-		theSkosPackage.initializePackageContents();
 		theTermsPackage.initializePackageContents();
 		theVcardPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
-		theLocnPackage.initializePackageContents();
-		theOdrlPackage.initializePackageContents();
-		theOwlPackage.initializePackageContents();
-		theProvPackage.initializePackageContents();
-		theSchemaPackage.initializePackageContents();
-		theDcatDEPackage.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
 		theSpdxPackage.freeze();
@@ -214,51 +149,6 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 		// Update the registry and return the package
 		EPackage.Registry.INSTANCE.put(SpdxPackage.eNS_URI, theSpdxPackage);
 		return theSpdxPackage;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EClass getDocumentRoot() {
-		return documentRootEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getDocumentRoot_Mixed() {
-		return (EAttribute)documentRootEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_XMLNSPrefixMap() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_XSISchemaLocation() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Checksum() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -275,26 +165,8 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getChecksum_Algorithm() {
-		return (EReference)checksumEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public EAttribute getChecksum_ChecksumValue() {
-		return (EAttribute)checksumEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getChecksum_About() {
-		return (EAttribute)checksumEClass.getEStructuralFeatures().get(2);
+		return (EAttribute)checksumEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -303,7 +175,16 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 	 * @generated
 	 */
 	public EAttribute getChecksum_NodeID() {
-		return (EAttribute)checksumEClass.getEStructuralFeatures().get(3);
+		return (EAttribute)checksumEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getChecksum_Algorithm() {
+		return (EAttribute)checksumEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -334,17 +215,10 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 		isCreated = true;
 
 		// Create classes and their features
-		documentRootEClass = createEClass(DOCUMENT_ROOT);
-		createEAttribute(documentRootEClass, DOCUMENT_ROOT__MIXED);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__XMLNS_PREFIX_MAP);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__XSI_SCHEMA_LOCATION);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__CHECKSUM);
-
 		checksumEClass = createEClass(CHECKSUM);
-		createEReference(checksumEClass, CHECKSUM__ALGORITHM);
 		createEAttribute(checksumEClass, CHECKSUM__CHECKSUM_VALUE);
-		createEAttribute(checksumEClass, CHECKSUM__ABOUT);
 		createEAttribute(checksumEClass, CHECKSUM__NODE_ID);
+		createEAttribute(checksumEClass, CHECKSUM__ALGORITHM);
 	}
 
 	/**
@@ -379,19 +253,13 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 		// Set bounds for type parameters
 
 		// Add supertypes to classes
+		checksumEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
 
 		// Initialize classes, features, and operations; add parameters
-		initEClass(documentRootEClass, DocumentRoot.class, "DocumentRoot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getDocumentRoot_Mixed(), ecorePackage.getEFeatureMapEntry(), "mixed", null, 0, -1, null, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_XMLNSPrefixMap(), ecorePackage.getEStringToStringMapEntry(), null, "xMLNSPrefixMap", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_XSISchemaLocation(), ecorePackage.getEStringToStringMapEntry(), null, "xSISchemaLocation", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Checksum(), this.getChecksum(), null, "checksum", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-
 		initEClass(checksumEClass, Checksum.class, "Checksum", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getChecksum_Algorithm(), theRdfPackage.getResource(), null, "algorithm", null, 1, 1, Checksum.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChecksum_ChecksumValue(), theXMLTypePackage.getHexBinary(), "checksumValue", null, 1, 1, Checksum.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getChecksum_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, Checksum.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getChecksum_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Checksum.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getChecksum_Algorithm(), theXMLTypePackage.getAnyURI(), "algorithm", null, 1, 1, Checksum.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Create resource
 		createResource(eNS_URI);
@@ -410,55 +278,11 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 	protected void createExtendedMetaDataAnnotations() {
 		String source = "http:///org/eclipse/emf/ecore/util/ExtendedMetaData";
 		addAnnotation
-		  (documentRootEClass,
-		   source,
-		   new String[] {
-			   "name", "",
-			   "kind", "mixed"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Mixed(),
-		   source,
-		   new String[] {
-			   "kind", "elementWildcard",
-			   "name", ":mixed"
-		   });
-		addAnnotation
-		  (getDocumentRoot_XMLNSPrefixMap(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xmlns:prefix"
-		   });
-		addAnnotation
-		  (getDocumentRoot_XSISchemaLocation(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xsi:schemaLocation"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Checksum(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Checksum",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
 		  (checksumEClass,
 		   source,
 		   new String[] {
 			   "name", "Checksum",
 			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getChecksum_Algorithm(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "algorithm",
-			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
 		  (getChecksum_ChecksumValue(),
@@ -469,20 +293,20 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getChecksum_About(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "about",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		   });
-		addAnnotation
 		  (getChecksum_NodeID(),
 		   source,
 		   new String[] {
 			   "kind", "attribute",
 			   "name", "nodeID",
 			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		   });
+		addAnnotation
+		  (getChecksum_Algorithm(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "algorithm",
+			   "namespace", "##targetNamespace"
 		   });
 	}
 

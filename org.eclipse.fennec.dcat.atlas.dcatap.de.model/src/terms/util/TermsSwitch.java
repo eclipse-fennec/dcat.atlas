@@ -17,7 +17,7 @@ import org.eclipse.emf.ecore.EPackage;
 
 import org.eclipse.emf.ecore.util.Switch;
 
-import rdf.Resource;
+import rdf.IdentifiedResource;
 
 import terms.*;
 
@@ -78,102 +78,50 @@ public class TermsSwitch<T> extends Switch<T> {
 	@Override
 	protected T doSwitch(int classifierID, EObject theEObject) {
 		switch (classifierID) {
-			case TermsPackage.DOCUMENT_ROOT: {
-				DocumentRoot documentRoot = (DocumentRoot)theEObject;
-				T result = caseDocumentRoot(documentRoot);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
 			case TermsPackage.LICENSE_DOCUMENT: {
 				LicenseDocument licenseDocument = (LicenseDocument)theEObject;
 				T result = caseLicenseDocument(licenseDocument);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case TermsPackage.LICENSE_DOCUMENT_TYPE: {
-				LicenseDocumentType licenseDocumentType = (LicenseDocumentType)theEObject;
-				T result = caseLicenseDocumentType(licenseDocumentType);
-				if (result == null) result = caseResource(licenseDocumentType);
+				if (result == null) result = caseIdentifiedResource(licenseDocument);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case TermsPackage.LOCATION: {
 				Location location = (Location)theEObject;
 				T result = caseLocation(location);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case TermsPackage.LOCATION_TYPE: {
-				LocationType locationType = (LocationType)theEObject;
-				T result = caseLocationType(locationType);
+				if (result == null) result = caseIdentifiedResource(location);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case TermsPackage.PERIOD_OF_TIME: {
 				PeriodOfTime periodOfTime = (PeriodOfTime)theEObject;
 				T result = casePeriodOfTime(periodOfTime);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case TermsPackage.PERIOD_OF_TIME_TYPE: {
-				PeriodOfTimeType periodOfTimeType = (PeriodOfTimeType)theEObject;
-				T result = casePeriodOfTimeType(periodOfTimeType);
+				if (result == null) result = caseIdentifiedResource(periodOfTime);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case TermsPackage.PROVENANCE_STATEMENT: {
 				ProvenanceStatement provenanceStatement = (ProvenanceStatement)theEObject;
 				T result = caseProvenanceStatement(provenanceStatement);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case TermsPackage.PROVENANCE_STATEMENT_TYPE: {
-				ProvenanceStatementType provenanceStatementType = (ProvenanceStatementType)theEObject;
-				T result = caseProvenanceStatementType(provenanceStatementType);
+				if (result == null) result = caseIdentifiedResource(provenanceStatement);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case TermsPackage.RIGHTS_STATEMENT: {
 				RightsStatement rightsStatement = (RightsStatement)theEObject;
 				T result = caseRightsStatement(rightsStatement);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case TermsPackage.RIGHTS_STATEMENT_TYPE: {
-				RightsStatementType rightsStatementType = (RightsStatementType)theEObject;
-				T result = caseRightsStatementType(rightsStatementType);
+				if (result == null) result = caseIdentifiedResource(rightsStatement);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			case TermsPackage.STANDARD: {
 				Standard standard = (Standard)theEObject;
 				T result = caseStandard(standard);
-				if (result == null) result = defaultCase(theEObject);
-				return result;
-			}
-			case TermsPackage.STANDARD_TYPE: {
-				StandardType standardType = (StandardType)theEObject;
-				T result = caseStandardType(standardType);
+				if (result == null) result = caseIdentifiedResource(standard);
 				if (result == null) result = defaultCase(theEObject);
 				return result;
 			}
 			default: return defaultCase(theEObject);
 		}
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Document Root</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseDocumentRoot(DocumentRoot object) {
-		return null;
 	}
 
 	/**
@@ -188,21 +136,6 @@ public class TermsSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseLicenseDocument(LicenseDocument object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>License Document Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>License Document Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseLicenseDocumentType(LicenseDocumentType object) {
 		return null;
 	}
 
@@ -222,21 +155,6 @@ public class TermsSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Location Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Location Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseLocationType(LocationType object) {
-		return null;
-	}
-
-	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Period Of Time</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -248,21 +166,6 @@ public class TermsSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T casePeriodOfTime(PeriodOfTime object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Period Of Time Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Period Of Time Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T casePeriodOfTimeType(PeriodOfTimeType object) {
 		return null;
 	}
 
@@ -282,21 +185,6 @@ public class TermsSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Provenance Statement Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Provenance Statement Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseProvenanceStatementType(ProvenanceStatementType object) {
-		return null;
-	}
-
-	/**
 	 * Returns the result of interpreting the object as an instance of '<em>Rights Statement</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
@@ -308,21 +196,6 @@ public class TermsSwitch<T> extends Switch<T> {
 	 * @generated
 	 */
 	public T caseRightsStatement(RightsStatement object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Rights Statement Type</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Rights Statement Type</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseRightsStatementType(RightsStatementType object) {
 		return null;
 	}
 
@@ -342,32 +215,17 @@ public class TermsSwitch<T> extends Switch<T> {
 	}
 
 	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Standard Type</em>'.
+	 * Returns the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * <!-- begin-user-doc -->
 	 * This implementation returns null;
 	 * returning a non-null result will terminate the switch.
 	 * <!-- end-user-doc -->
 	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Standard Type</em>'.
+	 * @return the result of interpreting the object as an instance of '<em>Identified Resource</em>'.
 	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
 	 * @generated
 	 */
-	public T caseStandardType(StandardType object) {
-		return null;
-	}
-
-	/**
-	 * Returns the result of interpreting the object as an instance of '<em>Resource</em>'.
-	 * <!-- begin-user-doc -->
-	 * This implementation returns null;
-	 * returning a non-null result will terminate the switch.
-	 * <!-- end-user-doc -->
-	 * @param object the target of the switch.
-	 * @return the result of interpreting the object as an instance of '<em>Resource</em>'.
-	 * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
-	 * @generated
-	 */
-	public T caseResource(Resource object) {
+	public T caseIdentifiedResource(IdentifiedResource object) {
 		return null;
 	}
 

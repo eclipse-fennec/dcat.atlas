@@ -12,6 +12,7 @@
  */
 package dcat.impl;
 
+import dcat.DataService;
 import dcat.DcatPackage;
 import dcat.Distribution;
 
@@ -34,20 +35,19 @@ import org.eclipse.emf.ecore.InternalEObject;
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
 import org.eclipse.emf.ecore.util.EDataTypeEList;
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
+import org.eclipse.emf.ecore.util.EObjectResolvingEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 import rdf.DateOrDateTimeLiteral;
 import rdf.PlainLiteral;
-import rdf.Resource;
 
-import rdf.impl.ResourceImpl;
-
-import skos.Concept;
+import rdf.impl.IdentifiedResourceImpl;
 
 import spdx.Checksum;
 
-import terms.LicenseDocumentType;
+import terms.LicenseDocument;
 import terms.RightsStatement;
 import terms.Standard;
 
@@ -77,18 +77,18 @@ import terms.Standard;
  *   <li>{@link dcat.impl.DistributionImpl#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.impl.DistributionImpl#getModified <em>Modified</em>}</li>
  *   <li>{@link dcat.impl.DistributionImpl#getNodeID <em>Node ID</em>}</li>
- *   <li>{@link dcat.impl.DistributionImpl#getDownloadURL <em>Download URL</em>}</li>
- *   <li>{@link dcat.impl.DistributionImpl#getAccessURL <em>Access URL</em>}</li>
  *   <li>{@link dcat.impl.DistributionImpl#getLicenseAttributionByText <em>License Attribution By Text</em>}</li>
  *   <li>{@link dcat.impl.DistributionImpl#getAvailability <em>Availability</em>}</li>
  *   <li>{@link dcat.impl.DistributionImpl#getStatus <em>Status</em>}</li>
- *   <li>{@link dcat.impl.DistributionImpl#getApplicableLegislation <em>Applicable Legislation</em>}</li>
  *   <li>{@link dcat.impl.DistributionImpl#getChecksum <em>Checksum</em>}</li>
+ *   <li>{@link dcat.impl.DistributionImpl#getApplicableLegislation <em>Applicable Legislation</em>}</li>
+ *   <li>{@link dcat.impl.DistributionImpl#getDownloadURL <em>Download URL</em>}</li>
+ *   <li>{@link dcat.impl.DistributionImpl#getAccessURL <em>Access URL</em>}</li>
  * </ul>
  *
  * @generated
  */
-public class DistributionImpl extends ResourceImpl implements Distribution {
+public class DistributionImpl extends IdentifiedResourceImpl implements Distribution {
 	/**
 	 * The cached value of the '{@link #getTitle() <em>Title</em>}' containment reference.
 	 * <!-- begin-user-doc -->
@@ -110,24 +110,34 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	protected EList<PlainLiteral> description;
 
 	/**
-	 * The cached value of the '{@link #getAccessService() <em>Access Service</em>}' containment reference list.
+	 * The cached value of the '{@link #getAccessService() <em>Access Service</em>}' reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getAccessService()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Resource> accessService;
+	protected EList<DataService> accessService;
 
 	/**
-	 * The cached value of the '{@link #getFormat() <em>Format</em>}' containment reference.
+	 * The default value of the '{@link #getFormat() <em>Format</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getFormat()
 	 * @generated
 	 * @ordered
 	 */
-	protected Concept format;
+	protected static final String FORMAT_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getFormat() <em>Format</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getFormat()
+	 * @generated
+	 * @ordered
+	 */
+	protected String format = FORMAT_EDEFAULT;
 
 	/**
 	 * The cached value of the '{@link #getMediaType() <em>Media Type</em>}' attribute list.
@@ -220,14 +230,14 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	protected Duration temporalResolution = TEMPORAL_RESOLUTION_EDEFAULT;
 
 	/**
-	 * The cached value of the '{@link #getAccessRights() <em>Access Rights</em>}' containment reference list.
+	 * The cached value of the '{@link #getAccessRights() <em>Access Rights</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getAccessRights()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Concept> accessRights;
+	protected EList<String> accessRights;
 
 	/**
 	 * The cached value of the '{@link #getLicense() <em>License</em>}' containment reference.
@@ -237,7 +247,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * @generated
 	 * @ordered
 	 */
-	protected LicenseDocumentType license;
+	protected LicenseDocument license;
 
 	/**
 	 * The cached value of the '{@link #getConformsTo() <em>Conforms To</em>}' containment reference list.
@@ -320,26 +330,6 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	protected String nodeID = NODE_ID_EDEFAULT;
 
 	/**
-	 * The cached value of the '{@link #getDownloadURL() <em>Download URL</em>}' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getDownloadURL()
-	 * @generated
-	 * @ordered
-	 */
-	protected EList<Resource> downloadURL;
-
-	/**
-	 * The cached value of the '{@link #getAccessURL() <em>Access URL</em>}' containment reference list.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @see #getAccessURL()
-	 * @generated
-	 * @ordered
-	 */
-	protected EList<Resource> accessURL;
-
-	/**
 	 * The cached value of the '{@link #getLicenseAttributionByText() <em>License Attribution By Text</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -350,34 +340,44 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	protected PlainLiteral licenseAttributionByText;
 
 	/**
-	 * The cached value of the '{@link #getAvailability() <em>Availability</em>}' containment reference.
+	 * The default value of the '{@link #getAvailability() <em>Availability</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getAvailability()
 	 * @generated
 	 * @ordered
 	 */
-	protected Concept availability;
+	protected static final String AVAILABILITY_EDEFAULT = null;
 
 	/**
-	 * The cached value of the '{@link #getStatus() <em>Status</em>}' containment reference.
+	 * The cached value of the '{@link #getAvailability() <em>Availability</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAvailability()
+	 * @generated
+	 * @ordered
+	 */
+	protected String availability = AVAILABILITY_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getStatus() <em>Status</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getStatus()
 	 * @generated
 	 * @ordered
 	 */
-	protected Concept status;
+	protected static final String STATUS_EDEFAULT = null;
 
 	/**
-	 * The cached value of the '{@link #getApplicableLegislation() <em>Applicable Legislation</em>}' containment reference list.
+	 * The cached value of the '{@link #getStatus() <em>Status</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @see #getApplicableLegislation()
+	 * @see #getStatus()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<Resource> applicableLegislation;
+	protected String status = STATUS_EDEFAULT;
 
 	/**
 	 * The cached value of the '{@link #getChecksum() <em>Checksum</em>}' containment reference.
@@ -388,6 +388,36 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * @ordered
 	 */
 	protected Checksum checksum;
+
+	/**
+	 * The cached value of the '{@link #getApplicableLegislation() <em>Applicable Legislation</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getApplicableLegislation()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> applicableLegislation;
+
+	/**
+	 * The cached value of the '{@link #getDownloadURL() <em>Download URL</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getDownloadURL()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> downloadURL;
+
+	/**
+	 * The cached value of the '{@link #getAccessURL() <em>Access URL</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAccessURL()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> accessURL;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -468,9 +498,9 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getAccessService() {
+	public EList<DataService> getAccessService() {
 		if (accessService == null) {
-			accessService = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DISTRIBUTION__ACCESS_SERVICE);
+			accessService = new EObjectResolvingEList<DataService>(DataService.class, this, DcatPackage.DISTRIBUTION__ACCESS_SERVICE);
 		}
 		return accessService;
 	}
@@ -480,7 +510,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Concept getFormat() {
+	public String getFormat() {
 		return format;
 	}
 
@@ -489,33 +519,11 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetFormat(Concept newFormat, NotificationChain msgs) {
-		Concept oldFormat = format;
+	public void setFormat(String newFormat) {
+		String oldFormat = format;
 		format = newFormat;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__FORMAT, oldFormat, newFormat);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setFormat(Concept newFormat) {
-		if (newFormat != format) {
-			NotificationChain msgs = null;
-			if (format != null)
-				msgs = ((InternalEObject)format).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__FORMAT, null, msgs);
-			if (newFormat != null)
-				msgs = ((InternalEObject)newFormat).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__FORMAT, null, msgs);
-			msgs = basicSetFormat(newFormat, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__FORMAT, newFormat, newFormat));
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__FORMAT, oldFormat, format));
 	}
 
 	/**
@@ -622,9 +630,9 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Concept> getAccessRights() {
+	public EList<String> getAccessRights() {
 		if (accessRights == null) {
-			accessRights = new EObjectContainmentEList<Concept>(Concept.class, this, DcatPackage.DISTRIBUTION__ACCESS_RIGHTS);
+			accessRights = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DISTRIBUTION__ACCESS_RIGHTS);
 		}
 		return accessRights;
 	}
@@ -634,7 +642,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public LicenseDocumentType getLicense() {
+	public LicenseDocument getLicense() {
 		return license;
 	}
 
@@ -643,8 +651,8 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetLicense(LicenseDocumentType newLicense, NotificationChain msgs) {
-		LicenseDocumentType oldLicense = license;
+	public NotificationChain basicSetLicense(LicenseDocument newLicense, NotificationChain msgs) {
+		LicenseDocument oldLicense = license;
 		license = newLicense;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__LICENSE, oldLicense, newLicense);
@@ -658,7 +666,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setLicense(LicenseDocumentType newLicense) {
+	public void setLicense(LicenseDocument newLicense) {
 		if (newLicense != license) {
 			NotificationChain msgs = null;
 			if (license != null)
@@ -860,30 +868,6 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<Resource> getDownloadURL() {
-		if (downloadURL == null) {
-			downloadURL = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DISTRIBUTION__DOWNLOAD_URL);
-		}
-		return downloadURL;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EList<Resource> getAccessURL() {
-		if (accessURL == null) {
-			accessURL = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DISTRIBUTION__ACCESS_URL);
-		}
-		return accessURL;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public PlainLiteral getLicenseAttributionByText() {
 		return licenseAttributionByText;
 	}
@@ -927,7 +911,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public Concept getAvailability() {
+	public String getAvailability() {
 		return availability;
 	}
 
@@ -936,14 +920,11 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetAvailability(Concept newAvailability, NotificationChain msgs) {
-		Concept oldAvailability = availability;
+	public void setAvailability(String newAvailability) {
+		String oldAvailability = availability;
 		availability = newAvailability;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__AVAILABILITY, oldAvailability, newAvailability);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__AVAILABILITY, oldAvailability, availability));
 	}
 
 	/**
@@ -951,26 +932,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public void setAvailability(Concept newAvailability) {
-		if (newAvailability != availability) {
-			NotificationChain msgs = null;
-			if (availability != null)
-				msgs = ((InternalEObject)availability).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__AVAILABILITY, null, msgs);
-			if (newAvailability != null)
-				msgs = ((InternalEObject)newAvailability).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__AVAILABILITY, null, msgs);
-			msgs = basicSetAvailability(newAvailability, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__AVAILABILITY, newAvailability, newAvailability));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public Concept getStatus() {
+	public String getStatus() {
 		return status;
 	}
 
@@ -979,45 +941,11 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public NotificationChain basicSetStatus(Concept newStatus, NotificationChain msgs) {
-		Concept oldStatus = status;
+	public void setStatus(String newStatus) {
+		String oldStatus = status;
 		status = newStatus;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__STATUS, oldStatus, newStatus);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setStatus(Concept newStatus) {
-		if (newStatus != status) {
-			NotificationChain msgs = null;
-			if (status != null)
-				msgs = ((InternalEObject)status).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__STATUS, null, msgs);
-			if (newStatus != null)
-				msgs = ((InternalEObject)newStatus).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__STATUS, null, msgs);
-			msgs = basicSetStatus(newStatus, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__STATUS, newStatus, newStatus));
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EList<Resource> getApplicableLegislation() {
-		if (applicableLegislation == null) {
-			applicableLegislation = new EObjectContainmentEList<Resource>(Resource.class, this, DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION);
-		}
-		return applicableLegislation;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__STATUS, oldStatus, status));
 	}
 
 	/**
@@ -1068,6 +996,42 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EList<String> getApplicableLegislation() {
+		if (applicableLegislation == null) {
+			applicableLegislation = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION);
+		}
+		return applicableLegislation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getDownloadURL() {
+		if (downloadURL == null) {
+			downloadURL = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DISTRIBUTION__DOWNLOAD_URL);
+		}
+		return downloadURL;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getAccessURL() {
+		if (accessURL == null) {
+			accessURL = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DISTRIBUTION__ACCESS_URL);
+		}
+		return accessURL;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
@@ -1075,14 +1039,8 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return basicSetTitle(null, msgs);
 			case DcatPackage.DISTRIBUTION__DESCRIPTION:
 				return ((InternalEList<?>)getDescription()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
-				return ((InternalEList<?>)getAccessService()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DISTRIBUTION__FORMAT:
-				return basicSetFormat(null, msgs);
 			case DcatPackage.DISTRIBUTION__COMPRESS_FORMAT:
 				return ((InternalEList<?>)getCompressFormat()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DISTRIBUTION__ACCESS_RIGHTS:
-				return ((InternalEList<?>)getAccessRights()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DISTRIBUTION__LICENSE:
 				return basicSetLicense(null, msgs);
 			case DcatPackage.DISTRIBUTION__CONFORMS_TO:
@@ -1093,18 +1051,8 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return basicSetIssued(null, msgs);
 			case DcatPackage.DISTRIBUTION__MODIFIED:
 				return basicSetModified(null, msgs);
-			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
-				return ((InternalEList<?>)getDownloadURL()).basicRemove(otherEnd, msgs);
-			case DcatPackage.DISTRIBUTION__ACCESS_URL:
-				return ((InternalEList<?>)getAccessURL()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
 				return basicSetLicenseAttributionByText(null, msgs);
-			case DcatPackage.DISTRIBUTION__AVAILABILITY:
-				return basicSetAvailability(null, msgs);
-			case DcatPackage.DISTRIBUTION__STATUS:
-				return basicSetStatus(null, msgs);
-			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
-				return ((InternalEList<?>)getApplicableLegislation()).basicRemove(otherEnd, msgs);
 			case DcatPackage.DISTRIBUTION__CHECKSUM:
 				return basicSetChecksum(null, msgs);
 		}
@@ -1155,20 +1103,20 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return getModified();
 			case DcatPackage.DISTRIBUTION__NODE_ID:
 				return getNodeID();
-			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
-				return getDownloadURL();
-			case DcatPackage.DISTRIBUTION__ACCESS_URL:
-				return getAccessURL();
 			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
 				return getLicenseAttributionByText();
 			case DcatPackage.DISTRIBUTION__AVAILABILITY:
 				return getAvailability();
 			case DcatPackage.DISTRIBUTION__STATUS:
 				return getStatus();
-			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
-				return getApplicableLegislation();
 			case DcatPackage.DISTRIBUTION__CHECKSUM:
 				return getChecksum();
+			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
+				return getApplicableLegislation();
+			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
+				return getDownloadURL();
+			case DcatPackage.DISTRIBUTION__ACCESS_URL:
+				return getAccessURL();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1191,10 +1139,10 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
 				getAccessService().clear();
-				getAccessService().addAll((Collection<? extends Resource>)newValue);
+				getAccessService().addAll((Collection<? extends DataService>)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__FORMAT:
-				setFormat((Concept)newValue);
+				setFormat((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__MEDIA_TYPE:
 				getMediaType().clear();
@@ -1219,10 +1167,10 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_RIGHTS:
 				getAccessRights().clear();
-				getAccessRights().addAll((Collection<? extends Concept>)newValue);
+				getAccessRights().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__LICENSE:
-				setLicense((LicenseDocumentType)newValue);
+				setLicense((LicenseDocument)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__CONFORMS_TO:
 				getConformsTo().clear();
@@ -1243,29 +1191,29 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 			case DcatPackage.DISTRIBUTION__NODE_ID:
 				setNodeID((String)newValue);
 				return;
-			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
-				getDownloadURL().clear();
-				getDownloadURL().addAll((Collection<? extends Resource>)newValue);
-				return;
-			case DcatPackage.DISTRIBUTION__ACCESS_URL:
-				getAccessURL().clear();
-				getAccessURL().addAll((Collection<? extends Resource>)newValue);
-				return;
 			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
 				setLicenseAttributionByText((PlainLiteral)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__AVAILABILITY:
-				setAvailability((Concept)newValue);
+				setAvailability((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__STATUS:
-				setStatus((Concept)newValue);
-				return;
-			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
-				getApplicableLegislation().clear();
-				getApplicableLegislation().addAll((Collection<? extends Resource>)newValue);
+				setStatus((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__CHECKSUM:
 				setChecksum((Checksum)newValue);
+				return;
+			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
+				getApplicableLegislation().clear();
+				getApplicableLegislation().addAll((Collection<? extends String>)newValue);
+				return;
+			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
+				getDownloadURL().clear();
+				getDownloadURL().addAll((Collection<? extends String>)newValue);
+				return;
+			case DcatPackage.DISTRIBUTION__ACCESS_URL:
+				getAccessURL().clear();
+				getAccessURL().addAll((Collection<? extends String>)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1289,7 +1237,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				getAccessService().clear();
 				return;
 			case DcatPackage.DISTRIBUTION__FORMAT:
-				setFormat((Concept)null);
+				setFormat(FORMAT_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__MEDIA_TYPE:
 				getMediaType().clear();
@@ -1313,7 +1261,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				getAccessRights().clear();
 				return;
 			case DcatPackage.DISTRIBUTION__LICENSE:
-				setLicense((LicenseDocumentType)null);
+				setLicense((LicenseDocument)null);
 				return;
 			case DcatPackage.DISTRIBUTION__CONFORMS_TO:
 				getConformsTo().clear();
@@ -1333,26 +1281,26 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 			case DcatPackage.DISTRIBUTION__NODE_ID:
 				setNodeID(NODE_ID_EDEFAULT);
 				return;
+			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
+				setLicenseAttributionByText((PlainLiteral)null);
+				return;
+			case DcatPackage.DISTRIBUTION__AVAILABILITY:
+				setAvailability(AVAILABILITY_EDEFAULT);
+				return;
+			case DcatPackage.DISTRIBUTION__STATUS:
+				setStatus(STATUS_EDEFAULT);
+				return;
+			case DcatPackage.DISTRIBUTION__CHECKSUM:
+				setChecksum((Checksum)null);
+				return;
+			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
+				getApplicableLegislation().clear();
+				return;
 			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
 				getDownloadURL().clear();
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_URL:
 				getAccessURL().clear();
-				return;
-			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
-				setLicenseAttributionByText((PlainLiteral)null);
-				return;
-			case DcatPackage.DISTRIBUTION__AVAILABILITY:
-				setAvailability((Concept)null);
-				return;
-			case DcatPackage.DISTRIBUTION__STATUS:
-				setStatus((Concept)null);
-				return;
-			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
-				getApplicableLegislation().clear();
-				return;
-			case DcatPackage.DISTRIBUTION__CHECKSUM:
-				setChecksum((Checksum)null);
 				return;
 		}
 		super.eUnset(featureID);
@@ -1373,7 +1321,7 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
 				return accessService != null && !accessService.isEmpty();
 			case DcatPackage.DISTRIBUTION__FORMAT:
-				return format != null;
+				return FORMAT_EDEFAULT == null ? format != null : !FORMAT_EDEFAULT.equals(format);
 			case DcatPackage.DISTRIBUTION__MEDIA_TYPE:
 				return mediaType != null && !mediaType.isEmpty();
 			case DcatPackage.DISTRIBUTION__PACKAGE_FORMAT:
@@ -1402,20 +1350,20 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 				return modified != null;
 			case DcatPackage.DISTRIBUTION__NODE_ID:
 				return NODE_ID_EDEFAULT == null ? nodeID != null : !NODE_ID_EDEFAULT.equals(nodeID);
+			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
+				return licenseAttributionByText != null;
+			case DcatPackage.DISTRIBUTION__AVAILABILITY:
+				return AVAILABILITY_EDEFAULT == null ? availability != null : !AVAILABILITY_EDEFAULT.equals(availability);
+			case DcatPackage.DISTRIBUTION__STATUS:
+				return STATUS_EDEFAULT == null ? status != null : !STATUS_EDEFAULT.equals(status);
+			case DcatPackage.DISTRIBUTION__CHECKSUM:
+				return checksum != null;
+			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
+				return applicableLegislation != null && !applicableLegislation.isEmpty();
 			case DcatPackage.DISTRIBUTION__DOWNLOAD_URL:
 				return downloadURL != null && !downloadURL.isEmpty();
 			case DcatPackage.DISTRIBUTION__ACCESS_URL:
 				return accessURL != null && !accessURL.isEmpty();
-			case DcatPackage.DISTRIBUTION__LICENSE_ATTRIBUTION_BY_TEXT:
-				return licenseAttributionByText != null;
-			case DcatPackage.DISTRIBUTION__AVAILABILITY:
-				return availability != null;
-			case DcatPackage.DISTRIBUTION__STATUS:
-				return status != null;
-			case DcatPackage.DISTRIBUTION__APPLICABLE_LEGISLATION:
-				return applicableLegislation != null && !applicableLegislation.isEmpty();
-			case DcatPackage.DISTRIBUTION__CHECKSUM:
-				return checksum != null;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1430,7 +1378,9 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (mediaType: ");
+		result.append(" (format: ");
+		result.append(format);
+		result.append(", mediaType: ");
 		result.append(mediaType);
 		result.append(", packageFormat: ");
 		result.append(packageFormat);
@@ -1440,10 +1390,22 @@ public class DistributionImpl extends ResourceImpl implements Distribution {
 		result.append(spatialResolutionInMeters);
 		result.append(", temporalResolution: ");
 		result.append(temporalResolution);
+		result.append(", accessRights: ");
+		result.append(accessRights);
 		result.append(", hasPolicy: ");
 		result.append(hasPolicy);
 		result.append(", nodeID: ");
 		result.append(nodeID);
+		result.append(", availability: ");
+		result.append(availability);
+		result.append(", status: ");
+		result.append(status);
+		result.append(", applicableLegislation: ");
+		result.append(applicableLegislation);
+		result.append(", downloadURL: ");
+		result.append(downloadURL);
+		result.append(", accessURL: ");
+		result.append(accessURL);
 		result.append(')');
 		return result.toString();
 	}

@@ -78,56 +78,20 @@ public class RdfAdapterFactory extends AdapterFactoryImpl {
 	protected RdfSwitch<Adapter> modelSwitch =
 		new RdfSwitch<Adapter>() {
 			@Override
-			public Adapter caseDateLiteral(DateLiteral object) {
-				return createDateLiteralAdapter();
-			}
-			@Override
 			public Adapter caseDateOrDateTimeLiteral(DateOrDateTimeLiteral object) {
 				return createDateOrDateTimeLiteralAdapter();
-			}
-			@Override
-			public Adapter caseDateTimeLiteral(DateTimeLiteral object) {
-				return createDateTimeLiteralAdapter();
-			}
-			@Override
-			public Adapter caseObjectType(ObjectType object) {
-				return createObjectTypeAdapter();
 			}
 			@Override
 			public Adapter casePlainLiteral(PlainLiteral object) {
 				return createPlainLiteralAdapter();
 			}
 			@Override
-			public Adapter casePredicateType(PredicateType object) {
-				return createPredicateTypeAdapter();
-			}
-			@Override
-			public Adapter caseResource(Resource object) {
-				return createResourceAdapter();
-			}
-			@Override
-			public Adapter caseStatement(Statement object) {
-				return createStatementAdapter();
-			}
-			@Override
-			public Adapter caseStatementType(StatementType object) {
-				return createStatementTypeAdapter();
-			}
-			@Override
-			public Adapter caseSubjectType(SubjectType object) {
-				return createSubjectTypeAdapter();
-			}
-			@Override
 			public Adapter caseTypedLiteral(TypedLiteral object) {
 				return createTypedLiteralAdapter();
 			}
 			@Override
-			public Adapter caseRDFRoot(RDFRoot object) {
-				return createRDFRootAdapter();
-			}
-			@Override
-			public Adapter caseDescription(Description object) {
-				return createDescriptionAdapter();
+			public Adapter caseIdentifiedResource(IdentifiedResource object) {
+				return createIdentifiedResourceAdapter();
 			}
 			@Override
 			public Adapter defaultCase(EObject object) {
@@ -150,20 +114,6 @@ public class RdfAdapterFactory extends AdapterFactoryImpl {
 
 
 	/**
-	 * Creates a new adapter for an object of class '{@link rdf.DateLiteral <em>Date Literal</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.DateLiteral
-	 * @generated
-	 */
-	public Adapter createDateLiteralAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link rdf.DateOrDateTimeLiteral <em>Date Or Date Time Literal</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -174,34 +124,6 @@ public class RdfAdapterFactory extends AdapterFactoryImpl {
 	 * @generated
 	 */
 	public Adapter createDateOrDateTimeLiteralAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.DateTimeLiteral <em>Date Time Literal</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.DateTimeLiteral
-	 * @generated
-	 */
-	public Adapter createDateTimeLiteralAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.ObjectType <em>Object Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.ObjectType
-	 * @generated
-	 */
-	public Adapter createObjectTypeAdapter() {
 		return null;
 	}
 
@@ -220,76 +142,6 @@ public class RdfAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link rdf.PredicateType <em>Predicate Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.PredicateType
-	 * @generated
-	 */
-	public Adapter createPredicateTypeAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.Resource <em>Resource</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.Resource
-	 * @generated
-	 */
-	public Adapter createResourceAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.Statement <em>Statement</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.Statement
-	 * @generated
-	 */
-	public Adapter createStatementAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.StatementType <em>Statement Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.StatementType
-	 * @generated
-	 */
-	public Adapter createStatementTypeAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.SubjectType <em>Subject Type</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.SubjectType
-	 * @generated
-	 */
-	public Adapter createSubjectTypeAdapter() {
-		return null;
-	}
-
-	/**
 	 * Creates a new adapter for an object of class '{@link rdf.TypedLiteral <em>Typed Literal</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
@@ -304,30 +156,16 @@ public class RdfAdapterFactory extends AdapterFactoryImpl {
 	}
 
 	/**
-	 * Creates a new adapter for an object of class '{@link rdf.RDFRoot <em>RDF Root</em>}'.
+	 * Creates a new adapter for an object of class '{@link rdf.IdentifiedResource <em>Identified Resource</em>}'.
 	 * <!-- begin-user-doc -->
 	 * This default implementation returns null so that we can easily ignore cases;
 	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
 	 * <!-- end-user-doc -->
 	 * @return the new adapter.
-	 * @see rdf.RDFRoot
+	 * @see rdf.IdentifiedResource
 	 * @generated
 	 */
-	public Adapter createRDFRootAdapter() {
-		return null;
-	}
-
-	/**
-	 * Creates a new adapter for an object of class '{@link rdf.Description <em>Description</em>}'.
-	 * <!-- begin-user-doc -->
-	 * This default implementation returns null so that we can easily ignore cases;
-	 * it's useful to ignore a case when inheritance will catch all the cases anyway.
-	 * <!-- end-user-doc -->
-	 * @return the new adapter.
-	 * @see rdf.Description
-	 * @generated
-	 */
-	public Adapter createDescriptionAdapter() {
+	public Adapter createIdentifiedResourceAdapter() {
 		return null;
 	}
 

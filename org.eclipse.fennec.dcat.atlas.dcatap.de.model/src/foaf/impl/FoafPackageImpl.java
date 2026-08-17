@@ -20,27 +20,12 @@ import dcat.DcatPackage;
 
 import dcat.impl.DcatPackageImpl;
 
-import dcatde.DcatDEPackage;
-
-import dcatde.impl.DcatDEPackageImpl;
-
 import foaf.Agent;
-import foaf.AgentType;
 import foaf.Document;
-import foaf.DocumentRoot;
-import foaf.DocumentType;
 import foaf.FoafFactory;
 import foaf.FoafPackage;
 import foaf.Organization;
 import foaf.Person;
-
-import locn.LocnPackage;
-
-import locn.impl.LocnPackageImpl;
-
-import odrl.OdrlPackage;
-
-import odrl.impl.OdrlPackageImpl;
 
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -51,25 +36,9 @@ import org.eclipse.emf.ecore.impl.EPackageImpl;
 
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage;
 
-import owl.OwlPackage;
-
-import owl.impl.OwlPackageImpl;
-
-import prov.ProvPackage;
-
-import prov.impl.ProvPackageImpl;
-
 import rdf.RdfPackage;
 
 import rdf.impl.RdfPackageImpl;
-
-import schema.SchemaPackage;
-
-import schema.impl.SchemaPackageImpl;
-
-import skos.SkosPackage;
-
-import skos.impl.SkosPackageImpl;
 
 import spdx.SpdxPackage;
 
@@ -102,28 +71,7 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass agentTypeEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	private EClass documentEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass documentTypeEClass = null;
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	private EClass documentRootEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -193,60 +141,32 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 		DcatPackageImpl theDcatPackage = (DcatPackageImpl)(registeredPackage instanceof DcatPackageImpl ? registeredPackage : DcatPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
 		RdfPackageImpl theRdfPackage = (RdfPackageImpl)(registeredPackage instanceof RdfPackageImpl ? registeredPackage : RdfPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SkosPackage.eNS_URI);
-		SkosPackageImpl theSkosPackage = (SkosPackageImpl)(registeredPackage instanceof SkosPackageImpl ? registeredPackage : SkosPackage.eINSTANCE);
+		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
+		SpdxPackageImpl theSpdxPackage = (SpdxPackageImpl)(registeredPackage instanceof SpdxPackageImpl ? registeredPackage : SpdxPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(TermsPackage.eNS_URI);
 		TermsPackageImpl theTermsPackage = (TermsPackageImpl)(registeredPackage instanceof TermsPackageImpl ? registeredPackage : TermsPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(VcardPackage.eNS_URI);
 		VcardPackageImpl theVcardPackage = (VcardPackageImpl)(registeredPackage instanceof VcardPackageImpl ? registeredPackage : VcardPackage.eINSTANCE);
 		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(AdmsPackage.eNS_URI);
 		AdmsPackageImpl theAdmsPackage = (AdmsPackageImpl)(registeredPackage instanceof AdmsPackageImpl ? registeredPackage : AdmsPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(LocnPackage.eNS_URI);
-		LocnPackageImpl theLocnPackage = (LocnPackageImpl)(registeredPackage instanceof LocnPackageImpl ? registeredPackage : LocnPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OdrlPackage.eNS_URI);
-		OdrlPackageImpl theOdrlPackage = (OdrlPackageImpl)(registeredPackage instanceof OdrlPackageImpl ? registeredPackage : OdrlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(OwlPackage.eNS_URI);
-		OwlPackageImpl theOwlPackage = (OwlPackageImpl)(registeredPackage instanceof OwlPackageImpl ? registeredPackage : OwlPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(ProvPackage.eNS_URI);
-		ProvPackageImpl theProvPackage = (ProvPackageImpl)(registeredPackage instanceof ProvPackageImpl ? registeredPackage : ProvPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SchemaPackage.eNS_URI);
-		SchemaPackageImpl theSchemaPackage = (SchemaPackageImpl)(registeredPackage instanceof SchemaPackageImpl ? registeredPackage : SchemaPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(DcatDEPackage.eNS_URI);
-		DcatDEPackageImpl theDcatDEPackage = (DcatDEPackageImpl)(registeredPackage instanceof DcatDEPackageImpl ? registeredPackage : DcatDEPackage.eINSTANCE);
-		registeredPackage = EPackage.Registry.INSTANCE.getEPackage(SpdxPackage.eNS_URI);
-		SpdxPackageImpl theSpdxPackage = (SpdxPackageImpl)(registeredPackage instanceof SpdxPackageImpl ? registeredPackage : SpdxPackage.eINSTANCE);
 
 		// Create package meta-data objects
 		theFoafPackage.createPackageContents();
 		theDcatPackage.createPackageContents();
 		theRdfPackage.createPackageContents();
-		theSkosPackage.createPackageContents();
+		theSpdxPackage.createPackageContents();
 		theTermsPackage.createPackageContents();
 		theVcardPackage.createPackageContents();
 		theAdmsPackage.createPackageContents();
-		theLocnPackage.createPackageContents();
-		theOdrlPackage.createPackageContents();
-		theOwlPackage.createPackageContents();
-		theProvPackage.createPackageContents();
-		theSchemaPackage.createPackageContents();
-		theDcatDEPackage.createPackageContents();
-		theSpdxPackage.createPackageContents();
 
 		// Initialize created meta-data
 		theFoafPackage.initializePackageContents();
 		theDcatPackage.initializePackageContents();
 		theRdfPackage.initializePackageContents();
-		theSkosPackage.initializePackageContents();
+		theSpdxPackage.initializePackageContents();
 		theTermsPackage.initializePackageContents();
 		theVcardPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
-		theLocnPackage.initializePackageContents();
-		theOdrlPackage.initializePackageContents();
-		theOwlPackage.initializePackageContents();
-		theProvPackage.initializePackageContents();
-		theSchemaPackage.initializePackageContents();
-		theDcatDEPackage.initializePackageContents();
-		theSpdxPackage.initializePackageContents();
 
 		// Mark meta-data to indicate it can't be changed
 		theFoafPackage.freeze();
@@ -270,7 +190,7 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getAgent_Agent() {
+	public EReference getAgent_Name() {
 		return (EReference)agentEClass.getEStructuralFeatures().get(0);
 	}
 
@@ -279,8 +199,8 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getAgent_Organization() {
-		return (EReference)agentEClass.getEStructuralFeatures().get(1);
+	public EAttribute getAgent_Type() {
+		return (EAttribute)agentEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -288,8 +208,8 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getAgent_Person() {
-		return (EReference)agentEClass.getEStructuralFeatures().get(2);
+	public EAttribute getAgent_NodeID() {
+		return (EAttribute)agentEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -297,8 +217,8 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EClass getAgentType() {
-		return agentTypeEClass;
+	public EAttribute getAgent_Phone() {
+		return (EAttribute)agentEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -306,44 +226,8 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getAgentType_Name() {
-		return (EReference)agentTypeEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getAgentType_Type() {
-		return (EReference)agentTypeEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getAgentType_Phone() {
-		return (EReference)agentTypeEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getAgentType_Mbox() {
-		return (EReference)agentTypeEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getAgentType_NodeID() {
-		return (EAttribute)agentTypeEClass.getEStructuralFeatures().get(4);
+	public EAttribute getAgent_Mbox() {
+		return (EAttribute)agentEClass.getEStructuralFeatures().get(4);
 	}
 
 	/**
@@ -360,7 +244,7 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDocument_Document() {
+	public EReference getDocument_Name() {
 		return (EReference)documentEClass.getEStructuralFeatures().get(0);
 	}
 
@@ -369,143 +253,8 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EClass getDocumentType() {
-		return documentTypeEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentType_Name() {
-		return (EReference)documentTypeEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getDocumentType_About() {
-		return (EAttribute)documentTypeEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getDocumentType_NodeID() {
-		return (EAttribute)documentTypeEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EClass getDocumentRoot() {
-		return documentRootEClass;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getDocumentRoot_Mixed() {
-		return (EAttribute)documentRootEClass.getEStructuralFeatures().get(0);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_XMLNSPrefixMap() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(1);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_XSISchemaLocation() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(2);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Homepage() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(3);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Mbox() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(4);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Name() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(5);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Page() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(6);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Phone() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(7);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_PrimaryTopic() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(8);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Organisation() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(9);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDocumentRoot_Person() {
-		return (EReference)documentRootEClass.getEStructuralFeatures().get(10);
+	public EAttribute getDocument_NodeID() {
+		return (EAttribute)documentEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -555,37 +304,15 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 
 		// Create classes and their features
 		agentEClass = createEClass(AGENT);
-		createEReference(agentEClass, AGENT__AGENT);
-		createEReference(agentEClass, AGENT__ORGANIZATION);
-		createEReference(agentEClass, AGENT__PERSON);
-
-		agentTypeEClass = createEClass(AGENT_TYPE);
-		createEReference(agentTypeEClass, AGENT_TYPE__NAME);
-		createEReference(agentTypeEClass, AGENT_TYPE__TYPE);
-		createEReference(agentTypeEClass, AGENT_TYPE__PHONE);
-		createEReference(agentTypeEClass, AGENT_TYPE__MBOX);
-		createEAttribute(agentTypeEClass, AGENT_TYPE__NODE_ID);
+		createEReference(agentEClass, AGENT__NAME);
+		createEAttribute(agentEClass, AGENT__TYPE);
+		createEAttribute(agentEClass, AGENT__NODE_ID);
+		createEAttribute(agentEClass, AGENT__PHONE);
+		createEAttribute(agentEClass, AGENT__MBOX);
 
 		documentEClass = createEClass(DOCUMENT);
-		createEReference(documentEClass, DOCUMENT__DOCUMENT);
-
-		documentTypeEClass = createEClass(DOCUMENT_TYPE);
-		createEReference(documentTypeEClass, DOCUMENT_TYPE__NAME);
-		createEAttribute(documentTypeEClass, DOCUMENT_TYPE__ABOUT);
-		createEAttribute(documentTypeEClass, DOCUMENT_TYPE__NODE_ID);
-
-		documentRootEClass = createEClass(DOCUMENT_ROOT);
-		createEAttribute(documentRootEClass, DOCUMENT_ROOT__MIXED);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__XMLNS_PREFIX_MAP);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__XSI_SCHEMA_LOCATION);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__HOMEPAGE);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__MBOX);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__NAME);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__PAGE);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__PHONE);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__PRIMARY_TOPIC);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__ORGANISATION);
-		createEReference(documentRootEClass, DOCUMENT_ROOT__PERSON);
+		createEReference(documentEClass, DOCUMENT__NAME);
+		createEAttribute(documentEClass, DOCUMENT__NODE_ID);
 
 		organizationEClass = createEClass(ORGANIZATION);
 
@@ -617,7 +344,6 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 
 		// Obtain other dependent packages
 		RdfPackage theRdfPackage = (RdfPackage)EPackage.Registry.INSTANCE.getEPackage(RdfPackage.eNS_URI);
-		SkosPackage theSkosPackage = (SkosPackage)EPackage.Registry.INSTANCE.getEPackage(SkosPackage.eNS_URI);
 		XMLTypePackage theXMLTypePackage = (XMLTypePackage)EPackage.Registry.INSTANCE.getEPackage(XMLTypePackage.eNS_URI);
 
 		// Create type parameters
@@ -625,43 +351,22 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 		// Set bounds for type parameters
 
 		// Add supertypes to classes
-		agentTypeEClass.getESuperTypes().add(theRdfPackage.getResource());
-		organizationEClass.getESuperTypes().add(this.getAgentType());
-		personEClass.getESuperTypes().add(this.getAgentType());
+		agentEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
+		documentEClass.getESuperTypes().add(theRdfPackage.getIdentifiedResource());
+		organizationEClass.getESuperTypes().add(this.getAgent());
+		personEClass.getESuperTypes().add(this.getAgent());
 
 		// Initialize classes, features, and operations; add parameters
 		initEClass(agentEClass, Agent.class, "Agent", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getAgent_Agent(), this.getAgentType(), null, "agent", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getAgent_Organization(), this.getOrganization(), null, "organization", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getAgent_Person(), this.getPerson(), null, "person", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(agentTypeEClass, AgentType.class, "AgentType", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getAgentType_Name(), theRdfPackage.getPlainLiteral(), null, "name", null, 1, 1, AgentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getAgentType_Type(), theSkosPackage.getConcept(), null, "type", null, 0, 1, AgentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getAgentType_Phone(), theRdfPackage.getResource(), null, "phone", null, 0, 1, AgentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getAgentType_Mbox(), theRdfPackage.getResource(), null, "mbox", null, 1, 1, AgentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getAgentType_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, AgentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getAgent_Name(), theRdfPackage.getPlainLiteral(), null, "name", null, 1, -1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAgent_Type(), theXMLTypePackage.getAnyURI(), "type", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAgent_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAgent_Phone(), theXMLTypePackage.getAnyURI(), "phone", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getAgent_Mbox(), theXMLTypePackage.getAnyURI(), "mbox", null, 0, 1, Agent.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(documentEClass, Document.class, "Document", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getDocument_Document(), this.getDocumentType(), null, "document", null, 1, 1, Document.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(documentTypeEClass, DocumentType.class, "DocumentType", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getDocumentType_Name(), theRdfPackage.getPlainLiteral(), null, "name", null, 0, -1, DocumentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDocumentType_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, DocumentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDocumentType_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, DocumentType.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-
-		initEClass(documentRootEClass, DocumentRoot.class, "DocumentRoot", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getDocumentRoot_Mixed(), ecorePackage.getEFeatureMapEntry(), "mixed", null, 0, -1, null, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_XMLNSPrefixMap(), ecorePackage.getEStringToStringMapEntry(), null, "xMLNSPrefixMap", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_XSISchemaLocation(), ecorePackage.getEStringToStringMapEntry(), null, "xSISchemaLocation", null, 0, -1, null, IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Homepage(), theRdfPackage.getResource(), null, "homepage", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Mbox(), theRdfPackage.getResource(), null, "mbox", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Name(), theRdfPackage.getPlainLiteral(), null, "name", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Page(), theRdfPackage.getResource(), null, "page", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Phone(), theRdfPackage.getResource(), null, "phone", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_PrimaryTopic(), theRdfPackage.getResource(), null, "primaryTopic", null, 0, -2, null, IS_TRANSIENT, IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Organisation(), this.getOrganization(), null, "organisation", null, 0, 1, null, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDocumentRoot_Person(), this.getPerson(), null, "person", null, 0, 1, null, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDocument_Name(), theRdfPackage.getPlainLiteral(), null, "name", null, 0, -1, Document.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDocument_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Document.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(organizationEClass, Organization.class, "Organization", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 
@@ -691,38 +396,7 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 			   "kind", "elementOnly"
 		   });
 		addAnnotation
-		  (getAgent_Agent(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Agent",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getAgent_Organization(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Organization",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getAgent_Person(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Person",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (agentTypeEClass,
-		   source,
-		   new String[] {
-			   "name", "Agent_._type",
-			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getAgentType_Name(),
+		  (getAgent_Name(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -730,7 +404,7 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getAgentType_Type(),
+		  (getAgent_Type(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -738,7 +412,15 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
-		  (getAgentType_Phone(),
+		  (getAgent_NodeID(),
+		   source,
+		   new String[] {
+			   "kind", "attribute",
+			   "name", "nodeID",
+			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		   });
+		addAnnotation
+		  (getAgent_Phone(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -746,20 +428,12 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getAgentType_Mbox(),
+		  (getAgent_Mbox(),
 		   source,
 		   new String[] {
 			   "kind", "element",
 			   "name", "mbox",
 			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getAgentType_NodeID(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "nodeID",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 		   });
 		addAnnotation
 		  (documentEClass,
@@ -769,22 +443,7 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 			   "kind", "elementOnly"
 		   });
 		addAnnotation
-		  (getDocument_Document(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Document",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (documentTypeEClass,
-		   source,
-		   new String[] {
-			   "name", "Document_._type",
-			   "kind", "elementOnly"
-		   });
-		addAnnotation
-		  (getDocumentType_Name(),
+		  (getDocument_Name(),
 		   source,
 		   new String[] {
 			   "kind", "element",
@@ -792,112 +451,12 @@ public class FoafPackageImpl extends EPackageImpl implements FoafPackage {
 			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
-		  (getDocumentType_About(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "about",
-			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		   });
-		addAnnotation
-		  (getDocumentType_NodeID(),
+		  (getDocument_NodeID(),
 		   source,
 		   new String[] {
 			   "kind", "attribute",
 			   "name", "nodeID",
 			   "namespace", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-		   });
-		addAnnotation
-		  (documentRootEClass,
-		   source,
-		   new String[] {
-			   "name", "",
-			   "kind", "mixed"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Mixed(),
-		   source,
-		   new String[] {
-			   "kind", "elementWildcard",
-			   "name", ":mixed"
-		   });
-		addAnnotation
-		  (getDocumentRoot_XMLNSPrefixMap(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xmlns:prefix"
-		   });
-		addAnnotation
-		  (getDocumentRoot_XSISchemaLocation(),
-		   source,
-		   new String[] {
-			   "kind", "attribute",
-			   "name", "xsi:schemaLocation"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Homepage(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "homepage",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Mbox(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "mbox",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Name(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "name",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Page(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "page",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Phone(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "phone",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_PrimaryTopic(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "primaryTopic",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Organisation(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Organisation",
-			   "namespace", "##targetNamespace"
-		   });
-		addAnnotation
-		  (getDocumentRoot_Person(),
-		   source,
-		   new String[] {
-			   "kind", "element",
-			   "name", "Person",
-			   "namespace", "##targetNamespace"
 		   });
 		addAnnotation
 		  (organizationEClass,

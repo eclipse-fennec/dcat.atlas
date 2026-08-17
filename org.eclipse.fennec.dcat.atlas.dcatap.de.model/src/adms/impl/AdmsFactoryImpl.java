@@ -66,9 +66,7 @@ public class AdmsFactoryImpl extends EFactoryImpl implements AdmsFactory {
 	@Override
 	public EObject create(EClass eClass) {
 		switch (eClass.getClassifierID()) {
-			case AdmsPackage.DOCUMENT_ROOT: return createDocumentRoot();
 			case AdmsPackage.IDENTIFIER: return createIdentifier();
-			case AdmsPackage.IDENTIFIER_TYPE: return createIdentifierType();
 			default:
 				throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
 		}
@@ -79,29 +77,9 @@ public class AdmsFactoryImpl extends EFactoryImpl implements AdmsFactory {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public DocumentRoot createDocumentRoot() {
-		DocumentRootImpl documentRoot = new DocumentRootImpl();
-		return documentRoot;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
 	public Identifier createIdentifier() {
 		IdentifierImpl identifier = new IdentifierImpl();
 		return identifier;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public IdentifierType createIdentifierType() {
-		IdentifierTypeImpl identifierType = new IdentifierTypeImpl();
-		return identifierType;
 	}
 
 	/**

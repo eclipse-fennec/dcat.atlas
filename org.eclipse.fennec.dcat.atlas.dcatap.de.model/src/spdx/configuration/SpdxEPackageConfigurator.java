@@ -38,6 +38,14 @@ import spdx.SpdxPackage;
  */
 public class SpdxEPackageConfigurator implements EPackageConfigurator {
 	
+	/**
+	 * The fingerprint of this model version, computed from the <code>.ecore</code> at build
+	 * time. It identifies the model content, not the artifact - see the <code>emf.fingerprint</code>
+	 * service property.
+	 * @generated
+	 */
+	public static final String FINGERPRINT = "fp1:e88f2780921fc274ea5115ed22d221684c50b3a19116bb0163c66c9f0a8af3c1";
+
 	private SpdxPackage ePackage;
 
 	protected SpdxEPackageConfigurator(SpdxPackage ePackage){
@@ -75,6 +83,7 @@ public class SpdxEPackageConfigurator implements EPackageConfigurator {
 		properties.put(EMFNamespaces.EMF_MODEL_REGISTRATION, EMFNamespaces.MODEL_REGISTRATION_PROVIDED);
 		properties.put(EMFNamespaces.EMF_MODEL_FILE_EXT, "spdx");
 		properties.put(EMFNamespaces.EMF_MODEL_VERSION, "1.0");
+		properties.put(EMFNamespaces.EMF_MODEL_FINGERPRINT, FINGERPRINT);
 		return properties;
 	}
 }

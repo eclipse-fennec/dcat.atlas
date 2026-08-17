@@ -15,38 +15,56 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.function.Function;
 
+import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
+import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
+import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
+import org.eclipse.fennec.dcat.atlas.impl.helper.References;
+import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 import dcat.Catalog;
 import dcat.DataService;
 import dcat.Dataset;
-import dcat.DatasetContainer;
-import dcat.DcatFactory;
-import dcat.DcatPackage;
+import rdf.IdentifiedResource;
 
 /**
- * File-backed {@link CatalogAdminService} (write side). Extends
- * {@link CatalogReadOnlyServiceImpl} to inherit {@code getCatalog}/{@code
- * listCatalogs} and adds create/replace/delete; all persistence goes through
- * {@link DcatHelper} using the storage location set up by the superclass.
+ * File-backed {@link CatalogAdminService} (write side).
+ *
+ * <h2>Membership (FR-9)</h2>
+ *
+ * A member is an EMF cross-resource reference to the entity in its own store, so
+ * the catalog file records {@code href="http://dcat.atlas/datasets/air#/"} and
+ * there stays exactly one description of the dataset. A dataset may be listed by
+ * several catalogs ({@code dcat:dataset} is {@code [*]} with no inverse
+ * constraint), which containment could not express at all.
  * <p>
- * The {@code id} is the last path segment of the catalog's {@code rdf:about} URI
- * (the REST adapter sets that URI from the request URL before delegating here).
- * <p>
- * Deliberately simple for now: no ETag/optimistic locking, no SHACL validation,
- * no cascade handling and no transactions.
+ * Two ways in per entity type: {@code addXToCatalog} takes the entity and stores
+ * it before linking; {@code linkXToCatalog} takes an id and requires it to exist.
+ * Both are idempotent on the membership itself, so a repeat leaves the catalog —
+ * and its ETag — untouched.
  */
 @Component(name = "CatalogAdminService", service = CatalogAdminService.class)
 @Designate(ocd = StoreConfig.class)
 public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implements CatalogAdminService {
+
+	/** Which membership list on a Catalog a given collection is linked through. */
+	private static final Function<Catalog, EList<? extends EObject>> DATASETS = Catalog::getDataset;
+	private static final Function<Catalog, EList<? extends EObject>> SERVICES = Catalog::getService;
+	private static final Function<Catalog, EList<? extends EObject>> SUB_CATALOGS = Catalog::getCatalog;
 
 	@Activate
 	public CatalogAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
@@ -54,111 +72,162 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	}
 
 	/** Package-visible for tests. */
-	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path directory) {
-		super(resourceSetFactory, directory);
+	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
+		super(resourceSetFactory, root);
 	}
+
+	/**
+	 * The RDF projection behind the SPARQL endpoint, maintained here rather than in
+	 * the REST layer: this service is the persistence boundary, and REST is only one
+	 * of its callers (persistence plan constraint G2).
+	 * <p>
+	 * Optional and dynamic so the projection can be reconfigured, or absent
+	 * altogether, without recycling the store services — absent simply means no
+	 * SPARQL, and a projection that missed an update is repaired by its own
+	 * reconciliation pass.
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+	volatile DcatGraphService graphService;
 
 	@Override
 	public Catalog upsertCatalog(Catalog catalog) {
-		String id = DcatHelper.idOf(catalog.getAbout());
-		if (id == null) {
-			// Mint an id when the client supplied no about (D2/FR-3).
-			id = UUID.randomUUID().toString();
-		}
-		DcatHelper.write(resourceSetFactory, directory, id, DcatPackage.Literals.DCATAP_ROOT__CATALOG, catalog);
+		String id = idOrMint(catalog);
+		store().put(collection, id, catalog);
+		reproject(id);
 		return catalog;
 	}
 
 	@Override
 	public void deleteCatalog(String id, boolean cascade) {
-		// TODO FR-1: 409 when the catalog is still referenced; cascade currently ignored.
-		DcatHelper.delete(directory, id);
+		Store store = store();
+		References.detach(store, root, collection, id, cascade);
+		store.delete(collection, id);
+		reproject(id);
 	}
 
 	// --- FR-9 catalog membership -------------------------------------------
-	//
-	// Dataset, DataService and sub-catalog are all *containment* references on
-	// Catalog (Catalog.dataset -> DatasetContainer -> Dataset, Catalog.service,
-	// Catalog.catalog), so membership is maintained entirely inside the catalog's
-	// own file: load the catalog, add/remove the member, store the catalog again.
-	// The caller sends only the member, never the whole catalog (FR-9). Members
-	// are matched on delete by the last path segment of their rdf:about.
 
 	@Override
 	public Catalog addDatasetToCatalog(String catalogId, Dataset dataset) {
-		Catalog catalog = requireCatalog(catalogId);
-		String datasetId = DcatHelper.idOf(dataset.getAbout());
-		boolean present = catalog.getDataset().stream()
-				.anyMatch(c -> c.getDataset() != null && datasetId != null
-						&& datasetId.equals(DcatHelper.idOf(c.getDataset().getAbout())));
-		if (present) {
-			// Idempotent: membership already recorded, leave the catalog (and its ETag) untouched.
-			return catalog;
-		}
-		DatasetContainer container = DcatFactory.eINSTANCE.createDatasetContainer();
-		container.setDataset(dataset);
-		catalog.getDataset().add(container);
-		return store(catalogId, catalog);
+		return add(catalogId, StoreLayout.DATASETS, dataset, DATASETS);
+	}
+
+	@Override
+	public Catalog linkDatasetToCatalog(String catalogId, String datasetId) {
+		return link(catalogId, StoreLayout.DATASETS, datasetId, DATASETS);
 	}
 
 	@Override
 	public void deleteDatasetFromCatalog(String catalogId, String datasetId) {
-		Catalog catalog = requireCatalog(catalogId);
-		if (catalog.getDataset().removeIf(
-				c -> c.getDataset() != null && datasetId.equals(DcatHelper.idOf(c.getDataset().getAbout())))) {
-			store(catalogId, catalog);
-		}
+		unlink(catalogId, StoreLayout.DATASETS, datasetId, DATASETS);
 	}
 
 	@Override
 	public Catalog addDataServiceToCatalog(String catalogId, DataService dataService) {
-		Catalog catalog = requireCatalog(catalogId);
-		String serviceId = DcatHelper.idOf(dataService.getAbout());
-		boolean present = catalog.getService().stream()
-				.anyMatch(s -> serviceId != null && serviceId.equals(DcatHelper.idOf(s.getAbout())));
-		if (present) {
-			return catalog;
-		}
-		catalog.getService().add(dataService);
-		return store(catalogId, catalog);
+		return add(catalogId, StoreLayout.DATA_SERVICES, dataService, SERVICES);
+	}
+
+	@Override
+	public Catalog linkDataServiceToCatalog(String catalogId, String dataServiceId) {
+		return link(catalogId, StoreLayout.DATA_SERVICES, dataServiceId, SERVICES);
 	}
 
 	@Override
 	public void deleteDataServiceFromCatalog(String catalogId, String dataServiceId) {
-		Catalog catalog = requireCatalog(catalogId);
-		if (catalog.getService().removeIf(s -> dataServiceId.equals(DcatHelper.idOf(s.getAbout())))) {
-			store(catalogId, catalog);
-		}
+		unlink(catalogId, StoreLayout.DATA_SERVICES, dataServiceId, SERVICES);
 	}
 
 	@Override
 	public Catalog addSubCatalogToCatalog(String catalogId, Catalog subCatalog) {
-		Catalog catalog = requireCatalog(catalogId);
-		String subCatalogId = DcatHelper.idOf(subCatalog.getAbout());
-		boolean present = catalog.getCatalog().stream()
-				.anyMatch(c -> subCatalogId != null && subCatalogId.equals(DcatHelper.idOf(c.getAbout())));
-		if (present) {
-			return catalog;
-		}
-		catalog.getCatalog().add(subCatalog);
-		return store(catalogId, catalog);
+		return add(catalogId, StoreLayout.CATALOGS, subCatalog, SUB_CATALOGS);
+	}
+
+	@Override
+	public Catalog linkSubCatalogToCatalog(String catalogId, String subCatalogId) {
+		return link(catalogId, StoreLayout.CATALOGS, subCatalogId, SUB_CATALOGS);
 	}
 
 	@Override
 	public void deleteSubCatalogFromCatalog(String catalogId, String subCatalogId) {
-		Catalog catalog = requireCatalog(catalogId);
-		if (catalog.getCatalog().removeIf(c -> subCatalogId.equals(DcatHelper.idOf(c.getAbout())))) {
-			store(catalogId, catalog);
+		unlink(catalogId, StoreLayout.CATALOGS, subCatalogId, SUB_CATALOGS);
+	}
+
+	// --- the three membership shapes ---------------------------------------
+
+	/**
+	 * Stores {@code member}, then links it.
+	 * <p>
+	 * The member is written first because a link to something that is not there yet
+	 * is exactly the dangling reference this design refuses to create. Storing is an
+	 * upsert, matching {@code upsertDataset} and friends: a caller that hands over a
+	 * whole entity means that entity to be what is stored.
+	 */
+	private <T extends EObject> Catalog add(String catalogId, String memberCollection, T member,
+			Function<Catalog, EList<? extends EObject>> membership) {
+		if (member == null) {
+			throw new IllegalArgumentException("Cannot add nothing to catalog " + catalogId);
+		}
+		Store store = store();
+		requireCatalog(store, catalogId);
+		String memberId = memberIdOrMint(memberCollection, member);
+		store.put(memberCollection, memberId, member);
+		return connect(store, catalogId, memberCollection, memberId, membership);
+	}
+
+	/** Links an entity that must already exist. */
+	private Catalog link(String catalogId, String memberCollection, String memberId,
+			Function<Catalog, EList<? extends EObject>> membership) {
+		Store store = store();
+		requireCatalog(store, catalogId);
+		if (store.get(memberCollection, memberId).isEmpty()) {
+			throw new NoSuchElementException("Unknown " + memberCollection + ": " + memberId);
+		}
+		return connect(store, catalogId, memberCollection, memberId, membership);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Catalog connect(Store store, String catalogId, String memberCollection, String memberId,
+			Function<Catalog, EList<? extends EObject>> membership) {
+		Catalog catalog = requireCatalog(store, catalogId);
+		EList<EObject> members = (EList<EObject>) membership.apply(catalog);
+		if (Members.contains(members, memberCollection, memberId)) {
+			return catalog;
+		}
+		members.add(store.<EObject>get(memberCollection, memberId).orElseThrow(
+				() -> new NoSuchElementException("Unknown " + memberCollection + ": " + memberId)));
+		store.save(catalog);
+		reproject(catalogId);
+		return catalog;
+	}
+
+	private void unlink(String catalogId, String memberCollection, String memberId,
+			Function<Catalog, EList<? extends EObject>> membership) {
+		Store store = store();
+		Catalog catalog = requireCatalog(store, catalogId);
+		if (Members.remove(membership.apply(catalog), memberCollection, memberId)) {
+			store.save(catalog);
+			reproject(catalogId);
 		}
 	}
 
-	private Catalog requireCatalog(String catalogId) {
-		return getCatalog(catalogId)
+	// --- helpers ------------------------------------------------------------
+
+	private static Catalog requireCatalog(Store store, String catalogId) {
+		return store.<Catalog>get(StoreLayout.CATALOGS, catalogId)
 				.orElseThrow(() -> new NoSuchElementException("Unknown catalog: " + catalogId));
 	}
 
-	private Catalog store(String catalogId, Catalog catalog) {
-		DcatHelper.write(resourceSetFactory, directory, catalogId, DcatPackage.Literals.DCATAP_ROOT__CATALOG, catalog);
-		return catalog;
+	/** As {@code idOrMint}, but for a member of a collection other than this store's. */
+	private static String memberIdOrMint(String memberCollection, EObject member) {
+		String about = member instanceof IdentifiedResource identified ? identified.getAbout() : null;
+		return DcatIds.idForWrite(memberCollection, about);
+	}
+
+	/** Re-projects one catalog into the RDF graph, if a projection is present. */
+	private void reproject(String catalogId) {
+		DcatGraphService graph = graphService;
+		if (graph != null) {
+			graph.invalidate(DcatEntity.CATALOG, catalogId);
+		}
 	}
 }

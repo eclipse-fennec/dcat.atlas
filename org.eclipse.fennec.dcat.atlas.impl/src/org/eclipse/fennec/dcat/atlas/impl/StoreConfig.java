@@ -18,20 +18,27 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 /**
  * Shared configuration for the file-based DCAT-AP stores. Every entity service
- * (catalogs, datasets, distributions, &hellip;) {@code @Designate}s this same
- * OCD; each service keeps its own configuration PID, so each can be pointed at
- * its own storage directory (e.g. via {@code $[env:STORE_FOLDER]}).
+ * {@code @Designate}s this same OCD.
  * <p>
- * Persistence is, for now, a flat directory of RDF/XML files, one per resource.
+ * A single <em>root</em> rather than a directory per service, because the stores
+ * are no longer independent: a Catalog's {@code dcat:dataset} link is an EMF
+ * cross-resource reference that has to resolve into the dataset store, so one
+ * {@code URIConverter} URI map has to cover every collection at once. The
+ * per-collection subdirectory names are therefore fixed rather than configurable
+ * — see {@link org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout}.
+ * <p>
+ * Persistence is a directory of XMI files, one per resource. Distributions have
+ * no directory of their own: {@code dcat:distribution} is containment, so a
+ * Distribution is stored inside its Dataset's file (FR-10).
  */
-@ObjectClassDefinition(name = "DCAT-AP Atlas file store", description = "File-system persistence for a DCAT-AP entity store")
+@ObjectClassDefinition(name = "DCAT-AP Atlas file store", description = "File-system persistence for the DCAT-AP entity stores")
 public @interface StoreConfig {
 
 	/**
-	 * Directory under which one {@code <id>.rdf} file per resource is stored. It is
-	 * created on activation if it does not exist. Configure a distinct directory per
-	 * service to keep the entity types separate.
+	 * Root directory holding one subdirectory per collection, each with one
+	 * {@code <id>.xmi} file per resource. Subdirectories are created on activation
+	 * if they do not exist.
 	 */
-	@AttributeDefinition(name = "Storage directory", description = "Directory holding one RDF/XML file per resource")
-	String directory() default "data";
+	@AttributeDefinition(name = "Store root", description = "Root directory holding the per-collection store subdirectories")
+	String root() default "data";
 }

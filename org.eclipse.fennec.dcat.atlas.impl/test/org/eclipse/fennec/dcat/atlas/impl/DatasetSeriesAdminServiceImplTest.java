@@ -38,21 +38,18 @@ import rdf.RdfFactory;
  */
 public class DatasetSeriesAdminServiceImplTest {
 
-	private static final String BASE = "https://portal.example/admin/api/v1/dataset-series/";
-	private static final String DATASET_BASE = "https://portal.example/admin/api/v1/datasets/";
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "dataset-series/";
+	private static final String DATASET_BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "datasets/";
 
 	@TempDir
 	Path storage;
 
-	@TempDir
-	Path datasetStorage;
-
 	private DatasetAdminServiceImpl datasetService() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), datasetStorage);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
 	}
 
 	private DatasetSeriesAdminServiceImpl service() {
-		return new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage, datasetService());
+		return new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
 	}
 
 	@Test
@@ -98,8 +95,7 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesRecordsInSeriesOnDataset() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage,
-				datasets);
+		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
@@ -113,8 +109,7 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesIsIdempotent() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage,
-				datasets);
+		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
@@ -134,8 +129,7 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void deleteDatasetFromSeriesRemovesInSeries() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage,
-				datasets);
+		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
 

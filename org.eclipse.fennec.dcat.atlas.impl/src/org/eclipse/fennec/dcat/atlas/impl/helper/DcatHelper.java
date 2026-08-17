@@ -22,102 +22,178 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.emf.ecore.xml.type.AnyType;
-import org.eclipse.emf.ecore.xml.type.XMLTypeFactory;
-import org.eclipse.emf.ecore.xmi.XMLResource;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 
-import rdf.RDFRoot;
-import rdf.RdfFactory;
+import rdf.IdentifiedResource;
 
 /**
- * Shared file-based persistence for the DCAT-AP admin/read services: each object
- * is stored as a single RDF/XML file {@code <directory>/<id>.rdf}, wrapped in an
- * {@code <rdf:RDF>} document so the model's own EMF resource factory can
- * round-trip it. Generic over the DCAT-AP document-root feature (e.g.
- * {@code DCATAP_ROOT__CATALOG}) so the same code serves every entity type.
+ * File-based persistence for the DCAT-AP stores: one XMI file per resource, the
+ * entity itself as the file's sole root object.
+ *
+ * <h2>Sessions, and why they exist</h2>
+ *
+ * Links between entities are EMF cross-resource references, so two entities can
+ * only be linked while they are loaded in the <em>same</em> {@link ResourceSet} —
+ * that is what lets EMF write {@code href="http://dcat.atlas/datasets/air#/"}
+ * rather than inlining a copy. {@link #open} hands out a {@link Store} holding one
+ * such resource set; everything read through it resolves against everything else.
+ * <p>
+ * A store is scoped to one operation and is not thread-safe, matching EMF's own
+ * guarantees — see {@code StoreResourceSets} for why that is preferred over one
+ * shared set.
  */
 public final class DcatHelper {
 
 	private DcatHelper() {
 	}
 
-
-	public static final String RDF_EXTENSION = ".rdf";
-
-	private static final Map<Object, Object> RESOURCE_OPTIONS = Map.of(//
-			XMLResource.OPTION_ENCODING, "UTF-8", //
-			XMLResource.OPTION_EXTENDED_META_DATA, Boolean.TRUE);
-
-	// --- CRUD primitives ---------------------------------------------------
-
-	/** Loads the object stored under {@code id}, or empty if there is no such file. */
-	public static <T extends EObject> Optional<T> get(ResourceSetFactory resourceSetFactory, Path directory, String id,
-			EReference rootFeature) {
-		Path file = fileFor(directory, id);
-		if (!Files.isRegularFile(file)) {
-			return Optional.empty();
-		}
-		return Optional.of(read(resourceSetFactory.createResourceSet(), file, rootFeature));
+	/** Opens a store session rooted at {@code root}. */
+	public static Store open(ResourceSetFactory resourceSetFactory, Path root) {
+		return new Store(StoreResourceSets.create(resourceSetFactory, root), root);
 	}
 
-	/** Loads every object stored in {@code directory}. */
-	public static <T extends EObject> List<T> list(ResourceSetFactory resourceSetFactory, Path directory,
-			EReference rootFeature) {
-		if (!Files.isDirectory(directory)) {
-			return List.of();
-		}
-		try (Stream<Path> files = Files.list(directory)) {
-			List<T> result = new ArrayList<>();
-			files.filter(Files::isRegularFile) //
-					.filter(p -> p.getFileName().toString().endsWith(RDF_EXTENSION)) //
-					.sorted() //
-					.forEach(p -> result.add(read(resourceSetFactory.createResourceSet(), p, rootFeature)));
-			return result;
-		} catch (IOException e) {
-			throw new UncheckedIOException("Could not list objects in " + directory, e);
+	/**
+	 * Creates the store subdirectories. Called on service activation so a fresh
+	 * deployment does not fail its first write.
+	 */
+	public static void prepare(Path root) {
+		for (String collection : StoreLayout.COLLECTIONS) {
+			Path directory = StoreLayout.directory(root, collection);
+			try {
+				Files.createDirectories(directory);
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not create store directory " + directory, e);
+			}
 		}
 	}
 
-	/** Stores {@code object} under {@code id} (create or replace). */
-	public static void write(ResourceSetFactory resourceSetFactory, Path directory, String id, EReference rootFeature,
-			EObject object) {
-		Resource resource = resourceSetFactory.createResourceSet()
-				.createResource(URI.createFileURI(fileFor(directory, id).toAbsolutePath().toString()));
+	/** One operation's view of the store. */
+	public static final class Store {
 
-		RDFRoot rdfRoot = RdfFactory.eINSTANCE.createRDFRoot();
-		resource.getContents().add(rdfRoot);
-		AnyType anyType = XMLTypeFactory.eINSTANCE.createAnyType();
-		rdfRoot.getRDF().add(anyType);
-		anyType.eSet(rootFeature, ECollections.singletonEList(EcoreUtil.copy(object)));
+		private final ResourceSet resourceSet;
+		private final Path root;
 
-		try {
-			resource.save(RESOURCE_OPTIONS);
-		} catch (IOException e) {
-			throw new UncheckedIOException("Could not store object " + id, e);
+		private Store(ResourceSet resourceSet, Path root) {
+			this.resourceSet = resourceSet;
+			this.root = root;
+		}
+
+		/** The object stored under {@code id}, or empty if there is no such file. */
+		@SuppressWarnings("unchecked")
+		public <T extends EObject> Optional<T> get(String collection, String id) {
+			if (!Files.isRegularFile(StoreLayout.file(root, collection, id))) {
+				return Optional.empty();
+			}
+			Resource resource = resourceSet.getResource(StoreResourceSets.resourceUri(collection, id), true);
+			return resource.getContents().isEmpty() ? Optional.empty()
+					: Optional.of((T) resource.getContents().get(0));
+		}
+
+		/** Every object in {@code collection}, ordered by id. */
+		public <T extends EObject> List<T> list(String collection) {
+			Path directory = StoreLayout.directory(root, collection);
+			if (!Files.isDirectory(directory)) {
+				return List.of();
+			}
+			try (Stream<Path> files = Files.list(directory)) {
+				List<String> ids = files.filter(Files::isRegularFile) //
+						.map(p -> p.getFileName().toString()) //
+						.sorted() //
+						.toList();
+				List<T> result = new ArrayList<>(ids.size());
+				for (String id : ids) {
+					this.<T>get(collection, id).ifPresent(result::add);
+				}
+				return result;
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not list " + collection + " in " + directory, e);
+			}
+		}
+
+		/**
+		 * Stores {@code object} under {@code id}, creating or replacing, and stamps it
+		 * with its logical identity.
+		 * <p>
+		 * The identity is minted here rather than taken from the caller, because it is
+		 * the store that decides what a resource is called. Accepting an {@code about}
+		 * from the request is how the writer's hostname used to end up frozen into the
+		 * file.
+		 */
+		public <T extends EObject> T put(String collection, String id, T object) {
+			StoreLayout.requireSafeId(id);
+			if (object instanceof IdentifiedResource identified) {
+				identified.setAbout(StoreLayout.logicalIri(collection, id));
+			}
+			// Refuse a link to an identity of ours that is not there, before anything is
+			// written. Every write funnels through here, so this is the one place the
+			// invariant has to hold — and it is the write-side half of the rule
+			// References.detach enforces on delete.
+			References.requireResolvable(this, object);
+			URI uri = StoreResourceSets.resourceUri(collection, id);
+			Resource resource = resourceSet.getResource(uri, false);
+			if (resource == null) {
+				resource = resourceSet.createResource(uri);
+			}
+			resource.getContents().clear();
+			resource.getContents().add(object);
+			save(resource);
+			return object;
+		}
+
+		/** Re-saves an object previously {@link #get}. */
+		public void save(EObject object) {
+			Resource resource = object.eResource();
+			if (resource == null) {
+				throw new IllegalArgumentException(
+						"Cannot save a " + object.eClass().getName() + " that is not in the store");
+			}
+			save(resource);
+		}
+
+		/** Removes the object stored under {@code id}; returns whether a file existed. */
+		public boolean delete(String collection, String id) {
+			URI uri = StoreResourceSets.resourceUri(collection, id);
+			Resource loaded = resourceSet.getResource(uri, false);
+			if (loaded != null) {
+				resourceSet.getResources().remove(loaded);
+			}
+			try {
+				return Files.deleteIfExists(StoreLayout.file(root, collection, id));
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not delete " + collection + "/" + id, e);
+			}
+		}
+
+		private void save(Resource resource) {
+			try {
+				resource.save(StoreResourceSets.saveOptions());
+			} catch (IOException e) {
+				throw new UncheckedIOException("Could not store " + resource.getURI(), e);
+			}
 		}
 	}
+
+	// --- ETag ---------------------------------------------------------------
 
 	/**
 	 * A strong entity-tag validator for the object stored under {@code id}: a
 	 * SHA-256 (hex) digest of the stored file's bytes, or empty if there is no such
-	 * file. Because it is computed over the persisted representation it is stable
-	 * across serialization formats and changes iff the stored state changes — which
-	 * is what conditional requests (ETag / If-Match / If-None-Match, F-16) need.
+	 * file. Computed over the persisted representation, so it changes iff the stored
+	 * state changes — which is what conditional requests need (F-16).
+	 * <p>
+	 * Note it digests the <em>stored</em> (logical) bytes, not what a client is
+	 * served. Two deployments rendering different public IRIs therefore agree on the
+	 * ETag, which is correct: they are serving the same resource at the same version.
 	 */
-	public static Optional<String> etag(Path directory, String id) {
-		Path file = fileFor(directory, id);
+	public static Optional<String> etag(Path root, String collection, String id) {
+		Path file = StoreLayout.file(root, collection, id);
 		if (!Files.isRegularFile(file)) {
 			return Optional.empty();
 		}
@@ -125,62 +201,9 @@ public final class DcatHelper {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			return Optional.of(HexFormat.of().formatHex(digest.digest(Files.readAllBytes(file))));
 		} catch (IOException e) {
-			throw new UncheckedIOException("Could not compute ETag for " + id, e);
+			throw new UncheckedIOException("Could not compute ETag for " + collection + "/" + id, e);
 		} catch (NoSuchAlgorithmException e) {
 			throw new IllegalStateException("SHA-256 is required but unavailable", e);
 		}
-	}
-
-	/** Removes the object stored under {@code id}; returns whether a file existed. */
-	public static boolean delete(Path directory, String id) {
-		try {
-			return Files.deleteIfExists(fileFor(directory, id));
-		} catch (IOException e) {
-			throw new UncheckedIOException("Could not delete object " + id, e);
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <T extends EObject> T read(ResourceSet resourceSet, Path file, EReference rootFeature) {
-		Resource resource = resourceSet.createResource(URI.createFileURI(file.toAbsolutePath().toString()));
-		try {
-			resource.load(RESOURCE_OPTIONS);
-		} catch (IOException e) {
-			throw new UncheckedIOException("Could not read object file " + file, e);
-		}
-		RDFRoot rdfRoot = (RDFRoot) resource.getContents().get(0);
-		AnyType anyType = rdfRoot.getRDF().get(0);
-		List<T> objects = (List<T>) anyType.eGet(rootFeature);
-		// Detach from the RDFRoot/AnyType storage wrapper before handing the object
-		// out: a codec MessageBodyWriter serializes the object's own eResource, and
-		// the wrapper's XML feature maps don't survive non-XML formats (e.g. JSON
-		// renders them as a toString()). A detached copy has no eResource, so the
-		// codec wraps just this object in a fresh resource of the requested format.
-		return EcoreUtil.copy(objects.get(0));
-	}
-
-	// --- id / path helpers -------------------------------------------------
-
-	/** Derives the storage id from an object's {@code rdf:about} URI, or {@code null}. */
-	public static String idOf(String about) {
-		if (about == null || about.isBlank()) {
-			return null;
-		}
-		int slash = about.lastIndexOf('/');
-		String candidate = slash >= 0 ? about.substring(slash + 1) : about;
-		return candidate.isBlank() ? null : candidate;
-	}
-
-	/** Resolves (and validates) the storage file for {@code id}. */
-	public static Path fileFor(Path directory, String id) {
-		return directory.resolve(requireSafeId(id) + RDF_EXTENSION);
-	}
-
-	/** Ensures a client-supplied id cannot escape the storage directory. */
-	public static String requireSafeId(String id) {
-		if (id == null || id.isBlank() || id.contains("/") || id.contains("\\") || id.contains("..")) {
-			throw new IllegalArgumentException("Illegal id: " + id);
-		}
-		return id;
 	}
 }

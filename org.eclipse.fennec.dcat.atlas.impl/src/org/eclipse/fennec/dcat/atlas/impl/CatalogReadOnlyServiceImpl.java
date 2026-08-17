@@ -13,19 +13,13 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
-import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
-import org.apache.felix.hc.api.Result;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
+import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -33,72 +27,36 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
 import dcat.Catalog;
-import dcat.DcatPackage;
 
 /**
- * File-backed, read-only view of the catalog store (visitor / machine-consumer
- * read side). All persistence goes through {@link DcatHelper}.
+ * File-backed, read-only view of the catalog store.
  * <p>
  * {@code CatalogAdminServiceImpl} extends this class to inherit the read
  * operations and add the write operations, so the two services share one
- * implementation of {@code getCatalog}/{@code listCatalogs}. The storage
- * location is exposed to that subclass through the {@code protected} fields.
+ * implementation of {@code getCatalog}/{@code listCatalogs}.
  */
 @Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, HealthCheck.class }, property = {
 		HealthCheck.NAME + "=store:catalogs", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = StoreConfig.class)
-public class CatalogReadOnlyServiceImpl implements CatalogReadOnlyService, HealthCheck {
-
-	protected final ResourceSetFactory resourceSetFactory;
-	protected final Path directory;
+public class CatalogReadOnlyServiceImpl extends AbstractEntityStore<Catalog> implements CatalogReadOnlyService {
 
 	@Activate
 	public CatalogReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.directory()));
+		this(resourceSetFactory, Path.of(config.root()));
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	CatalogReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path directory) {
-		this.resourceSetFactory = resourceSetFactory;
-		this.directory = directory;
-		try {
-			Files.createDirectories(directory);
-		} catch (IOException e) {
-			throw new UncheckedIOException("Could not create catalog storage directory " + directory, e);
-		}
+	CatalogReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
+		super(resourceSetFactory, root, StoreLayout.CATALOGS);
 	}
 
 	@Override
 	public Optional<Catalog> getCatalog(String id) {
-		return DcatHelper.get(resourceSetFactory, directory, id, DcatPackage.Literals.DCATAP_ROOT__CATALOG);
+		return getEntity(id);
 	}
 
 	@Override
 	public List<Catalog> listCatalogs() {
-		return DcatHelper.list(resourceSetFactory, directory, DcatPackage.Literals.DCATAP_ROOT__CATALOG);
+		return listEntities();
 	}
-
-	@Override
-	public Optional<String> etag(String id) {
-		return DcatHelper.etag(directory, id);
-	}
-
-	// --- F-25 readiness -----------------------------------------------------
-
-	/**
-	 * Reports whether this store can serve (F-25). CRITICAL rather than WARN: an
-	 * unusable store directory is a misconfiguration that no retry fixes, and the
-	 * portal should be taken out of rotation.
-	 */
-	@Override
-	public Result execute() {
-		FormattingResultLog log = new FormattingResultLog();
-		if (StoreHealth.ready(directory)) {
-			log.info("{}", StoreHealth.detail(directory));
-		} else {
-			log.critical("{}", StoreHealth.detail(directory));
-		}
-		return new Result(log);
-	}
-
 }

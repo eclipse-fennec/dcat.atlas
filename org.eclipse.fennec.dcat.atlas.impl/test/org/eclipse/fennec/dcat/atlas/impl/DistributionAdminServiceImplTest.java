@@ -14,13 +14,17 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException;
+import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,41 +36,40 @@ import rdf.PlainLiteral;
 import rdf.RdfFactory;
 
 /**
- * FR-10: a Distribution is created/read/deleted only in the context of its
- * Dataset. The Distribution itself is kept in the distribution store; the
- * dataset->distribution link is a {@code dcat:distribution} URI reference the
- * service maintains on the owning Dataset.
+ * FR-10: a Distribution exists only in the context of its Dataset.
+ * <p>
+ * Since the storage rework that is structural rather than enforced: {@code
+ * dcat:distribution} is containment, so a Distribution is stored <em>inside</em>
+ * its Dataset's file and cannot outlive it. Its identity nests to match, at
+ * {@code …/datasets/air/distributions/csv}.
  */
 public class DistributionAdminServiceImplTest {
 
-	private static final String DATASET_BASE = "https://portal.example/admin/api/v1/datasets/";
-	/** Distributions dereference under their dataset, e.g. {@code .../datasets/air/distributions/csv}. */
-	private static final String DIST_BASE = DATASET_BASE + "air/distributions/";
-	/** DataServices are catalog entities of their own, dereferencing under /data-services/. */
-	private static final String SERVICE_BASE = "https://portal.example/admin/api/v1/data-services/";
+	private static final String DATASETS = StoreLayout.LOGICAL_BASE + "datasets/";
+	private static final String SERVICES = StoreLayout.LOGICAL_BASE + "data-services/";
+	private static final String DIST_BASE = DATASETS + "air/distributions/";
 
 	@TempDir
 	Path storage;
 
-	@TempDir
-	Path datasetStorage;
-
 	private DatasetAdminServiceImpl datasetService;
 
 	private DistributionAdminServiceImpl service() {
-		datasetService = new DatasetAdminServiceImpl(TestResourceSets.factory(), datasetStorage);
+		datasetService = new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
 		return new DistributionAdminServiceImpl(TestResourceSets.factory(), storage, datasetService);
 	}
 
 	/** Seeds an (empty) owning dataset "air" and returns the ready distribution service. */
 	private DistributionAdminServiceImpl serviceWithDataset() {
 		DistributionAdminServiceImpl service = service();
-		datasetService.upsertDataset(dataset(DATASET_BASE + "air", "Air quality"));
+		datasetService.upsertDataset(dataset(DATASETS + "air", "Air quality"));
 		return service;
 	}
 
+	// --- storage ------------------------------------------------------------
+
 	@Test
-	void upsertStoresDistributionAndLinksItToDataset() {
+	void upsertStoresDistributionInsideItsDataset() {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
 
@@ -75,10 +78,18 @@ public class DistributionAdminServiceImplTest {
 		assertEquals(DIST_BASE + "csv", loaded.get().getAbout());
 		assertEquals("CSV download", loaded.get().getTitle().getValue());
 
-		// The owning dataset now references the distribution.
-		Dataset dataset = datasetService.getDataset("air").get();
-		assertEquals(1, dataset.getDistribution().size());
-		assertEquals(DIST_BASE + "csv", dataset.getDistribution().get(0).getResource());
+		// Contained, so it is part of the dataset — not a link to a separate file.
+		assertEquals(1, datasetService.getDataset("air").get().getDistribution().size());
+	}
+
+	@Test
+	void theDistributionLivesInTheDatasetFile() throws Exception {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+
+		String stored = Files.readString(StoreLayout.file(storage, StoreLayout.DATASETS, "air"));
+		assertTrue(stored.contains("CSV download"), stored);
+		assertFalse(Files.exists(storage.resolve("distributions")), "there is no distribution store any more");
 	}
 
 	@Test
@@ -99,10 +110,20 @@ public class DistributionAdminServiceImplTest {
 	}
 
 	@Test
+	void upsertReplacesRatherThanAccumulates() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download v2"));
+
+		assertEquals(1, service.listDistributionsForDataset("air").size());
+		assertEquals("CSV download v2", service.getDistributionForDataset("air", "csv").get().getTitle().getValue());
+	}
+
+	@Test
 	void getForWrongDatasetIsEmpty() {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
-		datasetService.upsertDataset(dataset(DATASET_BASE + "water", "Water quality"));
+		datasetService.upsertDataset(dataset(DATASETS + "water", "Water quality"));
 
 		// "csv" belongs to "air", not "water".
 		assertTrue(service.getDistributionForDataset("water", "csv").isEmpty());
@@ -114,7 +135,7 @@ public class DistributionAdminServiceImplTest {
 	}
 
 	@Test
-	void deleteRemovesDistributionAndUnlinksItFromDataset() {
+	void deleteRemovesTheDistributionFromItsDataset() {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
 
@@ -125,12 +146,61 @@ public class DistributionAdminServiceImplTest {
 	}
 
 	@Test
+	void deletingTheDatasetTakesItsDistributionsWithIt() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+
+		datasetService.deleteDataset("air", false);
+
+		assertTrue(service.listDistributionsForDataset("air").isEmpty());
+	}
+
+	@Test
 	void mintsIdWhenAboutMissing() {
 		DistributionAdminServiceImpl service = serviceWithDataset();
-		Distribution distribution = distribution(null, "Untitled about");
-		service.upsertDistributionToDataset("air", distribution);
-		// Stored under a minted id; with no about there is no dataset link to add.
-		assertTrue(datasetService.getDataset("air").get().getDistribution().isEmpty());
+		Distribution stored = service.upsertDistributionToDataset("air", distribution(null, "Untitled about"));
+
+		assertTrue(stored.getAbout().startsWith(DIST_BASE), stored.getAbout());
+		assertEquals(1, service.listDistributionsForDataset("air").size());
+	}
+
+	/**
+	 * The nested identity follows the same rule, through its own derivation
+	 * ({@code DcatIds.distributionIdForWrite}): mint only when nothing was asked for,
+	 * refuse anything we cannot file here. "Here" is the point — a Distribution's identity
+	 * nests inside <em>this</em> dataset (FR-10), so an about under a *different* dataset
+	 * is as foreign as somebody else's URL, and silently minting would have stored it under
+	 * this dataset while the caller believed it belonged to the other one.
+	 */
+	@Test
+	void anAboutFromAnotherDatasetIsRefused() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		datasetService.upsertDataset(dataset(DATASETS + "water", "Water quality"));
+
+		assertThrows(ForeignIdentityException.class, () -> service.upsertDistributionToDataset("air",
+				distribution(DATASETS + "water/distributions/csv", "Wrong dataset")));
+
+		assertTrue(service.listDistributionsForDataset("air").isEmpty(), "a refused write must store nothing");
+	}
+
+	@Test
+	void aForeignDistributionAboutIsRefused() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+
+		assertThrows(ForeignIdentityException.class, () -> service.upsertDistributionToDataset("air",
+				distribution("https://someone-else.example/files/data.csv", "Foreign")));
+
+		assertTrue(service.listDistributionsForDataset("air").isEmpty());
+	}
+
+	@Test
+	void theEtagIsTheOwningDatasets() {
+		// A distribution has no stored bytes of its own, so its version is the dataset's.
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+
+		assertEquals(datasetService.etag("air").orElseThrow(), service.etag("air", "csv").orElseThrow());
+		assertTrue(service.etag("air", "does-not-exist").isEmpty());
 	}
 
 	// --- FR-10 accessService link ------------------------------------------
@@ -140,13 +210,13 @@ public class DistributionAdminServiceImplTest {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
 
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "wfs", "Air WFS"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "wfs", "Air WFS"));
 
 		Distribution loaded = service.getDistributionForDataset("air", "csv").get();
 		assertEquals(1, loaded.getAccessService().size());
-		// A dcat:accessService rdf:resource pointer at the service's about — the service
-		// itself is not embedded, so it stays a single catalog entity (DCAT-AP.de §4.6.24).
-		assertEquals(SERVICE_BASE + "wfs", loaded.getAccessService().get(0).getResource());
+		// A cross-resource reference at the service's own identity — the DataService
+		// stays a single catalog entity (DCAT-AP.de §4.6.24).
+		assertEquals(SERVICES + "wfs", loaded.getAccessService().get(0).getAbout());
 	}
 
 	@Test
@@ -154,10 +224,24 @@ public class DistributionAdminServiceImplTest {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
 
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "wfs", "Air WFS"));
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "wfs", "Air WFS"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "wfs", "Air WFS"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "wfs", "Air WFS"));
 
 		assertEquals(1, service.getDistributionForDataset("air", "csv").get().getAccessService().size());
+	}
+
+	@Test
+	void linkAccessServiceRequiresTheServiceToExist() {
+		DistributionAdminServiceImpl service = serviceWithDataset();
+		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
+
+		assertThrows(NoSuchElementException.class,
+				() -> service.linkAccessServiceToDistribution("air", "csv", "wfs"));
+
+		new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage)
+				.upsertDataService(dataService(SERVICES + "wfs", "Air WFS"));
+		Distribution linked = service.linkAccessServiceToDistribution("air", "csv", "wfs");
+		assertEquals(1, linked.getAccessService().size());
 	}
 
 	@Test
@@ -166,19 +250,10 @@ public class DistributionAdminServiceImplTest {
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
 
 		// Multiplicity is [*]: the same data may be served by more than one service.
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "wfs", "Air WFS"));
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "ogcapi", "Air OGC API"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "wfs", "Air WFS"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "ogcapi", "Air OGC API"));
 
 		assertEquals(2, service.getDistributionForDataset("air", "csv").get().getAccessService().size());
-	}
-
-	@Test
-	void addAccessServiceWithoutAboutIsRejected() {
-		DistributionAdminServiceImpl service = serviceWithDataset();
-		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
-
-		assertThrows(IllegalArgumentException.class, () -> service.addAccessServiceToDistribution("air", "csv",
-				dataService(null, "Nameless service")));
 	}
 
 	@Test
@@ -186,21 +261,24 @@ public class DistributionAdminServiceImplTest {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 
 		assertThrows(NoSuchElementException.class, () -> service.addAccessServiceToDistribution("air", "nope",
-				dataService(SERVICE_BASE + "wfs", "Air WFS")));
+				dataService(SERVICES + "wfs", "Air WFS")));
 	}
 
 	@Test
 	void deleteAccessServiceRemovesOnlyTheReference() {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "wfs", "Air WFS"));
-		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICE_BASE + "ogcapi", "Air OGC API"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "wfs", "Air WFS"));
+		service.addAccessServiceToDistribution("air", "csv", dataService(SERVICES + "ogcapi", "Air OGC API"));
 
 		service.deleteAccessServiceFromDistribution("air", "csv", "wfs");
 
 		Distribution loaded = service.getDistributionForDataset("air", "csv").get();
 		assertEquals(1, loaded.getAccessService().size());
-		assertEquals(SERVICE_BASE + "ogcapi", loaded.getAccessService().get(0).getResource());
+		assertEquals(SERVICES + "ogcapi", loaded.getAccessService().get(0).getAbout());
+		// The DataService itself survives — only the link went.
+		assertTrue(new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage).getDataService("wfs")
+				.isPresent());
 	}
 
 	@Test
@@ -213,15 +291,14 @@ public class DistributionAdminServiceImplTest {
 		assertTrue(service.getDistributionForDataset("air", "csv").get().getAccessService().isEmpty());
 	}
 
+	// --- fixtures -----------------------------------------------------------
+
 	private static DataService dataService(String about, String title) {
 		DataService dataService = DcatFactory.eINSTANCE.createDataService();
 		if (about != null) {
 			dataService.setAbout(about);
 		}
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataService.getTitle().add(literal);
+		dataService.getTitle().add(literal(title));
 		return dataService;
 	}
 
@@ -230,10 +307,7 @@ public class DistributionAdminServiceImplTest {
 		if (about != null) {
 			distribution.setAbout(about);
 		}
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		distribution.setTitle(literal);
+		distribution.setTitle(literal(title));
 		return distribution;
 	}
 
@@ -242,10 +316,14 @@ public class DistributionAdminServiceImplTest {
 		if (about != null) {
 			dataset.setAbout(about);
 		}
+		dataset.getTitle().add(literal(title));
+		return dataset;
+	}
+
+	private static PlainLiteral literal(String value) {
 		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
 		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
-		return dataset;
+		literal.setValue(value);
+		return literal;
 	}
 }

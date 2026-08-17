@@ -34,7 +34,7 @@ import rdf.RdfFactory;
  */
 public class DatasetAdminServiceImplTest {
 
-	private static final String BASE = "https://portal.example/admin/api/v1/datasets/";
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "datasets/";
 
 	@TempDir
 	Path storage;

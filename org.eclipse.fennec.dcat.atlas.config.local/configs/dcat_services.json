@@ -1,34 +1,37 @@
 {
 	":configurator:resource-version": 1,
 	"CatalogReadOnlyService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/catalogs"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"CatalogAdminService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/catalogs"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DatasetReadOnlyService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/datasets"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DatasetAdminService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/datasets"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DataServiceReadOnlyService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/data-services"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DataServiceAdminService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/data-services"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
-	"DataSeriesReadOnlyService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/dataset-series"
+	"DatasetSeriesReadOnlyService": {
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
-	"DataSeriesAdminService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/dataset-series"
+	"DatasetSeriesAdminService": {
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DistributionReadOnlyService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DistributionAdminService": {
-		"directory": "$[env:STORE_FOLDER;default=/tmp/rdf]/distributions"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+	},
+	"PublicIris": {
+		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]"
 	},
 	"DcatValidationService": {
 		"shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=$[prop:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]]",

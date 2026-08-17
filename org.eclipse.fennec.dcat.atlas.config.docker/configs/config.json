@@ -42,17 +42,43 @@
 		"statusForMissing": "CRITICAL"
 	},
 
-	// One directory per entity under the mounted store volume (F-23).
-	"CatalogReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/catalogs" },
-	"CatalogAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/catalogs" },
-	"DatasetReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/datasets" },
-	"DatasetAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/datasets" },
-	"DataServiceReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/data-services" },
-	"DataServiceAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/data-services" },
-	"DataSeriesReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/dataset-series" },
-	"DataSeriesAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/dataset-series" },
-	"DistributionReadOnlyService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/distributions" },
-	"DistributionAdminService": { "directory": "$[env:STORE_FOLDER;default=/opt/dcat/data]/distributions" },
+	// One store root under the mounted volume (F-23); the per-collection subdirectories
+	// are fixed, because a Catalog's dcat:dataset link is an EMF cross-resource reference
+	// that has to resolve into the dataset store through one shared URI map. Distributions
+	// have no directory: dcat:distribution is containment, so they live in their Dataset's
+	// file (FR-10).
+	"CatalogReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"CatalogAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DatasetReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DatasetAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DataServiceReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DataServiceAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DatasetSeriesReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DatasetSeriesAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DistributionReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DistributionAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+
+	// Stored identities are host-free (http://dcat.atlas/...) so data is portable between
+	// environments; this is the base they are rendered under at read time. It must be the
+	// URL clients actually reach the portal on - behind a reverse proxy that is NOT the
+	// address the container sees. ADDITIONAL_OWNED_BASES is a migration aid for absorbing
+	// data written under an old hostname, and is normally empty.
+	"PublicIris": {
+		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]",
+		"additionalOwnedBases": "$[env:ADDITIONAL_OWNED_BASES;default=]"
+	},
+
+	// The SPARQL endpoint and the in-memory RDF projection behind it (WP-DCAT-5).
+	// The projection is a disposable view of the store, so nothing here is persistent
+	// state: switching it off costs only the endpoint, and the graph is rebuilt from
+	// the files on every start. The timeout and row cap are the real protection
+	// against an unbounded query — 'rooted' queries are an expectation, not a guard.
+	"DcatGraphService": {
+		"enabled": "$[env:SPARQL_ENABLED;default=true]",
+		"queryTimeoutMillis": "$[env:SPARQL_QUERY_TIMEOUT_MS;default=30000]",
+		"maxResultRows": "$[env:SPARQL_MAX_ROWS;default=10000]",
+		"reconcileIntervalSeconds": "$[env:SPARQL_RECONCILE_INTERVAL_S;default=300]"
+	},
 
 	// The DCAT-AP.de shapes are AGPL-3.0 and are NOT in the image (see NOTICE.md):
 	// the operator mounts them. The default points at the canonical mount path, so an

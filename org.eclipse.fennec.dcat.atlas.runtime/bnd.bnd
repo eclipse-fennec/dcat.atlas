@@ -15,6 +15,7 @@
 	org.eclipse.fennec.dcat.atlas.impl,\
 	org.eclipse.fennec.dcat.atlas.msg.body.writer,\
 	org.eclipse.fennec.dcat.atlas.rest,\
+	org.eclipse.fennec.dcat.atlas.sparql,\
 	org.eclipse.fennec.dcat.atlas.validation,\
 	org.eclipse.fennec.dcat.atlas.config.local,\
 	org.eclipse.fennec.dcat.atlas.config.docker

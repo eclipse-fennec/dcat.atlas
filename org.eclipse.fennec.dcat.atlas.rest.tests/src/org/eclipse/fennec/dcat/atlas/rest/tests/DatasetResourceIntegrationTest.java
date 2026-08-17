@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
 import org.osgi.test.common.annotation.InjectService;
 
@@ -49,7 +50,8 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 	@Override
 	protected void seed(String id, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
-		dataset.setAbout(reads() + "/" + id);
+		// Seeded the way the store mints identities: logical, not the request URL.
+		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
 		literal.setLang("en");
 		literal.setValue(title);

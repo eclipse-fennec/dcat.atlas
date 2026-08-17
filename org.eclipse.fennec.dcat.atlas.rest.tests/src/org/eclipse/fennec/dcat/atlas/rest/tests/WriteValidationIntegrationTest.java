@@ -30,6 +30,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.ResourceAware;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
@@ -64,6 +65,8 @@ public class WriteValidationIntegrationTest {
 	private static final String BASE = "http://localhost:8185/rest";
 	private static final String ADMIN_DATASETS = BASE + "/admin/datasets";
 	private static final String RDF_XML = "application/rdf+xml";
+	/** The only write format: the codec picks its codec by media type (application/xml selects a plain-XML one). */
+	private static final String XMI = "application/xmi";
 	private static final String PID = "DcatValidationService";
 	private static final String DEFAULT_SHAPES_DIR = "/tmp/dcat-shapes-unset";
 	/** Fixed id for the idempotent readiness probe so it never mints throw-away resources. */
@@ -126,8 +129,48 @@ public class WriteValidationIntegrationTest {
 		assertEquals("false", conformsHeader(rejected));
 		assertTrue(rejected.body().contains("ValidationReport"), rejected.body());
 
-		HttpResponse<String> created = post(ADMIN_DATASETS, datasetBody("with-title", "Air quality"));
-		assertEquals(201, created.statusCode(), created.body());
+		try {
+			HttpResponse<String> created = post(ADMIN_DATASETS, datasetBody("with-title", "Air quality"));
+			assertEquals(201, created.statusCode(), created.body());
+		} finally {
+			// The body names its own id, and a create now honours it — so leaving this behind
+			// would make the next run of this test a 409 rather than the 201 it asserts. The
+			// store outlives the run; a test that creates has to remove what it created.
+			http.send(delete(ADMIN_DATASETS + "/with-title"), BodyHandlers.discarding());
+		}
+	}
+
+	/**
+	 * The add-member endpoint stores the Dataset before linking it, so enforcement has to
+	 * hold there too — otherwise a payload rejected at {@code /admin/datasets} could be
+	 * persisted by choosing a different path.
+	 */
+	@Test
+	void nonConformantMemberIsRejectedOnTheCatalogPath() throws Exception {
+		String catalogId = "write-validation-catalog";
+		String datasets = BASE + "/admin/catalogs/" + catalogId + "/datasets";
+		assertEquals(201,
+				http.send(put(BASE + "/admin/catalogs/" + catalogId,
+						entityBody("Catalog", DcatIds.logicalIri(DcatIds.CATALOGS, catalogId), "Host catalog")),
+						BodyHandlers.ofString()).statusCode());
+		try {
+			HttpResponse<String> rejected = post(datasets, datasetBody("member-no-title", null));
+
+			assertEquals(422, rejected.statusCode(), rejected.body());
+			assertEquals("false", conformsHeader(rejected));
+			assertTrue(rejected.body().contains("ValidationReport"), rejected.body());
+			// Rejected before the write: no dataset was stored under that id.
+			assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(ADMIN_DATASETS + "/member-no-title"))
+					.DELETE().timeout(Duration.ofSeconds(10)).build(), BodyHandlers.ofString()).statusCode());
+
+			// ...and a conformant member still goes through.
+			HttpResponse<String> accepted = post(datasets, datasetBody("member-with-title", "Air quality"));
+			assertEquals(200, accepted.statusCode(), accepted.body());
+		} finally {
+			http.send(delete(datasets + "/member-with-title"), BodyHandlers.discarding());
+			http.send(delete(ADMIN_DATASETS + "/member-with-title"), BodyHandlers.discarding());
+			http.send(delete(BASE + "/admin/catalogs/" + catalogId), BodyHandlers.discarding());
+		}
 	}
 
 	// --- helpers -----------------------------------------------------------
@@ -165,20 +208,26 @@ public class WriteValidationIntegrationTest {
 	}
 
 	private HttpResponse<String> post(String url, String body) throws IOException, InterruptedException {
-		return http.send(withRdfBody(HttpRequest.newBuilder(URI.create(url))).POST(BodyPublishers.ofString(body))
+		return http.send(withXmiBody(HttpRequest.newBuilder(URI.create(url))).POST(BodyPublishers.ofString(body))
 				.build(), BodyHandlers.ofString());
 	}
 
 	private HttpRequest put(String url, String body) {
-		return withRdfBody(HttpRequest.newBuilder(URI.create(url))).PUT(BodyPublishers.ofString(body)).build();
+		return withXmiBody(HttpRequest.newBuilder(URI.create(url))).PUT(BodyPublishers.ofString(body)).build();
 	}
 
 	private static HttpRequest delete(String url) {
 		return HttpRequest.newBuilder(URI.create(url)).DELETE().timeout(Duration.ofSeconds(10)).build();
 	}
 
-	private static HttpRequest.Builder withRdfBody(HttpRequest.Builder builder) {
-		return builder.header("Content-Type", RDF_XML).header("Accept", RDF_XML).timeout(Duration.ofSeconds(10));
+	/**
+	 * Writes are XMI; only the <em>response</em> is RDF. RDF/XML request bodies stopped
+	 * being readable when the reader was dropped for the Jena converter (they now earn a
+	 * 415), while {@code Accept: application/rdf+xml} still serves both the created entity
+	 * and the {@code sh:ValidationReport} of a 422.
+	 */
+	private static HttpRequest.Builder withXmiBody(HttpRequest.Builder builder) {
+		return builder.header("Content-Type", XMI).header("Accept", RDF_XML).timeout(Duration.ofSeconds(10));
 	}
 
 	private static String conformsHeader(HttpResponse<String> response) {
@@ -186,12 +235,16 @@ public class WriteValidationIntegrationTest {
 	}
 
 	private static String datasetBody(String id, String title) {
-		String titleElement = title == null ? "" : "<dct:title xml:lang=\"en\">" + title + "</dct:title>";
+		return entityBody("Dataset", DcatIds.logicalIri(DcatIds.DATASETS, id), title);
+	}
+
+	/** A minimal XMI entity, with the title omitted entirely when {@code title} is null. */
+	private static String entityBody(String type, String about, String title) {
+		String titleElement = title == null ? "" : "\n  <title lang=\"en\" value=\"%s\"/>".formatted(title);
 		return """
-				<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-				         xmlns:dcat="http://www.w3.org/ns/dcat#"
-				         xmlns:dct="http://purl.org/dc/terms/">
-				  <dcat:Dataset rdf:about="%s/datasets/%s">%s</dcat:Dataset>
-				</rdf:RDF>""".formatted(BASE, id, titleElement);
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:%s xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmi:version="2.0" about="%s">%s
+				</dcat:%s>""".formatted(type, about, titleElement, type);
 	}
 }

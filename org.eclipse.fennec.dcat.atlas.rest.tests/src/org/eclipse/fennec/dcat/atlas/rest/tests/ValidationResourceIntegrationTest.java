@@ -59,7 +59,8 @@ public class ValidationResourceIntegrationTest {
 
 	private static final String BASE = "http://localhost:8185/rest";
 	private static final String VALIDATE_DATASETS = BASE + "/admin/validate/datasets";
-	private static final String RDF_XML = "application/rdf+xml";
+	/** The only write format; see {@link #validate}. */
+	private static final String XMI = "application/xmi";
 	private static final String TURTLE = "text/turtle";
 	private static final String PID = "DcatValidationService";
 	private static final String DEFAULT_SHAPES_DIR = "/tmp/dcat-shapes-unset";
@@ -144,8 +145,13 @@ public class ValidationResourceIntegrationTest {
 		return false;
 	}
 
+	/**
+	 * The body is XMI and only the report comes back as RDF. An RDF/XML request body stopped
+	 * being readable when the reader was dropped for the Jena converter — it now earns a 415,
+	 * which the readiness poll above sees as "validation never became active".
+	 */
 	private HttpResponse<String> validate(String body) throws IOException, InterruptedException {
-		return http.send(HttpRequest.newBuilder(URI.create(VALIDATE_DATASETS)).header("Content-Type", RDF_XML)
+		return http.send(HttpRequest.newBuilder(URI.create(VALIDATE_DATASETS)).header("Content-Type", XMI)
 				.header("Accept", TURTLE).POST(BodyPublishers.ofString(body)).timeout(Duration.ofSeconds(10)).build(),
 				BodyHandlers.ofString());
 	}
@@ -155,12 +161,11 @@ public class ValidationResourceIntegrationTest {
 	}
 
 	private static String datasetBody(String id, String title) {
-		String titleElement = title == null ? "" : "<dct:title xml:lang=\"en\">" + title + "</dct:title>";
+		String titleElement = title == null ? "" : "\n  <title lang=\"en\" value=\"%s\"/>".formatted(title);
 		return """
-				<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-				         xmlns:dcat="http://www.w3.org/ns/dcat#"
-				         xmlns:dct="http://purl.org/dc/terms/">
-				  <dcat:Dataset rdf:about="%s/datasets/%s">%s</dcat:Dataset>
-				</rdf:RDF>""".formatted(BASE, id, titleElement);
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:Dataset xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmi:version="2.0" about="http://dcat.atlas/datasets/%s">%s
+				</dcat:Dataset>""".formatted(id, titleElement);
 	}
 }

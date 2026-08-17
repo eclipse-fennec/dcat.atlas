@@ -14,6 +14,7 @@
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -54,6 +55,9 @@ public abstract class AbstractEntityResourceIntegrationTest {
 	protected static final String BASE = "http://localhost:8185/rest";
 
 	protected static final String RDF_XML = "application/rdf+xml";
+	protected static final String JSON = "application/json";
+	/** The only format the admin endpoints accept: our EMF model's own XMI. */
+	protected static final String XML = "application/xmi";
 	protected static final String TURTLE = "text/turtle";
 	protected static final String N_TRIPLES = "application/n-triples";
 	protected static final String JSON_LD = "application/ld+json";
@@ -167,18 +171,196 @@ public abstract class AbstractEntityResourceIntegrationTest {
 		assertTrue(response.body().contains("Hello"), response.body());
 	}
 
+	/**
+	 * Every wired format, because a collection is where the two writer families disagree:
+	 * the RDF ones take it as it is but select on the <em>generic</em> type, while the codec
+	 * needs a single root object and never accepts a list. Getting either wrong turns the
+	 * whole endpoint into a 500, and the single-entity tests cannot catch it — a rendered
+	 * EObject keeps its class either way.
+	 * <p>
+	 * {@code application/json} is in the list because the resources advertise it, and it
+	 * only works if {@code org.eclipse.fennec.codec} is in {@code -runbundles}: that bundle
+	 * carries the factory registered for the content type, and without it JSON is
+	 * unserializable for single entities too. Advertising a format nothing can write is a
+	 * 500, so this keeps the two in step.
+	 */
+	@Test
+	void listIsServedInEveryFormatWithPublicIris() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		for (String accept : List.of(TURTLE, XML, RDF_XML, N_TRIPLES, JSON_LD, N3, JSON)) {
+			HttpResponse<String> response = get(reads(), accept);
+			assertEquals(200, response.statusCode(), accept + " -> " + response.body());
+			// ...and the identities are the public ones, which is the filter's whole job.
+			assertTrue(response.body().contains(reads() + "/e1"),
+					accept + " should carry the public IRI: " + response.body());
+		}
+	}
+
 	// --- write (admin) tests ----------------------------------------------
 
 	@Test
-	void putStoresEntityFromRdfXml() throws Exception {
+	void putStoresEntityFromXmi() throws Exception {
 		String id = "put1";
 		track(id);
 		HttpResponse<String> put = send(HttpRequest.newBuilder(URI.create(writes() + "/" + id))
-				.header("Content-Type", RDF_XML).PUT(BodyPublishers.ofString(rdfXmlBody(id, "Uploaded"))), RDF_XML);
+				.header("Content-Type", XML).PUT(BodyPublishers.ofString(xmiBody(id, "Uploaded"))), XML);
 		assertTrue(put.statusCode() == 200 || put.statusCode() == 201, "status=" + put.statusCode());
 
 		assertTrue(storedPresent(id));
 		assertEquals("Uploaded", storedTitle(id));
+	}
+
+	/**
+	 * A create names its own identity when it has one, and a second create naming the same
+	 * identity is refused with {@code 409} instead of silently producing a second resource
+	 * (the retry/double-click case). Here for every entity type, because the mint-first
+	 * create was copied into all of them and a fix that reached only some would be worse than
+	 * none: a client could not tell which collections honour it.
+	 * <p>
+	 * The refusal carries the same {@code Location} as the create it collided with, so a
+	 * client that loses the race still ends up holding the URL — and the id in it — that it
+	 * needs to go on and add members.
+	 */
+	@Test
+	void postingAnIdentityTwiceCreatesOnceAndThenConflicts() throws Exception {
+		String id = "dup-post";
+		track(id);
+		// The public form, which is what a client has: folded back to the logical one before
+		// the resource sees it.
+		HttpResponse<String> first = postXmi(writes(), xmiBody(id, "First"));
+		assertEquals(201, first.statusCode(), first.body());
+		assertEquals(reads() + "/" + id, first.headers().firstValue("Location").orElse(null),
+				"the identity the client named should be the one created");
+
+		HttpResponse<String> second = postXmi(writes(), xmiBody(id, "Second"));
+
+		assertEquals(409, second.statusCode(), second.body());
+		assertEquals(reads() + "/" + id, second.headers().firstValue("Location").orElse(null),
+				"the conflict should point at the resource it collided with");
+		assertEquals("First", storedTitle(id), "the refused create must not have replaced the stored entity");
+	}
+
+	/**
+	 * A create refused for a reason other than a collision points at nothing: there is no
+	 * resource of ours at the identity the client sent, so a {@code Location} would name a
+	 * URL that 404s.
+	 */
+	@Test
+	void aRefusedAboutCarriesNoLocation() throws Exception {
+		HttpResponse<String> refused = postXmi(writes(),
+				xmiBody(typeName(), "https://www.govdata.de/" + collection() + "/no-location-probe", "Foreign"));
+
+		assertEquals(400, refused.statusCode(), refused.body());
+		assertTrue(refused.headers().firstValue("Location").isEmpty(),
+				"a 400 names no resource to point at: " + refused.headers().firstValue("Location").orElse(""));
+	}
+
+	/**
+	 * An {@code about} that names no identity of ours is refused rather than quietly
+	 * replaced by a minted one — again for every entity type, since a client picks the door,
+	 * and a rule that held in only some collections would be no rule at all. Only the entity
+	 * being stored is subject to it; what it contains keeps whatever identity it arrived
+	 * with (see {@code CatalogResourceIntegrationTest#containedResourcesKeepTheirForeignAbout}).
+	 */
+	@Test
+	void postingAForeignAboutIsRefused() throws Exception {
+		String foreign = "https://www.govdata.de/" + collection() + "/foreign-about-probe";
+
+		HttpResponse<String> refused = postXmi(writes(), xmiBody(typeName(), foreign, "Foreign"));
+
+		assertEquals(400, refused.statusCode(), refused.body());
+		assertTrue(refused.body().contains(foreign),
+				"the 400 should quote back the about it refused: " + refused.body());
+		// The last segment would be a usable id, so the risk the old minting behaviour ran
+		// was filing the entity under it — nothing may be stored there.
+		assertFalse(storedPresent("foreign-about-probe"), "no entity may be created for a foreign about");
+	}
+
+	/**
+	 * A {@code PUT} takes its identity from the path, and now says so instead of quietly
+	 * dropping a body that claims a different one. Nothing becomes unreachable: the resource
+	 * is addressed by the path, so an {@code about} is never needed to reach it — which is
+	 * what the next test shows.
+	 */
+	@Test
+	void puttingAForeignAboutIsRefused() throws Exception {
+		String id = "put-foreign";
+		String foreign = "https://www.govdata.de/" + collection() + "/" + id;
+
+		HttpResponse<String> refused = send(HttpRequest.newBuilder(URI.create(writes() + "/" + id))
+				.header("Content-Type", XML).PUT(BodyPublishers.ofString(xmiBody(typeName(), foreign, "Foreign"))),
+				XML);
+
+		assertEquals(400, refused.statusCode(), refused.body());
+		assertTrue(refused.body().contains(foreign), refused.body());
+		assertFalse(storedPresent(id), "the refused PUT must not have stored anything");
+	}
+
+	/** The escape hatch the refusal points at, and the way a harvested body is stored. */
+	@Test
+	void puttingWithoutAnAboutStoresUnderThePathId() throws Exception {
+		String id = "put-no-about";
+		track(id);
+		String body = """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:%s xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmi:version="2.0">
+				  <title lang="en" value="No about"/>
+				</dcat:%s>""".formatted(typeName(), typeName());
+
+		HttpResponse<String> put = send(HttpRequest.newBuilder(URI.create(writes() + "/" + id))
+				.header("Content-Type", XML).PUT(BodyPublishers.ofString(body)), XML);
+
+		assertEquals(201, put.statusCode(), put.body());
+		assertEquals("No about", storedTitle(id));
+	}
+
+	/**
+	 * The sharper half of the same rule: an {@code about} that <em>is</em> ours but names a
+	 * different resource. This one used to be written to the path's id under the other
+	 * resource's name, which is a worse outcome than the foreign case — the client named one
+	 * of our resources explicitly and got another one modified.
+	 */
+	@Test
+	void puttingAnAboutForAnotherResourceIsRefused() throws Exception {
+		track("put-target");
+		track("put-other");
+		seed("put-other", "Untouched");
+
+		HttpResponse<String> refused = send(HttpRequest.newBuilder(URI.create(writes() + "/put-target"))
+				.header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(xmiBody(typeName(), reads() + "/put-other", "Hijack"))), XML);
+
+		assertEquals(400, refused.statusCode(), refused.body());
+		assertTrue(refused.body().contains(collection() + "/put-other")
+				&& refused.body().contains(collection() + "/put-target"),
+				"the 400 should name both ends of the disagreement: " + refused.body());
+		assertFalse(storedPresent("put-target"), "nothing may be stored under the path id");
+		assertEquals("Untouched", storedTitle("put-other"), "nor may the resource it named be touched");
+	}
+
+	/**
+	 * Writes take XMI and nothing else, which the user guide now states outright. RDF is an
+	 * output format only — {@code RdfXmlMessageBodyReader} went with the move to the Jena
+	 * converter — so the syntax a client just read back is not one it can send.
+	 */
+	@Test
+	void anRdfXmlBodyIsUnsupportedOnAWrite() throws Exception {
+		String rdfXml = """
+				<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+				         xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmlns:dct="http://purl.org/dc/terms/">
+				  <dcat:%s rdf:about="%s/rdf-body">
+				    <dct:title xml:lang="en">Sent as RDF/XML</dct:title>
+				  </dcat:%s>
+				</rdf:RDF>""".formatted(typeName(), reads(), typeName());
+
+		HttpResponse<String> refused = send(HttpRequest.newBuilder(URI.create(writes()))
+				.header("Content-Type", RDF_XML).POST(BodyPublishers.ofString(rdfXml)), XML);
+
+		assertEquals(415, refused.statusCode(), refused.body());
+		assertFalse(storedPresent("rdf-body"), "nothing may be stored from a body we cannot read");
 	}
 
 	@Test
@@ -214,15 +396,35 @@ public abstract class AbstractEntityResourceIntegrationTest {
 
 		// A stale/wrong validator is rejected with 412.
 		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(writes() + "/e1"))
-				.header("Content-Type", RDF_XML).header("If-Match", "\"stale-value\"")
-				.PUT(BodyPublishers.ofString(rdfXmlBody("e1", "Updated"))), RDF_XML);
+				.header("Content-Type", XML).header("If-Match", "\"stale-value\"")
+				.PUT(BodyPublishers.ofString(xmiBody("e1", "Updated"))), XML);
 		assertEquals(412, stale.statusCode());
 
 		// The current validator is accepted.
 		HttpResponse<String> ok = send(HttpRequest.newBuilder(URI.create(writes() + "/e1"))
-				.header("Content-Type", RDF_XML).header("If-Match", etag)
-				.PUT(BodyPublishers.ofString(rdfXmlBody("e1", "Updated"))), RDF_XML);
+				.header("Content-Type", XML).header("If-Match", etag)
+				.PUT(BodyPublishers.ofString(xmiBody("e1", "Updated"))), XML);
 		assertEquals(200, ok.statusCode());
+		assertEquals("Updated", storedTitle("e1"));
+	}
+
+	/**
+	 * The plain update: a {@code PUT} over a resource that exists, carrying no conditional
+	 * header at all. {@code If-Match} is how a client <em>opts in</em> to optimistic locking
+	 * (F-16); a client that does not send one is not asking to be locked, and must not be
+	 * answered {@code 412}. Only {@code putStoresEntityFromXmi} covered a bare {@code PUT},
+	 * and it writes to an id that does not exist yet — so the create path was tested and the
+	 * replace path was not.
+	 */
+	@Test
+	void putWithoutAConditionalHeaderReplaces() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+
+		HttpResponse<String> put = send(HttpRequest.newBuilder(URI.create(writes() + "/e1"))
+				.header("Content-Type", XML).PUT(BodyPublishers.ofString(xmiBody("e1", "Updated"))), XML);
+
+		assertEquals(200, put.statusCode(), put.body());
 		assertEquals("Updated", storedTitle("e1"));
 	}
 
@@ -251,36 +453,49 @@ public abstract class AbstractEntityResourceIntegrationTest {
 		created.add(id);
 	}
 
-	/** A minimal {@code <rdf:RDF>} document with one resource of this entity's type and a title. */
-	private String rdfXmlBody(String id, String title) {
-		return rdfXmlBody(typeName(), reads() + "/" + id, title);
+	/** A minimal XMI document for this entity's type. */
+	private String xmiBody(String id, String title) {
+		return xmiBody(typeName(), reads() + "/" + id, title);
 	}
 
-	/** A minimal {@code <rdf:RDF>} document with one typed resource ({@code about}) and a title. */
-	protected static String rdfXmlBody(String type, String about, String title) {
+	/**
+	 * A minimal XMI document with one typed resource and a title.
+	 * <p>
+	 * XMI, not RDF/XML: writes go through the EMF model, so a request body is the same
+	 * shape as a stored file and a stored file can be sent straight back. RDF is an
+	 * output format only — {@code RdfXmlMessageBodyReader} was deleted with the move
+	 * to the Jena converter, which is why an RDF/XML body now earns a 415.
+	 */
+	protected static String xmiBody(String type, String about, String title) {
 		return """
-				<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-				         xmlns:dcat="http://www.w3.org/ns/dcat#"
-				         xmlns:dct="http://purl.org/dc/terms/">
-				  <dcat:%s rdf:about="%s">
-				    <dct:title xml:lang="en">%s</dct:title>
-				  </dcat:%s>
-				</rdf:RDF>""".formatted(type, about, title, type);
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:%s xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmi:version="2.0" about="%s">
+				  <title lang="en" value="%s"/>
+				</dcat:%s>""".formatted(type, about, title, type);
 	}
 
 	protected HttpResponse<String> get(String url, String accept) throws Exception {
 		return send(HttpRequest.newBuilder(URI.create(url)).GET(), accept);
 	}
 
-	/** POST an RDF/XML body to {@code url}. */
-	protected HttpResponse<String> postRdfXml(String url, String body) throws Exception {
-		return send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.POST(BodyPublishers.ofString(body)), RDF_XML);
+	/** POST an XMI body to {@code url}; admin endpoints accept XML/XMI only. */
+	protected HttpResponse<String> postXmi(String url, String body) throws Exception {
+		return send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.POST(BodyPublishers.ofString(body)), XML);
 	}
 
 	/** DELETE {@code url}. */
 	protected HttpResponse<String> delete(String url) throws Exception {
 		return send(HttpRequest.newBuilder(URI.create(url)).DELETE(), RDF_XML);
+	}
+
+	/**
+	 * PUT {@code url} with no body — the link endpoints, which name both ends in the path
+	 * and so carry nothing to send.
+	 */
+	protected HttpResponse<String> putEmpty(String url) throws Exception {
+		return send(HttpRequest.newBuilder(URI.create(url)).PUT(BodyPublishers.noBody()), XML);
 	}
 
 	protected HttpResponse<String> send(HttpRequest.Builder request, String accept)

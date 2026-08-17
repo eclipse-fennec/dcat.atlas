@@ -14,6 +14,7 @@
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
@@ -36,11 +37,18 @@ import org.osgi.test.junit5.service.ServiceExtension;
  * HTTP whiteboard directly, while the DCAT resources live behind the Jersey JAX-RS
  * whiteboard at {@code /rest}.
  * <p>
- * The test runtime configures the five store directories under {@code /tmp/rdf} and points
- * the SHACL shapes directory at {@code /tmp/dcat-shapes-unset}, which does not exist. That
+ * The test runtime configures the store directories under {@code /tmp/dcat-atlas-test-store}
+ * (see {@code configs/config.json} — deliberately not the live runtime's store) and points the
+ * SHACL shapes directory at {@code /tmp/dcat-shapes-unset}, which does not exist. That
  * exercises the interesting readiness case on purpose: stores are ready (creatable even
  * before the first write) while the shapes check is CRITICAL, so readiness must be 503 —
  * the misconfiguration a silently unvalidating portal would otherwise hide.
+ * <p>
+ * <b>CRITICAL here is the expected steady state, not a broken fixture.</b> The DCAT-AP.de
+ * shapes are AGPL-3.0 and are deliberately not vendored (see {@code NOTICE.md}), so no test
+ * can point this runtime at a real shapes directory. Readiness is therefore always 503 in
+ * this suite, and {@link #configuredButUnloadedShapesMakeReadinessCritical()} asserts
+ * exactly that. Assert on the individual checks rather than on {@code overallResult}.
  */
 @ExtendWith(BundleContextExtension.class)
 @ExtendWith(ServiceExtension.class)
@@ -66,7 +74,9 @@ public class HealthEndpointIntegrationTest {
 		assertTrue(body.contains("store:datasets"), body);
 		assertTrue(body.contains("store:data-services"), body);
 		assertTrue(body.contains("store:dataset-series"), body);
-		assertTrue(body.contains("store:distributions"), body);
+		// Four stores, not five: a Distribution is contained in its Dataset and has no
+		// store of its own, so there is no store:distributions check to report.
+		assertFalse(body.contains("store:distributions"), body);
 		assertTrue(body.contains("shacl"), body);
 	}
 
@@ -74,9 +84,11 @@ public class HealthEndpointIntegrationTest {
 	void everyStoreReportsOk() throws Exception {
 		String body = get("/health/ready").body();
 		// One OK per store. The "absent but creatable" case that keeps a fresh install
-		// serving cannot be forced here (the runtime's /tmp/rdf dirs may already exist from
-		// an earlier run), so that semantic is pinned by StoreHealthTest instead.
-		assertEquals(5, countOf(body, "\"name\":\"store:"), body);
+		// serving cannot be forced here (the test store's dirs may already exist from an
+		// earlier run), so that semantic is pinned by StoreHealthTest instead.
+		// Four: catalogs, datasets, data-services, dataset-series. Distributions are
+		// contained in their Dataset rather than stored on their own.
+		assertEquals(4, countOf(body, "\"name\":\"store:"), body);
 		// No store may be in a state that would take the portal out of rotation.
 		assertTrue(!body.contains("cannot be created"), body);
 		assertTrue(!body.contains("is not a directory"), body);

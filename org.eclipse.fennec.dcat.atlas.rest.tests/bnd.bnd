@@ -22,6 +22,7 @@ Test-Cases: ${classes;HIERARCHY_INDIRECTLY_ANNOTATED;org.junit.platform.commons.
 	org.eclipse.fennec.dcat.atlas.impl,\
 	org.eclipse.fennec.dcat.atlas.msg.body.writer,\
 	org.eclipse.fennec.dcat.atlas.rest,\
+	org.eclipse.fennec.dcat.atlas.sparql,\
 	org.eclipse.fennec.dcat.atlas.validation
 
 Private-Package: \

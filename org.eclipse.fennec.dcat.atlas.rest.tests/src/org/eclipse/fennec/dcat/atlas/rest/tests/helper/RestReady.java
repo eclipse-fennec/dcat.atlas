@@ -53,7 +53,8 @@ public final class RestReady {
 			"DatasetReadOnlyResource", "DatasetAdminResource", //
 			"DataServiceReadOnlyResource", "DataServiceAdminResource", //
 			"DatasetSeriesReadOnlyResource", "DatasetSeriesAdminResource", //
-			"DistributionReadOnlyResource", "DistributionAdminResource");
+			"DistributionReadOnlyResource", "DistributionAdminResource", //
+			"SparqlResource", "SparqlAdminResource");
 
 	/**
 	 * Blocks until all {@code required} resources are registered and the whiteboard
@@ -98,6 +99,23 @@ public final class RestReady {
 			Thread.sleep(100);
 		}
 		return false;
+	}
+
+	/**
+	 * The resource names the whiteboard currently reports. For diagnostics: a test
+	 * that times out waiting should be able to say what <em>did</em> register.
+	 */
+	public static Set<String> registeredResources(BundleContext ctx) {
+		ServiceReference<JakartarsServiceRuntime> ref = ctx.getServiceReference(JakartarsServiceRuntime.class);
+		if (ref == null) {
+			return Set.of();
+		}
+		JakartarsServiceRuntime runtime = ctx.getService(ref);
+		try {
+			return runtime == null ? Set.of() : resourceNames(runtime.getRuntimeDTO());
+		} finally {
+			ctx.ungetService(ref);
+		}
 	}
 
 	private static Set<String> resourceNames(RuntimeDTO dto) {

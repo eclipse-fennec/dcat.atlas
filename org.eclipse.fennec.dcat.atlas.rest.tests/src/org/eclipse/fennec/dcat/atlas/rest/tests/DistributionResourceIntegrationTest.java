@@ -26,6 +26,7 @@ import java.time.Duration;
 
 import org.eclipse.fennec.dcat.atlas.api.DataServiceAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
@@ -59,9 +60,19 @@ public class DistributionResourceIntegrationTest {
 
 	private static final String BASE = "http://localhost:8185/rest";
 	private static final String RDF_XML = "application/rdf+xml";
+	/** The only format the admin endpoints accept: our EMF model's own XMI. */
+	private static final String XML = "application/xmi";
 	private static final String TURTLE = "text/turtle";
 
 	private static final String DATASET_ID = "dist-e2e-ds";
+	/** The id {@link #distributionBody} names, and therefore the one a create lands under. */
+	private static final String DISTRIBUTION_ID = "placeholder";
+	/**
+	 * The id the {@code PUT} tests address in the path. Their bodies must name it too: a
+	 * {@code PUT} whose {@code about} points at a different distribution is refused now
+	 * rather than silently rewritten, and these used to send {@link #DISTRIBUTION_ID}.
+	 */
+	private static final String PUT_DISTRIBUTION_ID = "csv";
 	/** The DataService that the FR-10 accessService tests link to. */
 	private static final String SERVICE_ID = "dist-e2e-svc";
 
@@ -83,7 +94,11 @@ public class DistributionResourceIntegrationTest {
 	void ensureResourcesAndDataset(@InjectBundleContext BundleContext context) throws InterruptedException {
 		assertTrue(RestReady.awaitStable(context, RestReady.ALL_RESOURCES, 20_000, 750),
 				"REST whiteboard should reach a stable state within 20 seconds.");
-		datasetService.upsertDataset(dataset(BASE + "/datasets/" + DATASET_ID, "Air quality"));
+		// Seeded the way the store mints identities: logical, not the request URL. A public
+		// URL here is not an identity the store owns, so DcatIds.idOf refuses to carve an id
+		// out of it and upsert files the dataset under a fresh UUID instead — leaving every
+		// /datasets/{DATASET_ID}/... path below a 404.
+		datasetService.upsertDataset(dataset(DcatIds.logicalIri(DcatIds.DATASETS, DATASET_ID), "Air quality"));
 	}
 
 	@AfterEach
@@ -103,8 +118,8 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void postCreatesDistributionUnderDatasetAndLinksIt() throws Exception {
 		HttpResponse<String> post = send(HttpRequest.newBuilder(URI.create(adminDistributions()))
-				.header("Content-Type", RDF_XML).POST(BodyPublishers.ofString(distributionBody("CSV download"))),
-				RDF_XML);
+				.header("Content-Type", XML).POST(BodyPublishers.ofString(distributionBody("CSV download"))),
+				XML);
 		assertEquals(201, post.statusCode(), post.body());
 
 		// The created Location is a dereferenceable, dataset-scoped read URL.
@@ -119,11 +134,79 @@ public class DistributionResourceIntegrationTest {
 		assertEquals(1, datasetService.getDataset(DATASET_ID).get().getDistribution().size());
 	}
 
+	/**
+	 * The conflict rule on a nested identity: the first POST creates under the id the body
+	 * names, a repeat is refused. Distributions are the one create whose identity is not a
+	 * collection member — it nests inside the dataset (FR-10) — so it resolves through its own
+	 * path in {@code CreateIdentity} and needs its own test.
+	 */
+	@Test
+	void postingTheSameDistributionTwiceCreatesOnceAndThenConflicts() throws Exception {
+		HttpResponse<String> first = send(HttpRequest.newBuilder(URI.create(adminDistributions()))
+				.header("Content-Type", XML).POST(BodyPublishers.ofString(distributionBody("CSV download"))), XML);
+		assertEquals(201, first.statusCode(), first.body());
+		assertEquals(distributions() + "/" + DISTRIBUTION_ID, first.headers().firstValue("Location").orElseThrow());
+
+		HttpResponse<String> second = send(HttpRequest.newBuilder(URI.create(adminDistributions()))
+				.header("Content-Type", XML).POST(BodyPublishers.ofString(distributionBody("CSV again"))), XML);
+
+		assertEquals(409, second.statusCode(), second.body());
+		assertTrue(second.body().contains("distributions/" + DISTRIBUTION_ID),
+				"the 409 should name what is in the way: " + second.body());
+		// The nested read URL, which is the multi-segment case of the conflict's Location.
+		assertEquals(distributions() + "/" + DISTRIBUTION_ID, second.headers().firstValue("Location").orElse(null),
+				"the conflict should point at the distribution it collided with");
+		assertEquals(1, datasetService.getDataset(DATASET_ID).get().getDistribution().size(),
+				"the refused create must not have added a second distribution");
+	}
+
+	/**
+	 * And the foreign-{@code about} rule on that same nested path. A Distribution's identity
+	 * is scoped to its Dataset, so "not ours" here includes another dataset's distribution —
+	 * the body would otherwise have been filed under this one with its identity rewritten.
+	 */
+	@Test
+	void postingADistributionWithAForeignAboutIsRefused() throws Exception {
+		String foreign = "https://www.govdata.de/datasets/other/distributions/csv";
+		String body = """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:Distribution xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmi:version="2.0" about="%s">
+				  <title lang="en" value="Foreign"/>
+				</dcat:Distribution>""".formatted(foreign);
+
+		HttpResponse<String> refused = send(HttpRequest.newBuilder(URI.create(adminDistributions()))
+				.header("Content-Type", XML).POST(BodyPublishers.ofString(body)), XML);
+
+		assertEquals(400, refused.statusCode(), refused.body());
+		assertTrue(refused.body().contains(foreign), "the 400 should quote back the about: " + refused.body());
+		assertTrue(datasetService.getDataset(DATASET_ID).get().getDistribution().isEmpty(),
+				"the refused create must not have added a distribution");
+	}
+
+	/**
+	 * The nested form of the {@code PUT} identity rule: the body may not name another
+	 * distribution of this dataset, nor one of another dataset's.
+	 */
+	@Test
+	void puttingADistributionWhoseAboutNamesAnotherIsRefused() throws Exception {
+		String url = adminDistributions() + "/" + PUT_DISTRIBUTION_ID;
+
+		HttpResponse<String> refused = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody("some-other-distribution", "Hijack"))), XML);
+
+		assertEquals(400, refused.statusCode(), refused.body());
+		assertTrue(refused.body().contains("some-other-distribution")
+				&& refused.body().contains("distributions/" + PUT_DISTRIBUTION_ID), refused.body());
+		assertTrue(distributionService.getDistributionForDataset(DATASET_ID, PUT_DISTRIBUTION_ID).isEmpty(),
+				"the refused PUT must not have stored anything");
+	}
+
 	@Test
 	void putThenGetThenDelete() throws Exception {
 		String url = adminDistributions() + "/csv";
-		HttpResponse<String> put = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		HttpResponse<String> put = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 		assertTrue(put.statusCode() == 200 || put.statusCode() == 201, "status=" + put.statusCode());
 
 		HttpResponse<String> get = get(distributions() + "/csv", TURTLE);
@@ -144,8 +227,8 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void getReturnsEtagAndHonoursIfNoneMatch() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 
 		HttpResponse<String> read = get(distributions() + "/csv", TURTLE);
 		assertEquals(200, read.statusCode());
@@ -160,14 +243,14 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void reAddingSameDistributionLeavesDatasetLinkUnchanged() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 		String datasetEtagAfterFirst = datasetService.etag(DATASET_ID).orElseThrow();
 
 		// PUT the identical distribution again: the dcat:distribution link is already
 		// present, so the owning dataset is untouched and its ETag does not change.
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 
 		assertEquals(datasetEtagAfterFirst, datasetService.etag(DATASET_ID).orElseThrow());
 		assertEquals(1, datasetService.getDataset(DATASET_ID).get().getDistribution().size());
@@ -176,18 +259,18 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void putHonoursIfMatch() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 
-		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.header("If-Match", "\"stale-value\"").PUT(BodyPublishers.ofString(distributionBody("v2"))), RDF_XML);
+		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.header("If-Match", "\"stale-value\"").PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "v2"))), RDF_XML);
 		assertEquals(412, stale.statusCode());
 	}
 
 	@Test
 	void createUnderUnknownDatasetIsNotFound() throws Exception {
 		String url = BASE + "/admin/datasets/no-such-dataset/distributions";
-		HttpResponse<String> post = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
+		HttpResponse<String> post = send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
 				.POST(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
 		assertEquals(404, post.statusCode());
 	}
@@ -197,8 +280,8 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void putLinksAccessServiceAndRdfCarriesTheReference() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 		seedDataService();
 
 		HttpResponse<String> link = send(
@@ -218,28 +301,28 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void reLinkingSameAccessServiceLeavesDistributionUnchanged() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 		seedDataService();
 
 		send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
 				RDF_XML);
-		String etagAfterFirst = distributionService.etag("csv").orElseThrow();
+		String etagAfterFirst = distributionService.etag(DATASET_ID, "csv").orElseThrow();
 
 		// Idempotent: the link is already recorded, so nothing is written and the ETag holds.
 		HttpResponse<String> again = send(
 				HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
 				RDF_XML);
 		assertEquals(200, again.statusCode());
-		assertEquals(etagAfterFirst, distributionService.etag("csv").orElseThrow());
+		assertEquals(etagAfterFirst, distributionService.etag(DATASET_ID, "csv").orElseThrow());
 		assertEquals(1, distributionService.getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().size());
 	}
 
 	@Test
 	void deleteUnlinksAccessServiceButKeepsTheService() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 		seedDataService();
 		send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
 				RDF_XML);
@@ -256,8 +339,8 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void unlinkingAnAccessServiceThatIsNotLinkedIsNoContent() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 
 		HttpResponse<String> unlink = send(
 				HttpRequest.newBuilder(URI.create(url + "/access-service/never-linked")).DELETE(), RDF_XML);
@@ -267,8 +350,8 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void linkingUnknownAccessServiceIsNotFound() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 
 		HttpResponse<String> link = send(
 				HttpRequest.newBuilder(URI.create(url + "/access-service/no-such-service")).PUT(BodyPublishers.noBody()),
@@ -288,8 +371,8 @@ public class DistributionResourceIntegrationTest {
 	@Test
 	void linkHonoursIfMatch() throws Exception {
 		String url = adminDistributions() + "/csv";
-		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", RDF_XML)
-				.PUT(BodyPublishers.ofString(distributionBody("CSV download"))), RDF_XML);
+		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 		seedDataService();
 
 		HttpResponse<String> stale = send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID))
@@ -299,6 +382,7 @@ public class DistributionResourceIntegrationTest {
 
 	// --- helpers -----------------------------------------------------------
 
+	/** The service's public IRI — what a client sees in the RDF, not what it is stored under. */
 	private String serviceAbout() {
 		return BASE + "/data-services/" + SERVICE_ID;
 	}
@@ -306,7 +390,8 @@ public class DistributionResourceIntegrationTest {
 	/** Catalogues the DataService that {@code accessService} will reference. */
 	private void seedDataService() {
 		DataService service = DcatFactory.eINSTANCE.createDataService();
-		service.setAbout(serviceAbout());
+		// Logical, for the same reason as the dataset seed above.
+		service.setAbout(DcatIds.logicalIri(DcatIds.DATA_SERVICES, SERVICE_ID));
 		PlainLiteral title = RdfFactory.eINSTANCE.createPlainLiteral();
 		title.setLang("en");
 		title.setValue("Air quality WFS");
@@ -314,15 +399,25 @@ public class DistributionResourceIntegrationTest {
 		dataServiceService.upsertDataService(service);
 	}
 
+	/**
+	 * An XMI Distribution; admin endpoints accept XML/XMI only.
+	 * <p>
+	 * The {@code about} is the public, dataset-scoped IRI of {@link #DISTRIBUTION_ID}, and a
+	 * create now honours it rather than minting over it — so this body names the id it lands
+	 * under, on {@code POST} as well as on the {@code PUT}s that spell it in the path.
+	 */
 	private String distributionBody(String title) {
+		return distributionBody(DISTRIBUTION_ID, title);
+	}
+
+	/** The same, for the {@code PUT}s whose path names an id other than the default. */
+	private String distributionBody(String id, String title) {
 		return """
-				<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-				         xmlns:dcat="http://www.w3.org/ns/dcat#"
-				         xmlns:dct="http://purl.org/dc/terms/">
-				  <dcat:Distribution rdf:about="%s/placeholder">
-				    <dct:title xml:lang="en">%s</dct:title>
-				  </dcat:Distribution>
-				</rdf:RDF>""".formatted(distributions(), title);
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:Distribution xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				         xmi:version="2.0" about="%s/%s">
+				  <title lang="en" value="%s"/>
+				</dcat:Distribution>""".formatted(distributions(), id, title);
 	}
 
 	private static Dataset dataset(String about, String title) {

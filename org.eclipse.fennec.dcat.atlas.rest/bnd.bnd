@@ -15,4 +15,5 @@
 	org.eclipse.fennec.codec.rest;version=latest,\
 	org.apache.jena.shacl;version=latest,\
 	org.apache.jena.core;version=latest,\
-	org.apache.jena.base;version=latest
+	org.apache.jena.base;version=latest,\
+	org.eclipse.fennec.model;version=latest

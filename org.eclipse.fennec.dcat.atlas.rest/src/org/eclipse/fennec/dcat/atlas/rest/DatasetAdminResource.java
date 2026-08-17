@@ -14,12 +14,14 @@
 package org.eclipse.fennec.dcat.atlas.rest;
 
 import java.net.URI;
-import java.util.UUID;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -60,6 +62,10 @@ public class DatasetAdminResource {
 	
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI — the only write format. The codec picks its codec by
+	 * media type, so "application/xml" would select a plain-XML one that does not
+	 * understand xmi:version or a literal in attribute form. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
@@ -78,13 +84,21 @@ public class DatasetAdminResource {
 	volatile DcatValidationService validationService;
 
 	@POST
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response createDataset(Dataset dataset, @Context UriInfo uriInfo, @Context HttpHeaders headers) {
-		// Mint an id and make the resource's public read URL its about (D1/D2).
-		String id = UUID.randomUUID().toString();
+		// The identity is logical, and taken from the body when it names one of ours so that
+		// this same request sent twice conflicts instead of creating a second dataset; only
+		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
+		// Location header — stamping it here is what used to freeze the writing host into
+		// the stored file (and, behind a proxy, an internal address).
+		CreateIdentity identity = CreateIdentity.resolve(DcatIds.DATASETS, dataset,
+				candidate -> datasetAdminService.getDataset(candidate).isPresent(), uriInfo);
+		if (identity.refused()) {
+			return identity.refusal().build();
+		}
+		String id = identity.id();
 		URI about = readUri(uriInfo, id);
-		dataset.setAbout(about.toString());
 		// Validate the exact form to be stored (about already stamped); 422 if enforced.
 		ResponseBuilder invalid = WriteValidation.enforce(validationService, dataset, headers.getAcceptableMediaTypes());
 		if (invalid != null) {
@@ -98,8 +112,8 @@ public class DatasetAdminResource {
 
 	@PUT
 	@Path("/{id}")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
 			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
@@ -107,9 +121,12 @@ public class DatasetAdminResource {
 		if (precondition != null) {
 			return precondition.build();
 		}
-		// Force the public read URL onto the payload so the service stores it under
-		// {id} regardless of what the client sent (D1/D2, replace-only F-17).
-		dataset.setAbout(readUri(uriInfo, id).toString());
+		// The path says which dataset this is; the body may agree or say nothing, but it may
+		// not name a different one — nor one of somebody else's (D1/D2, replace-only F-17).
+		ResponseBuilder mismatch = ReplaceIdentity.stamp(DcatIds.DATASETS, id, dataset);
+		if (mismatch != null) {
+			return mismatch.build();
+		}
 		ResponseBuilder invalid = WriteValidation.enforce(validationService, dataset, headers.getAcceptableMediaTypes());
 		if (invalid != null) {
 			return invalid.build();

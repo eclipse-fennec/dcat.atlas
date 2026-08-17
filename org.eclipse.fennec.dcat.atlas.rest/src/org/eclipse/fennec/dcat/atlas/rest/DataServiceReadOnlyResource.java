@@ -54,6 +54,8 @@ public class DataServiceReadOnlyResource {
 
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI: the write format, and the read format that round-trips. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 	static final String TURTLE = "text/turtle";
 	static final String N_TRIPLES = "application/n-triples";
@@ -64,7 +66,7 @@ public class DataServiceReadOnlyResource {
 	DataServiceReadOnlyService dataServiceReadOnlyService;
 
 	@GET
-	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response listDataServices() {
 		List<DataService> dataServices = dataServiceReadOnlyService.listDataServices();
 		if (dataServices.isEmpty()) {
@@ -77,7 +79,7 @@ public class DataServiceReadOnlyResource {
 
 	@GET
 	@Path("/{id}")
-	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response getDataService(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
 		Optional<DataService> dataService = dataServiceReadOnlyService.getDataService(id);
 		if (dataService.isEmpty()) {

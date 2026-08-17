@@ -54,6 +54,8 @@ public class DistributionReadOnlyResource {
 	
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI: the write format, and the read format that round-trips. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 	static final String TURTLE = "text/turtle";
 	static final String N_TRIPLES = "application/n-triples";
@@ -64,7 +66,7 @@ public class DistributionReadOnlyResource {
 	DistributionReadOnlyService distributionReadOnlyService;
 
 	@GET
-	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response listDistributions(@PathParam("datasetId") String datasetId) {
 		List<Distribution> distributions = distributionReadOnlyService.listDistributionsForDataset(datasetId);
 		if (distributions.isEmpty()) {
@@ -77,7 +79,7 @@ public class DistributionReadOnlyResource {
 
 	@GET
 	@Path("/{id}")
-	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response getDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@Context ContainerRequestContext requestContext) {
 		Optional<Distribution> distribution = distributionReadOnlyService.getDistributionForDataset(datasetId, id);
@@ -86,7 +88,7 @@ public class DistributionReadOnlyResource {
 		}
 		// Attach the ETag; DcatConditionalFilter stamps it, adds Vary, and does the
 		// If-None-Match -> 304 handling (F-16).
-		DcatConditionalFilter.attach(requestContext, distributionReadOnlyService.etag(id));
+		DcatConditionalFilter.attach(requestContext, distributionReadOnlyService.etag(datasetId, id));
 		return Response.ok(distribution.get()).build();
 	}
 

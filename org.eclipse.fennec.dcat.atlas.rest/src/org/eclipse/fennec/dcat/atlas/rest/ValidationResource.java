@@ -43,8 +43,12 @@ import jakarta.ws.rs.core.Response;
  * Dry-run SHACL validation (FR-5): validate a submitted entity against the
  * DCAT-AP.de shapes <em>without</em> writing it, and return the SHACL report.
  * <p>
- * One POST per entity type so the existing per-type RDF/JSON/XML body readers
- * deserialize the payload. The response is always {@code 200} — a dry run reports
+ * One POST per entity type so the body reader knows what to deserialize into. The
+ * request format is XMI, matching the admin write endpoints: a dry run has to accept
+ * exactly what a real write would, or it validates something the caller could not
+ * actually submit. (It used to consume JSON/XML/RDF-XML — RDF stopped being readable
+ * when its reader was dropped for the Jena converter, so those bodies earned a 415.)
+ * The response is always {@code 200} — a dry run reports
  * rather than rejects — carrying the native {@code sh:ValidationReport}, serialized in
  * whichever RDF syntax the client negotiates (Turtle/JSON-LD/RDF-XML/N3/N-Triples,
  * FR-19), with {@code X-SHACL-Conforms: true|false} for a quick programmatic check.
@@ -63,6 +67,8 @@ public class ValidationResource {
 
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI: the write format, and the read format that round-trips. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 	static final String TURTLE = "text/turtle";
 	static final String JSONLD = "application/ld+json";
@@ -80,40 +86,40 @@ public class ValidationResource {
 
 	@POST
 	@Path("/catalogs")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
+	@Consumes({ XMI })
+	@Produces({ XMI, TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateCatalog(Catalog catalog) {
 		return report(catalog);
 	}
 
 	@POST
 	@Path("/datasets")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
+	@Consumes({ XMI })
+	@Produces({ XMI, TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDataset(Dataset dataset) {
 		return report(dataset);
 	}
 
 	@POST
 	@Path("/dataset-series")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
+	@Consumes({ XMI })
+	@Produces({ XMI, TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDatasetSeries(DatasetSeries series) {
 		return report(series);
 	}
 
 	@POST
 	@Path("/data-services")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
+	@Consumes({ XMI })
+	@Produces({ XMI, TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDataService(DataService dataService) {
 		return report(dataService);
 	}
 
 	@POST
 	@Path("/distributions")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
+	@Consumes({ XMI })
+	@Produces({ XMI, TURTLE, JSONLD, RDF_XML, N3, NTRIPLES })
 	public Response validateDistribution(Distribution distribution) {
 		return report(distribution);
 	}

@@ -14,14 +14,17 @@
 package org.eclipse.fennec.dcat.atlas.rest;
 
 import java.net.URI;
+import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -63,6 +66,10 @@ public class DatasetSeriesAdminResource {
 
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI — the only write format. The codec picks its codec by
+	 * media type, so "application/xml" would select a plain-XML one that does not
+	 * understand xmi:version or a literal in attribute form. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
@@ -89,13 +96,21 @@ public class DatasetSeriesAdminResource {
 	volatile DcatValidationService validationService;
 
 	@POST
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response createDatasetSeries(DatasetSeries datasetSeries, @Context UriInfo uriInfo, @Context HttpHeaders headers) {
-		// Mint an id and make the resource's public read URL its about (D1/D2).
-		String id = UUID.randomUUID().toString();
+		// The identity is logical, and taken from the body when it names one of ours so that
+		// this same request sent twice conflicts instead of creating a second series; only
+		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
+		// Location header — stamping it here is what used to freeze the writing host into
+		// the stored file (and, behind a proxy, an internal address).
+		CreateIdentity identity = CreateIdentity.resolve(DcatIds.DATASET_SERIES, datasetSeries,
+				candidate -> datasetSeriesAdminService.getDatasetSeries(candidate).isPresent(), uriInfo);
+		if (identity.refused()) {
+			return identity.refusal().build();
+		}
+		String id = identity.id();
 		URI about = readUri(uriInfo, id);
-		datasetSeries.setAbout(about.toString());
 		// Validate the exact form to be stored (about already stamped); 422 if enforced.
 		ResponseBuilder invalid = WriteValidation.enforce(validationService, datasetSeries, headers.getAcceptableMediaTypes());
 		if (invalid != null) {
@@ -109,8 +124,8 @@ public class DatasetSeriesAdminResource {
 
 	@PUT
 	@Path("/{id}")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDatasetSeries(@PathParam("id") String id, DatasetSeries datasetSeries,
 			@Context UriInfo uriInfo, @Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
@@ -118,9 +133,12 @@ public class DatasetSeriesAdminResource {
 		if (precondition != null) {
 			return precondition.build();
 		}
-		// Force the public read URL onto the payload so the service stores it under
-		// {id} regardless of what the client sent (D1/D2, replace-only F-17).
-		datasetSeries.setAbout(readUri(uriInfo, id).toString());
+		// The path says which series this is; the body may agree or say nothing, but it may
+		// not name a different one — nor one of somebody else's (D1/D2, replace-only F-17).
+		ResponseBuilder mismatch = ReplaceIdentity.stamp(DcatIds.DATASET_SERIES, id, datasetSeries);
+		if (mismatch != null) {
+			return mismatch.build();
+		}
 		ResponseBuilder invalid = WriteValidation.enforce(validationService, datasetSeries, headers.getAcceptableMediaTypes());
 		if (invalid != null) {
 			return invalid.build();
@@ -155,18 +173,67 @@ public class DatasetSeriesAdminResource {
 
 	@POST
 	@Path("/{id}/datasets")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
-	public Response addDataset(@PathParam("id") String id, Dataset dataset, @Context Request request) {
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
+	public Response addDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
+			@Context Request request, @Context HttpHeaders headers) {
 		if (datasetSeriesAdminService.getDatasetSeries(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		String datasetId = idOfAbout(dataset.getAbout());
+		// This stores the Dataset before linking it, so it is gated exactly as POST
+		// /admin/datasets is: an identity of ours or none at all, and a Dataset that already
+		// exists is refused rather than replaced — it may be in other series, catalogs and
+		// services, none of which asked for it to change. Resolving stamps the identity, so
+		// FR-4 below sees the form that will be stored.
+		CreateIdentity identity = CreateIdentity.resolveMember(DcatIds.DATASETS, dataset,
+				candidate -> datasetReadOnlyService.getDataset(candidate).isPresent(),
+				READ_COLLECTION + "/" + id + "/" + DcatIds.DATASETS, uriInfo);
+		if (identity.refused()) {
+			return identity.refusal().build();
+		}
+		ResponseBuilder invalid = WriteValidation.enforce(validationService, dataset,
+				headers.getAcceptableMediaTypes());
+		if (invalid != null) {
+			return invalid.build();
+		}
+		String datasetId = identity.id();
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetEtag(datasetId));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		ResponseBuilder ok = Response.ok(datasetSeriesAdminService.addDatasetToDatasetSeries(id, dataset));
+		datasetEtag(datasetId).ifPresent(ok::tag);
+		return ok.build();
+	}
+
+	/**
+	 * Links a Dataset that already exists — the counterpart of the {@code DELETE} on this
+	 * same path, and the request the {@code POST} above points at when it refuses one. This
+	 * one carries no body, so it attaches the Dataset without touching its content. 404 if
+	 * either the series or the dataset is unknown.
+	 */
+	@PUT
+	@Path("/{id}/datasets/{datasetId}")
+	@Produces({ XMI, JSON, XML, RDF_XML })
+	public Response linkDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
+			@Context Request request) {
+		if (datasetSeriesAdminService.getDatasetSeries(id).isEmpty()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetEtag(datasetId));
+		if (precondition != null) {
+			return precondition.build();
+		}
+		// Nothing is written, so nothing to validate; the service signals an unknown dataset
+		// with NoSuchElementException, which is a 404 about the dataset and not a 500 (the
+		// bundle registers no ExceptionMapper).
+		DatasetSeries series;
+		try {
+			series = datasetSeriesAdminService.linkDatasetToDatasetSeries(id, datasetId);
+		} catch (NoSuchElementException e) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		ResponseBuilder ok = Response.ok(series);
 		datasetEtag(datasetId).ifPresent(ok::tag);
 		return ok.build();
 	}
@@ -189,16 +256,6 @@ public class DatasetSeriesAdminResource {
 	/** Current ETag of the dataset {@code id}, or empty when the id is missing/absent. */
 	private Optional<String> datasetEtag(String datasetId) {
 		return datasetId == null || datasetId.isBlank() ? Optional.empty() : datasetReadOnlyService.etag(datasetId);
-	}
-
-	/** Last path segment of a resource {@code about} URI (its storage id), or {@code null}. */
-	private static String idOfAbout(String about) {
-		if (about == null || about.isBlank()) {
-			return null;
-		}
-		int slash = about.lastIndexOf('/');
-		String candidate = slash >= 0 ? about.substring(slash + 1) : about;
-		return candidate.isBlank() ? null : candidate;
 	}
 
 	/** The public (read-side) URI of the datasetSeries, e.g. {@code {base}/datasetSeriess/{id}}. */

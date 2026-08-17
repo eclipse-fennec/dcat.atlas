@@ -54,6 +54,8 @@ public class DatasetSeriesReadOnlyResource {
 	
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI: the write format, and the read format that round-trips. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 	static final String TURTLE = "text/turtle";
 	static final String N_TRIPLES = "application/n-triples";
@@ -64,7 +66,7 @@ public class DatasetSeriesReadOnlyResource {
 	DatasetSeriesReadOnlyService datasetSeriesReadOnlyService;
 
 	@GET
-	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response listDatasetSeriess() {
 		List<DatasetSeries> datasetSeriess = datasetSeriesReadOnlyService.listDatasetSeries();
 		if (datasetSeriess.isEmpty()) {
@@ -77,7 +79,7 @@ public class DatasetSeriesReadOnlyResource {
 
 	@GET
 	@Path("/{id}")
-	@Produces({ JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response getDatasetSeries(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
 		Optional<DatasetSeries> datasetSeries = datasetSeriesReadOnlyService.getDatasetSeries(id);
 		if (datasetSeries.isEmpty()) {

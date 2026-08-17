@@ -15,14 +15,16 @@ package org.eclipse.fennec.dcat.atlas.rest;
 
 import java.net.URI;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -64,6 +66,10 @@ public class DistributionAdminResource {
 
 	static final String JSON = "application/json";
 	static final String XML = "application/xml";
+	/** Our EMF model's own XMI — the only write format. The codec picks its codec by
+	 * media type, so "application/xml" would select a plain-XML one that does not
+	 * understand xmi:version or a literal in attribute form. */
+	static final String XMI = "application/xmi";
 	static final String RDF_XML = "application/rdf+xml";
 
 	/** Public read collection segments the dereferenceable {@code about} URI points at. */
@@ -95,17 +101,25 @@ public class DistributionAdminResource {
 	 * {@code datasetId} path segment), so there is no dataset-less create.
 	 */
 	@POST
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution,
 			@Context UriInfo uriInfo, @Context HttpHeaders headers) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		// Mint an id and make the resource's public read URL its about (D1/D2).
-		String id = UUID.randomUUID().toString();
+		// Logical identity, nested under the dataset, and taken from the body when it names
+		// one of this dataset's distributions so that the same request sent twice conflicts
+		// instead of creating a second one; only then is an id minted (see CreateIdentity).
+		// The request URL supplies nothing but Location.
+		CreateIdentity identity = CreateIdentity.resolveDistribution(datasetId, distribution,
+				candidate -> distributionAdminService.getDistributionForDataset(datasetId, candidate).isPresent(),
+				uriInfo);
+		if (identity.refused()) {
+			return identity.refusal().build();
+		}
+		String id = identity.id();
 		URI about = readUri(uriInfo, datasetId, id);
-		distribution.setAbout(about.toString());
 		// Validate the exact form to be stored (about already stamped); 422 if enforced.
 		ResponseBuilder invalid = WriteValidation.enforce(validationService, distribution, headers.getAcceptableMediaTypes());
 		if (invalid != null) {
@@ -113,27 +127,31 @@ public class DistributionAdminResource {
 		}
 		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);
 		ResponseBuilder created = Response.created(about).entity(distribution);
-		distributionAdminService.etag(id).ifPresent(created::tag);
+		distributionAdminService.etag(datasetId, id).ifPresent(created::tag);
 		return created.build();
 	}
 
 	@PUT
 	@Path("/{id}")
-	@Consumes({ JSON, XML, RDF_XML })
-	@Produces({ JSON, XML, RDF_XML })
+	@Consumes({ XMI })
+	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			Distribution distribution, @Context UriInfo uriInfo, @Context Request request, @Context HttpHeaders headers) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
 		if (precondition != null) {
 			return precondition.build();
 		}
-		// Force the public read URL onto the payload so the service stores it under
-		// {id} regardless of what the client sent (D1/D2, replace-only F-17).
-		distribution.setAbout(readUri(uriInfo, datasetId, id).toString());
+		// The path says which distribution of which dataset this is; the body may agree or
+		// say nothing, but it may not name a different one — including another dataset's
+		// distribution (D1/D2, replace-only F-17).
+		ResponseBuilder mismatch = ReplaceIdentity.stampDistribution(datasetId, id, distribution);
+		if (mismatch != null) {
+			return mismatch.build();
+		}
 		ResponseBuilder invalid = WriteValidation.enforce(validationService, distribution, headers.getAcceptableMediaTypes());
 		if (invalid != null) {
 			return invalid.build();
@@ -141,7 +159,7 @@ public class DistributionAdminResource {
 		boolean existed = distributionAdminService.getDistributionForDataset(datasetId, id).isPresent();
 		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(distribution);
-		distributionAdminService.etag(id).ifPresent(response::tag);
+		distributionAdminService.etag(datasetId, id).ifPresent(response::tag);
 		return response.build();
 	}
 
@@ -152,7 +170,7 @@ public class DistributionAdminResource {
 		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -170,8 +188,8 @@ public class DistributionAdminResource {
 
 	@PUT
 	@Path("/{id}/access-service/{serviceId}")
-	@Produces({ JSON, XML, RDF_XML })
-	public Response addAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
+	@Produces({ XMI, JSON, XML, RDF_XML })
+	public Response linkAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@PathParam("serviceId") String serviceId, @Context Request request) {
 		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
@@ -182,13 +200,16 @@ public class DistributionAdminResource {
 		if (dataService.isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
 		if (precondition != null) {
 			return precondition.build();
 		}
+		// link, not add: the DataService is named by id and already stored, so there is
+		// nothing to write. The add* variant takes the entity and store.put()s it, which
+		// here would mean reading the service only to write it straight back.
 		ResponseBuilder ok = Response
-				.ok(distributionAdminService.addAccessServiceToDistribution(datasetId, id, dataService.get()));
-		distributionAdminService.etag(id).ifPresent(ok::tag);
+				.ok(distributionAdminService.linkAccessServiceToDistribution(datasetId, id, serviceId));
+		distributionAdminService.etag(datasetId, id).ifPresent(ok::tag);
 		return ok.build();
 	}
 
@@ -199,7 +220,7 @@ public class DistributionAdminResource {
 		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
 		if (precondition != null) {
 			return precondition.build();
 		}

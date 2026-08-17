@@ -32,7 +32,14 @@ public interface DistributionReadOnlyService {
 
 	List<Distribution> listDistributionsForDataset(String datasetId);
 
-	/** Strong ETag validator for the stored distribution {@code id}, or empty if absent (F-16). */
-	Optional<String> etag(String id);
+	/**
+	 * Strong ETag validator for a distribution, or empty if absent (F-16).
+	 * <p>
+	 * The owning dataset is required because a Distribution is contained in its
+	 * Dataset and has no stored representation of its own, so its version <em>is</em>
+	 * the dataset's: changing a distribution changes the dataset. Identifying one by
+	 * bare id would mean searching every dataset for it on every conditional request.
+	 */
+	Optional<String> etag(String datasetId, String distributionId);
 
 }

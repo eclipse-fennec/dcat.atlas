@@ -48,6 +48,12 @@ public interface DistributionAdminService extends DistributionReadOnlyService {
      */
     Distribution addAccessServiceToDistribution(String datasetId, String distributionId, DataService dataService);
 
+    
+    /**
+     * If the DataService to link to the Distribution already exists, use this endpoint to link it.
+     */
+    Distribution linkAccessServiceToDistribution(String datasetId, String distributionId, String dataServiceId);
+    
     /**
      * Removes the {@code dcat:accessService} reference to {@code dataServiceId} from the
      * distribution. Idempotent: a no-op when no such reference is present. The referenced

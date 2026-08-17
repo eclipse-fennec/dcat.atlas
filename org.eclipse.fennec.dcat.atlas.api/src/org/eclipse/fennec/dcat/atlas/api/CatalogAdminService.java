@@ -33,13 +33,34 @@ public interface CatalogAdminService extends CatalogReadOnlyService{
     //assigned to / removed from a catalog **without** re-sending the target resource in full.
     Catalog addDatasetToCatalog(String catalogId, Dataset dataset);
     
+    /**
+     *If a Dataset was already created, a client can use this method to simply link
+     *the existing Dataset to the existing Catalog. Must fail if either the Catalog or
+     *the Dataset does not exist
+     */
+    Catalog linkDatasetToCatalog(String catalogId, String datasetId);
+    
     void deleteDatasetFromCatalog(String catalogId, String datasetId);
     
     Catalog addDataServiceToCatalog(String catalogId, DataService dataService);
     
+    /**
+     *If a DataService was already created, a client can use this method to simply link
+     *the existing DataService to the existing Catalog. Must fail if either the Catalog or
+     *the DataService does not exist
+     */
+    Catalog linkDataServiceToCatalog(String catalogId, String dataServiceId);
+    
     void deleteDataServiceFromCatalog(String catalogId, String dataServiceId);
     
     Catalog addSubCatalogToCatalog(String catalogId, Catalog subCatalog);
+    
+    /**
+     *If a Catalog was already created, a client can use this method to simply link
+     *the existing Catalog to the another existing Catalog, as sub catalog. 
+     *Must fail if either the parent Catalog or the sub catalog does not exist.
+     */
+    Catalog linkSubCatalogToCatalog(String catalogId, String subCatalogId);
     
     void deleteSubCatalogFromCatalog(String catalogId, String subCatalogId);
 }

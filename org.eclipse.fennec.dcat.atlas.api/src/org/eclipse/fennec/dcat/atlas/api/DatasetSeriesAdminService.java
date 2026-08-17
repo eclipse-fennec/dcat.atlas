@@ -30,6 +30,13 @@ public interface DatasetSeriesAdminService extends DatasetSeriesReadOnlyService{
     //**FR-11 (Series membership):** Datasets can be assigned to / removed from a DatasetSeries 
     DatasetSeries addDatasetToDatasetSeries(String datasetSeriesId, Dataset dataset);
     
+    /**
+     * If a Dataset already exists and the client simply wants to link it to a DatasetSeries, 
+     * use this endpoint. It must fail whether either the DatasetSeries or the Dataset does 
+     * not exist.
+     */
+    DatasetSeries linkDatasetToDatasetSeries(String datasetSeriesId, String datasetId);
+    
     void deleteDatasetFromDatasetSeries(String datasetSeriesId, String datasetId);
 
 }

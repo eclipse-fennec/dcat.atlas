@@ -29,8 +29,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
-import skos.Concept;
-import skos.SkosFactory;
+import terms.LicenseDocument;
+import terms.TermsFactory;
 
 /**
  * Opt-in regression test that validates against the <em>real</em> DCAT-AP.de
@@ -61,6 +61,10 @@ public class ControlledVocabularyRealDataTest {
 	/** A real EU authority frequency (dcterms:accrualPeriodicity is a MUSS controlled-vocabulary check). */
 	private static final String VALID_FREQUENCY = "http://publications.europa.eu/resource/authority/frequency/ANNUAL";
 	private static final String BOGUS_FREQUENCY = "http://example/frequency/made-up";
+	/** A real DCAT-AP.de licence — the one the live 422 was traced to. */
+	private static final String DL_BY_DE = "http://dcat-ap.de/def/licenses/dl-by-de/2.0";
+	/** The plain literal every entry of the real licence table carries as its {@code dct:type}. */
+	private static final String LICENCE_TABLE_TYPE = "Freie Nutzung";
 
 	@TempDir
 	Path cvShapeOnlyDir;
@@ -78,8 +82,7 @@ public class ControlledVocabularyRealDataTest {
 		// the full structural shape set would add unrelated MUSS violations to a minimal
 		// dataset. The real vocabulary data is loaded (and unioned in) as configured.
 		Files.copy(cvShape, cvShapeOnlyDir.resolve(CV_SHAPE_FILE));
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				cvShapeOnlyDir, vocabDir);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(cvShapeOnlyDir, vocabDir);
 
 		ValidationReport valid = service.validate(datasetWithFrequency(VALID_FREQUENCY));
 		assertTrue(valid.conforms(), "a real EU frequency URI should satisfy the CV check");
@@ -92,12 +95,54 @@ public class ControlledVocabularyRealDataTest {
 				"expected the frequency CV violation");
 	}
 
+	/**
+	 * The bug this guards against, on the inputs that exposed it: every entry in the real
+	 * licence table carries {@code dct:type "Freie Nutzung"} as a plain literal, which the
+	 * SEMIC shapes reject as not an IRI. Unioned into the data graph it landed on the
+	 * caller's licence node and made {@code enforceOnWrite} reject every write that
+	 * referenced any licence at all.
+	 */
+	@Test
+	void realLicenceTableDefectsAreNotReportedAsTheEntitys() {
+		Path shapesDir = Path.of(System.getenv("SHACL_SHAPES_DIR"));
+		Path vocabDir = Path.of(System.getenv("SHACL_VOCAB_DIR"));
+		assumeTrue(Files.isDirectory(shapesDir), () -> "SHACL_SHAPES_DIR is not a directory: " + shapesDir);
+		assumeTrue(Files.isDirectory(vocabDir), () -> "SHACL_VOCAB_DIR is not a directory: " + vocabDir);
+
+		// The full shape set here, not just the CV shape: the licence rule lives in the
+		// SEMIC shapes. A minimal dataset trips plenty of unrelated MUSS rules, so this
+		// asserts on the one result rather than on conformance.
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir, vocabDir);
+
+		ValidationReport report = service.validate(datasetWithLicence(DL_BY_DE));
+
+		assertTrue(report.getEntries().stream().noneMatch(e -> isLicenceTableType(e.value())),
+				() -> "the licence table's own dct:type defect was reported as the caller's: " + report.getEntries());
+	}
+
+	private static boolean isLicenceTableType(org.apache.jena.graph.Node value) {
+		return value != null && value.isLiteral() && LICENCE_TABLE_TYPE.equals(value.getLiteralLexicalForm());
+	}
+
+	private static Dataset datasetWithLicence(String licenceUri) {
+		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		dataset.setAbout("https://portal.example/datasets/cv-real-data");
+		// Exactly what an <license about="..."/> in a submitted entity produces: the licence
+		// node exists in the entity graph (carrying its rdf:type) but the caller wrote none
+		// of the triples the table holds about it.
+		LicenseDocument licence = TermsFactory.eINSTANCE.createLicenseDocument();
+		licence.setAbout(licenceUri);
+		dataset.setLicense(licence);
+		return dataset;
+	}
+
 	private static Dataset datasetWithFrequency(String frequencyUri) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout("https://portal.example/datasets/cv-real-data");
-		Concept frequency = SkosFactory.eINSTANCE.createConcept();
-		frequency.setResource(frequencyUri);
-		dataset.setAccrualPeriodicity(frequency);
+		// Controlled-vocabulary references are AnyURI attributes now, not skos:Concept
+		// nodes, so the converter emits the IRI directly as the object of the triple —
+		// which is what the CV shape's sh:class/skos:inScheme check needs to resolve.
+		dataset.setAccrualPeriodicity(frequencyUri);
 		return dataset;
 	}
 }

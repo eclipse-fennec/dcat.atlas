@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Node;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.riot.Lang;
@@ -34,6 +35,7 @@ import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
+import org.apache.jena.shacl.engine.ShaclPaths;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.eclipse.emf.ecore.EObject;
 import org.apache.felix.hc.api.FormattingResultLog;
@@ -42,16 +44,14 @@ import org.apache.felix.hc.api.Result;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.eclipse.fennec.dcat.atlas.api.Violation;
-import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectRDFModelBuilder;
-import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
  * SHACL validation over the DCAT-AP.de shapes (FR-4/FR-5), backed by Jena's SHACL
- * engine. The entity is serialized to an RDF graph via {@link EObjectRDFModelBuilder}
+ * engine. The entity is serialized to an RDF graph via {@link EObjectToJena}
  * and checked against the shapes loaded (once, at activation) from the configured
  * directory. When no shapes are configured/loadable, validation is a no-op that
  * reports conformance — enforcement is a decision for the caller (the admin write
@@ -62,7 +62,9 @@ import org.osgi.service.metatype.annotations.Designate;
  * in the external authority tables, not in the submitted entity. So the reference
  * vocabulary data (also operator-configured, loaded once at activation) is unioned with
  * the entity graph before validation; without it every vocabulary-constrained value
- * would report a false violation.
+ * would report a false violation. The union also exposes the authority tables' own defects,
+ * so the report is filtered back down to the caller's triples afterwards — see
+ * {@link #onlyEntityResults}.
  */
 @Component(name = "DcatValidationService", service = { DcatValidationService.class, HealthCheck.class }, property = {
 		HealthCheck.NAME + "=shacl", HealthCheck.TAGS + "=ready" })
@@ -71,7 +73,6 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 
 	private static final Logger LOGGER = System.getLogger(DcatValidationServiceImpl.class.getName());
 
-	private final ResourceSetFactory resourceSetFactory;
 	/** Parsed shapes; an empty shapes set (everything conforms) when none are configured. */
 	private final Shapes shapes;
 	/** Controlled-vocabulary reference data merged into the data graph (F-22); empty when none configured. */
@@ -84,30 +85,28 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 	private final int shapeFileCount;
 
 	@Activate
-	public DcatValidationServiceImpl(@Reference ResourceSetFactory resourceSetFactory, ShapesConfig config) {
-		this(resourceSetFactory, directoryOf(config.shapesDirectory()), directoryOf(config.vocabularyDirectory()),
+	public DcatValidationServiceImpl(ShapesConfig config) {
+		this(directoryOf(config.shapesDirectory()), directoryOf(config.vocabularyDirectory()),
 				config.enforceOnWrite());
 	}
 
 	/** Package-visible for tests; no vocabulary, enforcement off. */
-	DcatValidationServiceImpl(ResourceSetFactory resourceSetFactory, Path shapesDirectory) {
-		this(resourceSetFactory, shapesDirectory, null, false);
+	DcatValidationServiceImpl(Path shapesDirectory) {
+		this(shapesDirectory, null, false);
 	}
 
 	/** Package-visible for tests; no vocabulary. */
-	DcatValidationServiceImpl(ResourceSetFactory resourceSetFactory, Path shapesDirectory, boolean enforceOnWrite) {
-		this(resourceSetFactory, shapesDirectory, null, enforceOnWrite);
+	DcatValidationServiceImpl(Path shapesDirectory, boolean enforceOnWrite) {
+		this(shapesDirectory, null, enforceOnWrite);
 	}
 
 	/** Package-visible for tests; with controlled-vocabulary data (F-22). */
-	DcatValidationServiceImpl(ResourceSetFactory resourceSetFactory, Path shapesDirectory, Path vocabularyDirectory) {
-		this(resourceSetFactory, shapesDirectory, vocabularyDirectory, false);
+	DcatValidationServiceImpl(Path shapesDirectory, Path vocabularyDirectory) {
+		this(shapesDirectory, vocabularyDirectory, false);
 	}
 
 	/** Package-visible for tests. */
-	DcatValidationServiceImpl(ResourceSetFactory resourceSetFactory, Path shapesDirectory, Path vocabularyDirectory,
-			boolean enforceOnWrite) {
-		this.resourceSetFactory = resourceSetFactory;
+	DcatValidationServiceImpl(Path shapesDirectory, Path vocabularyDirectory, boolean enforceOnWrite) {
 		ShapesLoad load = loadShapes(shapesDirectory);
 		this.shapes = load.shapes();
 		this.shapeFileCount = load.fileCount();
@@ -118,14 +117,18 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 
 	@Override
 	public ValidationReport validate(EObject entity) {
-		Model data = EObjectRDFModelBuilder.toModel(entity, resourceSetFactory.createResourceSet());
+		Model data = EObjectToJena.toModel(entity);
+		// With no shapes configured this validates against an empty shapes set, which always
+		// conforms — so callers that gate writes on validation don't block.
+		if (vocabulary.isEmpty()) {
+			return ShaclValidator.get().validate(shapes, data.getGraph());
+		}
 		// Union the reference vocabularies in (read-only) so the CV shapes' skos:inScheme /
-		// sh:class checks can resolve against the authority-table triples (F-22). When no
-		// shapes are configured the graph is validated against an empty shapes set, which
-		// always conforms — so callers that gate writes on validation don't block.
-		Graph dataGraph = vocabulary.isEmpty() ? data.getGraph()
-				: ModelFactory.createUnion(data, vocabulary).getGraph();
-		return ShaclValidator.get().validate(shapes, dataGraph);
+		// sh:class checks can resolve against the authority-table triples (F-22), then drop
+		// the results that belong to the vocabularies rather than to the caller.
+		Graph dataGraph = ModelFactory.createUnion(data, vocabulary).getGraph();
+		ValidationReport report = ShaclValidator.get().validate(shapes, dataGraph);
+		return onlyEntityResults(report, data.getGraph(), dataGraph);
 	}
 
 	@Deprecated
@@ -141,6 +144,69 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 	@Override
 	public boolean isWriteEnforced() {
 		return enforceOnWrite;
+	}
+
+	// --- vocabulary-owned results (see validate) ----------------------------
+
+	/**
+	 * Drops the report entries that describe a defect in the reference vocabularies
+	 * rather than in the submitted entity.
+	 * <p>
+	 * The union that makes the CV checks resolvable also puts the authority tables under
+	 * validation: where the entity and an authority table share an IRI, SHACL sees one node
+	 * carrying both sets of triples and reports violations from either. The DCAT-AP.de
+	 * licence table, for instance, writes {@code dct:type "Freie Nutzung"} as a plain
+	 * literal on every entry while the SEMIC shapes require an IRI there — so every write
+	 * referencing a licence would be rejected for a defect in somebody else's file.
+	 * <p>
+	 * Attribution is per <em>triple</em>, not per focus node: a referenced licence IRI is
+	 * legitimately a node in the entity graph too (the converter emits
+	 * {@code <licence> a dct:LicenseDocument}), so only re-evaluating the reported result
+	 * path against the entity graph alone tells the two apart.
+	 * <p>
+	 * Results that name no value — {@code sh:minCount}, and the node-level constraints the
+	 * {@code sh:targetObjectsOf} controlled-vocabulary shapes are built from — point at no
+	 * triple, so they fall back to the focus node: the entity's whenever it mentions that node
+	 * (as subject <em>or</em> object — a CV concept is only ever an object) and the
+	 * vocabularies do not describe it. "The concept you referenced is not in the authority
+	 * table" is then still the caller's error, while a table entry failing a shape the caller
+	 * cannot influence is not.
+	 */
+	private ValidationReport onlyEntityResults(ValidationReport report, Graph entityGraph, Graph dataGraph) {
+		List<ReportEntry> entries = report.getEntries().stream() //
+				.filter(entry -> isEntityResult(entry, entityGraph, vocabulary.getGraph())) //
+				.collect(Collectors.toList());
+		if (entries.size() == report.getEntries().size()) {
+			return report;
+		}
+		LOGGER.log(Level.DEBUG, "Suppressed {0} SHACL result(s) originating in the reference vocabularies.",
+				report.getEntries().size() - entries.size());
+		ValidationReport.Builder filtered = ValidationReport.create();
+		// Mirrors what the engine puts on its own report (ValidationContext).
+		filtered.addPrefixes(dataGraph.getPrefixMapping());
+		filtered.addPrefixes(shapes.getGraph().getPrefixMapping());
+		entries.forEach(filtered::addReportEntry);
+		return filtered.build();
+	}
+
+	/** True when the reported {@code (focusNode, resultPath, value)} is the entity's own. */
+	private static boolean isEntityResult(ReportEntry entry, Graph entityGraph, Graph vocabularyGraph) {
+		Node focusNode = entry.focusNode();
+		if (focusNode == null) {
+			return true;
+		}
+		org.apache.jena.sparql.path.Path resultPath = entry.resultPath();
+		if (resultPath == null || entry.value() == null) {
+			return mentions(entityGraph, focusNode) && !vocabularyGraph.contains(focusNode, Node.ANY, Node.ANY);
+		}
+		// ShaclPaths is what the engine itself uses to walk a path, so this asks exactly the
+		// question the constraint asked, only of the entity graph.
+		return ShaclPaths.valueNodes(entityGraph, focusNode, resultPath).contains(entry.value());
+	}
+
+	/** Whether {@code graph} names {@code node} at all, on either end of a triple. */
+	private static boolean mentions(Graph graph, Node node) {
+		return graph.contains(node, Node.ANY, Node.ANY) || graph.contains(Node.ANY, Node.ANY, node);
 	}
 
 	// --- helpers -----------------------------------------------------------

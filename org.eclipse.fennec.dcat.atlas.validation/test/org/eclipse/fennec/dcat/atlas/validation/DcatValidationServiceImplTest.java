@@ -34,6 +34,8 @@ import dcat.Dataset;
 import dcat.DcatFactory;
 import rdf.PlainLiteral;
 import rdf.RdfFactory;
+import terms.LicenseDocument;
+import terms.TermsFactory;
 
 /**
  * Proves the SHACL pipeline end-to-end (EMF entity → RDF → Jena SHACL → report)
@@ -89,6 +91,40 @@ public class DcatValidationServiceImplTest {
 			    ] .
 			""".formatted(SCHEME);
 
+	/** A licence the entity only references — the shape of the real DCAT-AP.de licence table. */
+	private static final String LICENCE = "http://example/licences/dl-by-de";
+	private static final String ALLOWED_LICENCE_TYPE = "http://example/licences/type/free";
+	private static final String BOGUS_LICENCE_TYPE = "http://example/licences/type/bogus";
+
+	/**
+	 * Mirrors the SEMIC licence rule that exposed the vocabulary-union bug: {@code dct:type}
+	 * must be one of the authority's IRIs. The real table violates it on every entry.
+	 */
+	private static final String LICENCE_TYPE_SHAPE = """
+			@prefix sh:  <http://www.w3.org/ns/shacl#> .
+			@prefix dct: <http://purl.org/dc/terms/> .
+			@prefix ex:  <http://example/shapes#> .
+
+			ex:LicenceShape a sh:NodeShape ;
+			    sh:targetClass dct:LicenseDocument ;
+			    sh:property [
+			        sh:path dct:type ;
+			        sh:nodeKind sh:IRI ;
+			        sh:in ( <%s> ) ;
+			        sh:message "dct:type must be an allowed licence-type IRI"
+			    ] .
+			""".formatted(ALLOWED_LICENCE_TYPE);
+
+	/**
+	 * The authority table as it really is: {@code dct:type} written as a plain literal, which
+	 * the shape above rejects. Unioned in, it is a defect the caller neither wrote nor can fix.
+	 */
+	private static final String LICENCE_VOCABULARY = """
+			@prefix dct: <http://purl.org/dc/terms/> .
+			<%s> a dct:LicenseDocument ;
+			    dct:type "Freie Nutzung" .
+			""".formatted(LICENCE);
+
 	/** Same title rule as {@link #TITLE_SHAPE} but only a recommendation (DCAT-AP.de "SOLL"). */
 	private static final String TITLE_WARNING_SHAPE = """
 			@prefix sh:   <http://www.w3.org/ns/shacl#> .
@@ -114,7 +150,7 @@ public class DcatValidationServiceImplTest {
 
 	private DcatValidationServiceImpl serviceWithTitleShape() throws IOException {
 		Files.writeString(shapesDir.resolve("title-shape.ttl"), TITLE_SHAPE);
-		return new DcatValidationServiceImpl(ValidationTestResourceSets.factory(), shapesDir);
+		return new DcatValidationServiceImpl(shapesDir);
 	}
 
 	@Test
@@ -141,8 +177,7 @@ public class DcatValidationServiceImplTest {
 				@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 				<%s> skos:inScheme <%s> .
 				""".formatted(BASE + "air", SCHEME));
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				shapesDir, vocabDir);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir, vocabDir);
 
 		ValidationReport report = service.validate(dataset(BASE + "air", "Air quality"));
 
@@ -153,8 +188,7 @@ public class DcatValidationServiceImplTest {
 	void controlledVocabularyViolatesWhenReferenceDataMissing() throws IOException {
 		Files.writeString(shapesDir.resolve("in-scheme.ttl"), IN_SCHEME_SHAPE);
 		// vocabDir left empty: the skos:inScheme triple is nowhere in the graph.
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				shapesDir, vocabDir);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir, vocabDir);
 
 		ValidationReport report = service.validate(dataset(BASE + "air", "Air quality"));
 
@@ -163,10 +197,50 @@ public class DcatValidationServiceImplTest {
 	}
 
 	@Test
+	void vocabularyOwnDefectsAreNotReportedAsTheEntitys() throws IOException {
+		licenceShapeAndVocabulary();
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir, vocabDir);
+
+		// The entity says nothing about the licence beyond referencing it; the offending
+		// dct:type is purely the authority table's.
+		ValidationReport report = service.validate(datasetWithLicence(null));
+
+		assertTrue(report.conforms(), () -> report.getEntries().toString());
+	}
+
+	@Test
+	void entityDefectSurvivesEvenOnAVocabularyNode() throws IOException {
+		licenceShapeAndVocabulary();
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir, vocabDir);
+
+		ValidationReport report = service.validate(datasetWithLicence(BOGUS_LICENCE_TYPE));
+
+		// Same focus node and same sh:path as the suppressed vocabulary result: only the
+		// value distinguishes them, which is why attribution has to be per triple.
+		assertFalse(report.conforms());
+		assertEquals(1, report.getEntries().size(), () -> report.getEntries().toString());
+		assertEquals(BOGUS_LICENCE_TYPE, firstEntry(report).value().getURI());
+	}
+
+	@Test
+	void valuelessResultsSurviveTheVocabularyFilter() throws IOException {
+		// sh:minCount reports no sh:value, so there is no triple to attribute; the caller's
+		// own missing title must still come through with a vocabulary unioned in.
+		Files.writeString(shapesDir.resolve("title-shape.ttl"), TITLE_SHAPE);
+		Files.writeString(vocabDir.resolve("licences.ttl"), LICENCE_VOCABULARY);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir, vocabDir);
+
+		ValidationReport report = service.validate(dataset(BASE + "air", null));
+
+		assertFalse(report.conforms());
+		assertEquals(1, report.getEntries().size());
+		assertTrue(blocks(report));
+	}
+
+	@Test
 	void warningSeverityIsReportedButDoesNotBlock() throws IOException {
 		Files.writeString(shapesDir.resolve("title-warning.ttl"), TITLE_WARNING_SHAPE);
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				shapesDir);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
 
 		ValidationReport report = service.validate(dataset(BASE + "air", null));
 
@@ -181,8 +255,8 @@ public class DcatValidationServiceImplTest {
 	@Test
 	void writeEnforcementReflectsConfig() throws IOException {
 		Files.writeString(shapesDir.resolve("title-shape.ttl"), TITLE_SHAPE);
-		assertFalse(new DcatValidationServiceImpl(ValidationTestResourceSets.factory(), shapesDir, false).isWriteEnforced());
-		assertTrue(new DcatValidationServiceImpl(ValidationTestResourceSets.factory(), shapesDir, true).isWriteEnforced());
+		assertFalse(new DcatValidationServiceImpl(shapesDir, false).isWriteEnforced());
+		assertTrue(new DcatValidationServiceImpl(shapesDir, true).isWriteEnforced());
 		// Default (2-arg) constructor leaves enforcement off.
 		assertFalse(serviceWithTitleShape().isWriteEnforced());
 	}
@@ -191,8 +265,7 @@ public class DcatValidationServiceImplTest {
 	void validationConformsWhenNoShapesConfigured() {
 		// Empty directory -> empty shapes -> everything conforms (enforcement is the
 		// caller's concern; the service just reports).
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				shapesDir);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
 		ValidationReport report = service.validate(dataset(BASE + "air", null));
 		assertTrue(report.conforms());
 		assertTrue(report.getEntries().isEmpty());
@@ -218,6 +291,27 @@ public class DcatValidationServiceImplTest {
 		return List.copyOf(report.getEntries()).get(0);
 	}
 
+	private void licenceShapeAndVocabulary() throws IOException {
+		Files.writeString(shapesDir.resolve("licence-type.ttl"), LICENCE_TYPE_SHAPE);
+		Files.writeString(vocabDir.resolve("licences.ttl"), LICENCE_VOCABULARY);
+	}
+
+	/**
+	 * A dataset referencing {@link #LICENCE}. The licence node is in the entity graph too
+	 * (it carries its {@code rdf:type}), so focus-node attribution alone cannot tell the
+	 * entity's triples from the authority table's.
+	 */
+	private static Dataset datasetWithLicence(String licenceType) {
+		Dataset dataset = dataset(BASE + "air", "Air quality");
+		LicenseDocument licence = TermsFactory.eINSTANCE.createLicenseDocument();
+		licence.setAbout(LICENCE);
+		if (licenceType != null) {
+			licence.getType().add(licenceType);
+		}
+		dataset.setLicense(licence);
+		return dataset;
+	}
+
 	private static Dataset dataset(String about, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(about);
@@ -235,8 +329,7 @@ public class DcatValidationServiceImplTest {
 	void readinessNoShapesConfiguredIsWarnNotCritical() {
 		// Shapes are operator-supplied deployment input; running without them is a
 		// documented no-op, so the portal stays fit to serve. WARN maps to HTTP 200.
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				(Path) null);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl((Path) null);
 		// WARN, not CRITICAL. Felix's Result.isOk() is strictly OK, so "still serving" is
 		// not expressed here but by the servlet's httpStatus.warn=200 mapping — asserted in
 		// HealthEndpointIntegrationTest.
@@ -246,15 +339,13 @@ public class DcatValidationServiceImplTest {
 	@Test
 	void readinessShapesConfiguredButEmptyIsCritical() {
 		// The dangerous case: an operator believes the portal validates, and it does not.
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				shapesDir);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
 		assertEquals(Result.Status.CRITICAL, service.execute().getStatus());
 	}
 
 	@Test
 	void readinessShapesConfiguredButDirectoryMissingIsCritical() {
-		DcatValidationServiceImpl service = new DcatValidationServiceImpl(ValidationTestResourceSets.factory(),
-				shapesDir.resolve("does-not-exist"));
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir.resolve("does-not-exist"));
 		assertEquals(Result.Status.CRITICAL, service.execute().getStatus());
 	}
 

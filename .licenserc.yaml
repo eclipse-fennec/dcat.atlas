@@ -91,5 +91,6 @@ header:
     - 'gradlew.bat'
     - 'settings.gradle'
     - 'old/**'
+    - '**/*.old'
 
   comment: always

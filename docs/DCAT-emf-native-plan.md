@@ -305,19 +305,53 @@ and assert the parsed triple's **object**, never just that it parsed.
    including RDF/XML now goes through Jena and no longer needs a `ResourceSetFactory`.
 4. ~~Spec completeness pass.~~ **Done** — see Closed below. The structural parts landed before any
    client integrated, which was the constraint.
-5. **Storage rework — next.** XMI, shared `ResourceSet`, logical URIs + URIMap, distributions
-   folded into datasets. `impl` is red and the breakage *is* this step: `RdfPointers` deletes
-   (it was built on `RefResource`), `DcatHelper` `:42`/`:100`/`:152` is the linchpin
-   (`RDFRoot`/`DCATAP_ROOT__*` gone), `Distribution{Admin,ReadOnly}ServiceImpl` folds in, the other
-   read-only services follow.
-6. Identity/rebasing: `PUBLIC_BASE_URL`, `ADDITIONAL_OWNED_BASES`, inbound (XMI hrefs) + outbound.
+5. ~~Storage rework.~~ **Done 2026-08-17.** XMI, shared `ResourceSet`, logical URIs + URIMap,
+   distributions folded into datasets. `RdfPointers` and the `RDFRoot`/`DCATAP_ROOT__*` machinery
+   are gone; `DcatHelper.Store` is the single write choke point, with `StoreLayout` and
+   `StoreResourceSets` beside it. `impl` is green (98 tests).
+6. ~~Identity/rebasing.~~ **Done 2026-08-17.** `PublicIrisConfig` carries `publicBaseUrl` and
+   `additionalOwnedBases`; `PublicView.render`/`fold` are the outbound and inbound halves and
+   `PublicIriFilter` runs both, so XMI `href`s a client was served fold back to logical on the
+   way in and never write the public host into stored data.
 7. ~~Repoint `DcatGraphServiceImpl` at `EObjectToJena`.~~ **Done 2026-08-13**, pulled forward
-   because the deleted `EObjectRDFModelBuilder` left `sparql` and `validation` red. Both bundles
-   are green again (15 and 13 tests). **Still open:** making `skipped` an error signal.
-8. OCL validation at the write boundary via `emf.m2x` (§5) — not blocking, but it is what makes
-   `about` `[0..1]` safe.
-9. Read the five committed MDO reference documents through `JenaToEObject` as a conformance corpus.
-   Now unblocked by step 2, and the first real test against RDF we did not write ourselves.
+   because the deleted `EObjectRDFModelBuilder` left `sparql` and `validation` red.
+   ~~**Still open:** making `skipped` an error signal.~~ **Done 2026-08-17** — the `sparql`
+   health check reports WARN with the count of resources that could not be projected.
+   Deliberately WARN and not CRITICAL: REST still serves them, so taking the instance out of
+   rotation would be the wrong trade, but SPARQL under-reporting must be visible.
+8. **OCL validation at the write boundary via `emf.m2x` (§5) — the one item left.** Not
+   blocking, but it is what makes `about` `[0..1]` safe. Note what has since taken over part of
+   its job: `DcatIds.idForWrite` refuses an identity that is not ours *at the service*, and the
+   DCAT-AP.de SHACL shapes run on write (FR-4). What neither covers is the structural
+   constraints the ecore cannot express and the shapes do not check.
+9. **Read external documents through `JenaToEObject` as a conformance corpus — reopened, needs a
+   source.** The five committed MDO documents turned out to be **stale and have been deleted**:
+   four carried `<!-- Version 1.1, 13.08.2020 -->`, i.e. DCAT-AP.de 1.1, and the fifth was a
+   European Data Portal harvest using the `edp:trans*` vocabulary retired with the 2021
+   data.europa.eu rebrand. Across all five, *zero* occurrences of eleven DCAT-3 / DCAT-AP-2
+   discriminators (`DatasetSeries`, `inSeries`, `dcat:version`, `hasVersion`, `versionInfo`,
+   `temporalResolution`, `spatialResolutionInMeters`, `availability`, `accessRights`,
+   `applicableLegislation`, `previousVersion`). Passing them would have proved nothing about
+   v3, and failing them would often have been correct — they carry vocabulary v3 deprecated.
+
+   **What the corpus is actually for.** Not "is our output valid RDF" — Jena answers that, and
+   it said nothing about `dcat:endpointURL` being emitted as a literal. Validating our own
+   output is a closed loop: it cannot contain what the model cannot hold. The corpus answers
+   *does the model match reality*, which is the one question nothing else asks. A predicate/class
+   coverage audit against the ecore's `ExtendedMetaData` table is the concrete form.
+
+   Already demonstrated on one real document (a `dcat:Catalog` from the Jena city piveau
+   portal): it validates **clean** against the DCAT-AP.de 3.0 shapes while carrying
+   `dct:type "ckan"` as a plain literal — legal, because the shapes constrain `dcterms:type` per
+   class and leave it free on `dcat:Catalog`. Our `type` sits on the shared `DcatResource`
+   supertype as `AnyURI`, so we were stricter than the profile; the serializer now degrades a
+   non-IRI `AnyURI` value to a literal rather than throwing (which had made every RDF read of
+   such a resource a 500 while XMI reads hid it).
+
+   Blocked on a source: the portal's per-resource download emits `<rdf:RDF>` with **no namespace
+   declarations** (unparseable as-is) and a catalog with no `dcat:dataset`/`dcat:service` links,
+   so it cannot exercise references. Options are the DCAT-AP.de 3.0 reference implementation, or
+   fetching complete documents from a live piveau instance.
 
 ## Closed (2026-08-12)
 

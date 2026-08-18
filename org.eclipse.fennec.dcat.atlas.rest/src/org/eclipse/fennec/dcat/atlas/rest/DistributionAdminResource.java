@@ -20,17 +20,12 @@ import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWr
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
-import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -47,7 +42,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -88,15 +82,6 @@ public class DistributionAdminResource {
 	DataServiceReadOnlyService dataServiceReadOnlyService;
 
 	/**
-	 * On-write SHACL enforcement (FR-4); gated by the validation service's config.
-	 * Dynamic/optional so a validation reconfigure (shapes or enforce-flag change)
-	 * rebinds here without recycling this resource and reloading the whole JAX-RS
-	 * whiteboard; absent/unbound simply means no enforcement (see {@link WriteValidation}).
-	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
-
-	/**
 	 * FR-10: a Distribution is always created in the context of its Dataset (the
 	 * {@code datasetId} path segment), so there is no dataset-less create.
 	 */
@@ -104,7 +89,7 @@ public class DistributionAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution,
-			@Context UriInfo uriInfo, @Context HttpHeaders headers) {
+			@Context UriInfo uriInfo) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -120,11 +105,6 @@ public class DistributionAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(uriInfo, datasetId, id);
-		// Validate the exact form to be stored (about already stamped); 422 if enforced.
-		ResponseBuilder invalid = WriteValidation.enforce(validationService, distribution, headers.getAcceptableMediaTypes());
-		if (invalid != null) {
-			return invalid.build();
-		}
 		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);
 		ResponseBuilder created = Response.created(about).entity(distribution);
 		distributionAdminService.etag(datasetId, id).ifPresent(created::tag);
@@ -136,7 +116,7 @@ public class DistributionAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
-			Distribution distribution, @Context UriInfo uriInfo, @Context Request request, @Context HttpHeaders headers) {
+			Distribution distribution, @Context UriInfo uriInfo, @Context Request request) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -151,10 +131,6 @@ public class DistributionAdminResource {
 		ResponseBuilder mismatch = ReplaceIdentity.stampDistribution(datasetId, id, distribution);
 		if (mismatch != null) {
 			return mismatch.build();
-		}
-		ResponseBuilder invalid = WriteValidation.enforce(validationService, distribution, headers.getAcceptableMediaTypes());
-		if (invalid != null) {
-			return invalid.build();
 		}
 		boolean existed = distributionAdminService.getDistributionForDataset(datasetId, id).isPresent();
 		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);

@@ -22,16 +22,11 @@ import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
-import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -50,7 +45,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
@@ -102,19 +96,10 @@ public class CatalogAdminResource {
 	@Reference
 	DataServiceReadOnlyService dataServiceReadOnlyService;
 
-	/**
-	 * On-write SHACL enforcement (FR-4); gated by the validation service's config.
-	 * Dynamic/optional so a validation reconfigure (shapes or enforce-flag change)
-	 * rebinds here without recycling this resource and reloading the whole JAX-RS
-	 * whiteboard; absent/unbound simply means no enforcement (see {@link WriteValidation}).
-	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
-
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createCatalog(Catalog catalog, @Context UriInfo uriInfo, @Context HttpHeaders headers) {
+	public Response createCatalog(Catalog catalog, @Context UriInfo uriInfo) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second catalog; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
@@ -126,11 +111,6 @@ public class CatalogAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(uriInfo, id);
-		// Validate the exact form to be stored (about already stamped); 422 if enforced.
-		ResponseBuilder invalid = WriteValidation.enforce(validationService, catalog, headers.getAcceptableMediaTypes());
-		if (invalid != null) {
-			return invalid.build();
-		}
 		catalogAdminService.upsertCatalog(catalog);
 		ResponseBuilder created = Response.created(about).entity(catalog);
 		catalogAdminService.etag(id).ifPresent(created::tag);
@@ -142,7 +122,7 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog, @Context UriInfo uriInfo,
-			@Context Request request, @Context HttpHeaders headers) {
+			@Context Request request) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
 		if (precondition != null) {
@@ -153,10 +133,6 @@ public class CatalogAdminResource {
 		ResponseBuilder mismatch = ReplaceIdentity.stamp(DcatIds.CATALOGS, id, catalog);
 		if (mismatch != null) {
 			return mismatch.build();
-		}
-		ResponseBuilder invalid = WriteValidation.enforce(validationService, catalog, headers.getAcceptableMediaTypes());
-		if (invalid != null) {
-			return invalid.build();
 		}
 		boolean existed = catalogAdminService.getCatalog(id).isPresent();
 		catalogAdminService.upsertCatalog(catalog);
@@ -198,10 +174,9 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
-			@Context Request request, @Context HttpHeaders headers) {
+			@Context Request request) {
 		return addMember(id, request,
-				() -> refuseMember(DcatIds.DATASETS, dataset, this::datasetExists, membership(id, "datasets"), uriInfo,
-						headers),
+				() -> refuseMember(DcatIds.DATASETS, dataset, this::datasetExists, membership(id, "datasets"), uriInfo),
 				() -> catalogAdminService.addDatasetToCatalog(id, dataset));
 	}
 
@@ -231,10 +206,10 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addService(@PathParam("id") String id, DataService service, @Context UriInfo uriInfo,
-			@Context Request request, @Context HttpHeaders headers) {
+			@Context Request request) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.DATA_SERVICES, service, this::dataServiceExists, membership(id, "services"),
-						uriInfo, headers),
+						uriInfo),
 				() -> catalogAdminService.addDataServiceToCatalog(id, service));
 	}
 
@@ -259,10 +234,10 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addSubCatalog(@PathParam("id") String id, Catalog subCatalog, @Context UriInfo uriInfo,
-			@Context Request request, @Context HttpHeaders headers) {
+			@Context Request request) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.CATALOGS, subCatalog, this::catalogExists, membership(id, "catalogs"),
-						uriInfo, headers),
+						uriInfo),
 				() -> catalogAdminService.addSubCatalogToCatalog(id, subCatalog));
 	}
 
@@ -329,19 +304,20 @@ public class CatalogAdminResource {
 	 * Everything that can refuse a member submitted in the body, in the order a create in
 	 * the member's own collection applies it. {@code add} <em>stores</em> the member before
 	 * linking it, so these endpoints must be gated exactly as {@code POST}/{@code PUT} on
-	 * that collection is — otherwise both FR-4 enforcement and the identity rules are
-	 * bypassable by choosing a different path. Resolving the identity first also stamps it,
-	 * so the shapes see the exact form that will be stored.
+	 * that collection is — otherwise the identity rules are bypassable by choosing a
+	 * different path.
+	 * <p>
+	 * SHACL enforcement used to be applied here too. It no longer needs to be: the check
+	 * moved to the store, which every one of these paths writes through, so a member is
+	 * validated however it arrives — and, unlike this method, so is a member stored by a
+	 * caller that never touches REST.
 	 *
 	 * @return the response refusing the member, or {@code null} when it may be stored
 	 */
 	private ResponseBuilder refuseMember(String collection, IdentifiedResource member, Predicate<String> exists,
-			String membershipPath, UriInfo uriInfo, HttpHeaders headers) {
+			String membershipPath, UriInfo uriInfo) {
 		CreateIdentity identity = CreateIdentity.resolveMember(collection, member, exists, membershipPath, uriInfo);
-		if (identity.refused()) {
-			return identity.refusal();
-		}
-		return WriteValidation.enforce(validationService, member, headers.getAcceptableMediaTypes());
+		return identity.refused() ? identity.refusal() : null;
 	}
 
 	/** The path a membership lives under, as the refusal above names it to the client. */

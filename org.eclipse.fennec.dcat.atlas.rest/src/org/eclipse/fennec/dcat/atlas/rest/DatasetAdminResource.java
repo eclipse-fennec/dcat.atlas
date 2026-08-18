@@ -18,16 +18,11 @@ import java.net.URI;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
-import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -43,7 +38,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -74,19 +68,10 @@ public class DatasetAdminResource {
 	@Reference
 	DatasetAdminService datasetAdminService;
 
-	/**
-	 * On-write SHACL enforcement (FR-4); gated by the validation service's config.
-	 * Dynamic/optional so a validation reconfigure (shapes or enforce-flag change)
-	 * rebinds here without recycling this resource and reloading the whole JAX-RS
-	 * whiteboard; absent/unbound simply means no enforcement (see {@link WriteValidation}).
-	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
-
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createDataset(Dataset dataset, @Context UriInfo uriInfo, @Context HttpHeaders headers) {
+	public Response createDataset(Dataset dataset, @Context UriInfo uriInfo) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second dataset; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
@@ -99,11 +84,6 @@ public class DatasetAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(uriInfo, id);
-		// Validate the exact form to be stored (about already stamped); 422 if enforced.
-		ResponseBuilder invalid = WriteValidation.enforce(validationService, dataset, headers.getAcceptableMediaTypes());
-		if (invalid != null) {
-			return invalid.build();
-		}
 		datasetAdminService.upsertDataset(dataset);
 		ResponseBuilder created = Response.created(about).entity(dataset);
 		datasetAdminService.etag(id).ifPresent(created::tag);
@@ -115,7 +95,7 @@ public class DatasetAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
-			@Context Request request, @Context HttpHeaders headers) {
+			@Context Request request) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
 		if (precondition != null) {
@@ -126,10 +106,6 @@ public class DatasetAdminResource {
 		ResponseBuilder mismatch = ReplaceIdentity.stamp(DcatIds.DATASETS, id, dataset);
 		if (mismatch != null) {
 			return mismatch.build();
-		}
-		ResponseBuilder invalid = WriteValidation.enforce(validationService, dataset, headers.getAcceptableMediaTypes());
-		if (invalid != null) {
-			return invalid.build();
 		}
 		boolean existed = datasetAdminService.getDataset(id).isPresent();
 		datasetAdminService.upsertDataset(dataset);

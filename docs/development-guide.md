@@ -13,7 +13,7 @@
 |---|---|
 | `org.eclipse.fennec.dcat.atlas.dcatap.de.model/` | EMF model bundle for the DCAT-AP.de vocabulary (ecores + generated code + tests). |
 | `org.eclipse.fennec.dcat.atlas.api/` | OSGi service API — per-entity read-only + admin service interfaces (EMF-typed). |
-| `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations — file-backed store; one read-only + admin component per entity; shared `helper.DcatHelper`. |
+| `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations — file-backed store; one read-only + admin component per entity; shared `helper.DcatHelper`. Also the write boundary's model validation (`helper.ModelValidation`), which runs the ecore's multiplicities and OCL invariants through EMF's `Diagnostician`. |
 | `org.eclipse.fennec.dcat.atlas.rest/` | JAX-RS whiteboard resources — read-only (public) + admin (write) resource per entity. |
 | `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
 | `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed), controlled-vocabulary checks, and the Felix health checks behind `/health/*`. |
@@ -85,6 +85,159 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 ---
 
 ## Change log
+
+### 2026-08-18 — SHACL enforcement moved from the REST resources to the store
+
+**A direct service caller wrote unvalidated.** On-write SHACL enforcement lived in the five
+admin REST resources — each held its own `DcatValidationService` and called
+`WriteValidation.enforce` before delegating. So `POST /admin/datasets` refused a
+non-conformant body while the identical entity handed to `upsertDataset` from another bundle
+was stored. `DcatValidationService` was referenced in `…rest` and `…validation` only; zero
+references in `…impl`.
+
+This is the exact asymmetry `ForeignIdentityException` was created to end for identity, whose
+javadoc still records how it went unnoticed for a day. Both planning documents already said
+validation belonged at the persistence boundary — `DCAT-emf-native-plan.md` §5 ("not the REST
+layer — the admin services are OSGi services with other possible callers") and the persistence
+plan's write ordering. SHACL was the one check that had not moved.
+
+*Not an oversight, though.* `DcatValidationService.isWriteEnforced()` documents the split as
+deliberate: "the decision to act on it belongs to the caller (the REST write path), not this
+service." What dated was the parenthesis — it assumes REST is *the* caller.
+
+**`ShaclValidation.check` now runs in `DcatHelper.Store.put`**, after `ModelValidation` (cheap
+structural checks first: an entity missing its publisher should not pay for a shapes run to be
+told so) and after the `about` is stamped, because a report whose `sh:focusNode` is not the
+stored IRI is not actionable. It throws `api.ShaclViolationException`, which carries the native
+Jena `ValidationReport` — no new dependency, since `…api` already returns that type from
+`DcatValidationService.validate`.
+
+*The report is not lost by going through an exception.* `ShaclViolationExceptionMapper` injects
+`@Context HttpHeaders`, reuses `WriteValidation.reportType` for negotiation and the existing
+`ValidationReportMessageBodyWriter` for serialization, and sets `X-SHACL-Conforms: false` — the
+same 422 the resources used to build. Rendering a refusal is genuinely the adapter's job;
+deciding to refuse is not.
+
+**Absence fails open, and the operator can change that.** With no validation service bound, or
+enforcement off, the write proceeds — SHACL is operator policy over operator-supplied shapes,
+unlike the model constraints which ship inside the model and fail closed. An operator who wants
+the strict reading raises the DS reference's minimum cardinality in configuration:
+
+```json
+"DatasetAdminService": { "validationService.cardinality.minimum:int": 1 }
+```
+
+Verified against the Felix SCR source rather than assumed: `DependencyManager
+.getMinimumCardinality` rejects a configured minimum only when it is *below* the declared
+default, or above 1 for a unary reference. An `OPTIONAL` unary reference defaults to 0, so 1 is
+accepted and the component becomes unsatisfiable without the service. Every existing use in
+`/opt/git/nsc` is on a *multiple* reference, so this is the first unary one here. Note it can
+only ever *raise* the minimum — which is why the reference stays `OPTIONAL` in code.
+
+**The health check that explains the 404.** When the admin services go unsatisfied, the JAX-RS
+whiteboard unregisters their resources, so the write endpoints answer `404` — indistinguishable
+from a mistyped URL — while reads keep working. `AdminWriteHealthCheck` (`admin-write`, tag
+`ready`, CRITICAL) names the unavailable collections, states that the 404 is the whiteboard
+unregistering rather than a routing error, and says whether a missing `DcatValidationService` is
+the likely cause. All six of its references are optional and dynamic: a check that could itself
+go unsatisfied would vanish exactly when it is needed.
+
+**Tests.** `impl/ShaclWriteEnforcementTest` (5) calls the service directly with a hand-built
+`ValidationReport` — what is under test is the decision (which severities block, what absence
+means), not Jena's engine. `impl/AdminWriteHealthCheckTest` (6) pins the wording, including
+that it does not blame a validation service that is present. `WriteValidationIntegrationTest`
+gained `aDirectServiceCallIsEnforcedToo`, which injects `DatasetAdminService` and calls it with
+no HTTP in sight — before the move it stored the entity. **180 unit + 159 OSGi, green.**
+
+*Build notes.* `…impl` gained Jena on its `-buildpath` (`ValidationReport`, `Severity`) and the
+`validation` bundle's Jena runtime list on its `-testpath`; `Severity` is in
+`org.apache.jena.shacl.validation`, not `org.apache.jena.shacl`. A hand-built `ReportEntry`
+needs `sourceConstraintComponent` — `ValidationReport` materializes entries into a graph on
+`build()` and that field is not optional. And a `#` comment cannot sit inside a continued
+`-buildpath` list in a `bnd.bnd`; it is parsed as an entry.
+
+### 2026-08-18 — OCL constraints on the model, enforced before the store writes
+
+**The portal validated nothing out of the box.** No SHACL shapes ship with the repository —
+`config.local` defaults `shapesDirectory` to `/tmp/dcat-shapes-unset` — and an empty shapes set
+conforms to everything, so a deployment nobody had handed shapes to accepted any metadata at
+all. Separately, the ecore's own lower bounds (`title [1..*]`, `publisher [1]`) were decorative:
+`Resource.save()` never calls the `Diagnostician`, so nothing had ever checked them. And an
+`AnyURI` attribute holding a non-IRI did not error — `EObjectToJena` quietly emitted it as a
+**literal**, so `foaf:mbox "ilenia@example.com"` was written out and served.
+
+**44 OCL constraints, annotated on the model.** Declared as EMF validation-delegate annotations
+under `http://www.eclipse.org/fennec/m2x/ocl/1.0` and evaluated by the
+[`emf.m2x`](https://github.com/eclipse-fennec/emf.m2x) OCL engine. Three annotations per
+package: `validationDelegates` on the `EPackage`, a `constraints` name list on the `EClass`, and
+the expressions keyed by name. `dcatap.genmodel` needed no change — the generator reads the
+ecore and emits `validate<Class>_<Name>` methods with the delegate URI inlined as a string, so
+the model bundle gains **no compile dependency** on m2x.
+
+One constraint per feature rather than one per class, so a violation names the property to fix
+(`Dataset.ThemeIsIri`) instead of reporting that "some IRI is wrong".
+
+**Enforced at `DcatHelper.Store.put`** — the single write choke point — via
+`ModelValidation.check`, which calls `Diagnostician.INSTANCE.validate` and throws
+`ModelConstraintException`; `ModelConstraintExceptionMapper` renders it **422**, the status
+on-write SHACL already uses. Ordered after the `about` is stamped (`HasIdentity` needs it) and
+before the file write. Gated by `StoreConfig.validateOnWrite`, default `false`, `true` in the
+shipped configs — the `ShapesConfig.enforceOnWrite` arrangement.
+
+*The deviation from the plan.* `DCAT-emf-native-plan.md` §5 said to call `OclEngine` directly
+and **not** go through the `Diagnostician`, because a validation delegate is "diagnostic only".
+The premise was right and the conclusion was not: nothing calls the Diagnostician *on its own*,
+but calling it explicitly at the write boundary and throwing enforces just as well — and it also
+runs `validate_EveryMultiplicityConforms`, which is what finally makes the ecore's declared
+lower bounds mean something. Getting that for free is the reason this route won.
+
+*Which is why the cardinalities had to be fixed first.* Checked against the spec PDF, five
+Distribution features were mandatory in the ecore that DCAT-AP.de §4.6 marks Optional
+(`mediaType`, `packageFormat`, `compressFormat`, `accessRights`, `description`), and two Pflicht
+features were optional (`Distribution.accessURL`, `DataService.endpointURL` — both `[1..*]` in
+§4.6/§4.4). Harmless while nothing enforced lower bounds; a broken portal the moment something
+did. `DcatResource.description` was relaxed to `[0..*]` for the opposite reason: it is Pflicht
+for Catalog/Dataset/DatasetSeries and **not** for DataService, and an ecore cannot relax a bound
+in a subclass. It is `Dataset::HasDescription` in OCL instead — declared on `Dataset`, which is
+precisely what excludes DataService, since Catalog and DatasetSeries extend Dataset while
+DataService extends `DcatResource` directly.
+
+*It fails closed.* With the engine absent, `EObjectValidator` reports every annotated constraint
+as *constraint delegate not found* at `ERROR` rather than passing it, so a deployment missing
+the bundle refuses writes instead of accepting unvalidated ones — the opposite of the
+unconfigured-SHACL failure mode. `@RequireOCL` on the impl's `package-info` makes the resolver
+bring the engine along, so that path should stay theoretical.
+
+**Traps worth writing down.**
+
+- `fennecM2X` was **already** declared in `cnf/ext/fennec.bnd`. Adding it to
+  `cnf/ext/libraries.bnd` as well fails the build with *"Cyclic or multiple include of
+  …m2x.library.workspace…/workspace.bnd"*.
+- `resolve.test` **succeeds without updating `-runbundles`**, so the four `…m2x.ocl.*` bundles
+  plus `org.antlr.antlr4-runtime` (the parser imports it and does not embed it) had to be added
+  by hand to `test.bndrun` and `base.bndrun`.
+- m2x's OCL `matches` is `String.matches` — a **full** match, not a search.
+- 422 has no constant in `jakarta.ws.rs.core.Response.Status`; reuse
+  `WriteValidation.UNPROCESSABLE_ENTITY`.
+
+**Tests.** `impl/ModelConstraintValidationTest` (12) installs the delegates by hand —
+`new OclEngineImpl(new OclParserSupport()).installDelegates()`, m2x's documented standalone
+path — because a plain JUnit test has no OSGi whiteboard; one case uninstalls them again to pin
+the fail-closed behaviour, and one asserts a DataService without a description is *accepted*, so
+that nobody later "tidies" `HasDescription` up onto `DcatResource`.
+`rest.tests/ModelConstraintWriteIntegrationTest` (4) installs nothing and flips
+`validateOnWrite` through `ConfigurationAdmin`, which is what proves the delegate really does
+reach EMF's global registry from the m2x service. **169 unit + 157 OSGi, green.**
+
+*Fallout fixed on the way.* `EObjectToJenaTest.mediaTypeAndPackageFormatAreIris` still used
+`getMediaType().add(…)`; both features are single-valued after the cardinality correction.
+
+**Still open.** The existing test fixtures build spec-invalid entities (title only, no
+description or publisher), which is the only reason `validateOnWrite` defaults to `false`.
+Making them conformant — `AbstractEntityResourceIntegrationTest.xmiBody` plus about ten
+per-suite helpers — would let the default flip to `true` and have the whole suite exercise the
+enforced path. Controlled-vocabulary membership stays with SHACL: the F-22 check traverses
+`skos:inScheme` against operator-supplied authority tables that OCL cannot see.
 
 ### 2026-08-17 — `AnyURI` is the IRI marker, and three things found while proving it
 

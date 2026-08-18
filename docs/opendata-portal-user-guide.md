@@ -14,8 +14,9 @@ file in the EMF model's own XMI encoding, and serves the catalog machine-readabl
 Jena](https://jena.apache.org/) projection of that store) and human-readably (a
 catalog browser UI).
 
-Writes are validated against the DCAT-AP.de SHACL shapes; see
-[Validating metadata](#validating-metadata).
+Writes are validated twice over: against the model's own constraints, which travel with
+the model and need no setup, and against the DCAT-AP.de SHACL shapes, which the operator
+supplies. See [Validating metadata](#validating-metadata).
 
 For the architecture, scope and work-package plan, see the internal
 [planning document](./opendata-portal-planung.md). For the write-side contract,
@@ -525,12 +526,100 @@ Human-readable presentation of the catalog.
 
 ## Validating metadata
 
-Metadata is validated against the DCAT-AP.de SHACL shapes. Shapes and the controlled
+A write passes through **two independent layers**. They overlap deliberately, and they
+fail differently, so it is worth knowing which one rejected a request.
+
+| | Model constraints | SHACL shapes |
+|---|---|---|
+| What they check | the model's own rules — mandatory properties, and that every IRI-valued field really holds an IRI | the DCAT-AP.de profile, including controlled-vocabulary membership |
+| Where they come from | inside the model; nothing to install | operator-supplied `.ttl` files |
+| Switched on by | `validateOnWrite` (env `MODEL_VALIDATE`) | `enforceOnWrite` (env `SHACL_ENFORCE`) |
+| Also needs | — | a shapes directory (`SHACL_SHAPES_DIR`); **without one, nothing is checked** |
+| Enforced at | the store — so every writer is covered, not only HTTP callers | the store, likewise |
+| Rejection | `422` with a plain-text list of violations | `422` with an RDF `sh:ValidationReport` |
+| Dry run | not available | `POST /admin/validate/{collection}` |
+
+The practical consequence: a portal with no shapes directory configured still enforces the
+model constraints, but performs **no profile validation at all** — SHACL reports
+conformance because it has nothing to compare against. Configure shapes before treating a
+green validation as meaningful.
+
+### Model constraints
+
+These are declared on the model itself — as multiplicities, and as OCL invariants
+annotated on the ecore and evaluated by the [Fennec
+M2X](https://github.com/eclipse-fennec/emf.m2x) OCL engine. They are checked when the
+entity is stored, so every writer is covered, not only requests arriving over HTTP.
+
+What they enforce:
+
+- **Mandatory properties, per class.** A Catalog, Dataset or DatasetSeries needs
+  `dct:title`, `dct:description` and `dct:publisher`. A DataService needs `dct:title`,
+  `dct:publisher` and `dcat:endpointURL` — but **not** `dct:description`, which DCAT-AP.de
+  does not make mandatory for it. A Distribution needs `dcat:accessURL` and `dct:license`.
+- **IRI-valued fields really hold IRIs.** `dcat:theme`, `dcat:accessURL`,
+  `dcat:endpointURL`, `dct:language` and some forty other properties are IRI references. A
+  bare token like `ENVI`, a relative path, or a value containing a space is refused —
+  previously such a value was silently written out as a plain literal instead.
+- **Scheme-specific fields.** `foaf:mbox` and `vcard:hasEmail` must be `mailto:` IRIs,
+  `foaf:phone` and `vcard:hasTelephone` must be `tel:` IRIs.
+- **Every stored entity carries an identity.**
+
+A rejection lists one line per violated rule, naming the property to fix:
+
+```
+The required feature 'publisher' of 'Dataset http://dcat.atlas/datasets/air' must be set
+The 'ThemeIsIri' constraint is violated on 'Dataset http://dcat.atlas/datasets/air'
+The 'HasDescription' constraint is violated on 'Dataset http://dcat.atlas/datasets/air'
+```
+
+A named constraint (`ThemeIsIri`, `HasDescription`) is one of the OCL invariants; a
+*required feature* message is a multiplicity the model declares. The IRI shown is the
+resource's stored identity, not the public one you called.
+
+Enforcement is on in the shipped local and container configurations. Set
+`MODEL_VALIDATE=false` to load a corpus that predates a constraint.
+
+> If the OCL engine is missing from a deployment, writes are **refused**, not silently
+> accepted unvalidated — every constraint reports as *delegate not found*. A portal that
+> suddenly rejects every write with `422` is missing the engine bundle, not carrying bad
+> data.
+
+### Profile validation with SHACL
+
+Metadata is also validated against the DCAT-AP.de SHACL shapes. Shapes and the controlled
 vocabularies they reference are loaded from operator-configured directories (set in
 `secrets.bndrun` for local runs, as `SHACL_SHAPES_DIR` and `SHACL_VOCAB_DIR`); with no
 shapes configured, validation is a no-op that reports conformance.
 
-### Dry-run validation
+Enforcement happens where the entity is stored, so it covers every writer — an importer or
+a migration tool calling the OSGi services directly is checked exactly as an HTTP request
+is. Only the *rendering* of a refusal belongs to the REST layer, which is why a rejected
+`POST` still comes back as a `sh:ValidationReport` in the RDF syntax you asked for.
+
+#### Requiring the validation service
+
+With shapes configured, a portal should not silently keep accepting writes if the
+validation service goes away — a failed shapes reload, a bundle that did not start. The
+shipped configurations therefore require it:
+
+```json
+"DatasetAdminService": {
+    "validationService.cardinality.minimum:int": 1
+}
+```
+
+That is an OSGi Declarative Services setting: it raises the admin service's optional
+reference to a mandatory one, so **without a validation service the admin services do not
+start at all** and no write can slip past unchecked. Reads are unaffected.
+
+The symptom, though, is blunt: the admin endpoints answer `404`, not `503`, because the
+REST layer unregisters a resource whose service is missing. `GET /health/ready` explains
+it — the `admin-write` check reports `CRITICAL` and names both the collections that are
+unavailable and whether a missing validation service is the reason. Set the minimum back
+to `0` to let writes proceed unvalidated instead.
+
+#### Dry-run validation
 
 `POST /admin/validate/{collection}` validates a submitted entity **without storing
 it**. It always returns `200 OK` with a SHACL `sh:ValidationReport` (in the RDF syntax
@@ -547,7 +636,7 @@ property at fault (`sh:resultPath`), the rule (`sh:sourceShape`) and its severit
 DCAT-AP.de distinguishes **MUSS** (`sh:Violation` — mandatory) from **SOLL**
 (`sh:Warning` — recommended); both appear in the report.
 
-### On-write enforcement
+#### On-write enforcement
 
 When enforcement is enabled (`enforceOnWrite`), `POST`/`PUT` create and replace
 operations validate the entity first and reject a non-conformant one with

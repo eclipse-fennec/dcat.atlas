@@ -204,22 +204,63 @@ giving a Catalog an `rdf:about` containing a space, which failed when the projec
 emitted RDF/XML — a hop that no longer exists. The remaining skip path (a resource with no
 `about`) is covered by `resourceWithoutAboutIsSkippedRatherThanFailing`.
 
-## 5. Validation at the write boundary (planned)
+## 5. Validation at the write boundary (done 2026-08-18)
 
-Constraints the ecore cannot express get declared in **OCL** and evaluated by
+Constraints the ecore cannot express are declared in **OCL** and evaluated by
 [`emf.m2x`](/opt/git/emf.m2x) — a spec-compliant OCL 2.5 engine, decoupled from the Eclipse
-platform, standalone Java 21 with optional OSGi DS. Consumed via its workspace library, the same
-two-line pattern as `fennecPersistence`.
+platform, standalone Java 21 with optional OSGi DS. It reaches the workspace through the
+`fennecM2X` library, which `cnf/ext/fennec.bnd` already declared; adding it a second time in
+`libraries.bnd` fails the build with a cyclic-include error.
 
-**Call `OclEngine` directly from the admin services — not through EMF's `Diagnostician`.** That
-distinction is the whole design: `Resource.save()` never invokes the Diagnostician, so an OCL
-*validation delegate* would be diagnostic only and would happily let a bad object be written.
-Evaluating at the write boundary and throwing is what actually enforces.
+**44 constraints across six ecores**, one per feature so a violation names the property to fix:
+`rdf` 2, `dcat` 34 (DcatResource 12, Distribution 11, Catalog 3, Dataset 4, DataService 3,
+CatalogRecord 1), `foaf` 3, `vcard` 3, `spdx` 1, `terms` 1.
 
-Hook it at the **persistence boundary** (`…impl` admin services), not the REST layer — the admin
-services are OSGi services with other possible callers. Same rule as the SPARQL graph hook.
+### Deviation: annotations and the Diagnostician, not a direct `OclEngine` call
 
-What it should cover:
+This plan said to **call `OclEngine` directly from the admin services, not through EMF's
+`Diagnostician`**, on the grounds that a validation delegate is diagnostic only and would let a
+bad object be written. That reasoning was half right and the conclusion did not follow. What is
+true is that nothing calls the Diagnostician on its own — `Resource.save()` never does. What does
+not follow is that the delegate is therefore unusable: calling `Diagnostician.INSTANCE.validate`
+*explicitly at the write boundary and throwing* enforces exactly as a direct engine call would,
+and buys three things a direct call does not:
+
+- the constraints live **in the model**, as delegate annotations under
+  `http://www.eclipse.org/fennec/m2x/ocl/1.0`, rather than in a document beside it;
+- the generator emits `validate<Class>_<Name>` methods and chains inherited constraints into
+  subclasses, across packages, for free;
+- the same call also enforces the ecore's **declared multiplicities**, via
+  `validate_EveryMultiplicityConforms` — which nothing had ever enforced, since lower bounds are
+  inert without the Diagnostician.
+
+That last point is why the cardinality corrections had to land first, and why
+`DcatResource.description` had to be relaxed to `[0..*]`: DCAT-AP.de makes description Pflicht
+for Catalog/Dataset/DatasetSeries but not for DataService, and an ecore cannot relax a lower
+bound in a subclass. It is stated as `Dataset::HasDescription` instead, and declaring it on
+`Dataset` is what excludes DataService.
+
+It also **fails closed**, which a direct call would have had to implement by hand: with the
+engine absent, `EObjectValidator` reports every annotated constraint as *constraint delegate not
+found* at `ERROR`, so a deployment missing the bundle refuses writes rather than accepting
+unvalidated ones.
+
+### Where it is hooked
+
+At the **persistence boundary** as planned — `DcatHelper.Store.put`, the single write choke
+point, rather than the REST layer, because the admin services are OSGi services with other
+possible callers. Same rule as the SPARQL graph hook. Ordered after the `about` is stamped
+(`HasIdentity` needs it) and before `References.requireResolvable` and the file write.
+`ModelValidation.check` throws `api.ModelConstraintException`, which
+`rest.filter.ModelConstraintExceptionMapper` renders as **422** — the status on-write SHACL
+already uses, since the failure is the same kind.
+
+Gated by `StoreConfig.validateOnWrite`, default `false`, `true` in the shipped local and
+container configurations — the `ShapesConfig.enforceOnWrite` arrangement. Off by default only
+because the existing test fixtures build deliberately minimal entities; making them conformant
+would let the default flip.
+
+### What it covers
 
 - **`about` present on entities.** `IdentifiedResource.about` is `[0..1]` because value nodes
   (`PeriodOfTime`, `Checksum`, a vcard contact point) are legitimately blank. Ecore cannot
@@ -227,11 +268,29 @@ What it should cover:
   Without it an unset `about` degrades the XMI href to a positional path (`#//@dataset.0`) — no
   error, and every reference silently retargets when a collection is reordered.
 - **`AnyURI` scheme and shape.** `AnyURI` accepts any string, so `mbox` will happily hold
-  `ilenia@example.com` with no scheme, or plain garbage. `mbox` must be a `mailto:` IRI, `phone`
-  a `tel:` IRI, and owned IRIs must be absolute.
-- **Spec obligations the ecore lost.** Anything Pflicht that multiplicity alone cannot state.
-- Controlled-vocabulary membership, which overlaps the existing F-22 check — worth unifying
-  rather than running two mechanisms.
+  `ilenia@example.com` with no scheme, or plain garbage. `mbox` and `vcard:hasEmail` must be
+  `mailto:` IRIs, `phone` and `vcard:hasTelephone` `tel:` IRIs, and the other ~35 `AnyURI`
+  attributes absolute IRIs — matched against `[A-Za-z][A-Za-z0-9+.\-]*:\S*`. Note m2x's
+  `matches` is `String.matches`, i.e. a **full** match, so anchors are redundant.
+- **Spec obligations the ecore lost** — `Dataset::HasDescription`, above.
+- Controlled-vocabulary membership was **deliberately left to SHACL** rather than unified here:
+  the F-22 check traverses `skos:inScheme` against operator-supplied vocabulary data that OCL has
+  no access to, so restating it would mean hand-mirroring the authority tables.
+
+### SHACL joined it here on 2026-08-18
+
+On-write SHACL enforcement used to live in the admin REST resources, so it covered HTTP
+callers and nobody else. It now runs in the same place, immediately after the model
+constraints — see the development guide's entry for that date. This section's instruction to
+hook at the persistence boundary "not the REST layer — the admin services are OSGi services
+with other possible callers" turned out to apply to both layers, not only to OCL.
+
+### Why this layer exists at all, given SHACL
+
+**No shapes ship with the repository** — `config.local` defaults `shapesDirectory` to
+`/tmp/dcat-shapes-unset` — and an empty shapes set conforms to everything. So a deployment that
+has not been given shapes validates nothing at all. These constraints travel in the model and
+need no operator setup, which makes them the floor; SHACL is the profile check above it.
 
 ### The converter also guards its own IRIs (done 2026-08-13)
 
@@ -319,11 +378,12 @@ and assert the parsed triple's **object**, never just that it parsed.
    health check reports WARN with the count of resources that could not be projected.
    Deliberately WARN and not CRITICAL: REST still serves them, so taking the instance out of
    rotation would be the wrong trade, but SPARQL under-reporting must be visible.
-8. **OCL validation at the write boundary via `emf.m2x` (§5) — the one item left.** Not
-   blocking, but it is what makes `about` `[0..1]` safe. Note what has since taken over part of
-   its job: `DcatIds.idForWrite` refuses an identity that is not ours *at the service*, and the
-   DCAT-AP.de SHACL shapes run on write (FR-4). What neither covers is the structural
-   constraints the ecore cannot express and the shapes do not check.
+8. ~~**OCL validation at the write boundary via `emf.m2x` (§5).**~~ **Done 2026-08-18** — see
+   §5, including the deviation from this plan's "not through the Diagnostician" instruction.
+   44 constraints, enforced in `DcatHelper.Store.put`, `422` over REST, 12 unit + 4 OSGi tests.
+   The neighbours that cover part of the same ground remain: `DcatIds.idForWrite` refuses an
+   identity that is not ours *at the service*, and the DCAT-AP.de SHACL shapes run on write
+   (FR-4) when an operator has configured them.
 9. **Read external documents through `JenaToEObject` as a conformance corpus — reopened, needs a
    source.** The five committed MDO documents turned out to be **stale and have been deleted**:
    four carried `<!-- Version 1.1, 13.08.2020 -->`, i.e. DCAT-AP.de 1.1, and the fifth was a

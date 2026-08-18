@@ -1,13 +1,19 @@
 # DCAT.Atlas — Status & Gap Analysis
 
-> As of: **2026-08-07** (previous revision: 2026-07-09)
+> As of: **2026-08-18** (previous revisions: 2026-08-07, 2026-07-09)
 > Purpose: reconcile **what is implemented**, **what is still open**, and **where the
 > source documents contradict each other or the code**, across the three planning
 > inputs. This is an internal working document; it is not the requirements spec and
 > does not override it — where it flags a contradiction, the resolution is a decision
 > for review.
 
-**What changed in this revision:** SHACL validation completed end to end (FR-4 on-write
+**What changed in 2026-08-18:** a second validation layer — the model's own constraints,
+declared as OCL invariants on the ecore and enforced at the persistence boundary. This matters
+for how FR-4/F-21 should be read: SHACL is **operator-configured and absent by default**, so
+until now a deployment without a shapes directory validated nothing. The model constraints ship
+inside the model and always apply. See FR-4, FR-19 and F-21 below.
+
+**What changed in 2026-08-07:** SHACL validation completed end to end (FR-4 on-write
 enforcement, FR-5 dry-run, F-22 controlled vocabularies, native Jena `ValidationReport`);
 runtime + configuration bundles added; JSON read path fixed. [C7](#c7) rewritten — the
 earlier reading of FR-9 was wrong. The read/write format asymmetry is now spelled out
@@ -77,7 +83,7 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | FR-2 | Upsert / idempotency | ✅ | `PUT …/{id}` create-or-replace; repeat → same state. |
 | FR-2b | Replace-only, no PATCH | ✅ | No PATCH exposed. |
 | FR-3 | URI assignment / minting | ✅ | Mints UUID under the request base; adopts client `{id}`. Namespace/collision validation minimal. |
-| FR-4 | SHACL validation | ✅ | `helper/WriteValidation` rejects create/replace with **422 + `sh:ValidationReport`** before persist, config-gated by `ShapesConfig.enforceOnWrite` → `DcatValidationService.isWriteEnforced()`. Blocks only on `sh:Violation` (MUSS); `sh:Warning` (SOLL) is reported, not blocked. Validation runs **after** the `about` IRI is stamped and, on PUT, **after** If-Match (412 precedes 422). Membership endpoints (FR-9/10/11) are intentionally not gated. |
+| FR-4 | Validation | ✅ | SHACL rejects a write with **422 + `sh:ValidationReport`** before persist, config-gated by `ShapesConfig.enforceOnWrite` → `DcatValidationService.isWriteEnforced()`. **Since 2026-08-18 the check runs in `DcatHelper.Store.put` (`helper/ShaclValidation`), not in the REST resources** — it used to cover HTTP callers only, so an entity handed straight to `upsertDataset` was stored unvalidated; `ShaclViolationException` carries the report out and `ShaclViolationExceptionMapper` renders it, so the negotiated 422 body is unchanged. Blocks only on `sh:Violation` (MUSS); `sh:Warning` (SOLL) is reported, not blocked. Validation runs **after** the `about` IRI is stamped and, on PUT, **after** If-Match (412 precedes 422). Membership endpoints reach the same store, so they are covered by construction now rather than by a per-endpoint gate. **Second layer since 2026-08-18:** the model's own constraints — the ecore's declared multiplicities plus 44 OCL invariants annotated on the ecores — run in `DcatHelper.Store.put` via EMF's `Diagnostician` and reject with **422 + a plain-text violation list** (`ModelConstraintException` → `ModelConstraintExceptionMapper`). Config-gated by `StoreConfig.validateOnWrite` (default `false`, `true` in the shipped configs). Unlike SHACL it needs no operator setup, applies at the **persistence** boundary rather than the REST adapter (so every caller of the OSGi services is covered), and fails **closed** if the OCL engine is missing. |
 | FR-5 | Dry-run validation | ✅ | `POST /admin/validate/{catalogs\|datasets\|dataset-series\|data-services\|distributions}` (`ValidationResource`) → 200 + full report + `X-SHACL-Conforms`; 503 if the service is unbound. Deviates from the spec's `?validate=only` ([C12](#c12)). |
 | FR-6 | Transactionality | ⬜ | File writes are not transactional; multi-entity ops not atomic. Needs the real store. |
 | FR-7 | ETag concurrency (**mandatory**) | 🟡 | ETag on GET + after write ✅; `If-Match`→412 ✅; `If-None-Match`/304 ✅. **But not mandatory** — unconditional writes are allowed (no 428) ([C6](#c6)). |
@@ -92,7 +98,7 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | FR-16 | Public URLs unaltered | 🟡 | Stored verbatim ✅; no explicit endpoint-awareness config. |
 | FR-17 | Reachability check (opt.) | ⬜ | — |
 | FR-18 | Self-awareness / base URL | 🟡 | Derived from the request `UriInfo`; no configured `publicBaseUrl` (AP7) — URIs minted behind a proxy or in a container will be wrong. |
-| FR-19 | Error taxonomy | 🟡 | 404/412 ✅; **422 + full SHACL report ✅** (negotiated across all five RDF syntaxes); 409-referenced and structured 400 ⬜. |
+| FR-19 | Error taxonomy | 🟡 | 404/412 ✅; **422 ✅** in both flavours — full SHACL report (negotiated across all five RDF syntaxes) and, since 2026-08-18, a plain-text model-constraint violation list; 409-referenced and structured 400 ⬜. |
 | FR-20 | Audit / provenance (opt.) | ⬜ | `CatalogRecord` exists in the model, unused by any service or endpoint ([C10](#c10)). |
 | FR-21 | Security (opt.) | 🟡 | `/admin/**` path split prepares an APISix/Keycloak PEP; no auth wiring in-app. |
 
@@ -114,11 +120,11 @@ persistence ≈ 10% (placeholder only); ops ≈ 20%; everything else ≈ 0%.
 | F-16 | ETag / If-Match | ✅ | = FR-7 (see the "mandatory" nuance, [C6](#c6)). |
 | F-17 | Replace-only | ✅ | = FR-2b. |
 | F-18/19 | RDF formats + content negotiation | ✅ | = FR-8. All RDF syntaxes on read; XML/JSON/RDF-XML on write, by design. |
-| F-20 | DCAT-AP.de 3.0 compliance | 🟡 | Model is DCAT-AP.de v3; conformance now *checkable* via SHACL, but no test corpus runs in CI. |
-| F-21 | Input validation | ✅ | SHACL on write (422) and dry-run; = FR-4/FR-5. UI feedback pending the UI. |
+| F-20 | DCAT-AP.de 3.0 compliance | 🟡 | Model is DCAT-AP.de v3; conformance now *checkable* via SHACL, but no test corpus runs in CI. The 2026-08-18 pass corrected seven Distribution/DataService cardinalities against the spec PDF (§4.4/§4.6) and moved the Dataset-only `description` obligation into OCL, so the ecore's multiplicities now match the profile and are enforced. |
+| F-21 | Input validation | ✅ | Two layers: model constraints (multiplicities + OCL, always on, no configuration, 422) and SHACL on write (422) plus dry-run; = FR-4/FR-5. The model layer also closes the silent gap where an `AnyURI` holding a non-IRI was written out as a plain literal rather than refused. UI feedback pending the UI. |
 | F-22 | License-vocabulary validation | ✅ | Controlled vocabularies (license, theme, language, frequency, availability, access-rights, format, status) validated against the DCAT-AP.de authority tables, loaded from `ShapesConfig.vocabularyDirectory` and unioned with the entity at validation time. Verified against real data. |
-| F-23/24 | Docker, env configuration | 🟡 | Env-driven configuration ✅ (`STORE_FOLDER`, `SHACL_SHAPES_DIR`, `SHACL_VOCAB_DIR`, `SHACL_ENFORCE` via the configurator, with a nested `$[env:…;default=$[prop:…]]` fallback so both container env and bndrun `-D` work). **No Dockerfile**; `config.docker/configs/config.json` is still the generated stub. |
-| F-25 | Health / readiness | ✅ | `GET /health/live` and `GET /health/ready` via the Apache Felix Health Check executor servlet (`healthcheck.api` 2.0.4, `.core` 2.3.0, `.generalchecks` 3.0.8) — N21, 2026-08-10. Readiness = 5 store checks + `shacl` + a `ServicesCheck`; `httpStatusMapping` maps `WARN:200, CRITICAL:503`. Shapes status is split: *not configured* is `WARN` (validation is a documented no-op), *configured but nothing loaded* is `CRITICAL` — the misconfiguration where an operator believes the portal validates and it silently does not. |
+| F-23/24 | Docker, env configuration | 🟡 | Env-driven configuration ✅ (`STORE_FOLDER`, `SHACL_SHAPES_DIR`, `SHACL_VOCAB_DIR`, `SHACL_ENFORCE`, `MODEL_VALIDATE` via the configurator, with a nested `$[env:…;default=$[prop:…]]` fallback so both container env and bndrun `-D` work). **No Dockerfile**; `config.docker/configs/config.json` is still the generated stub. |
+| F-25 | Health / readiness | ✅ | `GET /health/live` and `GET /health/ready` via the Apache Felix Health Check executor servlet (`healthcheck.api` 2.0.4, `.core` 2.3.0, `.generalchecks` 3.0.8) — N21, 2026-08-10. Readiness = 5 store checks + `shacl` + `admin-write` (2026-08-18: explains the `404` when `validationService.cardinality.minimum=1` leaves the admin services unsatisfied) + a `ServicesCheck`; `httpStatusMapping` maps `WARN:200, CRITICAL:503`. Shapes status is split: *not configured* is `WARN` (validation is a documented no-op), *configured but nothing loaded* is `CRITICAL` — the misconfiguration where an operator believes the portal validates and it silently does not. |
 | F-26 | CSS customization | ⬜ | No UI. |
 | F-27/28 | Accessibility (AA), DE/EN i18n | ⬜ | No UI. |
 | F-29 | Legal pages (Impressum/privacy) | ⬜ | No UI. |

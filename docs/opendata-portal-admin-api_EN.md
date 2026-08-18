@@ -175,6 +175,22 @@ Location: https://portal.example/admin/api/v1/distributions/baum-kataster-csv
 | 409 | Conflict (e.g. deleting a referenced resource) | reference list |
 | 412 | `If-Match` does not match (FR-7) | current ETag |
 | 422 | DCAT-AP 3 validation failed (FR-4) | **SHACL report** (RDF/JSON) |
+| 422 | Model constraint violated — a declared multiplicity or an OCL invariant | violation list (`text/plain`, one per line) |
+
+Both validation layers answer `422`, and they are told apart by the body: SHACL returns an
+RDF `sh:ValidationReport`, the model constraints a plain-text list. **Both are checked at the
+persistence boundary**, so they hold for every caller of the OSGi services and not only for
+requests arriving over REST — what the REST adapter contributes is rendering the refusal
+(content negotiation for the report). Unlike SHACL, the model constraints need no operator
+configuration — they are annotated on the model itself — and they have no dry-run equivalent
+(FR-5 covers the shapes only).
+
+An operator can require SHACL rather than merely enable it, by raising the admin services'
+validation reference to a mandatory minimum
+(`validationService.cardinality.minimum=1`): the admin services then do not start without a
+validation service, so their REST resources are unregistered and the write endpoints answer
+`404`. The `admin-write` health check on the `ready` tag reports this as `CRITICAL` and names
+the cause.
 
 ## 6. OSGi Service API
 

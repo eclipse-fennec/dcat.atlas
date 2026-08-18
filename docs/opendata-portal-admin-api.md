@@ -177,6 +177,22 @@ Location: https://portal.example/admin/api/v1/distributions/baum-kataster-csv
 | 409 | Konflikt (z. B. Löschen referenzierter Ressource) | Verweisliste |
 | 412 | `If-Match` passt nicht (FR-7) | aktuelles ETag |
 | 422 | DCAT-AP-3-Validierung fehlgeschlagen (FR-4) | **SHACL-Report** (RDF/JSON) |
+| 422 | Modell-Constraint verletzt — deklarierte Multiplizität oder OCL-Invariante | Liste der Verstöße (`text/plain`, einer je Zeile) |
+
+Beide Validierungsschichten antworten mit `422`; unterschieden werden sie am Body: SHACL liefert
+einen RDF-`sh:ValidationReport`, die Modell-Constraints eine Klartextliste. **Beide werden an der
+Persistenzgrenze** geprüft und gelten damit für jeden Aufrufer der OSGi-Dienste, nicht nur für
+Requests über REST — der REST-Adapter steuert nur die Darstellung der Ablehnung bei
+(Content-Negotiation für den Report). Anders als SHACL brauchen die Modell-Constraints keine
+Konfiguration durch den Betreiber — sie sind am Modell annotiert — und haben kein
+Dry-Run-Pendant (FR-5 bezieht sich nur auf die Shapes).
+
+Ein Betreiber kann SHACL nicht nur aktivieren, sondern erzwingen, indem er die
+Validierungs-Referenz der Admin-Dienste auf ein Pflicht-Minimum anhebt
+(`validationService.cardinality.minimum=1`): Die Admin-Dienste starten dann ohne
+Validierungsdienst nicht, ihre REST-Ressourcen werden abgemeldet und die Schreib-Endpunkte
+antworten mit `404`. Der Health-Check `admin-write` (Tag `ready`) meldet das als `CRITICAL`
+und benennt die Ursache.
 
 ## 6. OSGi-Service-API
 

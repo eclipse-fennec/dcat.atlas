@@ -91,7 +91,8 @@ P1-6 for readiness.
 Hook create/update/delete in the `…impl` admin services — or inside `DcatHelper`'s
 write/delete, which is the single choke point — ordered as:
 
-1. SHACL validation (existing FR-4 on-write enforcement)
+1. validation, both layers in `DcatHelper.Store.put` (2026-08-18) — the model's own
+   constraints (OCL + multiplicities) then SHACL on-write enforcement (FR-4)
 2. file write / delete
 3. replace or remove the named graph
 

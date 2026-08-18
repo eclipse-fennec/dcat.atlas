@@ -36,7 +36,9 @@ import rdf.PlainLiteral;
  * </ul>
  *
  * @see foaf.FoafPackage#getAgent()
- * @model extendedMetaData="name='Agent' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='TypeIsIri MboxIsMailto PhoneIsTel'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 TypeIsIri='self.type = null or self.type.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' MboxIsMailto='self.mbox = null or self.mbox.matches(\'mailto:[^\\\\s@]+@[^\\\\s@]+\')' PhoneIsTel='self.phone = null or self.phone.matches(\'tel:\\\\S+\')'"
+ *        extendedMetaData="name='Agent' kind='elementOnly'"
  * @generated
  */
 @ProviderType

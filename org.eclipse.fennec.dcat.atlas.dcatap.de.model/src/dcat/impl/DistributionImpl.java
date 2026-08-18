@@ -34,7 +34,6 @@ import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
-import org.eclipse.emf.ecore.util.EDataTypeEList;
 import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.EObjectResolvingEList;
@@ -100,14 +99,14 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	protected PlainLiteral title;
 
 	/**
-	 * The cached value of the '{@link #getDescription() <em>Description</em>}' containment reference list.
+	 * The cached value of the '{@link #getDescription() <em>Description</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getDescription()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<PlainLiteral> description;
+	protected PlainLiteral description;
 
 	/**
 	 * The cached value of the '{@link #getAccessService() <em>Access Service</em>}' reference list.
@@ -140,24 +139,44 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	protected String format = FORMAT_EDEFAULT;
 
 	/**
-	 * The cached value of the '{@link #getMediaType() <em>Media Type</em>}' attribute list.
+	 * The default value of the '{@link #getMediaType() <em>Media Type</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getMediaType()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<String> mediaType;
+	protected static final String MEDIA_TYPE_EDEFAULT = null;
 
 	/**
-	 * The cached value of the '{@link #getPackageFormat() <em>Package Format</em>}' attribute list.
+	 * The cached value of the '{@link #getMediaType() <em>Media Type</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getMediaType()
+	 * @generated
+	 * @ordered
+	 */
+	protected String mediaType = MEDIA_TYPE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getPackageFormat() <em>Package Format</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getPackageFormat()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<String> packageFormat;
+	protected static final String PACKAGE_FORMAT_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getPackageFormat() <em>Package Format</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getPackageFormat()
+	 * @generated
+	 * @ordered
+	 */
+	protected String packageFormat = PACKAGE_FORMAT_EDEFAULT;
 
 	/**
 	 * The default value of the '{@link #getByteSize() <em>Byte Size</em>}' attribute.
@@ -180,14 +199,14 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	protected BigInteger byteSize = BYTE_SIZE_EDEFAULT;
 
 	/**
-	 * The cached value of the '{@link #getCompressFormat() <em>Compress Format</em>}' containment reference list.
+	 * The cached value of the '{@link #getCompressFormat() <em>Compress Format</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getCompressFormat()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<EObject> compressFormat;
+	protected EObject compressFormat;
 
 	/**
 	 * The default value of the '{@link #getSpatialResolutionInMeters() <em>Spatial Resolution In Meters</em>}' attribute.
@@ -230,14 +249,24 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	protected Duration temporalResolution = TEMPORAL_RESOLUTION_EDEFAULT;
 
 	/**
-	 * The cached value of the '{@link #getAccessRights() <em>Access Rights</em>}' attribute list.
+	 * The default value of the '{@link #getAccessRights() <em>Access Rights</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getAccessRights()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<String> accessRights;
+	protected static final String ACCESS_RIGHTS_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getAccessRights() <em>Access Rights</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getAccessRights()
+	 * @generated
+	 * @ordered
+	 */
+	protected String accessRights = ACCESS_RIGHTS_EDEFAULT;
 
 	/**
 	 * The cached value of the '{@link #getLicense() <em>License</em>}' containment reference.
@@ -486,11 +515,42 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<PlainLiteral> getDescription() {
-		if (description == null) {
-			description = new EObjectContainmentEList<PlainLiteral>(PlainLiteral.class, this, DcatPackage.DISTRIBUTION__DESCRIPTION);
-		}
+	public PlainLiteral getDescription() {
 		return description;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetDescription(PlainLiteral newDescription, NotificationChain msgs) {
+		PlainLiteral oldDescription = description;
+		description = newDescription;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__DESCRIPTION, oldDescription, newDescription);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setDescription(PlainLiteral newDescription) {
+		if (newDescription != description) {
+			NotificationChain msgs = null;
+			if (description != null)
+				msgs = ((InternalEObject)description).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__DESCRIPTION, null, msgs);
+			if (newDescription != null)
+				msgs = ((InternalEObject)newDescription).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__DESCRIPTION, null, msgs);
+			msgs = basicSetDescription(newDescription, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__DESCRIPTION, newDescription, newDescription));
 	}
 
 	/**
@@ -531,10 +591,7 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<String> getMediaType() {
-		if (mediaType == null) {
-			mediaType = new EDataTypeEList<String>(String.class, this, DcatPackage.DISTRIBUTION__MEDIA_TYPE);
-		}
+	public String getMediaType() {
 		return mediaType;
 	}
 
@@ -543,11 +600,32 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<String> getPackageFormat() {
-		if (packageFormat == null) {
-			packageFormat = new EDataTypeEList<String>(String.class, this, DcatPackage.DISTRIBUTION__PACKAGE_FORMAT);
-		}
+	public void setMediaType(String newMediaType) {
+		String oldMediaType = mediaType;
+		mediaType = newMediaType;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__MEDIA_TYPE, oldMediaType, mediaType));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public String getPackageFormat() {
 		return packageFormat;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setPackageFormat(String newPackageFormat) {
+		String oldPackageFormat = packageFormat;
+		packageFormat = newPackageFormat;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__PACKAGE_FORMAT, oldPackageFormat, packageFormat));
 	}
 
 	/**
@@ -576,11 +654,42 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<EObject> getCompressFormat() {
-		if (compressFormat == null) {
-			compressFormat = new EObjectContainmentEList<EObject>(EObject.class, this, DcatPackage.DISTRIBUTION__COMPRESS_FORMAT);
-		}
+	public EObject getCompressFormat() {
 		return compressFormat;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetCompressFormat(EObject newCompressFormat, NotificationChain msgs) {
+		EObject oldCompressFormat = compressFormat;
+		compressFormat = newCompressFormat;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__COMPRESS_FORMAT, oldCompressFormat, newCompressFormat);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setCompressFormat(EObject newCompressFormat) {
+		if (newCompressFormat != compressFormat) {
+			NotificationChain msgs = null;
+			if (compressFormat != null)
+				msgs = ((InternalEObject)compressFormat).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__COMPRESS_FORMAT, null, msgs);
+			if (newCompressFormat != null)
+				msgs = ((InternalEObject)newCompressFormat).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DISTRIBUTION__COMPRESS_FORMAT, null, msgs);
+			msgs = basicSetCompressFormat(newCompressFormat, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__COMPRESS_FORMAT, newCompressFormat, newCompressFormat));
 	}
 
 	/**
@@ -630,11 +739,20 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EList<String> getAccessRights() {
-		if (accessRights == null) {
-			accessRights = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.DISTRIBUTION__ACCESS_RIGHTS);
-		}
+	public String getAccessRights() {
 		return accessRights;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setAccessRights(String newAccessRights) {
+		String oldAccessRights = accessRights;
+		accessRights = newAccessRights;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DISTRIBUTION__ACCESS_RIGHTS, oldAccessRights, accessRights));
 	}
 
 	/**
@@ -1038,9 +1156,9 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 			case DcatPackage.DISTRIBUTION__TITLE:
 				return basicSetTitle(null, msgs);
 			case DcatPackage.DISTRIBUTION__DESCRIPTION:
-				return ((InternalEList<?>)getDescription()).basicRemove(otherEnd, msgs);
+				return basicSetDescription(null, msgs);
 			case DcatPackage.DISTRIBUTION__COMPRESS_FORMAT:
-				return ((InternalEList<?>)getCompressFormat()).basicRemove(otherEnd, msgs);
+				return basicSetCompressFormat(null, msgs);
 			case DcatPackage.DISTRIBUTION__LICENSE:
 				return basicSetLicense(null, msgs);
 			case DcatPackage.DISTRIBUTION__CONFORMS_TO:
@@ -1134,8 +1252,7 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 				setTitle((PlainLiteral)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__DESCRIPTION:
-				getDescription().clear();
-				getDescription().addAll((Collection<? extends PlainLiteral>)newValue);
+				setDescription((PlainLiteral)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
 				getAccessService().clear();
@@ -1145,19 +1262,16 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 				setFormat((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__MEDIA_TYPE:
-				getMediaType().clear();
-				getMediaType().addAll((Collection<? extends String>)newValue);
+				setMediaType((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__PACKAGE_FORMAT:
-				getPackageFormat().clear();
-				getPackageFormat().addAll((Collection<? extends String>)newValue);
+				setPackageFormat((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__BYTE_SIZE:
 				setByteSize((BigInteger)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__COMPRESS_FORMAT:
-				getCompressFormat().clear();
-				getCompressFormat().addAll((Collection<? extends EObject>)newValue);
+				setCompressFormat((EObject)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__SPATIAL_RESOLUTION_IN_METERS:
 				setSpatialResolutionInMeters((BigDecimal)newValue);
@@ -1166,8 +1280,7 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 				setTemporalResolution((Duration)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_RIGHTS:
-				getAccessRights().clear();
-				getAccessRights().addAll((Collection<? extends String>)newValue);
+				setAccessRights((String)newValue);
 				return;
 			case DcatPackage.DISTRIBUTION__LICENSE:
 				setLicense((LicenseDocument)newValue);
@@ -1231,7 +1344,7 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 				setTitle((PlainLiteral)null);
 				return;
 			case DcatPackage.DISTRIBUTION__DESCRIPTION:
-				getDescription().clear();
+				setDescription((PlainLiteral)null);
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
 				getAccessService().clear();
@@ -1240,16 +1353,16 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 				setFormat(FORMAT_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__MEDIA_TYPE:
-				getMediaType().clear();
+				setMediaType(MEDIA_TYPE_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__PACKAGE_FORMAT:
-				getPackageFormat().clear();
+				setPackageFormat(PACKAGE_FORMAT_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__BYTE_SIZE:
 				setByteSize(BYTE_SIZE_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__COMPRESS_FORMAT:
-				getCompressFormat().clear();
+				setCompressFormat((EObject)null);
 				return;
 			case DcatPackage.DISTRIBUTION__SPATIAL_RESOLUTION_IN_METERS:
 				setSpatialResolutionInMeters(SPATIAL_RESOLUTION_IN_METERS_EDEFAULT);
@@ -1258,7 +1371,7 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 				setTemporalResolution(TEMPORAL_RESOLUTION_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__ACCESS_RIGHTS:
-				getAccessRights().clear();
+				setAccessRights(ACCESS_RIGHTS_EDEFAULT);
 				return;
 			case DcatPackage.DISTRIBUTION__LICENSE:
 				setLicense((LicenseDocument)null);
@@ -1317,25 +1430,25 @@ public class DistributionImpl extends IdentifiedResourceImpl implements Distribu
 			case DcatPackage.DISTRIBUTION__TITLE:
 				return title != null;
 			case DcatPackage.DISTRIBUTION__DESCRIPTION:
-				return description != null && !description.isEmpty();
+				return description != null;
 			case DcatPackage.DISTRIBUTION__ACCESS_SERVICE:
 				return accessService != null && !accessService.isEmpty();
 			case DcatPackage.DISTRIBUTION__FORMAT:
 				return FORMAT_EDEFAULT == null ? format != null : !FORMAT_EDEFAULT.equals(format);
 			case DcatPackage.DISTRIBUTION__MEDIA_TYPE:
-				return mediaType != null && !mediaType.isEmpty();
+				return MEDIA_TYPE_EDEFAULT == null ? mediaType != null : !MEDIA_TYPE_EDEFAULT.equals(mediaType);
 			case DcatPackage.DISTRIBUTION__PACKAGE_FORMAT:
-				return packageFormat != null && !packageFormat.isEmpty();
+				return PACKAGE_FORMAT_EDEFAULT == null ? packageFormat != null : !PACKAGE_FORMAT_EDEFAULT.equals(packageFormat);
 			case DcatPackage.DISTRIBUTION__BYTE_SIZE:
 				return BYTE_SIZE_EDEFAULT == null ? byteSize != null : !BYTE_SIZE_EDEFAULT.equals(byteSize);
 			case DcatPackage.DISTRIBUTION__COMPRESS_FORMAT:
-				return compressFormat != null && !compressFormat.isEmpty();
+				return compressFormat != null;
 			case DcatPackage.DISTRIBUTION__SPATIAL_RESOLUTION_IN_METERS:
 				return SPATIAL_RESOLUTION_IN_METERS_EDEFAULT == null ? spatialResolutionInMeters != null : !SPATIAL_RESOLUTION_IN_METERS_EDEFAULT.equals(spatialResolutionInMeters);
 			case DcatPackage.DISTRIBUTION__TEMPORAL_RESOLUTION:
 				return TEMPORAL_RESOLUTION_EDEFAULT == null ? temporalResolution != null : !TEMPORAL_RESOLUTION_EDEFAULT.equals(temporalResolution);
 			case DcatPackage.DISTRIBUTION__ACCESS_RIGHTS:
-				return accessRights != null && !accessRights.isEmpty();
+				return ACCESS_RIGHTS_EDEFAULT == null ? accessRights != null : !ACCESS_RIGHTS_EDEFAULT.equals(accessRights);
 			case DcatPackage.DISTRIBUTION__LICENSE:
 				return license != null;
 			case DcatPackage.DISTRIBUTION__CONFORMS_TO:

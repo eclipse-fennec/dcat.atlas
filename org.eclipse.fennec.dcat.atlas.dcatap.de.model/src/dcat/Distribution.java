@@ -70,7 +70,9 @@ import terms.Standard;
  * </ul>
  *
  * @see dcat.DcatPackage#getDistribution()
- * @model extendedMetaData="name='Distribution' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='HasIdentity AccessURLIsIri DownloadURLIsIri FormatIsIri MediaTypeIsIri PackageFormatIsIri AccessRightsIsIri HasPolicyIsIri AvailabilityIsIri StatusIsIri ApplicableLegislationIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 HasIdentity='self.about &lt;&gt; null and self.about.size() &gt; 0' AccessURLIsIri='self.accessURL-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' DownloadURLIsIri='self.downloadURL-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' FormatIsIri='self.format = null or self.format.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' MediaTypeIsIri='self.mediaType = null or self.mediaType.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' PackageFormatIsIri='self.packageFormat = null or self.packageFormat.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' AccessRightsIsIri='self.accessRights = null or self.accessRights.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' HasPolicyIsIri='self.hasPolicy = null or self.hasPolicy.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' AvailabilityIsIri='self.availability = null or self.availability.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' StatusIsIri='self.status = null or self.status.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' ApplicableLegislationIsIri='self.applicableLegislation-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ *        extendedMetaData="name='Distribution' kind='elementOnly'"
  * @generated
  */
 @ProviderType
@@ -99,17 +101,27 @@ public interface Distribution extends IdentifiedResource {
 	void setTitle(PlainLiteral value);
 
 	/**
-	 * Returns the value of the '<em><b>Description</b></em>' containment reference list.
-	 * The list contents are of type {@link rdf.PlainLiteral}.
+	 * Returns the value of the '<em><b>Description</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Description</em>' containment reference list.
+	 * @return the value of the '<em>Description</em>' containment reference.
+	 * @see #setDescription(PlainLiteral)
 	 * @see dcat.DcatPackage#getDistribution_Description()
-	 * @model containment="true" required="true"
+	 * @model containment="true"
 	 *        extendedMetaData="kind='element' name='description' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<PlainLiteral> getDescription();
+	PlainLiteral getDescription();
+
+	/**
+	 * Sets the value of the '{@link dcat.Distribution#getDescription <em>Description</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Description</em>' containment reference.
+	 * @see #getDescription()
+	 * @generated
+	 */
+	void setDescription(PlainLiteral value);
 
 	/**
 	 * Returns the value of the '<em><b>Access Service</b></em>' reference list.
@@ -147,30 +159,50 @@ public interface Distribution extends IdentifiedResource {
 	void setFormat(String value);
 
 	/**
-	 * Returns the value of the '<em><b>Media Type</b></em>' attribute list.
-	 * The list contents are of type {@link java.lang.String}.
+	 * Returns the value of the '<em><b>Media Type</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Media Type</em>' attribute list.
+	 * @return the value of the '<em>Media Type</em>' attribute.
+	 * @see #setMediaType(String)
 	 * @see dcat.DcatPackage#getDistribution_MediaType()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='mediaType' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<String> getMediaType();
+	String getMediaType();
 
 	/**
-	 * Returns the value of the '<em><b>Package Format</b></em>' attribute list.
-	 * The list contents are of type {@link java.lang.String}.
+	 * Sets the value of the '{@link dcat.Distribution#getMediaType <em>Media Type</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Package Format</em>' attribute list.
+	 * @param value the new value of the '<em>Media Type</em>' attribute.
+	 * @see #getMediaType()
+	 * @generated
+	 */
+	void setMediaType(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Package Format</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Package Format</em>' attribute.
+	 * @see #setPackageFormat(String)
 	 * @see dcat.DcatPackage#getDistribution_PackageFormat()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='packageFormat' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<String> getPackageFormat();
+	String getPackageFormat();
+
+	/**
+	 * Sets the value of the '{@link dcat.Distribution#getPackageFormat <em>Package Format</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Package Format</em>' attribute.
+	 * @see #getPackageFormat()
+	 * @generated
+	 */
+	void setPackageFormat(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Byte Size</b></em>' attribute.
@@ -196,17 +228,27 @@ public interface Distribution extends IdentifiedResource {
 	void setByteSize(BigInteger value);
 
 	/**
-	 * Returns the value of the '<em><b>Compress Format</b></em>' containment reference list.
-	 * The list contents are of type {@link org.eclipse.emf.ecore.EObject}.
+	 * Returns the value of the '<em><b>Compress Format</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Compress Format</em>' containment reference list.
+	 * @return the value of the '<em>Compress Format</em>' containment reference.
+	 * @see #setCompressFormat(EObject)
 	 * @see dcat.DcatPackage#getDistribution_CompressFormat()
-	 * @model containment="true" required="true"
+	 * @model containment="true"
 	 *        extendedMetaData="kind='element' name='compressFormat' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EList<EObject> getCompressFormat();
+	EObject getCompressFormat();
+
+	/**
+	 * Sets the value of the '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Compress Format</em>' containment reference.
+	 * @see #getCompressFormat()
+	 * @generated
+	 */
+	void setCompressFormat(EObject value);
 
 	/**
 	 * Returns the value of the '<em><b>Spatial Resolution In Meters</b></em>' attribute.
@@ -255,17 +297,27 @@ public interface Distribution extends IdentifiedResource {
 	void setTemporalResolution(Duration value);
 
 	/**
-	 * Returns the value of the '<em><b>Access Rights</b></em>' attribute list.
-	 * The list contents are of type {@link java.lang.String}.
+	 * Returns the value of the '<em><b>Access Rights</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Access Rights</em>' attribute list.
+	 * @return the value of the '<em>Access Rights</em>' attribute.
+	 * @see #setAccessRights(String)
 	 * @see dcat.DcatPackage#getDistribution_AccessRights()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='accessRights' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */
-	EList<String> getAccessRights();
+	String getAccessRights();
+
+	/**
+	 * Sets the value of the '{@link dcat.Distribution#getAccessRights <em>Access Rights</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Access Rights</em>' attribute.
+	 * @see #getAccessRights()
+	 * @generated
+	 */
+	void setAccessRights(String value);
 
 	/**
 	 * Returns the value of the '<em><b>License</b></em>' containment reference.
@@ -555,7 +607,7 @@ public interface Distribution extends IdentifiedResource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Access URL</em>' attribute list.
 	 * @see dcat.DcatPackage#getDistribution_AccessURL()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
 	 *        extendedMetaData="kind='element' name='accessURL' namespace='##targetNamespace'"
 	 * @generated
 	 */

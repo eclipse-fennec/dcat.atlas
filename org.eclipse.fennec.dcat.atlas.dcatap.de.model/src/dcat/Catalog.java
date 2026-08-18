@@ -44,7 +44,9 @@ import org.osgi.annotation.versioning.ProviderType;
  * </ul>
  *
  * @see dcat.DcatPackage#getCatalog()
- * @model extendedMetaData="name='Catalog' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='ThemeTaxonomyIsIri HasPartIsIri HomepageIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 ThemeTaxonomyIsIri='self.themeTaxonomy-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' HasPartIsIri='self.hasPart-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' HomepageIsIri='self.homepage = null or self.homepage.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')'"
+ *        extendedMetaData="name='Catalog' kind='elementOnly'"
  * @generated
  */
 @ProviderType

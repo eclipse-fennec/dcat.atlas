@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EValidator;
 
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
@@ -49,6 +50,8 @@ import vcard.Address;
 import vcard.Organization;
 import vcard.VcardFactory;
 import vcard.VcardPackage;
+
+import vcard.util.VcardValidator;
 
 /**
  * <!-- begin-user-doc -->
@@ -151,6 +154,15 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 		theSpdxPackage.initializePackageContents();
 		theTermsPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
+
+		// Register package validator
+		EValidator.Registry.INSTANCE.put
+			(theVcardPackage,
+			 new EValidator.Descriptor() {
+				 public EValidator getEValidator() {
+					 return VcardValidator.INSTANCE;
+				 }
+			 });
 
 		// Mark meta-data to indicate it can't be changed
 		theVcardPackage.freeze();
@@ -387,8 +399,34 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 		createResource(eNS_URI);
 
 		// Create annotations
+		// http://www.eclipse.org/emf/2002/Ecore
+		createEcoreAnnotations();
 		// http:///org/eclipse/emf/ecore/util/ExtendedMetaData
 		createExtendedMetaDataAnnotations();
+		// http://www.eclipse.org/fennec/m2x/ocl/1.0
+		create_1Annotations();
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/emf/2002/Ecore</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void createEcoreAnnotations() {
+		String source = "http://www.eclipse.org/emf/2002/Ecore";
+		addAnnotation
+		  (this,
+		   source,
+		   new String[] {
+			   "validationDelegates", "http://www.eclipse.org/fennec/m2x/ocl/1.0"
+		   });
+		addAnnotation
+		  (organizationEClass,
+		   source,
+		   new String[] {
+			   "constraints", "HasEmailIsMailto HasTelephoneIsTel HasURLIsIri"
+		   });
 	}
 
 	/**
@@ -508,6 +546,24 @@ public class VcardPackageImpl extends EPackageImpl implements VcardPackage {
 			   "kind", "element",
 			   "name", "hasURL",
 			   "namespace", "##targetNamespace"
+		   });
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/fennec/m2x/ocl/1.0</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void create_1Annotations() {
+		String source = "http://www.eclipse.org/fennec/m2x/ocl/1.0";
+		addAnnotation
+		  (organizationEClass,
+		   source,
+		   new String[] {
+			   "HasEmailIsMailto", "self.hasEmail->forAll(v | v.matches(\'mailto:[^\\\\s@]+@[^\\\\s@]+\'))",
+			   "HasTelephoneIsTel", "self.hasTelephone->forAll(v | v.matches(\'tel:\\\\S+\'))",
+			   "HasURLIsIri", "self.hasURL->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
 		   });
 	}
 

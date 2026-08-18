@@ -53,7 +53,9 @@ import terms.PeriodOfTime;
  * </ul>
  *
  * @see dcat.DcatPackage#getDataset()
- * @model extendedMetaData="name='Dataset' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='HasDescription AccrualPeriodicityIsIri WasGeneratedByIsIri HasVersionIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 HasDescription='self.description-&gt;notEmpty()' AccrualPeriodicityIsIri='self.accrualPeriodicity = null or self.accrualPeriodicity.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' WasGeneratedByIsIri='self.wasGeneratedBy-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' HasVersionIsIri='self.hasVersion-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ *        extendedMetaData="name='Dataset' kind='elementOnly'"
  * @generated
  */
 @ProviderType

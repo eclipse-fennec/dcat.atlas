@@ -40,7 +40,7 @@ public class DcatEPackageConfigurator implements EPackageConfigurator {
 	 * service property.
 	 * @generated
 	 */
-	public static final String FINGERPRINT = "fp1:a91106873628f6d04268d8afb4af82353b9785547e16d0327455557a45367b8c";
+	public static final String FINGERPRINT = "fp1:0412bd1f74f77b773b1163720704461185874cd712ccb44b94982e9d02629789";
 
 	private DcatPackage ePackage;
 

@@ -40,10 +40,11 @@ import rdf.RdfPackage;
  * <!-- end-model-doc -->
  * @see dcat.DcatFactory
  * @model kind="package"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore validationDelegates='http://www.eclipse.org/fennec/m2x/ocl/1.0'"
  * @generated
  */
 @ProviderType
-@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:a91106873628f6d04268d8afb4af82353b9785547e16d0327455557a45367b8c", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
+@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:0412bd1f74f77b773b1163720704461185874cd712ccb44b94982e9d02629789", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
 public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -1243,7 +1244,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__TITLE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 0;
 
 	/**
-	 * The feature id for the '<em><b>Description</b></em>' containment reference list.
+	 * The feature id for the '<em><b>Description</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1270,7 +1271,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__FORMAT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 3;
 
 	/**
-	 * The feature id for the '<em><b>Media Type</b></em>' attribute list.
+	 * The feature id for the '<em><b>Media Type</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1279,7 +1280,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__MEDIA_TYPE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 4;
 
 	/**
-	 * The feature id for the '<em><b>Package Format</b></em>' attribute list.
+	 * The feature id for the '<em><b>Package Format</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1297,7 +1298,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__BYTE_SIZE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 6;
 
 	/**
-	 * The feature id for the '<em><b>Compress Format</b></em>' containment reference list.
+	 * The feature id for the '<em><b>Compress Format</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1324,7 +1325,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__TEMPORAL_RESOLUTION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 9;
 
 	/**
-	 * The feature id for the '<em><b>Access Rights</b></em>' attribute list.
+	 * The feature id for the '<em><b>Access Rights</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -2592,10 +2593,10 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EReference getDistribution_Title();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link dcat.Distribution#getDescription <em>Description</em>}'.
+	 * Returns the meta object for the containment reference '{@link dcat.Distribution#getDescription <em>Description</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Description</em>'.
+	 * @return the meta object for the containment reference '<em>Description</em>'.
 	 * @see dcat.Distribution#getDescription()
 	 * @see #getDistribution()
 	 * @generated
@@ -2625,10 +2626,10 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getDistribution_Format();
 
 	/**
-	 * Returns the meta object for the attribute list '{@link dcat.Distribution#getMediaType <em>Media Type</em>}'.
+	 * Returns the meta object for the attribute '{@link dcat.Distribution#getMediaType <em>Media Type</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Media Type</em>'.
+	 * @return the meta object for the attribute '<em>Media Type</em>'.
 	 * @see dcat.Distribution#getMediaType()
 	 * @see #getDistribution()
 	 * @generated
@@ -2636,10 +2637,10 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getDistribution_MediaType();
 
 	/**
-	 * Returns the meta object for the attribute list '{@link dcat.Distribution#getPackageFormat <em>Package Format</em>}'.
+	 * Returns the meta object for the attribute '{@link dcat.Distribution#getPackageFormat <em>Package Format</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Package Format</em>'.
+	 * @return the meta object for the attribute '<em>Package Format</em>'.
 	 * @see dcat.Distribution#getPackageFormat()
 	 * @see #getDistribution()
 	 * @generated
@@ -2658,10 +2659,10 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getDistribution_ByteSize();
 
 	/**
-	 * Returns the meta object for the containment reference list '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}'.
+	 * Returns the meta object for the containment reference '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference list '<em>Compress Format</em>'.
+	 * @return the meta object for the containment reference '<em>Compress Format</em>'.
 	 * @see dcat.Distribution#getCompressFormat()
 	 * @see #getDistribution()
 	 * @generated
@@ -2691,10 +2692,10 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getDistribution_TemporalResolution();
 
 	/**
-	 * Returns the meta object for the attribute list '{@link dcat.Distribution#getAccessRights <em>Access Rights</em>}'.
+	 * Returns the meta object for the attribute '{@link dcat.Distribution#getAccessRights <em>Access Rights</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute list '<em>Access Rights</em>'.
+	 * @return the meta object for the attribute '<em>Access Rights</em>'.
 	 * @see dcat.Distribution#getAccessRights()
 	 * @see #getDistribution()
 	 * @generated
@@ -3576,7 +3577,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EReference DISTRIBUTION__TITLE = eINSTANCE.getDistribution_Title();
 
 		/**
-		 * The meta object literal for the '<em><b>Description</b></em>' containment reference list feature.
+		 * The meta object literal for the '<em><b>Description</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
@@ -3600,7 +3601,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute DISTRIBUTION__FORMAT = eINSTANCE.getDistribution_Format();
 
 		/**
-		 * The meta object literal for the '<em><b>Media Type</b></em>' attribute list feature.
+		 * The meta object literal for the '<em><b>Media Type</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
@@ -3608,7 +3609,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute DISTRIBUTION__MEDIA_TYPE = eINSTANCE.getDistribution_MediaType();
 
 		/**
-		 * The meta object literal for the '<em><b>Package Format</b></em>' attribute list feature.
+		 * The meta object literal for the '<em><b>Package Format</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
@@ -3624,7 +3625,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute DISTRIBUTION__BYTE_SIZE = eINSTANCE.getDistribution_ByteSize();
 
 		/**
-		 * The meta object literal for the '<em><b>Compress Format</b></em>' containment reference list feature.
+		 * The meta object literal for the '<em><b>Compress Format</b></em>' containment reference feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
@@ -3648,7 +3649,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute DISTRIBUTION__TEMPORAL_RESOLUTION = eINSTANCE.getDistribution_TemporalResolution();
 
 		/**
-		 * The meta object literal for the '<em><b>Access Rights</b></em>' attribute list feature.
+		 * The meta object literal for the '<em><b>Access Rights</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated

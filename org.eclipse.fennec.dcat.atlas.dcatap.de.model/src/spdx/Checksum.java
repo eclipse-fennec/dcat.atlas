@@ -39,7 +39,9 @@ import rdf.IdentifiedResource;
  * </ul>
  *
  * @see spdx.SpdxPackage#getChecksum()
- * @model extendedMetaData="name='Checksum' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='AlgorithmIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 AlgorithmIsIri='self.algorithm = null or self.algorithm.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')'"
+ *        extendedMetaData="name='Checksum' kind='elementOnly'"
  * @generated
  */
 @ProviderType

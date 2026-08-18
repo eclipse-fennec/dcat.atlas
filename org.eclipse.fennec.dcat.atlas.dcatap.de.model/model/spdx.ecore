@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="spdx" nsURI="http://spdx.org/rdf/terms#" nsPrefix="spdx">
+  <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+    <details key="validationDelegates" value="http://www.eclipse.org/fennec/m2x/ocl/1.0"/>
+  </eAnnotations>
   <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
     <details key="documentation" value="&#xA;      SPDX XML Schema (relevant parts for DCAT-AP.de 3.0)&#xA;      http://spdx.org/rdf/terms#&#xA;      spdx:Checksum (DCAT-AP.de 3.0 §4.12) is referenced from dcat:Distribution via spdx:checksum.&#xA;    "/>
   </eAnnotations>
   <eClassifiers xsi:type="ecore:EClass" name="Checksum" eSuperTypes="rdf.ecore#//IdentifiedResource">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="AlgorithmIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="AlgorithmIsIri" value="self.algorithm = null or self.algorithm.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+    </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        spdx:Checksum — a value that allows the content of a file to be&#xA;        verified (DCAT-AP.de 3.0 §4.12). Referenced from dcat:Distribution&#xA;        via spdx:checksum. Carries the algorithm used and the resulting value.&#xA;      "/>
     </eAnnotations>

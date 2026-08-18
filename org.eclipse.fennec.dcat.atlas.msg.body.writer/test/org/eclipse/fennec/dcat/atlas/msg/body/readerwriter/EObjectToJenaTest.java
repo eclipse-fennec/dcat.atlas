@@ -161,8 +161,10 @@ class EObjectToJenaTest {
 	void mediaTypeAndPackageFormatAreIris() {
 		Distribution distribution = DcatFactory.eINSTANCE.createDistribution();
 		distribution.setAbout(DISTRIBUTION);
-		distribution.getMediaType().add(MEDIA_TYPE);
-		distribution.getPackageFormat().add(PACKAGE_FORMAT);
+		// Single-valued since the 2026-08-18 cardinality fix: DCAT-AP.de §4.6 makes both
+		// Optional [0..1], where the ecore had them at [1..*].
+		distribution.setMediaType(MEDIA_TYPE);
+		distribution.setPackageFormat(PACKAGE_FORMAT);
 
 		Model model = EObjectToJena.toModel(distribution);
 

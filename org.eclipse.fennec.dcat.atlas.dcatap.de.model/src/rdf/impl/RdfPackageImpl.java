@@ -433,8 +433,40 @@ public class RdfPackageImpl extends EPackageImpl implements RdfPackage {
 		createResource(eNS_URI);
 
 		// Create annotations
+		// http://www.eclipse.org/emf/2002/Ecore
+		createEcoreAnnotations();
 		// http:///org/eclipse/emf/ecore/util/ExtendedMetaData
 		createExtendedMetaDataAnnotations();
+		// http://www.eclipse.org/fennec/m2x/ocl/1.0
+		create_1Annotations();
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/emf/2002/Ecore</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void createEcoreAnnotations() {
+		String source = "http://www.eclipse.org/emf/2002/Ecore";
+		addAnnotation
+		  (this,
+		   source,
+		   new String[] {
+			   "validationDelegates", "http://www.eclipse.org/fennec/m2x/ocl/1.0"
+		   });
+		addAnnotation
+		  (typedLiteralEClass,
+		   source,
+		   new String[] {
+			   "constraints", "DatatypeIsIri"
+		   });
+		addAnnotation
+		  (identifiedResourceEClass,
+		   source,
+		   new String[] {
+			   "constraints", "AboutIsIri"
+		   });
 	}
 
 	/**
@@ -531,6 +563,28 @@ public class RdfPackageImpl extends EPackageImpl implements RdfPackage {
 			   "kind", "attribute",
 			   "name", "about",
 			   "namespace", "##targetNamespace"
+		   });
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/fennec/m2x/ocl/1.0</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void create_1Annotations() {
+		String source = "http://www.eclipse.org/fennec/m2x/ocl/1.0";
+		addAnnotation
+		  (typedLiteralEClass,
+		   source,
+		   new String[] {
+			   "DatatypeIsIri", "self.datatype = null or self.datatype.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')"
+		   });
+		addAnnotation
+		  (identifiedResourceEClass,
+		   source,
+		   new String[] {
+			   "AboutIsIri", "self.about = null or self.about.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')"
 		   });
 	}
 

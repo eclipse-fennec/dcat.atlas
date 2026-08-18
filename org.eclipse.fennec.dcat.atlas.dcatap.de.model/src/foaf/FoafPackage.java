@@ -146,10 +146,11 @@ import rdf.RdfPackage;
  * <!-- end-model-doc -->
  * @see foaf.FoafFactory
  * @model kind="package"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore validationDelegates='http://www.eclipse.org/fennec/m2x/ocl/1.0'"
  * @generated
  */
 @ProviderType
-@EPackage(uri = FoafPackage.eNS_URI, fingerprint = "fp1:53826c1edeb0d65aac8317ac9bad4f9033ecee9070f9ca418a964bc3c0b72301", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/foaf.ecore", ecoreSourceLocations = "/model/foaf.ecore")
+@EPackage(uri = FoafPackage.eNS_URI, fingerprint = "fp1:e4344045c4cf80c0a635d64a447d5e88b2577dbe50dd9204151bd24a927e0f50", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/foaf.ecore", ecoreSourceLocations = "/model/foaf.ecore")
 public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.

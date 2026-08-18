@@ -156,10 +156,11 @@ import rdf.RdfPackage;
  * <!-- end-model-doc -->
  * @see vcard.VcardFactory
  * @model kind="package"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore validationDelegates='http://www.eclipse.org/fennec/m2x/ocl/1.0'"
  * @generated
  */
 @ProviderType
-@EPackage(uri = VcardPackage.eNS_URI, fingerprint = "fp1:372b225892c5118a5c3d5085b8a88a497e3ac7819816892772857759cb2c1f9f", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/vcard.ecore", ecoreSourceLocations = "/model/vcard.ecore")
+@EPackage(uri = VcardPackage.eNS_URI, fingerprint = "fp1:1186332e59d254dea3df1e8d5ca7fac41c99aa1a274c2ac94fdabe93163981aa", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/vcard.ecore", ecoreSourceLocations = "/model/vcard.ecore")
 public interface VcardPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.

@@ -50,7 +50,9 @@ import terms.Standard;
  * </ul>
  *
  * @see dcat.DcatPackage#getCatalogRecord()
- * @model extendedMetaData="name='CatalogRecord' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='LanguageIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 LanguageIsIri='self.language-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ *        extendedMetaData="name='CatalogRecord' kind='elementOnly'"
  * @generated
  */
 @ProviderType

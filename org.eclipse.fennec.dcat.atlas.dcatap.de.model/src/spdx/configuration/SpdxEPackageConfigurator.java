@@ -44,7 +44,7 @@ public class SpdxEPackageConfigurator implements EPackageConfigurator {
 	 * service property.
 	 * @generated
 	 */
-	public static final String FINGERPRINT = "fp1:e88f2780921fc274ea5115ed22d221684c50b3a19116bb0163c66c9f0a8af3c1";
+	public static final String FINGERPRINT = "fp1:c38bb77170fee4ace540c02e342a38e00dc4f698a5eb23e0cd5b94efb174c8c4";
 
 	private SpdxPackage ePackage;
 

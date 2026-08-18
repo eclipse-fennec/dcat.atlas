@@ -146,7 +146,7 @@ public class FoafEPackageConfigurator implements EPackageConfigurator {
 	 * service property.
 	 * @generated
 	 */
-	public static final String FINGERPRINT = "fp1:53826c1edeb0d65aac8317ac9bad4f9033ecee9070f9ca418a964bc3c0b72301";
+	public static final String FINGERPRINT = "fp1:e4344045c4cf80c0a635d64a447d5e88b2577dbe50dd9204151bd24a927e0f50";
 
 	private FoafPackage ePackage;
 

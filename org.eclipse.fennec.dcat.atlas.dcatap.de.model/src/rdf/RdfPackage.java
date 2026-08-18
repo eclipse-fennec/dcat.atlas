@@ -130,10 +130,11 @@ import org.osgi.annotation.versioning.ProviderType;
  * <!-- end-model-doc -->
  * @see rdf.RdfFactory
  * @model kind="package"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore validationDelegates='http://www.eclipse.org/fennec/m2x/ocl/1.0'"
  * @generated
  */
 @ProviderType
-@EPackage(uri = RdfPackage.eNS_URI, fingerprint = "fp1:1791d7852e7ba108bbe3ed6c9db3a118ee00f63c2af996b177b2f7d0dc96ee4b", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/rdf.ecore", ecoreSourceLocations = "/model/rdf.ecore")
+@EPackage(uri = RdfPackage.eNS_URI, fingerprint = "fp1:f4782aac339582b8a6f5082d003dfa157e770ebda211da037c7bd170eaf29118", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/rdf.ecore", ecoreSourceLocations = "/model/rdf.ecore")
 public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.

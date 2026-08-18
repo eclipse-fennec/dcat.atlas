@@ -156,7 +156,7 @@ public class VcardEPackageConfigurator implements EPackageConfigurator {
 	 * service property.
 	 * @generated
 	 */
-	public static final String FINGERPRINT = "fp1:372b225892c5118a5c3d5085b8a88a497e3ac7819816892772857759cb2c1f9f";
+	public static final String FINGERPRINT = "fp1:1186332e59d254dea3df1e8d5ca7fac41c99aa1a274c2ac94fdabe93163981aa";
 
 	private VcardPackage ePackage;
 

@@ -43,10 +43,11 @@ import rdf.RdfPackage;
  * <!-- end-model-doc -->
  * @see spdx.SpdxFactory
  * @model kind="package"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore validationDelegates='http://www.eclipse.org/fennec/m2x/ocl/1.0'"
  * @generated
  */
 @ProviderType
-@EPackage(uri = SpdxPackage.eNS_URI, fingerprint = "fp1:e88f2780921fc274ea5115ed22d221684c50b3a19116bb0163c66c9f0a8af3c1", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/spdx.ecore", ecoreSourceLocations = "/model/spdx.ecore")
+@EPackage(uri = SpdxPackage.eNS_URI, fingerprint = "fp1:c38bb77170fee4ace540c02e342a38e00dc4f698a5eb23e0cd5b94efb174c8c4", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/spdx.ecore", ecoreSourceLocations = "/model/spdx.ecore")
 public interface SpdxPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.

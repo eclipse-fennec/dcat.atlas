@@ -27,6 +27,8 @@ import dcat.DcatResource;
 import dcat.Distribution;
 import dcat.Relationship;
 
+import dcat.util.DcatValidator;
+
 import foaf.FoafPackage;
 
 import foaf.impl.FoafPackageImpl;
@@ -35,6 +37,7 @@ import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EValidator;
 
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
@@ -199,6 +202,15 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		theTermsPackage.initializePackageContents();
 		theVcardPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
+
+		// Register package validator
+		EValidator.Registry.INSTANCE.put
+			(theDcatPackage,
+			 new EValidator.Descriptor() {
+				 public EValidator getEValidator() {
+					 return DcatValidator.INSTANCE;
+				 }
+			 });
 
 		// Mark meta-data to indicate it can't be changed
 		theDcatPackage.freeze();
@@ -1245,16 +1257,16 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 
 		initEClass(distributionEClass, Distribution.class, "Distribution", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getDistribution_Title(), theRdfPackage.getPlainLiteral(), null, "title", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDistribution_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_AccessService(), this.getDataService(), null, "accessService", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_Format(), theXMLTypePackage.getAnyURI(), "format", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDistribution_MediaType(), theXMLTypePackage.getAnyURI(), "mediaType", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDistribution_PackageFormat(), theXMLTypePackage.getAnyURI(), "packageFormat", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_MediaType(), theXMLTypePackage.getAnyURI(), "mediaType", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_PackageFormat(), theXMLTypePackage.getAnyURI(), "packageFormat", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_ByteSize(), theXMLTypePackage.getNonNegativeInteger(), "byteSize", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_CompressFormat(), ecorePackage.getEObject(), null, "compressFormat", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDistribution_CompressFormat(), ecorePackage.getEObject(), null, "compressFormat", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_SpatialResolutionInMeters(), theXMLTypePackage.getDecimal(), "spatialResolutionInMeters", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_TemporalResolution(), theXMLTypePackage.getDuration(), "temporalResolution", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDistribution_AccessRights(), theXMLTypePackage.getAnyURI(), "accessRights", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_AccessRights(), theXMLTypePackage.getAnyURI(), "accessRights", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_License(), theTermsPackage.getLicenseDocument(), null, "license", null, 1, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_ConformsTo(), theTermsPackage.getStandard(), null, "conformsTo", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDistribution_Rights(), theTermsPackage.getRightsStatement(), null, "rights", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1268,7 +1280,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		initEReference(getDistribution_Checksum(), theSpdxPackage.getChecksum(), null, "checksum", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_ApplicableLegislation(), theXMLTypePackage.getAnyURI(), "applicableLegislation", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_DownloadURL(), theXMLTypePackage.getAnyURI(), "downloadURL", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDistribution_AccessURL(), theXMLTypePackage.getAnyURI(), "accessURL", null, 0, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_AccessURL(), theXMLTypePackage.getAnyURI(), "accessURL", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(relationshipEClass, Relationship.class, "Relationship", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getRelationship_HadRole(), ecorePackage.getEObject(), null, "hadRole", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1286,14 +1298,14 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 
 		initEClass(dataServiceEClass, DataService.class, "DataService", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getDataService_EndpointDescription(), theXMLTypePackage.getAnyURI(), "endpointDescription", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDataService_EndpointURL(), theXMLTypePackage.getAnyURI(), "endpointURL", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDataService_EndpointURL(), theXMLTypePackage.getAnyURI(), "endpointURL", null, 1, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDataService_ServesDataset(), this.getDataset(), null, "servesDataset", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDataService_Format(), theXMLTypePackage.getAnyURI(), "format", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(dcatResourceEClass, DcatResource.class, "DcatResource", IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getDcatResource_Identifier(), theRdfPackage.getPlainLiteral(), null, "identifier", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Title(), theRdfPackage.getPlainLiteral(), null, "title", null, 1, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDcatResource_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 1, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDcatResource_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDcatResource_Theme(), theXMLTypePackage.getAnyURI(), "theme", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Keyword(), theRdfPackage.getPlainLiteral(), null, "keyword", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDcatResource_Type(), theXMLTypePackage.getAnyURI(), "type", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1327,8 +1339,138 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createResource(eNS_URI);
 
 		// Create annotations
+		// http://www.eclipse.org/emf/2002/Ecore
+		createEcoreAnnotations();
+		// http://www.eclipse.org/fennec/m2x/ocl/1.0
+		create_1Annotations();
 		// http:///org/eclipse/emf/ecore/util/ExtendedMetaData
 		createExtendedMetaDataAnnotations();
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/emf/2002/Ecore</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void createEcoreAnnotations() {
+		String source = "http://www.eclipse.org/emf/2002/Ecore";
+		addAnnotation
+		  (this,
+		   source,
+		   new String[] {
+			   "validationDelegates", "http://www.eclipse.org/fennec/m2x/ocl/1.0"
+		   });
+		addAnnotation
+		  (catalogEClass,
+		   source,
+		   new String[] {
+			   "constraints", "ThemeTaxonomyIsIri HasPartIsIri HomepageIsIri"
+		   });
+		addAnnotation
+		  (datasetEClass,
+		   source,
+		   new String[] {
+			   "constraints", "HasDescription AccrualPeriodicityIsIri WasGeneratedByIsIri HasVersionIsIri"
+		   });
+		addAnnotation
+		  (distributionEClass,
+		   source,
+		   new String[] {
+			   "constraints", "HasIdentity AccessURLIsIri DownloadURLIsIri FormatIsIri MediaTypeIsIri PackageFormatIsIri AccessRightsIsIri HasPolicyIsIri AvailabilityIsIri StatusIsIri ApplicableLegislationIsIri"
+		   });
+		addAnnotation
+		  (catalogRecordEClass,
+		   source,
+		   new String[] {
+			   "constraints", "LanguageIsIri"
+		   });
+		addAnnotation
+		  (dataServiceEClass,
+		   source,
+		   new String[] {
+			   "constraints", "EndpointURLIsIri EndpointDescriptionIsIri FormatIsIri"
+		   });
+		addAnnotation
+		  (dcatResourceEClass,
+		   source,
+		   new String[] {
+			   "constraints", "HasIdentity ThemeIsIri TypeIsIri AccessRightsIsIri HasPolicyIsIri QualifiedAttributionIsIri RelationIsIri IsReferencedByIsIri LanguageIsIri ContributorIDIsIri ApplicableLegislationIsIri PoliticalGeocodingLevelURIIsIri"
+		   });
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/fennec/m2x/ocl/1.0</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void create_1Annotations() {
+		String source = "http://www.eclipse.org/fennec/m2x/ocl/1.0";
+		addAnnotation
+		  (catalogEClass,
+		   source,
+		   new String[] {
+			   "ThemeTaxonomyIsIri", "self.themeTaxonomy->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "HasPartIsIri", "self.hasPart->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "HomepageIsIri", "self.homepage = null or self.homepage.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')"
+		   });
+		addAnnotation
+		  (datasetEClass,
+		   source,
+		   new String[] {
+			   "HasDescription", "self.description->notEmpty()",
+			   "AccrualPeriodicityIsIri", "self.accrualPeriodicity = null or self.accrualPeriodicity.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "WasGeneratedByIsIri", "self.wasGeneratedBy->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "HasVersionIsIri", "self.hasVersion->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+		   });
+		addAnnotation
+		  (distributionEClass,
+		   source,
+		   new String[] {
+			   "HasIdentity", "self.about <> null and self.about.size() > 0",
+			   "AccessURLIsIri", "self.accessURL->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "DownloadURLIsIri", "self.downloadURL->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "FormatIsIri", "self.format = null or self.format.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "MediaTypeIsIri", "self.mediaType = null or self.mediaType.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "PackageFormatIsIri", "self.packageFormat = null or self.packageFormat.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "AccessRightsIsIri", "self.accessRights = null or self.accessRights.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "HasPolicyIsIri", "self.hasPolicy = null or self.hasPolicy.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "AvailabilityIsIri", "self.availability = null or self.availability.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "StatusIsIri", "self.status = null or self.status.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "ApplicableLegislationIsIri", "self.applicableLegislation->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+		   });
+		addAnnotation
+		  (catalogRecordEClass,
+		   source,
+		   new String[] {
+			   "LanguageIsIri", "self.language->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+		   });
+		addAnnotation
+		  (dataServiceEClass,
+		   source,
+		   new String[] {
+			   "EndpointURLIsIri", "self.endpointURL->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "EndpointDescriptionIsIri", "self.endpointDescription->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "FormatIsIri", "self.format->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+		   });
+		addAnnotation
+		  (dcatResourceEClass,
+		   source,
+		   new String[] {
+			   "HasIdentity", "self.about <> null and self.about.size() > 0",
+			   "ThemeIsIri", "self.theme->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "TypeIsIri", "self.type->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "AccessRightsIsIri", "self.accessRights = null or self.accessRights.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "HasPolicyIsIri", "self.hasPolicy = null or self.hasPolicy.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')",
+			   "QualifiedAttributionIsIri", "self.qualifiedAttribution->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "RelationIsIri", "self.relation->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "IsReferencedByIsIri", "self.isReferencedBy->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "LanguageIsIri", "self.language->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "ContributorIDIsIri", "self.contributorID->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "ApplicableLegislationIsIri", "self.applicableLegislation->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "PoliticalGeocodingLevelURIIsIri", "self.politicalGeocodingLevelURI->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+		   });
 	}
 
 	/**

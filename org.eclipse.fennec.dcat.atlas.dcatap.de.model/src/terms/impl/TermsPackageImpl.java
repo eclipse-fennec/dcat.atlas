@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EValidator;
 
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
@@ -49,6 +50,8 @@ import terms.RightsStatement;
 import terms.Standard;
 import terms.TermsFactory;
 import terms.TermsPackage;
+
+import terms.util.TermsValidator;
 
 import vcard.VcardPackage;
 
@@ -183,6 +186,15 @@ public class TermsPackageImpl extends EPackageImpl implements TermsPackage {
 		theSpdxPackage.initializePackageContents();
 		theVcardPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
+
+		// Register package validator
+		EValidator.Registry.INSTANCE.put
+			(theTermsPackage,
+			 new EValidator.Descriptor() {
+				 public EValidator getEValidator() {
+					 return TermsValidator.INSTANCE;
+				 }
+			 });
 
 		// Mark meta-data to indicate it can't be changed
 		theTermsPackage.freeze();
@@ -552,8 +564,50 @@ public class TermsPackageImpl extends EPackageImpl implements TermsPackage {
 		createResource(eNS_URI);
 
 		// Create annotations
+		// http://www.eclipse.org/emf/2002/Ecore
+		createEcoreAnnotations();
+		// http://www.eclipse.org/fennec/m2x/ocl/1.0
+		create_1Annotations();
 		// http:///org/eclipse/emf/ecore/util/ExtendedMetaData
 		createExtendedMetaDataAnnotations();
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/emf/2002/Ecore</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void createEcoreAnnotations() {
+		String source = "http://www.eclipse.org/emf/2002/Ecore";
+		addAnnotation
+		  (this,
+		   source,
+		   new String[] {
+			   "validationDelegates", "http://www.eclipse.org/fennec/m2x/ocl/1.0"
+		   });
+		addAnnotation
+		  (licenseDocumentEClass,
+		   source,
+		   new String[] {
+			   "constraints", "TypeIsIri"
+		   });
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/fennec/m2x/ocl/1.0</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void create_1Annotations() {
+		String source = "http://www.eclipse.org/fennec/m2x/ocl/1.0";
+		addAnnotation
+		  (licenseDocumentEClass,
+		   source,
+		   new String[] {
+			   "TypeIsIri", "self.type->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+		   });
 	}
 
 	/**

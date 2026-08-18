@@ -151,7 +151,7 @@ public class TermsEPackageConfigurator implements EPackageConfigurator {
 	 * service property.
 	 * @generated
 	 */
-	public static final String FINGERPRINT = "fp1:d91c5a1585d09df35fe01f08b201ec15eb93745c8728f23b8170d6c208562f2a";
+	public static final String FINGERPRINT = "fp1:961a36d28ee4d224a3c72c89b323e45b2699bb76c7736c9237818311378172a8";
 
 	private TermsPackage ePackage;
 

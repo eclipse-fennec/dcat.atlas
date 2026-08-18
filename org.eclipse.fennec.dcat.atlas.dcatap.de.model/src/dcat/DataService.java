@@ -39,7 +39,9 @@ import org.osgi.annotation.versioning.ProviderType;
  * </ul>
  *
  * @see dcat.DcatPackage#getDataService()
- * @model extendedMetaData="name='DataService' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='EndpointURLIsIri EndpointDescriptionIsIri FormatIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 EndpointURLIsIri='self.endpointURL-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' EndpointDescriptionIsIri='self.endpointDescription-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' FormatIsIri='self.format-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ *        extendedMetaData="name='DataService' kind='elementOnly'"
  * @generated
  */
 @ProviderType
@@ -64,7 +66,7 @@ public interface DataService extends DcatResource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Endpoint URL</em>' attribute list.
 	 * @see dcat.DcatPackage#getDataService_EndpointURL()
-	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 * @model unique="false" dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
 	 *        extendedMetaData="kind='element' name='endpointURL' namespace='##targetNamespace'"
 	 * @generated
 	 */

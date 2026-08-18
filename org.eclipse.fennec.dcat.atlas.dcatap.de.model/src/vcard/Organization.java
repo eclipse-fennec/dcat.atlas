@@ -37,7 +37,9 @@ import rdf.IdentifiedResource;
  * </ul>
  *
  * @see vcard.VcardPackage#getOrganization()
- * @model extendedMetaData="name='Organization' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='HasEmailIsMailto HasTelephoneIsTel HasURLIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 HasEmailIsMailto='self.hasEmail-&gt;forAll(v | v.matches(\'mailto:[^\\\\s@]+@[^\\\\s@]+\'))' HasTelephoneIsTel='self.hasTelephone-&gt;forAll(v | v.matches(\'tel:\\\\S+\'))' HasURLIsIri='self.hasURL-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ *        extendedMetaData="name='Organization' kind='elementOnly'"
  * @generated
  */
 @ProviderType

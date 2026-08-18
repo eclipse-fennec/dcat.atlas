@@ -131,7 +131,7 @@ public class RdfEPackageConfigurator implements EPackageConfigurator {
 	 * service property.
 	 * @generated
 	 */
-	public static final String FINGERPRINT = "fp1:1791d7852e7ba108bbe3ed6c9db3a118ee00f63c2af996b177b2f7d0dc96ee4b";
+	public static final String FINGERPRINT = "fp1:f4782aac339582b8a6f5082d003dfa157e770ebda211da037c7bd170eaf29118";
 
 	private RdfPackage ePackage;
 

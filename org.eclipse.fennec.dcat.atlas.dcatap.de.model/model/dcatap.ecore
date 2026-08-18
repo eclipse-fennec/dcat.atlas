@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ecore:EPackage xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" name="dcat" nsURI="http://www.w3.org/ns/dcat#" nsPrefix="dcat">
+  <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+    <details key="validationDelegates" value="http://www.eclipse.org/fennec/m2x/ocl/1.0"/>
+  </eAnnotations>
   <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
     <details key="documentation" value="DCAT Application Profile for data portals in Europe — DCAT-AP.de Version 3.0"/>
     <details key="copyrightText" value="Copyright (c) 2026 Contributors to the Eclipse Foundation.&#xA;&#xA;This program and the accompanying materials are made&#xA;available under the terms of the Eclipse Public License 2.0&#xA;which is available at https://www.eclipse.org/legal/epl-2.0/&#xA;&#xA;SPDX-License-Identifier: EPL-2.0&#xA;&#xA;Contributors:&#xA;  Data In Motion Consulting - initial implementation"/>
   </eAnnotations>
   <eClassifiers xsi:type="ecore:EClass" name="Catalog" eSuperTypes="#//Dataset">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="ThemeTaxonomyIsIri HasPartIsIri HomepageIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="ThemeTaxonomyIsIri" value="self.themeTaxonomy->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="HasPartIsIri" value="self.hasPart->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="HomepageIsIri" value="self.homepage = null or self.homepage.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+    </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        dcat:Catalog represents a catalog, which is a dataset in which&#xA;        each individual item is a metadata record&#xA;        describing some resource; the scope of dcat:Catalog&#xA;        is collections of metadata about datasets or data services.&#xA;      "/>
     </eAnnotations>
@@ -70,6 +81,15 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Dataset" eSuperTypes="#//DcatResource">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="HasDescription AccrualPeriodicityIsIri WasGeneratedByIsIri HasVersionIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="HasDescription" value="self.description-&gt;notEmpty()"/>
+      <details key="AccrualPeriodicityIsIri" value="self.accrualPeriodicity = null or self.accrualPeriodicity.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="WasGeneratedByIsIri" value="self.wasGeneratedBy->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="HasVersionIsIri" value="self.hasVersion->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+    </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        dcat:Dataset represents a dataset. A dataset is a collection of data, published or curated by a single agent.&#xA;        Data comes in many forms including numbers, words, pixels, imagery, sound and other multi-media, and potentially&#xA;        other types, any of which might be collected into a dataset.&#xA;      "/>
     </eAnnotations>
@@ -165,6 +185,22 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="Distribution" eSuperTypes="rdf.ecore#//IdentifiedResource">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="HasIdentity AccessURLIsIri DownloadURLIsIri FormatIsIri MediaTypeIsIri PackageFormatIsIri AccessRightsIsIri HasPolicyIsIri AvailabilityIsIri StatusIsIri ApplicableLegislationIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="HasIdentity" value="self.about &lt;> null and self.about.size() > 0"/>
+      <details key="AccessURLIsIri" value="self.accessURL->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="DownloadURLIsIri" value="self.downloadURL->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="FormatIsIri" value="self.format = null or self.format.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="MediaTypeIsIri" value="self.mediaType = null or self.mediaType.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="PackageFormatIsIri" value="self.packageFormat = null or self.packageFormat.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="AccessRightsIsIri" value="self.accessRights = null or self.accessRights.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="HasPolicyIsIri" value="self.hasPolicy = null or self.hasPolicy.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="AvailabilityIsIri" value="self.availability = null or self.availability.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="StatusIsIri" value="self.status = null or self.status.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="ApplicableLegislationIsIri" value="self.applicableLegislation->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+    </eAnnotations>
     <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
       <details key="name" value="Distribution"/>
       <details key="kind" value="elementOnly"/>
@@ -177,9 +213,8 @@
         <details key="namespace" value="http://purl.org/dc/terms/"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="description" lowerBound="1"
-        upperBound="-1" eType="ecore:EClass rdf.ecore#//PlainLiteral" containment="true"
-        resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="description" eType="ecore:EClass rdf.ecore#//PlainLiteral"
+        containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="description"/>
@@ -202,7 +237,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="mediaType" unique="false"
-        lowerBound="1" upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+        eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="mediaType"/>
@@ -210,7 +245,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="packageFormat" unique="false"
-        lowerBound="1" upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+        eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="packageFormat"/>
@@ -224,8 +259,7 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="compressFormat" lowerBound="1"
-        upperBound="-1" eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject"
+    <eStructuralFeatures xsi:type="ecore:EReference" name="compressFormat" eType="ecore:EClass http://www.eclipse.org/emf/2002/Ecore#//EObject"
         containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
@@ -248,8 +282,7 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="accessRights" lowerBound="1"
-        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="accessRights" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="accessRights"/>
@@ -368,8 +401,8 @@
         <details key="namespace" value="##targetNamespace"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EAttribute" name="accessURL" upperBound="-1"
-        eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="accessURL" lowerBound="1"
+        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="accessURL"/>
@@ -407,6 +440,12 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="CatalogRecord" eSuperTypes="rdf.ecore#//IdentifiedResource">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="LanguageIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="LanguageIsIri" value="self.language->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+    </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        dcat:CatalogRecord represents a metadata item in the catalog, primarily concerning the registration information,&#xA;        such as who added the item and when.&#xA;&#xA;        https://www.w3.org/TR/vocab-dcat-2/#Class:Catalog_Record&#xA;      "/>
     </eAnnotations>
@@ -473,6 +512,14 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="DataService" eSuperTypes="#//DcatResource">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="EndpointURLIsIri EndpointDescriptionIsIri FormatIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="EndpointURLIsIri" value="self.endpointURL->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="EndpointDescriptionIsIri" value="self.endpointDescription->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="FormatIsIri" value="self.format->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+    </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        dcat:DataService represents a data service. A data service is a collection of operations accessible through an&#xA;        interface (API) that provide access to one or more datasets or data processing functions.&#xA;      "/>
     </eAnnotations>
@@ -489,7 +536,7 @@
       </eAnnotations>
     </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EAttribute" name="endpointURL" unique="false"
-        upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+        lowerBound="1" upperBound="-1" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="endpointURL"/>
@@ -517,6 +564,23 @@
     </eStructuralFeatures>
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="DcatResource" abstract="true" eSuperTypes="rdf.ecore#//IdentifiedResource">
+    <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
+      <details key="constraints" value="HasIdentity ThemeIsIri TypeIsIri AccessRightsIsIri HasPolicyIsIri QualifiedAttributionIsIri RelationIsIri IsReferencedByIsIri LanguageIsIri ContributorIDIsIri ApplicableLegislationIsIri PoliticalGeocodingLevelURIIsIri"/>
+    </eAnnotations>
+    <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
+      <details key="HasIdentity" value="self.about &lt;> null and self.about.size() > 0"/>
+      <details key="ThemeIsIri" value="self.theme->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="TypeIsIri" value="self.type->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="AccessRightsIsIri" value="self.accessRights = null or self.accessRights.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="HasPolicyIsIri" value="self.hasPolicy = null or self.hasPolicy.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
+      <details key="QualifiedAttributionIsIri" value="self.qualifiedAttribution->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="RelationIsIri" value="self.relation->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="IsReferencedByIsIri" value="self.isReferencedBy->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="LanguageIsIri" value="self.language->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="ContributorIDIsIri" value="self.contributorID->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="ApplicableLegislationIsIri" value="self.applicableLegislation->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="PoliticalGeocodingLevelURIIsIri" value="self.politicalGeocodingLevelURI->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+    </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        dcat:Resource represents a dataset, a data service or any other resource&#xA;        that may be described by a metadata record in a catalog.&#xA;&#xA;        This class is not intended to be used directly, but is the parent class of dcat:Dataset,&#xA;        dcat:DataService and dcat:Catalog.&#xA;&#xA;        Member items in a catalog should be members of one of the sub-classes, or of a&#xA;        sub-class of these, or of a sub-class of dcat:Resource defined in a&#xA;        DCAT profile or other DCAT application.&#xA;&#xA;        dcat:Resource is effectively an extension point for defining&#xA;        a catalog of any kind of resource. dcat:Dataset and dcat:DataService&#xA;        can be used for datasets and services which are not documented in any catalog.&#xA;      "/>
     </eAnnotations>
@@ -540,9 +604,8 @@
         <details key="namespace" value="http://purl.org/dc/terms/"/>
       </eAnnotations>
     </eStructuralFeatures>
-    <eStructuralFeatures xsi:type="ecore:EReference" name="description" lowerBound="1"
-        upperBound="-1" eType="ecore:EClass rdf.ecore#//PlainLiteral" containment="true"
-        resolveProxies="false">
+    <eStructuralFeatures xsi:type="ecore:EReference" name="description" upperBound="-1"
+        eType="ecore:EClass rdf.ecore#//PlainLiteral" containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
         <details key="kind" value="element"/>
         <details key="name" value="description"/>

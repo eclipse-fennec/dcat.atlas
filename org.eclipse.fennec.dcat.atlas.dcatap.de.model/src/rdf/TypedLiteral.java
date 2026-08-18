@@ -30,7 +30,9 @@ import org.osgi.annotation.versioning.ProviderType;
  * </ul>
  *
  * @see rdf.RdfPackage#getTypedLiteral()
- * @model extendedMetaData="name='TypedLiteral' kind='simple'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='DatatypeIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 DatatypeIsIri='self.datatype = null or self.datatype.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')'"
+ *        extendedMetaData="name='TypedLiteral' kind='simple'"
  * @generated
  */
 @ProviderType

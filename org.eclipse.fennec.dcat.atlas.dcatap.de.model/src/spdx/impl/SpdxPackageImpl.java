@@ -27,6 +27,7 @@ import foaf.impl.FoafPackageImpl;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EValidator;
 
 import org.eclipse.emf.ecore.impl.EPackageImpl;
 
@@ -39,6 +40,8 @@ import rdf.impl.RdfPackageImpl;
 import spdx.Checksum;
 import spdx.SpdxFactory;
 import spdx.SpdxPackage;
+
+import spdx.util.SpdxValidator;
 
 import terms.TermsPackage;
 
@@ -142,6 +145,15 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 		theTermsPackage.initializePackageContents();
 		theVcardPackage.initializePackageContents();
 		theAdmsPackage.initializePackageContents();
+
+		// Register package validator
+		EValidator.Registry.INSTANCE.put
+			(theSpdxPackage,
+			 new EValidator.Descriptor() {
+				 public EValidator getEValidator() {
+					 return SpdxValidator.INSTANCE;
+				 }
+			 });
 
 		// Mark meta-data to indicate it can't be changed
 		theSpdxPackage.freeze();
@@ -265,8 +277,50 @@ public class SpdxPackageImpl extends EPackageImpl implements SpdxPackage {
 		createResource(eNS_URI);
 
 		// Create annotations
+		// http://www.eclipse.org/emf/2002/Ecore
+		createEcoreAnnotations();
+		// http://www.eclipse.org/fennec/m2x/ocl/1.0
+		create_1Annotations();
 		// http:///org/eclipse/emf/ecore/util/ExtendedMetaData
 		createExtendedMetaDataAnnotations();
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/emf/2002/Ecore</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void createEcoreAnnotations() {
+		String source = "http://www.eclipse.org/emf/2002/Ecore";
+		addAnnotation
+		  (this,
+		   source,
+		   new String[] {
+			   "validationDelegates", "http://www.eclipse.org/fennec/m2x/ocl/1.0"
+		   });
+		addAnnotation
+		  (checksumEClass,
+		   source,
+		   new String[] {
+			   "constraints", "AlgorithmIsIri"
+		   });
+	}
+
+	/**
+	 * Initializes the annotations for <b>http://www.eclipse.org/fennec/m2x/ocl/1.0</b>.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected void create_1Annotations() {
+		String source = "http://www.eclipse.org/fennec/m2x/ocl/1.0";
+		addAnnotation
+		  (checksumEClass,
+		   source,
+		   new String[] {
+			   "AlgorithmIsIri", "self.algorithm = null or self.algorithm.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')"
+		   });
 	}
 
 	/**

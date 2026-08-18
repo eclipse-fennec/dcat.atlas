@@ -151,10 +151,11 @@ import rdf.RdfPackage;
  * <!-- end-model-doc -->
  * @see terms.TermsFactory
  * @model kind="package"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore validationDelegates='http://www.eclipse.org/fennec/m2x/ocl/1.0'"
  * @generated
  */
 @ProviderType
-@EPackage(uri = TermsPackage.eNS_URI, fingerprint = "fp1:d91c5a1585d09df35fe01f08b201ec15eb93745c8728f23b8170d6c208562f2a", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/terms.ecore", ecoreSourceLocations = "/model/terms.ecore")
+@EPackage(uri = TermsPackage.eNS_URI, fingerprint = "fp1:961a36d28ee4d224a3c72c89b323e45b2699bb76c7736c9237818311378172a8", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/terms.ecore", ecoreSourceLocations = "/model/terms.ecore")
 public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.

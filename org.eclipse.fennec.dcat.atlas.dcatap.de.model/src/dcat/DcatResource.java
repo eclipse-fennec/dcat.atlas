@@ -92,6 +92,8 @@ import vcard.Organization;
  *
  * @see dcat.DcatPackage#getDcatResource()
  * @model abstract="true"
+ *        annotation="http://www.eclipse.org/emf/2002/Ecore constraints='HasIdentity ThemeIsIri TypeIsIri AccessRightsIsIri HasPolicyIsIri QualifiedAttributionIsIri RelationIsIri IsReferencedByIsIri LanguageIsIri ContributorIDIsIri ApplicableLegislationIsIri PoliticalGeocodingLevelURIIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 HasIdentity='self.about &lt;&gt; null and self.about.size() &gt; 0' ThemeIsIri='self.theme-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' TypeIsIri='self.type-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' AccessRightsIsIri='self.accessRights = null or self.accessRights.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' HasPolicyIsIri='self.hasPolicy = null or self.hasPolicy.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')' QualifiedAttributionIsIri='self.qualifiedAttribution-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' RelationIsIri='self.relation-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' IsReferencedByIsIri='self.isReferencedBy-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' LanguageIsIri='self.language-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' ContributorIDIsIri='self.contributorID-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' ApplicableLegislationIsIri='self.applicableLegislation-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' PoliticalGeocodingLevelURIIsIri='self.politicalGeocodingLevelURI-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
  *        extendedMetaData="name='ResourceType' kind='elementOnly'"
  * @generated
  */
@@ -130,7 +132,7 @@ public interface DcatResource extends IdentifiedResource {
 	 * <!-- end-user-doc -->
 	 * @return the value of the '<em>Description</em>' containment reference list.
 	 * @see dcat.DcatPackage#getDcatResource_Description()
-	 * @model containment="true" required="true"
+	 * @model containment="true"
 	 *        extendedMetaData="kind='element' name='description' namespace='http://purl.org/dc/terms/'"
 	 * @generated
 	 */

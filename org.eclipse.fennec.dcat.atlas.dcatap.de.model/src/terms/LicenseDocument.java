@@ -36,7 +36,9 @@ import rdf.PlainLiteral;
  * </ul>
  *
  * @see terms.TermsPackage#getLicenseDocument()
- * @model extendedMetaData="name='LicenseDocument' kind='elementOnly'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='TypeIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 TypeIsIri='self.type-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ *        extendedMetaData="name='LicenseDocument' kind='elementOnly'"
  * @generated
  */
 @ProviderType

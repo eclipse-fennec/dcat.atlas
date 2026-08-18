@@ -14,6 +14,9 @@
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -30,8 +33,12 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.ShaclViolationException;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.ResourceAware;
+import dcat.Dataset;
+import dcat.DcatFactory;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +78,8 @@ public class WriteValidationIntegrationTest {
 	private static final String DEFAULT_SHAPES_DIR = "/tmp/dcat-shapes-unset";
 	/** Fixed id for the idempotent readiness probe so it never mints throw-away resources. */
 	private static final String PROBE_ID = "write-validation-readiness-probe";
+	/** Fixed id for the direct-service tests, cleaned up with the probe. */
+	private static final String DIRECT_ID = "write-validation-direct-call";
 
 	/** Minimal shape: a dcat:Dataset must carry at least one dct:title. */
 	private static final String TITLE_SHAPE = """
@@ -89,6 +98,10 @@ public class WriteValidationIntegrationTest {
 
 	@InjectService
 	ConfigurationAdmin configAdmin;
+
+	/** The service itself, to prove enforcement no longer depends on going through REST. */
+	@InjectService
+	DatasetAdminService datasetAdminService;
 
 	@TempDir
 	Path shapesDir;
@@ -120,6 +133,7 @@ public class WriteValidationIntegrationTest {
 		// Best-effort cleanup of the title-less dataset the readiness probe may have stored
 		// before enforcement kicked in.
 		http.send(delete(ADMIN_DATASETS + "/" + PROBE_ID), BodyHandlers.discarding());
+		http.send(delete(ADMIN_DATASETS + "/" + DIRECT_ID), BodyHandlers.discarding());
 	}
 
 	@Test
@@ -174,6 +188,43 @@ public class WriteValidationIntegrationTest {
 	}
 
 	// --- helpers -----------------------------------------------------------
+
+	/**
+	 * The reason on-write enforcement moved out of the REST resources.
+	 * <p>
+	 * This calls the OSGi service directly — no HTTP, no JAX-RS, nothing that could apply a
+	 * check on the way past. Before the move it stored the entity happily while the same
+	 * body over {@code POST /admin/datasets} was refused, which is precisely the asymmetry
+	 * {@code ForeignIdentityException} was created to end for identity.
+	 */
+	@Test
+	void aDirectServiceCallIsEnforcedToo() {
+		Dataset titleless = DcatFactory.eINSTANCE.createDataset();
+		titleless.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
+
+		ShaclViolationException refused = assertThrows(ShaclViolationException.class,
+				() -> datasetAdminService.upsertDataset(titleless));
+
+		assertNotNull(refused.getReport(), "the caller needs the report, not just a failure");
+		assertFalse(refused.getReport().conforms(), "a conforming report would not have been thrown");
+		assertTrue(datasetAdminService.getDataset(DIRECT_ID).isEmpty(),
+				"nothing may reach the store when the service itself refuses");
+	}
+
+	/** The same call with a conformant entity still stores, so the check is not simply refusing everything. */
+	@Test
+	void aDirectServiceCallWithAConformantEntityStores() {
+		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
+		rdf.PlainLiteral title = rdf.RdfFactory.eINSTANCE.createPlainLiteral();
+		title.setLang("en");
+		title.setValue("Directly written");
+		dataset.getTitle().add(title);
+
+		datasetAdminService.upsertDataset(dataset);
+
+		assertTrue(datasetAdminService.getDataset(DIRECT_ID).isPresent());
+	}
 
 	private void updateValidationConfig(String directory, boolean enforceOnWrite) throws IOException {
 		Configuration configuration = configAdmin.getConfiguration(PID, "?");

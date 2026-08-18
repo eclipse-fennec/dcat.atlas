@@ -5,13 +5,18 @@ Test-Cases: ${classes;HIERARCHY_INDIRECTLY_ANNOTATED;org.junit.platform.commons.
 	enableEMF
 
 # sets the usually required buildpath using the bnd library, you can extend it with the normal -buildpath to your liking
+# The Jena entries are for ShaclViolationException's ValidationReport, which the
+# direct-service tests in WriteValidationIntegrationTest assert on.
 -buildpath: \
 	org.osgi.framework;version=latest,\
 	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.osgi.service.jakartars;version=latest,\
 	org.osgi.util.tracker;version=latest,\
-	org.osgi.service.cm;version=latest
+	org.osgi.service.cm;version=latest,\
+	org.apache.jena.shacl;version=latest,\
+	org.apache.jena.core;version=latest,\
+	org.apache.jena.base;version=latest
 	
 # Projects that test.bndrun needs at *run* time but that are not on the -buildpath.
 # bnd derives the build order (and thus the Gradle task graph for resolve.test/testOSGi)

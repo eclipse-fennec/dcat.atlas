@@ -5,4 +5,36 @@
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.apache.felix.healthcheck.api;version=latest,\
 	org.osgi.service.component.annotations;version=latest,\
-	org.osgi.service.metatype.annotations;version=latest
+	org.osgi.service.metatype.annotations;version=latest,\
+	org.eclipse.fennec.m2x.ocl.api;version=latest,\
+	org.apache.jena.shacl;version=latest,\
+	org.apache.jena.core;version=latest,\
+	org.apache.jena.base;version=latest
+
+# The OCL engine, needed only to *run*: the model's constraints are annotations, so the
+# impl compiles against nothing but org.eclipse.fennec.m2x.ocl.api (for @RequireOCL).
+# Validation goes through EMF's Diagnostician, which finds the engine through the global
+# ValidationDelegate registry — so the plain JUnit tests have to put it on the classpath
+# and install the delegates themselves (see ModelConstraintValidationTest).
+-testpath: \
+	org.eclipse.fennec.m2x.ocl.engine;version=latest,\
+	org.eclipse.fennec.m2x.ocl.parser;version=latest,\
+	org.eclipse.fennec.m2x.ocl.model;version=latest,\
+	org.antlr.antlr4-runtime;version=latest,\
+	org.apache.jena.arq;version=latest,\
+	org.apache.jena.iri;version=latest,\
+	org.apache.jena.langtag;version=latest,\
+	slf4j.api;version=latest,\
+	org.apache.commons.lang3;version=latest,\
+	org.apache.commons.commons-compress;version=latest,\
+	com.github.ben-manes.caffeine;version=latest,\
+	com.apicatalog.titanium.json.ld;version=latest,\
+	com.apicatalog.titanium.rdf.api;version=latest,\
+	com.apicatalog.titanium.rdf.n.quads;version=latest,\
+	com.apicatalog.titanium.jcs;version=latest,\
+	com.apicatalog.titanium.tree.io.api;version=latest,\
+	jakarta.json-api;version=latest,\
+	org.eclipse.parsson.jakarta.json;version=latest,\
+	org.apache.thrift;version=latest,\
+	org.apache.commons.commons-codec;version=latest,\
+	org.apache.commons.commons-collections4;version=latest

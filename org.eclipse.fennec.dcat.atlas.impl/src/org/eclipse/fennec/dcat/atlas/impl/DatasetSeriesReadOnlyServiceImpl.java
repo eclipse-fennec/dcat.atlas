@@ -37,12 +37,17 @@ public class DatasetSeriesReadOnlyServiceImpl extends AbstractEntityStore<Datase
 
 	@Activate
 	public DatasetSeriesReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()));
+		this(resourceSetFactory, Path.of(config.root()), config.validateOnWrite());
+	}
+
+	/** Package-visible for the admin subclass and tests; writes are not validated. */
+	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
+		this(resourceSetFactory, root, false);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root, StoreLayout.DATASET_SERIES);
+	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
+		super(resourceSetFactory, root, StoreLayout.DATASET_SERIES, validateOnWrite);
 	}
 
 	@Override

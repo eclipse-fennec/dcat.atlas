@@ -22,6 +22,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
@@ -76,6 +77,11 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		super(resourceSetFactory, root);
 	}
 
+	/** Package-visible for tests that need the model constraints enforced. */
+	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
+		super(resourceSetFactory, root, validateOnWrite);
+	}
+
 	/**
 	 * The RDF projection behind the SPARQL endpoint, maintained here rather than in
 	 * the REST layer: this service is the persistence boundary, and REST is only one
@@ -88,6 +94,25 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	 */
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
 	volatile DcatGraphService graphService;
+
+	/**
+	 * On-write SHACL enforcement (FR-4), maintained here rather than in the REST layer:
+	 * this service is the persistence boundary, and REST is only one of its callers.
+	 * <p>
+	 * Optional and dynamic, so absence simply means no enforcement — see
+	 * {@link org.eclipse.fennec.dcat.atlas.impl.helper.ShaclValidation}. An operator who
+	 * needs the strict reading raises this reference's minimum cardinality in
+	 * configuration ({@code validationService.cardinality.minimum=1}), which makes this
+	 * component unsatisfiable without a validation service instead of letting writes
+	 * through unchecked.
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+	volatile DcatValidationService validationService;
+
+	@Override
+	protected DcatValidationService writeValidation() {
+		return validationService;
+	}
 
 	@Override
 	public Catalog upsertCatalog(Catalog catalog) {

@@ -42,12 +42,17 @@ public class CatalogReadOnlyServiceImpl extends AbstractEntityStore<Catalog> imp
 
 	@Activate
 	public CatalogReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()));
+		this(resourceSetFactory, Path.of(config.root()), config.validateOnWrite());
+	}
+
+	/** Package-visible for the admin subclass and tests; writes are not validated. */
+	CatalogReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
+		this(resourceSetFactory, root, false);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	CatalogReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root, StoreLayout.CATALOGS);
+	CatalogReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
+		super(resourceSetFactory, root, StoreLayout.CATALOGS, validateOnWrite);
 	}
 
 	@Override

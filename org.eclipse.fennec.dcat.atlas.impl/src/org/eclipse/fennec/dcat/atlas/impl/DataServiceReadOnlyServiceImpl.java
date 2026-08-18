@@ -37,12 +37,17 @@ public class DataServiceReadOnlyServiceImpl extends AbstractEntityStore<DataServ
 
 	@Activate
 	public DataServiceReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()));
+		this(resourceSetFactory, Path.of(config.root()), config.validateOnWrite());
+	}
+
+	/** Package-visible for the admin subclass and tests; writes are not validated. */
+	DataServiceReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
+		this(resourceSetFactory, root, false);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	DataServiceReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root, StoreLayout.DATA_SERVICES);
+	DataServiceReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
+		super(resourceSetFactory, root, StoreLayout.DATA_SERVICES, validateOnWrite);
 	}
 
 	@Override

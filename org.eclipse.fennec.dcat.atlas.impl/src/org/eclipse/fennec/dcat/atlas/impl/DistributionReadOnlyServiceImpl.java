@@ -52,19 +52,33 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final Path root;
 	protected final DatasetReadOnlyService datasetService;
+	/**
+	 * Whether writes through this store are checked against the model's constraints
+	 * ({@link StoreConfig#validateOnWrite()}). This service does not extend
+	 * {@code AbstractEntityStore} — a Distribution has no store of its own — so it
+	 * carries the flag itself, for {@code DistributionAdminServiceImpl.store()}.
+	 */
+	protected final boolean validateOnWrite;
 
 	@Activate
 	public DistributionReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
 			@Reference DatasetReadOnlyService datasetService, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()), datasetService);
+		this(resourceSetFactory, Path.of(config.root()), datasetService, config.validateOnWrite());
+	}
+
+	/** Package-visible for the admin subclass and tests; writes are not validated. */
+	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
+			DatasetReadOnlyService datasetService) {
+		this(resourceSetFactory, root, datasetService, false);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
 	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
-			DatasetReadOnlyService datasetService) {
+			DatasetReadOnlyService datasetService, boolean validateOnWrite) {
 		this.resourceSetFactory = resourceSetFactory;
 		this.root = root;
 		this.datasetService = datasetService;
+		this.validateOnWrite = validateOnWrite;
 	}
 
 	@Override

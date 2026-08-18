@@ -21,6 +21,7 @@ import java.util.UUID;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
@@ -69,6 +70,12 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		super(resourceSetFactory, root, datasetService);
 	}
 
+	/** Package-visible for tests that need the model constraints enforced. */
+	DistributionAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
+			DatasetReadOnlyService datasetService, boolean validateOnWrite) {
+		super(resourceSetFactory, root, datasetService, validateOnWrite);
+	}
+
 	/**
 	 * The RDF projection behind the SPARQL endpoint, maintained here rather than in
 	 * the REST layer: this service is the persistence boundary, and REST is only one
@@ -77,6 +84,25 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	 */
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
 	volatile DcatGraphService graphService;
+
+	/**
+	 * On-write SHACL enforcement (FR-4), maintained here rather than in the REST layer:
+	 * this service is the persistence boundary, and REST is only one of its callers.
+	 * <p>
+	 * Optional and dynamic, so absence simply means no enforcement — see
+	 * {@link org.eclipse.fennec.dcat.atlas.impl.helper.ShaclValidation}. An operator who
+	 * needs the strict reading raises this reference's minimum cardinality in
+	 * configuration ({@code validationService.cardinality.minimum=1}), which makes this
+	 * component unsatisfiable without a validation service instead of letting writes
+	 * through unchecked.
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+	volatile DcatValidationService validationService;
+
+	/** Not an override: a Distribution has no store of its own, so this class does not extend {@code AbstractEntityStore}. */
+	private DcatValidationService writeValidation() {
+		return validationService;
+	}
 
 	@Override
 	public Distribution upsertDistributionToDataset(String datasetId, Distribution distribution) {
@@ -165,7 +191,7 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	}
 
 	private Store store() {
-		return DcatHelper.open(resourceSetFactory, root);
+		return DcatHelper.open(resourceSetFactory, root, validateOnWrite, writeValidation());
 	}
 
 	private static Dataset requireDataset(Store store, String datasetId) {

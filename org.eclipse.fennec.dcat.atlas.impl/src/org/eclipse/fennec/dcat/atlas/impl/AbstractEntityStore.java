@@ -23,6 +23,7 @@ import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
@@ -49,17 +50,38 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	protected final Path root;
 	/** Which collection this store holds; see {@link StoreLayout}. */
 	protected final String collection;
+	/**
+	 * Whether writes through this store are checked against the model's constraints
+	 * ({@link StoreConfig#validateOnWrite()}). Held here rather than in the admin
+	 * subclasses because {@link #store()} is what opens the session, and a read-only
+	 * service never reaches the write path where it is consulted.
+	 */
+	protected final boolean validateOnWrite;
 
-	protected AbstractEntityStore(ResourceSetFactory resourceSetFactory, Path root, String collection) {
+	protected AbstractEntityStore(ResourceSetFactory resourceSetFactory, Path root, String collection,
+			boolean validateOnWrite) {
 		this.resourceSetFactory = resourceSetFactory;
 		this.root = root;
 		this.collection = collection;
+		this.validateOnWrite = validateOnWrite;
 		DcatHelper.prepare(root);
 	}
 
 	/** A store session; everything read through one resolves against everything else. */
 	protected Store store() {
-		return DcatHelper.open(resourceSetFactory, root);
+		return DcatHelper.open(resourceSetFactory, root, validateOnWrite, writeValidation());
+	}
+
+	/**
+	 * The SHACL validation service this store enforces with, or {@code null} for none.
+	 * <p>
+	 * Overridden by the admin subclasses, which hold the DS reference; a read-only service
+	 * never reaches the write path, so the base answers {@code null}. The reference is
+	 * declared per subclass rather than here because DS binds fields on the component
+	 * class, matching how {@code graphService} is already declared.
+	 */
+	protected DcatValidationService writeValidation() {
+		return null;
 	}
 
 	protected Optional<T> getEntity(String id) {

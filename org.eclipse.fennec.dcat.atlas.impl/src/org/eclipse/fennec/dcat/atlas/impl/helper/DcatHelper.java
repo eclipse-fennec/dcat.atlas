@@ -29,6 +29,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 
 import rdf.IdentifiedResource;
@@ -54,9 +55,32 @@ public final class DcatHelper {
 	private DcatHelper() {
 	}
 
-	/** Opens a store session rooted at {@code root}. */
+	/** Opens a store session rooted at {@code root}, without model validation on write. */
 	public static Store open(ResourceSetFactory resourceSetFactory, Path root) {
-		return new Store(StoreResourceSets.create(resourceSetFactory, root), root);
+		return open(resourceSetFactory, root, false);
+	}
+
+	/**
+	 * Opens a store session rooted at {@code root}.
+	 *
+	 * @param validateOnWrite whether {@link Store#put} checks the entity against the
+	 *                        model's constraints first — see {@link ModelValidation}
+	 */
+	public static Store open(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
+		return open(resourceSetFactory, root, validateOnWrite, null);
+	}
+
+	/**
+	 * Opens a store session rooted at {@code root}.
+	 *
+	 * @param validateOnWrite whether {@link Store#put} checks the entity against the
+	 *                        model's constraints first — see {@link ModelValidation}
+	 * @param validation      the SHACL validation service, or {@code null} for none; see
+	 *                        {@link ShaclValidation} for why absence means no enforcement
+	 */
+	public static Store open(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite,
+			DcatValidationService validation) {
+		return new Store(StoreResourceSets.create(resourceSetFactory, root), root, validateOnWrite, validation);
 	}
 
 	/**
@@ -79,10 +103,15 @@ public final class DcatHelper {
 
 		private final ResourceSet resourceSet;
 		private final Path root;
+		private final boolean validateOnWrite;
+		/** SHACL enforcement, or {@code null} when no validation service is bound. */
+		private final DcatValidationService validation;
 
-		private Store(ResourceSet resourceSet, Path root) {
+		private Store(ResourceSet resourceSet, Path root, boolean validateOnWrite, DcatValidationService validation) {
 			this.resourceSet = resourceSet;
 			this.root = root;
+			this.validateOnWrite = validateOnWrite;
+			this.validation = validation;
 		}
 
 		/** The object stored under {@code id}, or empty if there is no such file. */
@@ -131,6 +160,18 @@ public final class DcatHelper {
 			if (object instanceof IdentifiedResource identified) {
 				identified.setAbout(StoreLayout.logicalIri(collection, id));
 			}
+			// Both validations run after the identity is stamped — "a stored entity has an
+			// about" is one constraint, and a SHACL report has to name the node that will
+			// actually be stored — and before anything is written, because the point is that
+			// an invalid entity never reaches the disk.
+			//
+			// Model constraints first: they are cheap and structural, where SHACL serializes
+			// the entity to RDF and unions the vocabulary graph. An entity missing its
+			// publisher should not pay for a shapes run to be told so.
+			if (validateOnWrite) {
+				ModelValidation.check(object);
+			}
+			ShaclValidation.check(validation, object);
 			// Refuse a link to an identity of ours that is not there, before anything is
 			// written. Every write funnels through here, so this is the one place the
 			// invariant has to hold — and it is the write-side half of the rule

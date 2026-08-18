@@ -41,4 +41,20 @@ public @interface StoreConfig {
 	 */
 	@AttributeDefinition(name = "Store root", description = "Root directory holding the per-collection store subdirectories")
 	String root() default "data";
+
+	/**
+	 * Whether a write is checked against the model's own constraints — the ecore
+	 * multiplicities and the OCL invariants annotated on it — and refused if it
+	 * violates them.
+	 * <p>
+	 * Defaults to {@code false} and is switched on in the shipped runtime configurations,
+	 * the same arrangement {@code ShapesConfig.enforceOnWrite} uses. Off by default so
+	 * that importing a corpus written before a constraint existed does not need the
+	 * constraint removed, and so the store's own tests can exercise storage mechanics with
+	 * deliberately minimal entities. A deployment serving a portal should leave it on:
+	 * unlike SHACL, these constraints ship inside the model and need no operator setup, so
+	 * this is the only always-available check.
+	 */
+	@AttributeDefinition(name = "Validate on write", description = "Refuse a write whose entity violates the model's OCL constraints or declared multiplicities")
+	boolean validateOnWrite() default false;
 }

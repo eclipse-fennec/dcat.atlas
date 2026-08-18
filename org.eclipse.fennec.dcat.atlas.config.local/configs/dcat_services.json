@@ -4,31 +4,41 @@
 		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"CatalogAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
+		"validationService.cardinality.minimum:int": 1
 	},
 	"DatasetReadOnlyService": {
 		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DatasetAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
+		"validationService.cardinality.minimum:int": 1
 	},
 	"DataServiceReadOnlyService": {
 		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DataServiceAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
+		"validationService.cardinality.minimum:int": 1
 	},
 	"DatasetSeriesReadOnlyService": {
 		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DatasetSeriesAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
+		"validationService.cardinality.minimum:int": 1
 	},
 	"DistributionReadOnlyService": {
 		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
 	},
 	"DistributionAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
+		"validationService.cardinality.minimum:int": 1
 	},
 	"PublicIris": {
 		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]"

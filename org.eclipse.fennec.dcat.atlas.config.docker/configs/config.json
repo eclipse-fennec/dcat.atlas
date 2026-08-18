@@ -48,15 +48,15 @@
 	// have no directory: dcat:distribution is containment, so they live in their Dataset's
 	// file (FR-10).
 	"CatalogReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"CatalogAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"CatalogAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 	"DatasetReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DatasetAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DatasetAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 	"DataServiceReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DataServiceAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DataServiceAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 	"DatasetSeriesReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DatasetSeriesAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DatasetSeriesAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 	"DistributionReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DistributionAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
+	"DistributionAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 
 	// Stored identities are host-free (http://dcat.atlas/...) so data is portable between
 	// environments; this is the base they are rendered under at read time. It must be the

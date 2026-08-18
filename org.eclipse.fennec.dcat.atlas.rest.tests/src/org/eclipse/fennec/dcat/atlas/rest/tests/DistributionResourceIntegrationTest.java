@@ -392,10 +392,7 @@ public class DistributionResourceIntegrationTest {
 		DataService service = DcatFactory.eINSTANCE.createDataService();
 		// Logical, for the same reason as the dataset seed above.
 		service.setAbout(DcatIds.logicalIri(DcatIds.DATA_SERVICES, SERVICE_ID));
-		PlainLiteral title = RdfFactory.eINSTANCE.createPlainLiteral();
-		title.setLang("en");
-		title.setValue("Air quality WFS");
-		service.getTitle().add(title);
+		RestEntities.mandatoryDataService(service, "Air quality WFS");
 		dataServiceService.upsertDataService(service);
 	}
 
@@ -417,17 +414,15 @@ public class DistributionResourceIntegrationTest {
 				<dcat:Distribution xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmi:version="2.0" about="%s/%s">
 				  <title lang="en" value="%s"/>
+				  <accessURL>https://example.de/data.csv</accessURL>
+				  <license about="http://dcat-ap.de/def/licenses/dl-by-de/2.0"/>
 				</dcat:Distribution>""".formatted(distributions(), id, title);
 	}
 
 	private static Dataset dataset(String about, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(about);
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
-		return dataset;
+		return RestEntities.mandatoryDataset(dataset, title);
 	}
 
 	private HttpResponse<String> get(String url, String accept) throws Exception {

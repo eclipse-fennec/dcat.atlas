@@ -25,8 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * Round-trips the file-backed dataset store (admin impl, which also covers the
@@ -99,15 +97,12 @@ public class DatasetAdminServiceImplTest {
 		assertNotEquals(first, service.etag("air").orElseThrow());
 	}
 
+	/** A conformant Dataset: title, description and publisher, per DCAT-AP.de §4.3. */
 	private static Dataset dataset(String about, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		if (about != null) {
 			dataset.setAbout(about);
 		}
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, title);
 	}
 }

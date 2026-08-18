@@ -28,8 +28,6 @@ import dcat.Catalog;
 import dcat.Dataset;
 import dcat.DcatFactory;
 import foaf.Organization;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
@@ -65,10 +63,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
 		// Seeded the way the store mints identities: logical, not the request URL.
 		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, id));
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		catalog.getTitle().add(literal);
+		RestEntities.mandatoryDataset(catalog, title);
 		service.upsertCatalog(catalog);
 	}
 
@@ -232,6 +227,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 				              xmlns:foaf="http://xmlns.com/foaf/0.1/"
 				              xmi:version="2.0" about="%s/xsi-typed">
 				  <title lang="en" value="Typed publisher"/>
+				  <description lang="en" value="Typed-publisher fixture"/>
 				  <publisher xsi:type="foaf:Organization" about="https://data-in-motion.biz">
 				    <name lang="en" value="Data In Motion"/>
 				  </publisher>
@@ -453,10 +449,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 	private void seedDataset(String id, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
+		RestEntities.mandatoryDataset(dataset, title);
 		datasetAdminService.upsertDataset(dataset);
 	}
 }

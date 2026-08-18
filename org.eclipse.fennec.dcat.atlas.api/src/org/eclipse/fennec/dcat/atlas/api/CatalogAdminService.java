@@ -19,7 +19,30 @@ import dcat.Dataset;
 
 /**
  * CRUD + upsert per DCAT-AP 3 entity (FR-1..FR-8).
- * Implementation: transactional against Jena TDB2, SHACL-validated before commit.
+ *
+ * <h2>What the implementation actually does</h2>
+ *
+ * There is <b>no database and no transaction</b>. This javadoc claimed "transactional
+ * against Jena TDB2" from the original design; the store has been a directory of XMI
+ * files — one per resource, a Distribution inside its Dataset's file (FR-10) — since the
+ * 2026-08-17 storage rework, and Jena appears only as the disposable in-memory projection
+ * behind the SPARQL endpoint. A git-backed store is Phase 2 of the persistence plan.
+ * <p>
+ * A write is therefore a file write, and is atomic only to the extent one file is. An
+ * operation that touches two resources — linking a member that has to be stored first —
+ * is not rolled back if the second write fails.
+ * <p>
+ * Validation does happen before anything is stored, in two layers, both at the persistence
+ * boundary so they hold for every caller of this interface and not only for requests
+ * arriving over REST:
+ * <ul>
+ * <li>the model's own constraints — the ecore's declared multiplicities and the OCL
+ * invariants annotated on it — refused as {@link ModelConstraintException}. These ship
+ * inside the model and are always available, gated only by {@code validateOnWrite};</li>
+ * <li>the DCAT-AP.de SHACL shapes (FR-4), refused as {@link ShaclViolationException}, when
+ * an operator has configured shapes and switched enforcement on. With no shapes configured
+ * this checks nothing, because an empty shapes set conforms to everything.</li>
+ * </ul>
  */
 public interface CatalogAdminService extends CatalogReadOnlyService{
 

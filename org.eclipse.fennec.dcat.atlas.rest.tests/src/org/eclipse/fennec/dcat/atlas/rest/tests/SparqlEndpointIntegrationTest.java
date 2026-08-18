@@ -43,8 +43,6 @@ import org.osgi.test.junit5.service.ServiceExtension;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * End-to-end tests for the SPARQL endpoint over the in-memory RDF projection
@@ -122,10 +120,7 @@ public class SparqlEndpointIntegrationTest {
 		String title = "Direct OSGi write " + id;
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
+		RestEntities.mandatoryDataset(dataset, title);
 
 		datasetService.upsertDataset(dataset);
 
@@ -242,6 +237,10 @@ public class SparqlEndpointIntegrationTest {
 				<dcat:Dataset xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmi:version="2.0" about="%s/datasets/%s">
 				  <title lang="en" value="%s"/>
+				  <description lang="en" value="SPARQL integration fixture"/>
+				  <publisher about="https://example.de/organisation/uba">
+				    <name lang="en" value="Umweltbundesamt"/>
+				  </publisher>
 				</dcat:Dataset>""".formatted(BASE, datasetId, title);
 		HttpResponse<String> response = send(HttpRequest.newBuilder(URI.create(BASE + "/admin/datasets/" + datasetId))
 				.header("Content-Type", "application/xmi").PUT(BodyPublishers.ofString(body)).build());

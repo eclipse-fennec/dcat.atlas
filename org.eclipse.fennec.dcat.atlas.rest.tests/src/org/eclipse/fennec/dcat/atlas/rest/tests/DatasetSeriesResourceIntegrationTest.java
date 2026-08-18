@@ -28,8 +28,6 @@ import org.osgi.test.common.annotation.InjectService;
 import dcat.Dataset;
 import dcat.DatasetSeries;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
@@ -65,10 +63,7 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		DatasetSeries series = DcatFactory.eINSTANCE.createDatasetSeries();
 		// Seeded the way the store mints identities: logical, not the request URL.
 		series.setAbout(DcatIds.logicalIri(DcatIds.DATASET_SERIES, id));
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		series.getTitle().add(literal);
+		RestEntities.mandatoryDataset(series, title);
 		service.upsertDatasetSeries(series);
 	}
 
@@ -191,10 +186,7 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 	private void seedMemberDataset(String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, MEMBER_DATASET_ID));
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
+		RestEntities.mandatoryDataset(dataset, title);
 		datasetService.upsertDataset(dataset);
 	}
 }

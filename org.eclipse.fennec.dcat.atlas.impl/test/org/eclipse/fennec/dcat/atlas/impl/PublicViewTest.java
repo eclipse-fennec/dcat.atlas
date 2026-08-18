@@ -229,22 +229,20 @@ class PublicViewTest {
 	private static Catalog catalog(String id, String title) {
 		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
 		catalog.setAbout(LOGICAL + "catalogs/" + id);
-		catalog.getTitle().add(literal(title));
-		return catalog;
+		return TestEntities.mandatoryDataset(catalog, title);
 	}
 
 	private static Dataset dataset(String id, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(LOGICAL + "datasets/" + id);
-		dataset.getTitle().add(literal(title));
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, title);
 	}
 
 	private static Distribution distribution(String id) {
 		Distribution distribution = DcatFactory.eINSTANCE.createDistribution();
 		distribution.setAbout(StoreLayout.distributionIri("air", id));
-		distribution.setTitle(literal("CSV download"));
-		return distribution;
+		distribution.setTitle(TestEntities.literal("CSV download"));
+		return TestEntities.mandatoryDistribution(distribution);
 	}
 
 	private static PlainLiteral literal(String value) {

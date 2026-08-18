@@ -47,14 +47,16 @@ public @interface StoreConfig {
 	 * multiplicities and the OCL invariants annotated on it — and refused if it
 	 * violates them.
 	 * <p>
-	 * Defaults to {@code false} and is switched on in the shipped runtime configurations,
-	 * the same arrangement {@code ShapesConfig.enforceOnWrite} uses. Off by default so
-	 * that importing a corpus written before a constraint existed does not need the
-	 * constraint removed, and so the store's own tests can exercise storage mechanics with
-	 * deliberately minimal entities. A deployment serving a portal should leave it on:
-	 * unlike SHACL, these constraints ship inside the model and need no operator setup, so
-	 * this is the only always-available check.
+	 * Defaults to {@code true}: unlike SHACL, these constraints ship inside the model and
+	 * need no operator setup, so this is the only check a deployment always has. It briefly
+	 * defaulted to {@code false} because the test fixtures built entities that were not
+	 * valid DCAT-AP.de — title only, no description or publisher — which would have left the
+	 * whole suite exercising a path production does not take. The fixtures were corrected
+	 * instead; see {@code TestEntities}.
+	 * <p>
+	 * Switch it off ({@code MODEL_VALIDATE=false}) to import a corpus written before a
+	 * constraint existed, rather than removing the constraint.
 	 */
 	@AttributeDefinition(name = "Validate on write", description = "Refuse a write whose entity violates the model's OCL constraints or declared multiplicities")
-	boolean validateOnWrite() default false;
+	boolean validateOnWrite() default true;
 }

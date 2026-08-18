@@ -28,8 +28,6 @@ import org.junit.jupiter.api.io.TempDir;
 import dcat.Dataset;
 import dcat.DatasetSeries;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * Round-trips the file-backed dataset-series store (admin impl, which also covers
@@ -152,11 +150,7 @@ public class DatasetSeriesAdminServiceImplTest {
 		if (about != null) {
 			series.setAbout(about);
 		}
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		series.getTitle().add(literal);
-		return series;
+		return TestEntities.mandatoryDataset(series, title);
 	}
 
 	private static Dataset dataset(String about, String title) {
@@ -164,10 +158,6 @@ public class DatasetSeriesAdminServiceImplTest {
 		if (about != null) {
 			dataset.setAbout(about);
 		}
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, title);
 	}
 }

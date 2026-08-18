@@ -307,7 +307,7 @@ public abstract class AbstractEntityResourceIntegrationTest {
 				<dcat:%s xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmi:version="2.0">
 				  <title lang="en" value="No about"/>
-				</dcat:%s>""".formatted(typeName(), typeName());
+				%s</dcat:%s>""".formatted(typeName(), mandatoryFor(typeName()), typeName());
 
 		HttpResponse<String> put = send(HttpRequest.newBuilder(URI.create(writes() + "/" + id))
 				.header("Content-Type", XML).PUT(BodyPublishers.ofString(body)), XML);
@@ -472,7 +472,38 @@ public abstract class AbstractEntityResourceIntegrationTest {
 				<dcat:%s xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmi:version="2.0" about="%s">
 				  <title lang="en" value="%s"/>
-				</dcat:%s>""".formatted(type, about, title, type);
+				%s</dcat:%s>""".formatted(type, about, title, mandatoryFor(type), type);
+	}
+
+	/**
+	 * The rest of what DCAT-AP.de makes Pflicht for {@code type}, so a body is a valid
+	 * entity and not merely a parseable one.
+	 * <p>
+	 * These bodies used to carry a title and nothing else, which no class in the profile
+	 * accepts — it only ever worked because nothing validated. Per type, because the
+	 * mandatory set differs: a DataService needs {@code dcat:endpointURL} and, unlike the
+	 * Dataset family, no {@code dct:description}; a Distribution needs neither of those but
+	 * does need {@code dcat:accessURL} and {@code dct:license}.
+	 */
+	private static String mandatoryFor(String type) {
+		String publisher = """
+				  <publisher about="https://example.de/organisation/uba">
+				    <name lang="en" value="Umweltbundesamt"/>
+				  </publisher>
+				""";
+		return switch (type) {
+			case "Catalog", "Dataset", "DatasetSeries" -> """
+					  <description lang="en" value="Integration-test fixture"/>
+					""" + publisher;
+			case "DataService" -> publisher + """
+					  <endpointURL>https://example.de/sparql</endpointURL>
+					""";
+			case "Distribution" -> """
+					  <accessURL>https://example.de/data.csv</accessURL>
+					  <license about="http://dcat-ap.de/def/licenses/dl-by-de/2.0"/>
+					""";
+			default -> "";
+		};
 	}
 
 	protected HttpResponse<String> get(String url, String accept) throws Exception {

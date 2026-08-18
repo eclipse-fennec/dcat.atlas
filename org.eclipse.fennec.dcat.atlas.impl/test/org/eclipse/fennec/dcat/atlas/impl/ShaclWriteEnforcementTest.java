@@ -32,8 +32,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * On-write SHACL enforcement at the <em>service</em>, not the REST resource.
@@ -140,14 +138,14 @@ public class ShaclWriteEnforcementTest {
 		return builder.build();
 	}
 
+	/**
+	 * Conformant to the <em>model</em>, so that only SHACL can refuse it — otherwise these
+	 * tests would pass on a ModelConstraintException and prove nothing about SHACL.
+	 */
 	private static Dataset dataset() {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(BASE + "air");
-		PlainLiteral title = RdfFactory.eINSTANCE.createPlainLiteral();
-		title.setLang("en");
-		title.setValue("Air quality");
-		dataset.getTitle().add(title);
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, "Air quality");
 	}
 
 	/** Returns a fixed report, so the test pins the decision rather than Jena's engine. */

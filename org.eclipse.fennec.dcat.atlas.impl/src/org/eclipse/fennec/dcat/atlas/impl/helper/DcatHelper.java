@@ -160,6 +160,16 @@ public final class DcatHelper {
 			if (object instanceof IdentifiedResource identified) {
 				identified.setAbout(StoreLayout.logicalIri(collection, id));
 			}
+			// Refuse a link to an identity of ours that is not there, before anything is
+			// written. Every write funnels through here, so this is the one place the
+			// invariant has to hold — and it is the write-side half of the rule
+			// References.detach enforces on delete.
+			//
+			// It runs before validation on purpose. EMF's own validate_EveryProxyResolves
+			// would also reject a dangling link, but as a generic "a proxy did not resolve"
+			// — losing which member was missing, and answering 422 where the API has always
+			// answered 409. The more specific diagnosis wins.
+			References.requireResolvable(this, object);
 			// Both validations run after the identity is stamped — "a stored entity has an
 			// about" is one constraint, and a SHACL report has to name the node that will
 			// actually be stored — and before anything is written, because the point is that
@@ -172,11 +182,6 @@ public final class DcatHelper {
 				ModelValidation.check(object);
 			}
 			ShaclValidation.check(validation, object);
-			// Refuse a link to an identity of ours that is not there, before anything is
-			// written. Every write funnels through here, so this is the one place the
-			// invariant has to hold — and it is the write-side half of the rule
-			// References.detach enforces on delete.
-			References.requireResolvable(this, object);
 			URI uri = StoreResourceSets.resourceUri(collection, id);
 			Resource resource = resourceSet.getResource(uri, false);
 			if (resource == null) {

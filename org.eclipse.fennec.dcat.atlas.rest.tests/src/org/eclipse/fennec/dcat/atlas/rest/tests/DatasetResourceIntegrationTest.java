@@ -19,8 +19,6 @@ import org.osgi.test.common.annotation.InjectService;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
@@ -52,10 +50,7 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		// Seeded the way the store mints identities: logical, not the request URL.
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
+		RestEntities.mandatoryDataset(dataset, title);
 		service.upsertDataset(dataset);
 	}
 

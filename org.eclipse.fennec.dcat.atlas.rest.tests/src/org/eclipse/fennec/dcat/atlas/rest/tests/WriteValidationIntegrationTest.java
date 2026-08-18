@@ -81,17 +81,24 @@ public class WriteValidationIntegrationTest {
 	/** Fixed id for the direct-service tests, cleaned up with the probe. */
 	private static final String DIRECT_ID = "write-validation-direct-call";
 
-	/** Minimal shape: a dcat:Dataset must carry at least one dct:title. */
-	private static final String TITLE_SHAPE = """
+	/**
+	 * Minimal shape: a dcat:Dataset must carry at least one dcat:keyword.
+	 * <p>
+	 * It used to require {@code dct:title}, which stopped working as a test once the model
+	 * required a title too: the model check runs first, so the entity was refused before
+	 * SHACL ever saw it and this suite would have been asserting on the wrong layer.
+	 * {@code dcat:keyword} is optional throughout the model, so a violation here can only
+	 * come from the shapes.
+	 */
+	private static final String KEYWORD_SHAPE = """
 			@prefix sh:   <http://www.w3.org/ns/shacl#> .
 			@prefix dcat: <http://www.w3.org/ns/dcat#> .
-			@prefix dct:  <http://purl.org/dc/terms/> .
 			@prefix ex:   <http://example/shapes#> .
 
 			ex:DatasetShape a sh:NodeShape ;
 			    sh:targetClass dcat:Dataset ;
-			    sh:property [ sh:path dct:title ; sh:minCount 1 ;
-			                  sh:message "A Dataset must have a dct:title." ] .
+			    sh:property [ sh:path dcat:keyword ; sh:minCount 1 ;
+			                  sh:message "A Dataset must have a dcat:keyword." ] .
 			""";
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
@@ -113,12 +120,12 @@ public class WriteValidationIntegrationTest {
 		assertTrue(ResourceAware.create(context, "DatasetAdminResource").waitForResource(15, TimeUnit.SECONDS),
 				"DatasetAdminResource should be registered within 15 seconds.");
 
-		Files.writeString(shapesDir.resolve("title-shape.ttl"), TITLE_SHAPE);
+		Files.writeString(shapesDir.resolve("keyword-shape.ttl"), KEYWORD_SHAPE);
 		updateValidationConfig(shapesDir.toString(), true);
 
 		// The reconfigured validation service rebinds into the (dynamic) admin resource
 		// asynchronously, so poll the admin write path itself until enforcement is live:
-		// an idempotent PUT of a title-less dataset flips from 2xx to 422. Using PUT to a
+		// an idempotent PUT of a keyword-less dataset flips from 2xx to 422. Using PUT to a
 		// fixed id keeps the probe from minting a new resource per attempt.
 		HttpResponse<String> ready = awaitEnforcementActive(30_000);
 		assertEquals(422, ready.statusCode(),
@@ -130,27 +137,27 @@ public class WriteValidationIntegrationTest {
 	void disableEnforcement() throws Exception {
 		// Leave the runtime as later test classes expect it: no shapes, no enforcement.
 		updateValidationConfig(DEFAULT_SHAPES_DIR, false);
-		// Best-effort cleanup of the title-less dataset the readiness probe may have stored
+		// Best-effort cleanup of the keyword-less dataset the readiness probe may have stored
 		// before enforcement kicked in.
 		http.send(delete(ADMIN_DATASETS + "/" + PROBE_ID), BodyHandlers.discarding());
 		http.send(delete(ADMIN_DATASETS + "/" + DIRECT_ID), BodyHandlers.discarding());
 	}
 
 	@Test
-	void nonConformantCreateIsRejectedAndConformantSucceeds() throws Exception {
-		HttpResponse<String> rejected = post(ADMIN_DATASETS, datasetBody("no-title", null));
+	void aShapeViolationIsRejectedAndAConformantBodySucceeds() throws Exception {
+		HttpResponse<String> rejected = post(ADMIN_DATASETS, datasetBody("no-keyword", null));
 		assertEquals(422, rejected.statusCode(), rejected.body());
 		assertEquals("false", conformsHeader(rejected));
 		assertTrue(rejected.body().contains("ValidationReport"), rejected.body());
 
 		try {
-			HttpResponse<String> created = post(ADMIN_DATASETS, datasetBody("with-title", "Air quality"));
+			HttpResponse<String> created = post(ADMIN_DATASETS, datasetBody("with-keyword", "air"));
 			assertEquals(201, created.statusCode(), created.body());
 		} finally {
 			// The body names its own id, and a create now honours it — so leaving this behind
 			// would make the next run of this test a 409 rather than the 201 it asserts. The
 			// store outlives the run; a test that creates has to remove what it created.
-			http.send(delete(ADMIN_DATASETS + "/with-title"), BodyHandlers.discarding());
+			http.send(delete(ADMIN_DATASETS + "/with-keyword"), BodyHandlers.discarding());
 		}
 	}
 
@@ -160,29 +167,29 @@ public class WriteValidationIntegrationTest {
 	 * persisted by choosing a different path.
 	 */
 	@Test
-	void nonConformantMemberIsRejectedOnTheCatalogPath() throws Exception {
+	void aShapeViolatingMemberIsRejectedOnTheCatalogPath() throws Exception {
 		String catalogId = "write-validation-catalog";
 		String datasets = BASE + "/admin/catalogs/" + catalogId + "/datasets";
 		assertEquals(201,
 				http.send(put(BASE + "/admin/catalogs/" + catalogId,
-						entityBody("Catalog", DcatIds.logicalIri(DcatIds.CATALOGS, catalogId), "Host catalog")),
+						entityBody("Catalog", DcatIds.logicalIri(DcatIds.CATALOGS, catalogId), null)),
 						BodyHandlers.ofString()).statusCode());
 		try {
-			HttpResponse<String> rejected = post(datasets, datasetBody("member-no-title", null));
+			HttpResponse<String> rejected = post(datasets, datasetBody("member-no-keyword", null));
 
 			assertEquals(422, rejected.statusCode(), rejected.body());
 			assertEquals("false", conformsHeader(rejected));
 			assertTrue(rejected.body().contains("ValidationReport"), rejected.body());
 			// Rejected before the write: no dataset was stored under that id.
-			assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(ADMIN_DATASETS + "/member-no-title"))
+			assertEquals(404, http.send(HttpRequest.newBuilder(URI.create(ADMIN_DATASETS + "/member-no-keyword"))
 					.DELETE().timeout(Duration.ofSeconds(10)).build(), BodyHandlers.ofString()).statusCode());
 
 			// ...and a conformant member still goes through.
-			HttpResponse<String> accepted = post(datasets, datasetBody("member-with-title", "Air quality"));
+			HttpResponse<String> accepted = post(datasets, datasetBody("member-with-keyword", "air"));
 			assertEquals(200, accepted.statusCode(), accepted.body());
 		} finally {
-			http.send(delete(datasets + "/member-with-title"), BodyHandlers.discarding());
-			http.send(delete(ADMIN_DATASETS + "/member-with-title"), BodyHandlers.discarding());
+			http.send(delete(datasets + "/member-with-keyword"), BodyHandlers.discarding());
+			http.send(delete(ADMIN_DATASETS + "/member-with-keyword"), BodyHandlers.discarding());
 			http.send(delete(BASE + "/admin/catalogs/" + catalogId), BodyHandlers.discarding());
 		}
 	}
@@ -199,11 +206,14 @@ public class WriteValidationIntegrationTest {
 	 */
 	@Test
 	void aDirectServiceCallIsEnforcedToo() {
-		Dataset titleless = DcatFactory.eINSTANCE.createDataset();
-		titleless.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
+		// Model-conformant on purpose, and missing only the dcat:keyword the shape wants —
+		// otherwise ModelConstraintException would be thrown first and this would prove
+		// nothing about SHACL reaching a direct caller.
+		Dataset keywordless = RestEntities.mandatoryDataset(DcatFactory.eINSTANCE.createDataset(), "Air quality");
+		keywordless.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
 
 		ShaclViolationException refused = assertThrows(ShaclViolationException.class,
-				() -> datasetAdminService.upsertDataset(titleless));
+				() -> datasetAdminService.upsertDataset(keywordless));
 
 		assertNotNull(refused.getReport(), "the caller needs the report, not just a failure");
 		assertFalse(refused.getReport().conforms(), "a conforming report would not have been thrown");
@@ -214,12 +224,9 @@ public class WriteValidationIntegrationTest {
 	/** The same call with a conformant entity still stores, so the check is not simply refusing everything. */
 	@Test
 	void aDirectServiceCallWithAConformantEntityStores() {
-		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		Dataset dataset = RestEntities.mandatoryDataset(DcatFactory.eINSTANCE.createDataset(), "Directly written");
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
-		rdf.PlainLiteral title = rdf.RdfFactory.eINSTANCE.createPlainLiteral();
-		title.setLang("en");
-		title.setValue("Directly written");
-		dataset.getTitle().add(title);
+		dataset.getKeyword().add(RestEntities.literal("air"));
 
 		datasetAdminService.upsertDataset(dataset);
 
@@ -235,7 +242,7 @@ public class WriteValidationIntegrationTest {
 	}
 
 	/**
-	 * Polls the admin PUT (idempotent, fixed id) with a title-less dataset until it is
+	 * Polls the admin PUT (idempotent, fixed id) with a keyword-less dataset until it is
 	 * rejected with 422 — i.e. the reconfigured validation service has rebound and
 	 * enforcement is live. Returns the last response (its status is asserted by the caller).
 	 */
@@ -285,17 +292,26 @@ public class WriteValidationIntegrationTest {
 		return response.headers().firstValue("X-SHACL-Conforms").orElse(null);
 	}
 
-	private static String datasetBody(String id, String title) {
-		return entityBody("Dataset", DcatIds.logicalIri(DcatIds.DATASETS, id), title);
+	private static String datasetBody(String id, String keyword) {
+		return entityBody("Dataset", DcatIds.logicalIri(DcatIds.DATASETS, id), keyword);
 	}
 
-	/** A minimal XMI entity, with the title omitted entirely when {@code title} is null. */
-	private static String entityBody(String type, String about, String title) {
-		String titleElement = title == null ? "" : "\n  <title lang=\"en\" value=\"%s\"/>".formatted(title);
+	/**
+	 * An XMI entity that always satisfies the <em>model</em> — title, description and
+	 * publisher — and satisfies the <em>shape</em> only when {@code keyword} is given.
+	 * That separation is the point: it isolates which layer refused the write.
+	 */
+	private static String entityBody(String type, String about, String keyword) {
+		String keywordElement = keyword == null ? "" : "  <keyword lang=\"en\" value=\"%s\"/>%n".formatted(keyword);
 		return """
 				<?xml version="1.0" encoding="UTF-8"?>
 				<dcat:%s xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
-				         xmi:version="2.0" about="%s">%s
-				</dcat:%s>""".formatted(type, about, titleElement, type);
+				         xmi:version="2.0" about="%s">
+				  <title lang="en" value="Air quality"/>
+				  <description lang="en" value="Integration-test fixture"/>
+				  <publisher about="https://example.de/organisation/uba">
+				    <name lang="en" value="Umweltbundesamt"/>
+				  </publisher>
+				%s</dcat:%s>""".formatted(type, about, keywordElement, type);
 	}
 }

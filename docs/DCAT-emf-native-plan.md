@@ -255,10 +255,11 @@ possible callers. Same rule as the SPARQL graph hook. Ordered after the `about` 
 `rest.filter.ModelConstraintExceptionMapper` renders as **422** — the status on-write SHACL
 already uses, since the failure is the same kind.
 
-Gated by `StoreConfig.validateOnWrite`, default `false`, `true` in the shipped local and
-container configurations — the `ShapesConfig.enforceOnWrite` arrangement. Off by default only
-because the existing test fixtures build deliberately minimal entities; making them conformant
-would let the default flip.
+Gated by `StoreConfig.validateOnWrite`, **default `true`** (env `MODEL_VALIDATE`). It briefly
+defaulted to `false` because the test fixtures built entities that were not valid DCAT-AP.de —
+title only, no description or publisher — which would have left the whole suite exercising a
+path production does not take. The fixtures were corrected instead, so the default and the
+tested path now agree.
 
 ### What it covers
 

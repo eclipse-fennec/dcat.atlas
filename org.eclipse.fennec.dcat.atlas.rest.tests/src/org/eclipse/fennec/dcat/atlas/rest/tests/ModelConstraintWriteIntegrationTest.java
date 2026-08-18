@@ -94,8 +94,10 @@ public class ModelConstraintWriteIntegrationTest {
 	}
 
 	@AfterEach
-	void disableEnforcement() throws Exception {
-		setValidateOnWrite(false);
+	void restoreEnforcement() throws Exception {
+		// Back to the shipped default, which is on: leaving it off would silently disarm
+		// every test class that runs after this one.
+		setValidateOnWrite(true);
 		delete(ADMIN_DATASETS + "/" + PROBE_ID);
 		delete(ADMIN_DATASETS + "/" + CONFORMANT_ID);
 	}

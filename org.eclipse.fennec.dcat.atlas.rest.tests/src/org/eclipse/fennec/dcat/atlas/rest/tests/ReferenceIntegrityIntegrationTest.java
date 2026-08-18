@@ -178,6 +178,10 @@ public class ReferenceIntegrityIntegrationTest {
 				<dcat:Dataset xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmi:version="2.0" about="http://dcat.atlas/datasets/%s">
 				  <title lang="en" value="Original title"/>
+				  <description lang="en" value="Reference integrity fixture"/>
+				  <publisher about="https://example.de/organisation/uba">
+				    <name lang="en" value="Umweltbundesamt"/>
+				  </publisher>
 				</dcat:Dataset>""".formatted(DATASET_ID));
 		assertTrue(put.statusCode() < 300, put.body());
 	}
@@ -188,6 +192,10 @@ public class ReferenceIntegrityIntegrationTest {
 				<dcat:Catalog xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
 				         xmi:version="2.0" about="http://dcat.atlas/catalogs/%s">
 				  <title lang="en" value="Reference integrity catalog"/>
+				  <description lang="en" value="Reference integrity fixture"/>
+				  <publisher about="https://example.de/organisation/uba">
+				    <name lang="en" value="Umweltbundesamt"/>
+				  </publisher>
 				%s
 				</dcat:Catalog>""".formatted(CATALOG_ID, memberElement));
 	}

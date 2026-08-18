@@ -66,10 +66,10 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 		this(resourceSetFactory, Path.of(config.root()), datasetService, config.validateOnWrite());
 	}
 
-	/** Package-visible for the admin subclass and tests; writes are not validated. */
+	/** Package-visible for the admin subclass and tests; validates as the shipped configurations do. */
 	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
 			DatasetReadOnlyService datasetService) {
-		this(resourceSetFactory, root, datasetService, false);
+		this(resourceSetFactory, root, datasetService, true);
 	}
 
 	/** Package-visible for the admin subclass and tests. */

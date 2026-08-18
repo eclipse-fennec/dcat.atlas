@@ -28,8 +28,6 @@ import org.junit.jupiter.api.io.TempDir;
 import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * Round-trips the file-backed data-service store (admin impl, which also covers
@@ -185,22 +183,15 @@ public class DataServiceAdminServiceImplTest {
 	private static Dataset dataset(String about, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(about);
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		dataset.getTitle().add(literal);
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, title);
 	}
 
+	/** No description: §4.4 does not make it Pflicht for a DataService, and Dataset::HasDescription does not reach here. */
 	private static DataService dataService(String about, String title) {
 		DataService service = DcatFactory.eINSTANCE.createDataService();
 		if (about != null) {
 			service.setAbout(about);
 		}
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(title);
-		service.getTitle().add(literal);
-		return service;
+		return TestEntities.mandatoryDataService(service, title);
 	}
 }

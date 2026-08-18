@@ -26,6 +26,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.util.Diagnostician;
+import org.eclipse.emf.ecore.util.EObjectValidator;
 import org.eclipse.fennec.dcat.atlas.api.ModelConstraintException;
 
 import rdf.IdentifiedResource;
@@ -88,11 +89,30 @@ public final class ModelValidation {
 		Map<Object, Object> context = new HashMap<>();
 		context.put(EValidator.SubstitutionLabelProvider.class, LABELS);
 		Diagnostician.INSTANCE.validate(object, diagnostic, context);
-		if (diagnostic.getSeverity() < Diagnostic.ERROR) {
+		// Decided on the filtered messages rather than on the raw severity: one of EMF's
+		// generic checks does not apply to this model (see isApplicable), and a diagnostic
+		// carrying only that would otherwise throw with nothing to report.
+		List<String> violations = messages(diagnostic);
+		if (violations.isEmpty()) {
 			return;
 		}
-		List<String> violations = messages(diagnostic);
 		throw new ModelConstraintException(summary(object, violations), violations);
+	}
+
+	/**
+	 * Whether a diagnostic is one this model can be held to.
+	 * <p>
+	 * {@code validate_EveryProxyResolves} is not. Membership is cross-resource references,
+	 * and an unresolved proxy is the normal state of two legitimate cases: a link to another
+	 * of our entities that has not been touched yet in this session, and a link to a
+	 * <em>foreign</em> IRI, which by definition cannot resolve and is deliberately kept
+	 * ({@code upsertLeavesAForeignReferenceAlone}). EMF's generic check cannot tell either
+	 * from a dangling link, where {@code References.requireResolvable} — which runs first,
+	 * and knows which IRIs are ours — can, and answers 409 naming the missing member.
+	 */
+	private static boolean isApplicable(Diagnostic diagnostic) {
+		return !(EObjectValidator.DIAGNOSTIC_SOURCE.equals(diagnostic.getSource())
+				&& diagnostic.getCode() == EObjectValidator.EOBJECT__EVERY_PROXY_RESOLVES);
 	}
 
 	/**
@@ -107,7 +127,7 @@ public final class ModelValidation {
 	}
 
 	private static void collect(Diagnostic diagnostic, Set<String> into) {
-		if (diagnostic.getSeverity() < Diagnostic.ERROR) {
+		if (diagnostic.getSeverity() < Diagnostic.ERROR || !isApplicable(diagnostic)) {
 			return;
 		}
 		List<Diagnostic> children = diagnostic.getChildren();

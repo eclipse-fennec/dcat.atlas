@@ -35,8 +35,6 @@ import dcat.Catalog;
 import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * Round-trips the file-backed catalog store, and pins the two things the storage
@@ -364,14 +362,13 @@ public class CatalogAdminServiceImplTest {
 	private static Dataset dataset(String about, String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(about);
-		dataset.getTitle().add(literal(title));
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, title);
 	}
 
 	private static DataService dataService(String about) {
 		DataService service = DcatFactory.eINSTANCE.createDataService();
 		service.setAbout(about);
-		return service;
+		return TestEntities.mandatoryDataService(service, "Service");
 	}
 
 	private static Catalog catalog(String about, String title) {
@@ -379,14 +376,7 @@ public class CatalogAdminServiceImplTest {
 		if (about != null) {
 			catalog.setAbout(about);
 		}
-		catalog.getTitle().add(literal(title));
-		return catalog;
+		return TestEntities.mandatoryDataset(catalog, title);
 	}
 
-	private static PlainLiteral literal(String value) {
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(value);
-		return literal;
-	}
 }

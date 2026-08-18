@@ -23,8 +23,6 @@ import java.nio.file.Path;
 import org.eclipse.fennec.dcat.atlas.api.ModelConstraintException;
 import org.eclipse.fennec.m2x.ocl.engine.OclEngineImpl;
 import org.eclipse.fennec.m2x.ocl.parser.OclParserSupport;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -58,21 +56,15 @@ public class ModelConstraintValidationTest {
 	private static final String SERVICES = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE
 			+ org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.DATA_SERVICES + "/";
 
-	private static OclEngineImpl engine;
+	/**
+	 * Only for the fail-closed test below, which takes the delegates away and puts them back.
+	 * Installing them is {@link TestResourceSets}'s job — an {@code @AfterAll} uninstall here
+	 * would leave every later test class in the run without them.
+	 */
+	private static final OclEngineImpl ENGINE = new OclEngineImpl(new OclParserSupport());
 
 	@TempDir
 	Path storage;
-
-	@BeforeAll
-	static void installDelegates() {
-		engine = new OclEngineImpl(new OclParserSupport());
-		engine.installDelegates();
-	}
-
-	@AfterAll
-	static void removeDelegates() {
-		engine.uninstallDelegates();
-	}
 
 	private DatasetAdminServiceImpl datasets(boolean validateOnWrite) {
 		return new DatasetAdminServiceImpl(TestResourceSets.factory(), storage, validateOnWrite);
@@ -221,7 +213,7 @@ public class ModelConstraintValidationTest {
 	@Test
 	void aMissingDelegateRejectsTheWriteRatherThanSkippingTheConstraint() {
 		Dataset conformant = dataset("Air quality");
-		engine.uninstallDelegates();
+		ENGINE.uninstallDelegates();
 		try {
 			ModelConstraintException refused = assertThrows(ModelConstraintException.class,
 					() -> datasets(true).upsertDataset(conformant));
@@ -229,7 +221,7 @@ public class ModelConstraintValidationTest {
 					"expected a delegate-not-found diagnostic, but was: " + refused.getViolations());
 			assertFalse(refused.getViolations().isEmpty());
 		} finally {
-			engine.installDelegates();
+			ENGINE.installDelegates();
 		}
 	}
 

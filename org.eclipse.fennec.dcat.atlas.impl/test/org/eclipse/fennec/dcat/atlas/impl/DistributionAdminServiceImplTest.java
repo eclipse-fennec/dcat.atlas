@@ -32,8 +32,6 @@ import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
 import dcat.Distribution;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
 
 /**
  * FR-10: a Distribution exists only in the context of its Dataset.
@@ -298,8 +296,7 @@ public class DistributionAdminServiceImplTest {
 		if (about != null) {
 			dataService.setAbout(about);
 		}
-		dataService.getTitle().add(literal(title));
-		return dataService;
+		return TestEntities.mandatoryDataService(dataService, title);
 	}
 
 	private static Distribution distribution(String about, String title) {
@@ -307,8 +304,8 @@ public class DistributionAdminServiceImplTest {
 		if (about != null) {
 			distribution.setAbout(about);
 		}
-		distribution.setTitle(literal(title));
-		return distribution;
+		distribution.setTitle(TestEntities.literal(title));
+		return TestEntities.mandatoryDistribution(distribution);
 	}
 
 	private static Dataset dataset(String about, String title) {
@@ -316,14 +313,7 @@ public class DistributionAdminServiceImplTest {
 		if (about != null) {
 			dataset.setAbout(about);
 		}
-		dataset.getTitle().add(literal(title));
-		return dataset;
+		return TestEntities.mandatoryDataset(dataset, title);
 	}
 
-	private static PlainLiteral literal(String value) {
-		PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
-		literal.setLang("en");
-		literal.setValue(value);
-		return literal;
-	}
 }

@@ -86,6 +86,50 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 
 ## Change log
 
+### 2026-08-18 — The test fixtures were not valid DCAT-AP.de, so validation is on by default
+
+Every fixture in the suite built an entity carrying a title and nothing else. §4.2/§4.3/§4.5
+make `dct:description` and `dct:publisher` Pflicht as well, so none of those objects was a
+valid Catalog, Dataset or DatasetSeries — it simply never mattered, because until this week
+nothing checked. The consequence once something did was that `StoreConfig.validateOnWrite` had
+to default to `false`, which meant ~250 tests exercised a path production does not take and the
+enforced path was covered only by the handful written for it.
+
+The fixtures are corrected and the default is now `true`. Mandatory sets are collected in
+`impl/TestEntities` and `rest.tests/RestEntities` rather than repeated per test, since what is
+mandatory is a property of the profile: when the profile changes, one place changes.
+`AbstractEntityResourceIntegrationTest.xmiBody` gained `mandatoryFor(type)`, because the set
+differs per class — a DataService needs `dcat:endpointURL` and no description, a Distribution
+needs `dcat:accessURL` and `dct:license` and neither of the other two.
+
+**Three things this turned up that were not fixture problems.**
+
+*`validate_EveryProxyResolves` does not apply to this model.* Membership is cross-resource
+references, so an unresolved proxy is the normal state of two legitimate cases: a link to
+another of our entities not yet touched in this session, and a link to a **foreign** IRI, which
+by definition cannot resolve and is deliberately preserved (`upsertLeavesAForeignReferenceAlone`).
+EMF's generic check cannot tell either from a dangling link. `ModelValidation` now filters that
+one diagnostic by source and code, and decides on the filtered messages rather than the raw
+severity — otherwise a diagnostic carrying only the excluded entry would throw with nothing to
+report. `References.requireResolvable`, which knows which IRIs are ours, is the check that
+belongs here, and it was moved back **before** validation so a dangling member still answers 409
+naming the member rather than 422 saying a proxy did not resolve.
+
+*The suite has to install the OCL delegates once, not per class.* The write boundary fails
+closed, so without them every write is refused with "unable to find delegate" — 72 failures on
+the first run. Installation moved into `TestResourceSets`, which already exists to stand in for
+what the OSGi runtime provides, and the `@AfterAll` uninstall came out of
+`ModelConstraintValidationTest`, where it was quietly disarming every later class in the run.
+
+*A SHACL test cannot use a shape the model already enforces.* `WriteValidationIntegrationTest`
+required `dct:title` — which the model now requires too, so the model check fired first and the
+suite would have been asserting on the wrong layer while appearing to pass. The shape now
+requires `dcat:keyword`, optional throughout the model, so a violation can only come from the
+shapes; its bodies are model-conformant and vary only in the keyword.
+
+**180 unit + 159 OSGi, green, twice in a row** (the store is shared, so some failures only
+appear on a second run).
+
 ### 2026-08-18 — SHACL enforcement moved from the REST resources to the store
 
 **A direct service caller wrote unvalidated.** On-write SHACL enforcement lived in the five
@@ -181,8 +225,8 @@ One constraint per feature rather than one per class, so a violation names the p
 `ModelValidation.check`, which calls `Diagnostician.INSTANCE.validate` and throws
 `ModelConstraintException`; `ModelConstraintExceptionMapper` renders it **422**, the status
 on-write SHACL already uses. Ordered after the `about` is stamped (`HasIdentity` needs it) and
-before the file write. Gated by `StoreConfig.validateOnWrite`, default `false`, `true` in the
-shipped configs — the `ShapesConfig.enforceOnWrite` arrangement.
+before the file write. Gated by `StoreConfig.validateOnWrite`, default `true` (env
+`MODEL_VALIDATE`) — see the fixture entry below for why it was briefly `false`.
 
 *The deviation from the plan.* `DCAT-emf-native-plan.md` §5 said to call `OclEngine` directly
 and **not** go through the `Diagnostician`, because a validation delegate is "diagnostic only".
@@ -232,12 +276,9 @@ reach EMF's global registry from the m2x service. **169 unit + 157 OSGi, green.*
 *Fallout fixed on the way.* `EObjectToJenaTest.mediaTypeAndPackageFormatAreIris` still used
 `getMediaType().add(…)`; both features are single-valued after the cardinality correction.
 
-**Still open.** The existing test fixtures build spec-invalid entities (title only, no
-description or publisher), which is the only reason `validateOnWrite` defaults to `false`.
-Making them conformant — `AbstractEntityResourceIntegrationTest.xmiBody` plus about ten
-per-suite helpers — would let the default flip to `true` and have the whole suite exercise the
-enforced path. Controlled-vocabulary membership stays with SHACL: the F-22 check traverses
-`skos:inScheme` against operator-supplied authority tables that OCL cannot see.
+**Follow-up, done the same day** — see the fixture entry below. Controlled-vocabulary
+membership stays with SHACL: the F-22 check traverses `skos:inScheme` against
+operator-supplied authority tables that OCL cannot see.
 
 ### 2026-08-17 — `AnyURI` is the IRI marker, and three things found while proving it
 

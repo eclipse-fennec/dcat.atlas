@@ -51,11 +51,11 @@ public class CatalogAdminServiceImplTest {
 	Path storage;
 
 	private CatalogAdminServiceImpl service() {
-		return new CatalogAdminServiceImpl(TestResourceSets.factory(), storage);
+		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 	}
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 	}
 
 	// --- storage round trip -------------------------------------------------
@@ -149,7 +149,7 @@ public class CatalogAdminServiceImplTest {
 		CatalogAdminServiceImpl service = service();
 		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
 
-		String stored = Files.readString(StoreLayout.file(storage, StoreLayout.CATALOGS, "gov"));
+		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		assertTrue(stored.contains("about=\"" + CATALOGS + "gov\""), stored);
 	}
 
@@ -178,7 +178,7 @@ public class CatalogAdminServiceImplTest {
 		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
 		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
 
-		String stored = Files.readString(StoreLayout.file(storage, StoreLayout.CATALOGS, "gov"));
+		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		assertTrue(stored.contains("href=\"" + DATASETS + "air#/\""), stored);
 		assertFalse(stored.contains("Air quality"), "the dataset must not be copied into the catalog: " + stored);
 	}

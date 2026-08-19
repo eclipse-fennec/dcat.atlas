@@ -42,7 +42,7 @@ public class DataServiceAdminServiceImplTest {
 	Path storage;
 
 	private DataServiceAdminServiceImpl service() {
-		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage);
+		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 	}
 
 	@Test
@@ -177,7 +177,7 @@ public class DataServiceAdminServiceImplTest {
 	}
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 	}
 
 	private static Dataset dataset(String about, String title) {

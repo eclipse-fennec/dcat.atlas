@@ -43,11 +43,11 @@ public class DatasetSeriesAdminServiceImplTest {
 	Path storage;
 
 	private DatasetAdminServiceImpl datasetService() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 	}
 
 	private DatasetSeriesAdminServiceImpl service() {
-		return new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
+		return new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 	}
 
 	@Test
@@ -93,7 +93,7 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesRecordsInSeriesOnDataset() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
+		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
@@ -107,7 +107,7 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesIsIdempotent() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
+		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
@@ -127,7 +127,7 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void deleteDatasetFromSeriesRemovesInSeries() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
+		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
 

@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.NoSuchElementException;
 
 import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesAdminService;
@@ -26,6 +25,7 @@ import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
 import org.eclipse.fennec.dcat.atlas.impl.helper.References;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -52,18 +52,20 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		implements DatasetSeriesAdminService {
 
 	@Activate
-	public DatasetSeriesAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		super(resourceSetFactory, config);
+	public DatasetSeriesAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference(name = "gitService") GitService gitService, StoreConfig config) {
+		super(resourceSetFactory, gitService, config);
 	}
 
 	/** Package-visible for tests. */
-	DatasetSeriesAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root);
+	DatasetSeriesAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		super(resourceSetFactory, gitService, basePath);
 	}
 
 	/** Package-visible for tests that need the model constraints enforced. */
-	DatasetSeriesAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		super(resourceSetFactory, root, validateOnWrite);
+	DatasetSeriesAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		super(resourceSetFactory, gitService, basePath, validateOnWrite);
 	}
 
 	/**
@@ -97,7 +99,9 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	@Override
 	public DatasetSeries upsertDatasetSeries(DatasetSeries series) {
 		String id = idOrMint(series);
-		store().put(collection, id, series);
+		Store store = store();
+		store.put(collection, id, series);
+		store.commit("Store dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
 		return series;
 	}
@@ -105,8 +109,11 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	@Override
 	public void deleteDatasetSeries(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, root, collection, id, cascade);
+		References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
+		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.
+		store.commit(cascade ? "Delete dataset series " + id + " and unlink its referrers"
+				: "Delete dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
 	}
 
@@ -119,7 +126,8 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		requireSeries(store, datasetSeriesId);
 		String datasetId = DcatIds.idForWrite(StoreLayout.DATASETS, dataset.getAbout());
 		store.put(StoreLayout.DATASETS, datasetId, dataset);
-		return connect(store, datasetSeriesId, datasetId);
+		return connect(store, datasetSeriesId, datasetId,
+				"Add dataset %s to dataset series %s".formatted(datasetId, datasetSeriesId));
 	}
 
 	@Override
@@ -129,7 +137,8 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		if (store.get(StoreLayout.DATASETS, datasetId).isEmpty()) {
 			throw new NoSuchElementException("Unknown dataset: " + datasetId);
 		}
-		return connect(store, datasetSeriesId, datasetId);
+		return connect(store, datasetSeriesId, datasetId,
+				"Link dataset %s to dataset series %s".formatted(datasetId, datasetSeriesId));
 	}
 
 	@Override
@@ -138,20 +147,23 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> {
 			if (Members.remove(dataset.getInSeries(), collection, datasetSeriesId)) {
 				store.save(dataset);
+				store.commit("Unlink dataset %s from dataset series %s".formatted(datasetId, datasetSeriesId));
 				reproject(DcatEntity.DATASET, datasetId);
 			}
 		});
 	}
 
-	private DatasetSeries connect(Store store, String datasetSeriesId, String datasetId) {
+	private DatasetSeries connect(Store store, String datasetSeriesId, String datasetId, String message) {
 		DatasetSeries series = requireSeries(store, datasetSeriesId);
 		Dataset dataset = store.<Dataset>get(StoreLayout.DATASETS, datasetId)
 				.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId));
 		if (!Members.contains(dataset.getInSeries(), collection, datasetSeriesId)) {
 			dataset.getInSeries().add(series);
 			store.save(dataset);
-			reproject(DcatEntity.DATASET, datasetId);
 		}
+		// Commits whatever the operation staged, as one commit; see CatalogAdminServiceImpl.
+		store.commit(message);
+		reproject(DcatEntity.DATASET, datasetId);
 		return series;
 	}
 

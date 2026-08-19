@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +20,7 @@ import org.apache.felix.hc.api.HealthCheck;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -39,18 +39,20 @@ import dcat.Dataset;
 public class DatasetReadOnlyServiceImpl extends AbstractEntityStore<Dataset> implements DatasetReadOnlyService {
 
 	@Activate
-	public DatasetReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()), config.validateOnWrite());
+	public DatasetReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference(name = "gitService") GitService gitService, StoreConfig config) {
+		this(resourceSetFactory, gitService, config.basePath(), config.validateOnWrite());
 	}
 
 	/** Package-visible for the admin subclass and tests; validates as the shipped configurations do. */
-	DatasetReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		this(resourceSetFactory, root, true);
+	DatasetReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		this(resourceSetFactory, gitService, basePath, true);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	DatasetReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		super(resourceSetFactory, root, StoreLayout.DATASETS, validateOnWrite);
+	DatasetReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		super(resourceSetFactory, gitService, basePath, StoreLayout.DATASETS, validateOnWrite);
 	}
 
 	@Override

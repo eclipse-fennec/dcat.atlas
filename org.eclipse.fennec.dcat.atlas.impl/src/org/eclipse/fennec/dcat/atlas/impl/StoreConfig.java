@@ -17,30 +17,34 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 /**
- * Shared configuration for the file-based DCAT-AP stores. Every entity service
+ * Shared configuration for the git-backed DCAT-AP stores. Every entity service
  * {@code @Designate}s this same OCD.
  * <p>
- * A single <em>root</em> rather than a directory per service, because the stores
- * are no longer independent: a Catalog's {@code dcat:dataset} link is an EMF
- * cross-resource reference that has to resolve into the dataset store, so one
- * {@code URIConverter} URI map has to cover every collection at once. The
- * per-collection subdirectory names are therefore fixed rather than configurable
- * — see {@link org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout}.
+ * The repository itself is not configured here: it belongs to the
+ * {@code org.eclipse.fennec.jgit} {@code GitService} each store binds, so which repository,
+ * which branch and which credentials are one {@code GitConfig} the stores share rather than
+ * ten copies that could disagree. Point the stores at a particular one with the usual DS
+ * {@code gitService.target} property.
  * <p>
- * Persistence is a directory of XMI files, one per resource. Distributions have
- * no directory of their own: {@code dcat:distribution} is containment, so a
- * Distribution is stored inside its Dataset's file (FR-10).
+ * Persistence is one XMI blob per resource, at
+ * {@code <basePath>/<collection>/<id>.xmi}. Distributions have no folder of their own:
+ * {@code dcat:distribution} is containment, so a Distribution is stored inside its Dataset's
+ * blob (FR-10).
  */
-@ObjectClassDefinition(name = "DCAT-AP Atlas file store", description = "File-system persistence for the DCAT-AP entity stores")
+@ObjectClassDefinition(name = "DCAT-AP Atlas git store", description = "Git-backed persistence for the DCAT-AP entity stores")
 public @interface StoreConfig {
 
 	/**
-	 * Root directory holding one subdirectory per collection, each with one
-	 * {@code <id>.xmi} file per resource. Subdirectories are created on activation
-	 * if they do not exist.
+	 * The folder inside the repository the four collection folders sit under. Empty means
+	 * the repository root.
+	 * <p>
+	 * Configurable so the portal can share a repository with unrelated content; the
+	 * collection folders below it are not, because they are the collection segment of
+	 * every stored identity rather than a storage detail — see
+	 * {@link org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout}.
 	 */
-	@AttributeDefinition(name = "Store root", description = "Root directory holding the per-collection store subdirectories")
-	String root() default "data";
+	@AttributeDefinition(name = "Store base path", description = "Folder inside the repository holding the per-collection store folders", required = false)
+	String basePath() default "dcat";
 
 	/**
 	 * Whether a write is checked against the model's own constraints — the ecore

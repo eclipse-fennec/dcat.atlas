@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -50,7 +50,8 @@ import dcat.Distribution;
 public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyService {
 
 	protected final ResourceSetFactory resourceSetFactory;
-	protected final Path root;
+	protected final GitService gitService;
+	protected final String basePath;
 	protected final DatasetReadOnlyService datasetService;
 	/**
 	 * Whether writes through this store are checked against the model's constraints
@@ -62,21 +63,22 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 
 	@Activate
 	public DistributionReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
-			@Reference DatasetReadOnlyService datasetService, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()), datasetService, config.validateOnWrite());
+			@Reference(name = "gitService") GitService gitService, @Reference DatasetReadOnlyService datasetService, StoreConfig config) {
+		this(resourceSetFactory, gitService, config.basePath(), datasetService, config.validateOnWrite());
 	}
 
 	/** Package-visible for the admin subclass and tests; validates as the shipped configurations do. */
-	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
+	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
 			DatasetReadOnlyService datasetService) {
-		this(resourceSetFactory, root, datasetService, true);
+		this(resourceSetFactory, gitService, basePath, datasetService, true);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
+	DistributionReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
 			DatasetReadOnlyService datasetService, boolean validateOnWrite) {
 		this.resourceSetFactory = resourceSetFactory;
-		this.root = root;
+		this.gitService = gitService;
+		this.basePath = StoreLayout.requireSafeBasePath(basePath);
 		this.datasetService = datasetService;
 		this.validateOnWrite = validateOnWrite;
 	}
@@ -102,7 +104,7 @@ public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyServ
 		if (getDistributionForDataset(datasetId, distributionId).isEmpty()) {
 			return Optional.empty();
 		}
-		return DcatHelper.etag(root, StoreLayout.DATASETS, datasetId);
+		return DcatHelper.etag(gitService, basePath, StoreLayout.DATASETS, datasetId);
 	}
 
 	/** The Distribution of {@code dataset} whose identity ends in {@code distributionId}. */

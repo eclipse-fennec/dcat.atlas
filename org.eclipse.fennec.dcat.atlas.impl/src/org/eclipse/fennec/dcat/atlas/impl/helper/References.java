@@ -13,8 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl.helper;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -71,9 +69,9 @@ public final class References {
 	 * @throws ResourceInUseException if something still references the target and
 	 *                                {@code cascade} is {@code false}
 	 */
-	public static void detach(Store store, Path root, String collection, String id, boolean cascade) {
+	public static void detach(Store store, String collection, String id, boolean cascade) {
 		String targetIri = StoreLayout.logicalIri(collection, id);
-		List<Referrer> referrers = referrersTo(store, root, targetIri);
+		List<Referrer> referrers = referrersTo(store, targetIri);
 		if (referrers.isEmpty()) {
 			return;
 		}
@@ -131,10 +129,12 @@ public final class References {
 	}
 
 	/** The stored roots that link to {@code targetIri}, each reported once. */
-	private static List<Referrer> referrersTo(Store store, Path root, String targetIri) {
+	private static List<Referrer> referrersTo(Store store, String targetIri) {
 		List<Referrer> referrers = new ArrayList<>();
 		for (String collection : StoreLayout.COLLECTIONS) {
-			for (String id : idsIn(root, collection)) {
+			// Through the session, so a scan sees what the operation running it has already
+			// staged - a cascade unlinks referrers one at a time and must not re-find them.
+			for (String id : store.ids(collection)) {
 				if (targetIri.equals(StoreLayout.logicalIri(collection, id))) {
 					// A resource does not hold itself up.
 					continue;
@@ -145,18 +145,6 @@ public final class References {
 			}
 		}
 		return referrers;
-	}
-
-	private static List<String> idsIn(Path root, String collection) {
-		Path directory = StoreLayout.directory(root, collection);
-		if (!Files.isDirectory(directory)) {
-			return List.of();
-		}
-		try (var files = Files.list(directory)) {
-			return files.filter(Files::isRegularFile).map(p -> p.getFileName().toString()).sorted().toList();
-		} catch (java.io.IOException e) {
-			throw new java.io.UncheckedIOException("Could not scan " + directory, e);
-		}
 	}
 
 	private static boolean linksTo(EObject owner, String targetIri) {

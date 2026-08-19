@@ -15,135 +15,165 @@ package org.eclipse.fennec.dcat.atlas.impl.helper;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HexFormat;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.StoreConflictException;
+import org.eclipse.fennec.dcat.atlas.api.StoreUnavailableException;
+import org.eclipse.fennec.dcat.atlas.impl.helper.PendingChanges.State;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
+import org.eclipse.fennec.jgit.api.TreeResult;
+import org.eclipse.fennec.jgit.exceptions.GitConflictException;
+import org.eclipse.fennec.jgit.exceptions.GitPushException;
 
 import rdf.IdentifiedResource;
 
 /**
- * File-based persistence for the DCAT-AP stores: one XMI file per resource, the
- * entity itself as the file's sole root object.
+ * Git-backed persistence for the DCAT-AP stores: one XMI blob per resource, the entity
+ * itself as the blob's sole root object.
  *
  * <h2>Sessions, and why they exist</h2>
  *
- * Links between entities are EMF cross-resource references, so two entities can
- * only be linked while they are loaded in the <em>same</em> {@link ResourceSet} —
- * that is what lets EMF write {@code href="http://dcat.atlas/datasets/air#/"}
- * rather than inlining a copy. {@link #open} hands out a {@link Store} holding one
- * such resource set; everything read through it resolves against everything else.
+ * Links between entities are EMF cross-resource references, so two entities can only be
+ * linked while they are loaded in the <em>same</em> {@link ResourceSet} — that is what lets
+ * EMF write {@code href="http://dcat.atlas/datasets/air#/"} rather than inlining a copy.
+ * {@link #open} hands out a {@link Store} holding one such resource set; everything read
+ * through it resolves against everything else.
  * <p>
- * A store is scoped to one operation and is not thread-safe, matching EMF's own
- * guarantees — see {@code StoreResourceSets} for why that is preferred over one
- * shared set.
+ * A session is also the unit of change. Writes are staged, not committed, until
+ * {@link Store#commit} is called, so one API operation becomes one commit however many
+ * resources it touches — and an operation that fails part way through commits nothing at
+ * all. See {@link PendingChanges}.
+ * <p>
+ * A store is scoped to one operation and is not thread-safe, matching EMF's own guarantees
+ * — see {@code StoreResourceSets} for why that is preferred over one shared set.
  */
 public final class DcatHelper {
 
 	private DcatHelper() {
 	}
 
-	/** Opens a store session rooted at {@code root}, without model validation on write. */
-	public static Store open(ResourceSetFactory resourceSetFactory, Path root) {
-		return open(resourceSetFactory, root, false);
+	/** Opens a store session, without model validation on write. */
+	public static Store open(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		return open(resourceSetFactory, gitService, basePath, false);
 	}
 
 	/**
-	 * Opens a store session rooted at {@code root}.
+	 * Opens a store session.
 	 *
 	 * @param validateOnWrite whether {@link Store#put} checks the entity against the
 	 *                        model's constraints first — see {@link ModelValidation}
 	 */
-	public static Store open(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		return open(resourceSetFactory, root, validateOnWrite, null);
+	public static Store open(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		return open(resourceSetFactory, gitService, basePath, validateOnWrite, null);
 	}
 
 	/**
-	 * Opens a store session rooted at {@code root}.
+	 * Opens a store session.
 	 *
 	 * @param validateOnWrite whether {@link Store#put} checks the entity against the
 	 *                        model's constraints first — see {@link ModelValidation}
 	 * @param validation      the SHACL validation service, or {@code null} for none; see
 	 *                        {@link ShaclValidation} for why absence means no enforcement
 	 */
-	public static Store open(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite,
-			DcatValidationService validation) {
-		return new Store(StoreResourceSets.create(resourceSetFactory, root), root, validateOnWrite, validation);
+	public static Store open(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite, DcatValidationService validation) {
+		PendingChanges pending = new PendingChanges();
+		ResourceSet resourceSet = StoreResourceSets.create(resourceSetFactory, gitService, basePath, pending);
+		return new Store(resourceSet, gitService, basePath, pending, validateOnWrite, validation);
 	}
 
-	/**
-	 * Creates the store subdirectories. Called on service activation so a fresh
-	 * deployment does not fail its first write.
-	 */
-	public static void prepare(Path root) {
-		for (String collection : StoreLayout.COLLECTIONS) {
-			Path directory = StoreLayout.directory(root, collection);
-			try {
-				Files.createDirectories(directory);
-			} catch (IOException e) {
-				throw new UncheckedIOException("Could not create store directory " + directory, e);
-			}
-		}
-	}
-
-	/** One operation's view of the store. */
+	/** One operation's view of the store, and the one commit it will become. */
 	public static final class Store {
 
 		private final ResourceSet resourceSet;
-		private final Path root;
+		private final GitService gitService;
+		private final String basePath;
+		private final PendingChanges pending;
 		private final boolean validateOnWrite;
 		/** SHACL enforcement, or {@code null} when no validation service is bound. */
 		private final DcatValidationService validation;
 
-		private Store(ResourceSet resourceSet, Path root, boolean validateOnWrite, DcatValidationService validation) {
+		private Store(ResourceSet resourceSet, GitService gitService, String basePath, PendingChanges pending,
+				boolean validateOnWrite, DcatValidationService validation) {
 			this.resourceSet = resourceSet;
-			this.root = root;
+			this.gitService = gitService;
+			this.basePath = basePath;
+			this.pending = pending;
 			this.validateOnWrite = validateOnWrite;
 			this.validation = validation;
 		}
 
-		/** The object stored under {@code id}, or empty if there is no such file. */
+		/** The object stored under {@code id}, or empty if there is no such resource. */
 		@SuppressWarnings("unchecked")
 		public <T extends EObject> Optional<T> get(String collection, String id) {
-			if (!Files.isRegularFile(StoreLayout.file(root, collection, id))) {
+			URI uri = StoreResourceSets.resourceUri(collection, id);
+			if (resourceSet.getResource(uri, false) == null && !resourceSet.getURIConverter().exists(uri, null)) {
 				return Optional.empty();
 			}
-			Resource resource = resourceSet.getResource(StoreResourceSets.resourceUri(collection, id), true);
+			Resource resource = resourceSet.getResource(uri, true);
 			return resource.getContents().isEmpty() ? Optional.empty()
 					: Optional.of((T) resource.getContents().get(0));
 		}
 
 		/** Every object in {@code collection}, ordered by id. */
 		public <T extends EObject> List<T> list(String collection) {
-			Path directory = StoreLayout.directory(root, collection);
-			if (!Files.isDirectory(directory)) {
-				return List.of();
+			List<String> ids = ids(collection);
+			List<T> result = new ArrayList<>(ids.size());
+			for (String id : ids) {
+				this.<T>get(collection, id).ifPresent(result::add);
 			}
-			try (Stream<Path> files = Files.list(directory)) {
-				List<String> ids = files.filter(Files::isRegularFile) //
-						.map(p -> p.getFileName().toString()) //
-						.sorted() //
-						.toList();
-				List<T> result = new ArrayList<>(ids.size());
-				for (String id : ids) {
-					this.<T>get(collection, id).ifPresent(result::add);
+			return result;
+		}
+
+		/**
+		 * The ids in {@code collection}, ordered, as this session sees them — committed
+		 * resources plus anything it has staged, minus anything it has removed.
+		 * <p>
+		 * Session-aware because the alternative is a scan that contradicts the very
+		 * operation running it: {@code References} looks for referrers while a cascade is
+		 * part way through unlinking them.
+		 */
+		public List<String> ids(String collection) {
+			String prefix = StoreLayout.collectionPrefix(basePath, collection);
+			Set<String> ids = new LinkedHashSet<>();
+			TreeResult tree = gitService.getFiles(prefix);
+			for (String path : tree.getFiles()) {
+				String id = StoreLayout.idOfPath(basePath, collection, path);
+				// A listing is recursive and the prefix may be shared with unrelated content,
+				// so anything that is not one of our blobs is not ours to read.
+				if (id != null && pending.state(StoreLayout.repoPath(basePath, collection, id)) != State.REMOVED) {
+					ids.add(id);
 				}
-				return result;
-			} catch (IOException e) {
-				throw new UncheckedIOException("Could not list " + collection + " in " + directory, e);
 			}
+			for (String id : stagedIds(collection)) {
+				ids.add(id);
+			}
+			List<String> sorted = new ArrayList<>(ids);
+			sorted.sort(null);
+			return sorted;
+		}
+
+		/** The ids of {@code collection} this session has staged but not yet committed. */
+		private List<String> stagedIds(String collection) {
+			List<String> staged = new ArrayList<>();
+			for (String path : pending.writtenPaths()) {
+				String id = StoreLayout.idOfPath(basePath, collection, path);
+				if (id != null) {
+					staged.add(id);
+				}
+			}
+			return staged;
 		}
 
 		/**
@@ -172,8 +202,8 @@ public final class DcatHelper {
 			References.requireResolvable(this, object);
 			// Both validations run after the identity is stamped — "a stored entity has an
 			// about" is one constraint, and a SHACL report has to name the node that will
-			// actually be stored — and before anything is written, because the point is that
-			// an invalid entity never reaches the disk.
+			// actually be stored — and before anything is staged, because the point is that
+			// an invalid entity never reaches a commit.
 			//
 			// Model constraints first: they are cheap and structural, where SHACL serializes
 			// the entity to RDF and unions the vocabulary graph. An entity missing its
@@ -193,7 +223,7 @@ public final class DcatHelper {
 			return object;
 		}
 
-		/** Re-saves an object previously {@link #get}. */
+		/** Re-stages an object previously {@link #get}. */
 		public void save(EObject object) {
 			Resource resource = object.eResource();
 			if (resource == null) {
@@ -203,18 +233,57 @@ public final class DcatHelper {
 			save(resource);
 		}
 
-		/** Removes the object stored under {@code id}; returns whether a file existed. */
+		/** Stages the removal of the object stored under {@code id}; returns whether it existed. */
 		public boolean delete(String collection, String id) {
 			URI uri = StoreResourceSets.resourceUri(collection, id);
+			boolean existed = resourceSet.getURIConverter().exists(uri, null);
 			Resource loaded = resourceSet.getResource(uri, false);
 			if (loaded != null) {
 				resourceSet.getResources().remove(loaded);
 			}
-			try {
-				return Files.deleteIfExists(StoreLayout.file(root, collection, id));
-			} catch (IOException e) {
-				throw new UncheckedIOException("Could not delete " + collection + "/" + id, e);
+			pending.remove(StoreLayout.repoPath(basePath, collection, id));
+			return existed;
+		}
+
+		/**
+		 * Commits everything this session has staged, as one commit.
+		 * <p>
+		 * A session that staged nothing commits nothing and returns empty: an idempotent
+		 * no-op — re-linking a member that is already linked — must leave no trace in the
+		 * history, and must not move an ETag.
+		 *
+		 * @param message the commit message; it is the audit trail, so it should name the
+		 *                operation and the resource
+		 * @return the id of the new commit, or empty if there was nothing to commit
+		 */
+		public Optional<String> commit(String message) {
+			if (pending.isEmpty()) {
+				return Optional.empty();
 			}
+			String commitId;
+			try {
+				commitId = gitService.commit(pending.toCommitRequest(message));
+			} catch (GitConflictException e) {
+				// Translated here rather than let out: the REST adapter renders refusals and
+				// does not know the store is a git repository, the same boundary
+				// ReferentialIntegrityException already draws.
+				throw new StoreConflictException(
+						"Could not store the change: the store moved underneath this operation (" + message + ")", e);
+			} catch (GitPushException e) {
+				// The commit is written and on the branch; only sending it to the remote
+				// failed. Retryable, and the retry is cheap because the work is already done -
+				// so it is a 503 and not a lost write. Caught after GitConflictException,
+				// which is the more specific "the remote moved on" case.
+				throw new StoreUnavailableException(
+						"The change is stored locally but could not be sent to the remote (" + message + ")", e);
+			}
+			// A plain GitWriteException - the object database write failed and nothing was
+			// recorded - is deliberately NOT caught. It is a server fault rather than a
+			// refusal, so it should surface as an unmapped 500 with its stack trace in the
+			// log; wrapping it in a mapped exception would render a tidy message and lose the
+			// diagnosis, and there is nothing a client could do with the detail anyway.
+			pending.clear();
+			return Optional.ofNullable(commitId);
 		}
 
 		private void save(Resource resource) {
@@ -229,27 +298,19 @@ public final class DcatHelper {
 	// --- ETag ---------------------------------------------------------------
 
 	/**
-	 * A strong entity-tag validator for the object stored under {@code id}: a
-	 * SHA-256 (hex) digest of the stored file's bytes, or empty if there is no such
-	 * file. Computed over the persisted representation, so it changes iff the stored
-	 * state changes — which is what conditional requests need (F-16).
+	 * A strong entity-tag validator for the object stored under {@code id}: the id of the
+	 * git blob holding it, or empty if there is no such resource.
 	 * <p>
-	 * Note it digests the <em>stored</em> (logical) bytes, not what a client is
-	 * served. Two deployments rendering different public IRIs therefore agree on the
-	 * ETag, which is correct: they are serving the same resource at the same version.
+	 * The blob id is git's own content hash of exactly that resource, so it changes iff the
+	 * stored state changes — which is what conditional requests need (F-16). A commit id
+	 * would not do: it changes whenever <em>any</em> resource changes, so every cached
+	 * representation in the estate would be invalidated by an unrelated write.
+	 * <p>
+	 * Note it digests the <em>stored</em> (logical) bytes, not what a client is served. Two
+	 * deployments rendering different public IRIs therefore agree on the ETag, which is
+	 * correct: they are serving the same resource at the same version.
 	 */
-	public static Optional<String> etag(Path root, String collection, String id) {
-		Path file = StoreLayout.file(root, collection, id);
-		if (!Files.isRegularFile(file)) {
-			return Optional.empty();
-		}
-		try {
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			return Optional.of(HexFormat.of().formatHex(digest.digest(Files.readAllBytes(file))));
-		} catch (IOException e) {
-			throw new UncheckedIOException("Could not compute ETag for " + collection + "/" + id, e);
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException("SHA-256 is required but unavailable", e);
-		}
+	public static Optional<String> etag(GitService gitService, String basePath, String collection, String id) {
+		return gitService.blobId(null, StoreLayout.repoPath(basePath, collection, id));
 	}
 }

@@ -9,7 +9,8 @@
 	org.eclipse.fennec.m2x.ocl.api;version=latest,\
 	org.apache.jena.shacl;version=latest,\
 	org.apache.jena.core;version=latest,\
-	org.apache.jena.base;version=latest
+	org.apache.jena.base;version=latest,\
+	org.eclipse.fennec.jgit;version=latest
 
 # The OCL engine, needed only to *run*: the model's constraints are annotations, so the
 # impl compiles against nothing but org.eclipse.fennec.m2x.ocl.api (for @RequireOCL).
@@ -17,6 +18,7 @@
 # ValidationDelegate registry — so the plain JUnit tests have to put it on the classpath
 # and install the delegates themselves (see ModelConstraintValidationTest).
 -testpath: \
+	org.eclipse.jgit;version=latest,\
 	org.eclipse.fennec.m2x.ocl.engine;version=latest,\
 	org.eclipse.fennec.m2x.ocl.parser;version=latest,\
 	org.eclipse.fennec.m2x.ocl.model;version=latest,\

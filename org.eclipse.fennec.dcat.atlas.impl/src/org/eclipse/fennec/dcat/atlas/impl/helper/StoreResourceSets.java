@@ -13,8 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl.helper;
 
-import java.nio.file.Path;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
@@ -26,12 +24,13 @@ import org.eclipse.emf.ecore.xmi.impl.URIHandlerImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceImpl;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 
 /**
  * Builds the {@link ResourceSet} the stores read and write through: XMI, with a
- * {@code URIConverter} URI map that resolves every collection's logical base to
- * its store directory, so a {@code dcat:dataset} link from a Catalog resolves
- * into the dataset store as an ordinary EMF cross-resource reference.
+ * {@link DcatGitUriHandler} at the front of the {@code URIConverter}'s handler list, so a
+ * {@code dcat:dataset} link from a Catalog resolves into the dataset store as an ordinary
+ * EMF cross-resource reference and the bytes come from git.
  *
  * <h2>Why one per operation rather than one shared</h2>
  *
@@ -61,17 +60,18 @@ public final class StoreResourceSets {
 		return Map.of(XMLResource.OPTION_ENCODING, "UTF-8");
 	}
 
-	/** A resource set that reads and writes the store rooted at {@code root}. */
-	public static ResourceSet create(ResourceSetFactory resourceSetFactory, Path root) {
+	/**
+	 * A resource set that reads and writes the store in {@code gitService}'s repository,
+	 * staging its writes in {@code pending}.
+	 */
+	public static ResourceSet create(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			PendingChanges pending) {
 		ResourceSet resourceSet = resourceSetFactory.createResourceSet();
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new StoreResourceFactory());
-
-		Map<URI, URI> uriMap = new LinkedHashMap<>();
-		for (String collection : StoreLayout.COLLECTIONS) {
-			uriMap.put(URI.createURI(StoreLayout.logicalBase(collection)), URI.createFileURI(
-					StoreLayout.directory(root, collection).toAbsolutePath().toString() + "/"));
-		}
-		resourceSet.getURIConverter().getURIMap().putAll(uriMap);
+		// At the front, because EMF asks handlers in order and the default one would claim an
+		// http:// URI and try to fetch it over the network.
+		resourceSet.getURIConverter().getURIHandlers().add(0,
+				new DcatGitUriHandler(gitService, basePath, pending));
 		return resourceSet;
 	}
 
@@ -79,11 +79,16 @@ public final class StoreResourceSets {
 	 * The URI a stored resource is known by inside the resource set — its logical
 	 * identity, with no file extension.
 	 * <p>
-	 * The extension is deliberately absent. EMF derives the href of a cross-resource
-	 * reference from the target's resource URI, so an {@code .xmi} here would end up
-	 * inside a stored (and, rebased, served) identity — naming a serialization format
-	 * in something whose whole job is to identify a resource independently of how it
-	 * happens to be written. The cost is that store files carry no extension.
+	 * The extension is deliberately absent <em>here</em>. EMF derives the href of a
+	 * cross-resource reference from the target's resource URI, so an {@code .xmi} in this
+	 * URI would end up inside a stored (and, rebased, served) identity — naming a
+	 * serialization format in something whose whole job is to identify a resource
+	 * independently of how it happens to be written.
+	 * <p>
+	 * The stored blob does carry {@code .xmi}, which used to be impossible: while the URI
+	 * map made the URI the path, one could not have an extension without the other. The
+	 * handler decides the path now, so the blob is named for what it is and the identity
+	 * stays free of it — see {@link StoreLayout}.
 	 */
 	public static URI resourceUri(String collection, String id) {
 		return URI.createURI(StoreLayout.logicalIri(collection, id));

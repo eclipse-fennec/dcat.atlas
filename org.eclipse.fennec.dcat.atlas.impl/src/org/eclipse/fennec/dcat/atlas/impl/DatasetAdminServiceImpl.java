@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
@@ -22,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.References;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -43,18 +43,20 @@ import dcat.Dataset;
 public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implements DatasetAdminService {
 
 	@Activate
-	public DatasetAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		super(resourceSetFactory, config);
+	public DatasetAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference(name = "gitService") GitService gitService, StoreConfig config) {
+		super(resourceSetFactory, gitService, config);
 	}
 
 	/** Package-visible for tests. */
-	DatasetAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root);
+	DatasetAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		super(resourceSetFactory, gitService, basePath);
 	}
 
 	/** Package-visible for tests that need the model constraints enforced. */
-	DatasetAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		super(resourceSetFactory, root, validateOnWrite);
+	DatasetAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		super(resourceSetFactory, gitService, basePath, validateOnWrite);
 	}
 
 	/**
@@ -88,7 +90,9 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 	@Override
 	public Dataset upsertDataset(Dataset dataset) {
 		String id = idOrMint(dataset);
-		store().put(collection, id, dataset);
+		Store store = store();
+		store.put(collection, id, dataset);
+		store.commit("Store dataset " + id);
 		reproject(id);
 		return dataset;
 	}
@@ -96,8 +100,10 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 	@Override
 	public void deleteDataset(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, root, collection, id, cascade);
+		References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
+		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.
+		store.commit(cascade ? "Delete dataset " + id + " and unlink its referrers" : "Delete dataset " + id);
 		reproject(id);
 	}
 

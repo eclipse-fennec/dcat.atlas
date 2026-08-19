@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +28,7 @@ import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -60,20 +60,20 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 
 	@Activate
 	public DistributionAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
-			@Reference DatasetReadOnlyService datasetService, StoreConfig config) {
-		super(resourceSetFactory, datasetService, config);
+			@Reference(name = "gitService") GitService gitService, @Reference DatasetReadOnlyService datasetService, StoreConfig config) {
+		super(resourceSetFactory, gitService, datasetService, config);
 	}
 
 	/** Package-visible for tests. */
-	DistributionAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
+	DistributionAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
 			DatasetReadOnlyService datasetService) {
-		super(resourceSetFactory, root, datasetService);
+		super(resourceSetFactory, gitService, basePath, datasetService);
 	}
 
 	/** Package-visible for tests that need the model constraints enforced. */
-	DistributionAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root,
+	DistributionAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
 			DatasetReadOnlyService datasetService, boolean validateOnWrite) {
-		super(resourceSetFactory, root, datasetService, validateOnWrite);
+		super(resourceSetFactory, gitService, basePath, datasetService, validateOnWrite);
 	}
 
 	/**
@@ -121,6 +121,7 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		find(dataset, datasetId, distributionId).ifPresent(dataset.getDistribution()::remove);
 		dataset.getDistribution().add(distribution);
 		store.save(dataset);
+		store.commit("Store distribution %s of dataset %s".formatted(distributionId, datasetId));
 		reproject(datasetId, distributionId);
 		return distribution;
 	}
@@ -131,6 +132,7 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> {
 			if (find(dataset, datasetId, distributionId).map(dataset.getDistribution()::remove).orElse(false)) {
 				store.save(dataset);
+				store.commit("Delete distribution %s of dataset %s".formatted(distributionId, datasetId));
 				reproject(datasetId, distributionId);
 			}
 		});
@@ -148,7 +150,9 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		requireDistribution(store, datasetId, distributionId);
 		String serviceId = DcatIds.idForWrite(StoreLayout.DATA_SERVICES, dataService.getAbout());
 		store.put(StoreLayout.DATA_SERVICES, serviceId, dataService);
-		return connect(store, datasetId, distributionId, serviceId);
+		return connect(store, datasetId, distributionId, serviceId,
+				"Add access service %s to distribution %s of dataset %s".formatted(serviceId, distributionId,
+						datasetId));
 	}
 
 	@Override
@@ -159,7 +163,9 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		if (store.get(StoreLayout.DATA_SERVICES, dataServiceId).isEmpty()) {
 			throw new NoSuchElementException("Unknown data service: " + dataServiceId);
 		}
-		return connect(store, datasetId, distributionId, dataServiceId);
+		return connect(store, datasetId, distributionId, dataServiceId,
+				"Link access service %s to distribution %s of dataset %s".formatted(dataServiceId, distributionId,
+						datasetId));
 	}
 
 	@Override
@@ -169,6 +175,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 				distributionId).ifPresent(distribution -> {
 					if (Members.remove(distribution.getAccessService(), StoreLayout.DATA_SERVICES, dataServiceId)) {
 						store.save(dataset);
+						store.commit("Unlink access service %s from distribution %s of dataset %s"
+								.formatted(dataServiceId, distributionId, datasetId));
 						reproject(datasetId, distributionId);
 					}
 				}));
@@ -176,22 +184,24 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 
 	// --- helpers ------------------------------------------------------------
 
-	private Distribution connect(Store store, String datasetId, String distributionId, String dataServiceId) {
+	private Distribution connect(Store store, String datasetId, String distributionId, String dataServiceId,
+			String message) {
 		Dataset dataset = requireDataset(store, datasetId);
 		Distribution distribution = requireDistribution(store, datasetId, distributionId);
-		if (Members.contains(distribution.getAccessService(), StoreLayout.DATA_SERVICES, dataServiceId)) {
-			// Idempotent: leave the dataset — and its ETag — untouched.
-			return distribution;
+		if (!Members.contains(distribution.getAccessService(), StoreLayout.DATA_SERVICES, dataServiceId)) {
+			distribution.getAccessService().add(store.<DataService>get(StoreLayout.DATA_SERVICES, dataServiceId)
+					.orElseThrow(() -> new NoSuchElementException("Unknown data service: " + dataServiceId)));
+			store.save(dataset);
 		}
-		distribution.getAccessService().add(store.<DataService>get(StoreLayout.DATA_SERVICES, dataServiceId)
-				.orElseThrow(() -> new NoSuchElementException("Unknown data service: " + dataServiceId)));
-		store.save(dataset);
+		// Commits whatever the operation staged, as one commit; a repeat stages nothing and
+		// so leaves the dataset - and its ETag - untouched. See CatalogAdminServiceImpl.
+		store.commit(message);
 		reproject(datasetId, distributionId);
 		return distribution;
 	}
 
 	private Store store() {
-		return DcatHelper.open(resourceSetFactory, root, validateOnWrite, writeValidation());
+		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation());
 	}
 
 	private static Dataset requireDataset(Store store, String datasetId) {

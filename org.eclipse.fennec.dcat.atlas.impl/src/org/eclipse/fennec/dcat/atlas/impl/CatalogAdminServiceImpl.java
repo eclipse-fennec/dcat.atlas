@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
@@ -29,6 +28,7 @@ import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
 import org.eclipse.fennec.dcat.atlas.impl.helper.References;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -68,18 +68,20 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	private static final Function<Catalog, EList<? extends EObject>> SUB_CATALOGS = Catalog::getCatalog;
 
 	@Activate
-	public CatalogAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		super(resourceSetFactory, config);
+	public CatalogAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference(name = "gitService") GitService gitService, StoreConfig config) {
+		super(resourceSetFactory, gitService, config);
 	}
 
 	/** Package-visible for tests. */
-	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root);
+	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		super(resourceSetFactory, gitService, basePath);
 	}
 
 	/** Package-visible for tests that need the model constraints enforced. */
-	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		super(resourceSetFactory, root, validateOnWrite);
+	CatalogAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		super(resourceSetFactory, gitService, basePath, validateOnWrite);
 	}
 
 	/**
@@ -117,7 +119,9 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	@Override
 	public Catalog upsertCatalog(Catalog catalog) {
 		String id = idOrMint(catalog);
-		store().put(collection, id, catalog);
+		Store store = store();
+		store.put(collection, id, catalog);
+		store.commit("Store catalog " + id);
 		reproject(id);
 		return catalog;
 	}
@@ -125,8 +129,12 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	@Override
 	public void deleteCatalog(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, root, collection, id, cascade);
+		References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
+		// One commit for the delete and every unlink it caused: a cascade that committed
+		// per referrer would publish states in which the catalog is gone but something
+		// still points at it, and the SPARQL projection reads the same store.
+		store.commit(cascade ? "Delete catalog " + id + " and unlink its referrers" : "Delete catalog " + id);
 		reproject(id);
 	}
 
@@ -196,7 +204,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		requireCatalog(store, catalogId);
 		String memberId = memberIdOrMint(memberCollection, member);
 		store.put(memberCollection, memberId, member);
-		return connect(store, catalogId, memberCollection, memberId, membership);
+		return connect(store, catalogId, memberCollection, memberId, membership,
+				"Add %s %s to catalog %s".formatted(memberCollection, memberId, catalogId));
 	}
 
 	/** Links an entity that must already exist. */
@@ -207,20 +216,24 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		if (store.get(memberCollection, memberId).isEmpty()) {
 			throw new NoSuchElementException("Unknown " + memberCollection + ": " + memberId);
 		}
-		return connect(store, catalogId, memberCollection, memberId, membership);
+		return connect(store, catalogId, memberCollection, memberId, membership,
+				"Link %s %s to catalog %s".formatted(memberCollection, memberId, catalogId));
 	}
 
 	@SuppressWarnings("unchecked")
 	private Catalog connect(Store store, String catalogId, String memberCollection, String memberId,
-			Function<Catalog, EList<? extends EObject>> membership) {
+			Function<Catalog, EList<? extends EObject>> membership, String message) {
 		Catalog catalog = requireCatalog(store, catalogId);
 		EList<EObject> members = (EList<EObject>) membership.apply(catalog);
-		if (Members.contains(members, memberCollection, memberId)) {
-			return catalog;
+		if (!Members.contains(members, memberCollection, memberId)) {
+			members.add(store.<EObject>get(memberCollection, memberId).orElseThrow(
+					() -> new NoSuchElementException("Unknown " + memberCollection + ": " + memberId)));
+			store.save(catalog);
 		}
-		members.add(store.<EObject>get(memberCollection, memberId).orElseThrow(
-				() -> new NoSuchElementException("Unknown " + memberCollection + ": " + memberId)));
-		store.save(catalog);
+		// Commits whatever the operation staged, as one commit: for addX the member and the
+		// catalog together, for a repeat of an existing membership the member alone, and for
+		// a repeated link nothing at all - which commits nothing and leaves the ETag alone.
+		store.commit(message);
 		reproject(catalogId);
 		return catalog;
 	}
@@ -231,6 +244,7 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		Catalog catalog = requireCatalog(store, catalogId);
 		if (Members.remove(membership.apply(catalog), memberCollection, memberId)) {
 			store.save(catalog);
+			store.commit("Unlink %s %s from catalog %s".formatted(memberCollection, memberId, catalogId));
 			reproject(catalogId);
 		}
 	}

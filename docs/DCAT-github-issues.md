@@ -76,3 +76,99 @@ We need a client, like the one in [MDO](https://github.com/de-jena/MDO/blob/main
 ### [DCAT] Convert Ecore into RDF  (https://github.com/DataInMotion/xdp/issues/8) - Status OPEN
 
 [Lower priority with respect to the other DCAT issues]
+### [DCAT] `cascade` delete is implemented but not reachable over HTTP - Status DRAFT (not yet filed)
+
+*Found 2026-08-19 while smoke-testing the git-backed store against a running portal.*
+
+**Summary.** Every DCAT resource can be deleted with a cascade — unlink the referrers first,
+then remove the resource — and the whole path is implemented, tested and working at the OSGi
+service layer. It cannot be triggered through the REST API. Deleting a resource that anything
+still references therefore always fails with `409 Conflict`, and a client has no way to ask
+for the cascade.
+
+**Where it is.** Each admin resource in `org.eclipse.fennec.dcat.atlas.rest` hard-codes the
+flag, e.g. `DatasetAdminResource.deleteDataset`:
+
+```java
+@DELETE
+@Path("/{id}")
+public Response deleteDataset(@PathParam("id") String id, @Context Request request) {
+    ...
+    datasetAdminService.deleteDataset(id, false);   // <- always false
+    return Response.noContent().build();
+}
+```
+
+`grep -rn "cascade\|QueryParam" org.eclipse.fennec.dcat.atlas.rest/src` returns nothing: there
+is no query parameter anywhere in the REST layer. The same hard-coded `false` appears in the
+catalog, data-service, dataset and dataset-series admin resources.
+
+**What works today.** `CatalogAdminService.deleteCatalog(String, boolean)` and its siblings
+take the flag and honour it; `References.detach(store, collection, id, cascade)` implements
+both halves — refuse when `cascade` is false, unlink every referrer when it is true. Covered
+by `CatalogAdminServiceImplTest.cascadeUnlinksThenDeletes` and, since the git store landed, by
+`GitCommitBoundaryTest.aCascadeDeleteIsOneCommit` (which also shows the cascade is a single
+commit, so it is atomic).
+
+**Reproduce.**
+
+```bash
+# create a catalog, add a dataset to it, then try to delete the dataset
+curl -X DELETE "$BASE/admin/datasets/$ID"                 # 409, correct
+curl -X DELETE "$BASE/admin/datasets/$ID?cascade=true"    # 409 - the parameter is ignored
+```
+
+**Impact.** A client that has linked a dataset into a catalog cannot delete it through the
+API at all: it must first discover every referrer, unlink each one, and only then delete —
+which is exactly the sequence the service-side cascade exists to perform atomically. Doing it
+client-side is also several requests and several commits where the service does one.
+
+**Proposed fix.** Add `@QueryParam("cascade") @DefaultValue("false") boolean cascade` to the
+five admin `@DELETE` methods and pass it through. Defaulting to `false` keeps the current
+behaviour for existing callers, so this is additive.
+
+**Decided 2026-08-19:**
+
+**1. A cascade returns `200` with the identities it modified, not `204`.**
+A cascade can unlink an arbitrary number of other resources, and every one of their ETags
+moves. A `204` tells the client nothing, so a client holding any of those resources would go
+on using a stale ETag until something 412s at it. Returning what changed makes the side
+effects of an operation the client explicitly asked for visible to it, and lets it invalidate
+its own caches in one round trip.
+
+- `?cascade=true` that actually unlinked something → `200` + the modified identities.
+- `?cascade=true` that had nothing to unlink → `204`, same as a plain delete. Nothing else
+  changed, so there is nothing to report, and the response stays honest about that.
+- Plain delete (`cascade` absent or `false`) → `204` as today. Unchanged for every existing
+  caller.
+
+The identities to report are exactly what `ResourceInUseException.getReferencedBy()` already
+computes for the refusal — the same list, on the other branch of the same decision. The `409`
+body already names them as text, so the information is not new; it is only unavailable on the
+path that acts on it.
+
+*Representation is the one implementation choice left.* The delete endpoints have no
+`@Produces` today, and a list of IRIs is not a DCAT entity, so the collection pattern
+(`GenericEntity<List<Catalog>>` through the RDF body writers) does not fit. Cheapest
+consistent option: `text/plain`, one IRI per line, matching how the `409` body already
+reports the same list. If a machine-readable form is wanted, it should be a deliberate small
+model type rather than an ad-hoc JSON shape — do not invent one in passing.
+
+**2. `If-Match` keeps its current meaning, and it gets documented.**
+The precondition is evaluated against the *target's* ETag only. A cascade also rewrites the
+referrers, whose ETags the caller never saw and therefore cannot have checked — so the
+optimistic-locking guarantee of F-16 covers the resource being deleted and not the resources
+being unlinked.
+
+That is the right semantics: the caller is explicitly asking for the side effects, and
+requiring it to supply an ETag for every referrer would make a cascade impossible to perform
+without first enumerating them — which is precisely the work the cascade exists to avoid.
+But it is a real narrowing of what `If-Match` promises, so it must be written down rather
+than inferred:
+
+- in the user guide, next to the delete operations and the F-16 description;
+- in the javadoc of the `deleteX(String, boolean)` service methods, since direct OSGi callers
+  see no HTTP preconditions at all.
+
+**Not a regression.** The REST layer has never exposed the flag; this was found by testing
+the API rather than the service, not by breaking anything.

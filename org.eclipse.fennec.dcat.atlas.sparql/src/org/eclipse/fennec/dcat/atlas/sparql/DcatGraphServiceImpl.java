@@ -49,12 +49,16 @@ import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.PublicView;
+import org.eclipse.fennec.dcat.atlas.api.StoreRevision;
 import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -118,6 +122,23 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	private volatile boolean ready;
 	private volatile boolean refreshing;
 	private volatile String lastFailure;
+	/**
+	 * The store version the projection was last built from, or {@code null} if that is
+	 * unknown — no revision service bound, the store had no content, or the last refresh
+	 * failed. Only ever set after a refresh that completed.
+	 */
+	private volatile String projectedRevision;
+
+	/**
+	 * How the reconcile poll tells whether anything has changed (P1-7).
+	 * <p>
+	 * Optional and dynamic: without it the poll simply re-reads everything, which is what
+	 * it did before and is still correct — just not free. Deliberately a
+	 * {@link StoreRevision} rather than anything storage-specific, so the projection stays
+	 * unaware of what the store actually is.
+	 */
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
+	volatile StoreRevision storeRevision;
 
 	@Activate
 	public DcatGraphServiceImpl( //
@@ -142,7 +163,7 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 		if (config.reconcileIntervalSeconds() > 0) {
 			// Cheap safety net (P1-7): bounds how long the projection can be silently
 			// wrong to one interval, whatever caused the drift.
-			worker.scheduleWithFixedDelay(this::refreshQuietly, config.reconcileIntervalSeconds(),
+			worker.scheduleWithFixedDelay(this::reconcileQuietly, config.reconcileIntervalSeconds(),
 					config.reconcileIntervalSeconds(), TimeUnit.SECONDS);
 		}
 	}
@@ -286,13 +307,65 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 		lastFailure = null;
 	}
 
+	/**
+	 * One tick of the reconcile poll: a full refresh, unless the store is demonstrably
+	 * unchanged since the projection was built.
+	 * <p>
+	 * Only the <em>poll</em> may skip. The startup build and {@link #rebuild()} always do
+	 * the work, because {@code rebuild} is the repair path an operator reaches for and a
+	 * repair that decided it had nothing to do would be useless.
+	 * <p>
+	 * The skip is safe because every way the projection can drift also moves the store
+	 * version. A write that committed but whose {@code invalidate} failed — the one drift
+	 * P1-4 tolerates by design — has by definition changed the store, so the next tick sees
+	 * a different revision and repairs it. And {@link #projectedRevision} is only recorded
+	 * after a refresh that completed, so a failed one is always retried.
+	 * <p>
+	 * A write therefore costs one full pass at the following tick and nothing after that:
+	 * {@link #invalidate} repairs its own graph but does not claim the new store version,
+	 * because it has no way to know the commit its write produced. Reads stay correct
+	 * throughout — this only decides how often the safety net does redundant work.
+	 */
+	void reconcileQuietly() {
+		String current = currentRevision();
+		String projected = projectedRevision;
+		if (current != null && current.equals(projected)) {
+			LOGGER.log(Level.FINE, () -> "Store unchanged at " + current + "; skipping the reconcile pass");
+			return;
+		}
+		refreshQuietly();
+	}
+
+	/** The store's version, or {@code null} when nothing can tell us. */
+	private String currentRevision() {
+		StoreRevision revision = storeRevision;
+		if (revision == null) {
+			return null;
+		}
+		try {
+			return revision.current().orElse(null);
+		} catch (RuntimeException e) {
+			// A fingerprint that cannot be read is not a reason to skip the work it was
+			// meant to save; fall through to the full pass.
+			LOGGER.log(Level.FINE, e, () -> "Could not read the store revision; reconciling in full");
+			return null;
+		}
+	}
+
 	private void refreshQuietly() {
 		refreshing = true;
+		// Read before the refresh, not after: anything committed while it runs must leave
+		// the recorded revision stale, so the next tick picks it up rather than skipping.
+		String revision = currentRevision();
 		try {
 			refresh();
+			projectedRevision = revision;
 		} catch (RuntimeException e) {
 			LOGGER.log(Level.SEVERE, e, () -> "Could not build the RDF projection from the store");
 			lastFailure = e.toString();
+			// Leave projectedRevision alone so the next tick retries rather than concluding
+			// it is already in step with a store it failed to read.
+			projectedRevision = null;
 		} finally {
 			refreshing = false;
 		}

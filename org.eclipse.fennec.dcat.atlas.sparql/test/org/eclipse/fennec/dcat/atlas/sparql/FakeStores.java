@@ -58,6 +58,13 @@ final class FakeStores {
 		}
 	}
 
+	/**
+	 * How many times the catalog store has been listed. A projection pass lists every
+	 * store exactly once, so this counts passes — which is what lets a test assert that a
+	 * reconcile tick did no work.
+	 */
+	int catalogReads;
+
 	CatalogReadOnlyService catalogService() {
 		return new CatalogReadOnlyService() {
 			@Override
@@ -67,6 +74,7 @@ final class FakeStores {
 
 			@Override
 			public List<Catalog> listCatalogs() {
+				catalogReads++;
 				return new ArrayList<>(catalogs.values());
 			}
 

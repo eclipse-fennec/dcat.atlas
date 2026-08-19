@@ -1,42 +1,76 @@
 {
 	":configurator:resource-version": 1,
+	// The one repository every store reads and writes (persistence plan Phase 2).
+	//
+	// A *bare* local repository by default: commits are written straight into the object
+	// database and leave a working tree untouched, so a non-bare repo would show its whole
+	// tree as deleted. Point GIT_REPO at a remote (git@..., https://...) to mirror instead -
+	// and then set GIT_PUSH_ON_COMMIT=true, because a remote is held in memory and an
+	// unpushed commit is lost on restart.
+	//
+	// Create the default before the first run:  git init --bare /tmp/dcat-store.git
+	"GitConfig~dcatStore": {
+		"id": "dcatStore",
+		"repo": "$[env:GIT_REPO;default=/tmp/dcat-store.git]",
+		"branch": "$[env:GIT_BRANCH;default=main]",
+		"authorName": "$[env:GIT_AUTHOR_NAME;default=DCAT.Atlas]",
+		"authorEmail": "$[env:GIT_AUTHOR_EMAIL;default=dcat-atlas@example.org]",
+		"pushOnCommit": "$[env:GIT_PUSH_ON_COMMIT;default=false]",
+		// SSH for a remote only; a local repository needs none of it.
+		"privateKey": "$[env:GIT_SSH_PRIVATE_KEY;default=$[prop:GIT_SSH_PRIVATE_KEY;default=]]",
+		"privateKeyPassphrase": "$[env:GIT_SSH_PRIVATE_KEY_PWD;default=$[prop:GIT_SSH_PRIVATE_KEY_PWD;default=]]",
+		"knownHosts": "$[env:GIT_SSH_KNOWN_HOSTS;default=$[prop:GIT_SSH_KNOWN_HOSTS;default=]]",
+		// https remote instead; ignored for SSH and for a local repository.
+		"username": "$[env:GIT_USERNAME;default=]",
+		"password": "$[env:GIT_PASSWORD;default=]"
+	},
 	"CatalogReadOnlyService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)"
 	},
 	"CatalogAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)",
 		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
 		"validationService.cardinality.minimum:int": 1
 	},
 	"DatasetReadOnlyService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)"
 	},
 	"DatasetAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)",
 		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
 		"validationService.cardinality.minimum:int": 1
 	},
 	"DataServiceReadOnlyService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)"
 	},
 	"DataServiceAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)",
 		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
 		"validationService.cardinality.minimum:int": 1
 	},
 	"DatasetSeriesReadOnlyService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)"
 	},
 	"DatasetSeriesAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)",
 		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
 		"validationService.cardinality.minimum:int": 1
 	},
 	"DistributionReadOnlyService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]"
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)"
 	},
 	"DistributionAdminService": {
-		"root": "$[env:STORE_FOLDER;default=/tmp/rdf]",
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)",
 		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
 		"validationService.cardinality.minimum:int": 1
 	},

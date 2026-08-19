@@ -112,12 +112,26 @@
 	org.eclipse.fennec.emf.osgi.metadata;version='[1.1.0,1.1.1)',\
 	org.osgi.service.event;version='[1.4.1,1.4.2)',\
 	org.eclipse.fennec.model;version='[0.0.1,0.0.2)',\
-	org.osgi.util.pushstream;version='[1.1.0,1.1.1)'
+	org.osgi.util.pushstream;version='[1.1.0,1.1.1)',\
+	bcprov;version='[1.84.0,1.84.1)',\
+	com.googlecode.javaewah.JavaEWAH;version='[1.2.3,1.2.4)',\
+	org.apache.sshd.osgi;version='[2.19.0,2.19.1)',\
+	org.apache.sshd.sftp;version='[2.19.0,2.19.1)',\
+	org.eclipse.fennec.jgit;version='[1.0.0,1.0.1)',\
+	org.eclipse.jgit;version='[7.7.1,7.7.2)',\
+	org.eclipse.jgit.ssh.apache;version='[7.7.1,7.7.2)'
 
+# org.eclipse.jgit.ssh.apache is required for a repository configured as an SSH remote. It is
+# no longer needed merely to load the service - that was EU-9, fixed upstream 2026-08-19 by
+# confining the sshd types to SshdSessionFactoryProvider - but it is still requested here so
+# that switching GIT_REPO to an ssh:// or git@ remote works without re-resolving the runtime.
+# The unit tests deliberately do NOT have it on their path, which is what proves EU-9 fixed.
 -runrequires: \
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.shell)',\
 	osgi.identity;filter:='(osgi.identity=org.apache.felix.gogo.command)',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.impl',\
+	bnd.identity;id='org.eclipse.fennec.jgit',\
+	bnd.identity;id='org.eclipse.jgit.ssh.apache',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.msg.body.writer',\

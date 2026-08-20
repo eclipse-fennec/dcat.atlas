@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import java.util.List;
+
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
@@ -127,15 +129,16 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	}
 
 	@Override
-	public void deleteCatalog(String id, boolean cascade) {
+	public List<String> deleteCatalog(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, collection, id, cascade);
+		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
 		// One commit for the delete and every unlink it caused: a cascade that committed
 		// per referrer would publish states in which the catalog is gone but something
 		// still points at it, and the SPARQL projection reads the same store.
 		store.commit(cascade ? "Delete catalog " + id + " and unlink its referrers" : "Delete catalog " + id);
 		reproject(id);
+		return unlinked;
 	}
 
 	// --- FR-9 catalog membership -------------------------------------------

@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import java.util.List;
+
 import java.util.NoSuchElementException;
 
 import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesAdminService;
@@ -107,14 +109,15 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	}
 
 	@Override
-	public void deleteDatasetSeries(String id, boolean cascade) {
+	public List<String> deleteDatasetSeries(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, collection, id, cascade);
+		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
 		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.
 		store.commit(cascade ? "Delete dataset series " + id + " and unlink its referrers"
 				: "Delete dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
+		return unlinked;
 	}
 
 	@Override

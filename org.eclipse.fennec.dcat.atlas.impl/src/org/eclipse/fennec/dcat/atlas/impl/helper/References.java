@@ -63,27 +63,37 @@ public final class References {
 
 	/**
 	 * Clears the way to delete {@code collection}/{@code id}.
+	 * <p>
+	 * The returned identities are the referrers this call rewrote, and they are the same
+	 * list the refusal carries on the other branch — the scan happens once and serves both
+	 * outcomes. A caller reports them so that whoever asked for the cascade can invalidate
+	 * the ETags it just invalidated on their behalf; every one of those resources moved.
 	 *
 	 * @param cascade when {@code true}, unlink from every referrer; when
 	 *                {@code false}, refuse the delete if there is one
+	 * @return the logical IRIs of the resources that were unlinked, in the order found;
+	 *         empty when nothing referenced the target, which is also the only case where
+	 *         {@code cascade} makes no difference
 	 * @throws ResourceInUseException if something still references the target and
 	 *                                {@code cascade} is {@code false}
 	 */
-	public static void detach(Store store, String collection, String id, boolean cascade) {
+	public static List<String> detach(Store store, String collection, String id, boolean cascade) {
 		String targetIri = StoreLayout.logicalIri(collection, id);
 		List<Referrer> referrers = referrersTo(store, targetIri);
 		if (referrers.isEmpty()) {
-			return;
+			return List.of();
 		}
+		List<String> iris = referrers.stream().map(Referrer::iri).toList();
 		if (!cascade) {
 			throw new ResourceInUseException(
 					"Cannot delete %s: still referenced by %d resource(s)".formatted(targetIri, referrers.size()),
-					referrers.stream().map(Referrer::iri).toList());
+					iris);
 		}
 		for (Referrer referrer : referrers) {
 			store.<EObject>get(referrer.collection(), referrer.id())
 					.ifPresent(owner -> unlinkAll(owner, targetIri, store));
 		}
+		return iris;
 	}
 
 	/**

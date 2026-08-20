@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest;
 
+import java.util.List;
+
 import java.net.URI;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
@@ -27,6 +29,7 @@ import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CascadeReport;
 import org.eclipse.fennec.dcat.atlas.rest.helper.PublicUri;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -40,12 +43,14 @@ import dcat.Catalog;
 import dcat.DataService;
 import dcat.Dataset;
 import rdf.IdentifiedResource;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Request;
@@ -154,7 +159,8 @@ public class CatalogAdminResource {
 
 	@DELETE
 	@Path("/{id}")
-	public Response deleteCatalog(@PathParam("id") String id, @Context Request request) {
+	public Response deleteCatalog(@PathParam("id") String id,
+			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request) {
 		if (catalogAdminService.getCatalog(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -162,8 +168,11 @@ public class CatalogAdminResource {
 		if (precondition != null) {
 			return precondition.build();
 		}
-		catalogAdminService.deleteCatalog(id, false);
-		return Response.noContent().build();
+		// If-Match was evaluated against this catalog's ETag only. A cascade also rewrites
+		// the referrers, whose ETags the caller never saw — see the service javadoc for why
+		// that narrowing of F-16 is deliberate.
+		List<String> unlinked = catalogAdminService.deleteCatalog(id, cascade);
+		return CascadeReport.respond(unlinked, identityRendering);
 	}
 
 	// --- FR-9 catalog membership -------------------------------------------

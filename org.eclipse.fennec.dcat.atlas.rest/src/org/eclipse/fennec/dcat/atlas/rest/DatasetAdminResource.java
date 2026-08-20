@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest;
 
+import java.util.List;
+
 import java.net.URI;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
@@ -23,6 +25,7 @@ import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CascadeReport;
 import org.eclipse.fennec.dcat.atlas.rest.helper.PublicUri;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -33,12 +36,14 @@ import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsResource;
 import org.osgi.service.servlet.whiteboard.annotations.RequireHttpWhiteboard;
 
 import dcat.Dataset;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Request;
@@ -127,7 +132,8 @@ public class DatasetAdminResource {
 
 	@DELETE
 	@Path("/{id}")
-	public Response deleteDataset(@PathParam("id") String id, @Context Request request) {
+	public Response deleteDataset(@PathParam("id") String id,
+			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request) {
 		if (datasetAdminService.getDataset(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -135,8 +141,11 @@ public class DatasetAdminResource {
 		if (precondition != null) {
 			return precondition.build();
 		}
-		datasetAdminService.deleteDataset(id, false);
-		return Response.noContent().build();
+		// If-Match was evaluated against this dataset's ETag only. A cascade also rewrites
+		// the referrers, whose ETags the caller never saw — see the service javadoc for why
+		// that narrowing of F-16 is deliberate.
+		List<String> unlinked = datasetAdminService.deleteDataset(id, cascade);
+		return CascadeReport.respond(unlinked, identityRendering);
 	}
 
 	/** The public (read-side) URI of the dataset, e.g. {@code {base}/datasets/{id}}. */

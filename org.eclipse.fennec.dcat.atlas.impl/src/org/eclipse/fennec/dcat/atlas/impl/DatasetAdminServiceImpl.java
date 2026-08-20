@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import java.util.List;
+
 
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
@@ -98,13 +100,14 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 	}
 
 	@Override
-	public void deleteDataset(String id, boolean cascade) {
+	public List<String> deleteDataset(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, collection, id, cascade);
+		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
 		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.
 		store.commit(cascade ? "Delete dataset " + id + " and unlink its referrers" : "Delete dataset " + id);
 		reproject(id);
+		return unlinked;
 	}
 
 	/** Re-projects one dataset into the RDF graph, if a projection is present. */

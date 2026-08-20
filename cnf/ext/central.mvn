@@ -140,11 +140,35 @@ org.eclipse.fennec.models:org.eclipse.fennec.common.models.library:0.0.1-SNAPSHO
 
 
 # Swagger OpenAPI
-io.swagger.core.v3:swagger-annotations:2.2.28
-io.swagger.core.v3:swagger-jaxrs2-jakarta:2.2.28
-io.swagger.core.v3:swagger-models-jakarta:2.2.28
-io.swagger.core.v3:swagger-integration-jakarta:2.2.28
-io.swagger.core.v3:swagger-core-jakarta:2.2.28
+#io.swagger.core.v3:swagger-annotations:2.2.28
+#io.swagger.core.v3:swagger-jaxrs2-jakarta:2.2.28
+#io.swagger.core.v3:swagger-models-jakarta:2.2.28
+#io.swagger.core.v3:swagger-integration-jakarta:2.2.28
+#io.swagger.core.v3:swagger-core-jakarta:2.2.28
+
+#Swagger with Jackson 3.x
+io.github.vpelikh:swagger-annotations-jakarta:3.0.0
+io.github.vpelikh:swagger-models-jakarta:3.0.0
+io.github.vpelikh:swagger-core-jakarta:3.0.0
+io.github.vpelikh:swagger-integration-jakarta:3.0.0
+io.github.vpelikh:swagger-jaxrs2-jakarta:3.0.0
+
+# Required by swagger-jaxrs2-jakarta for its classpath scanning. Mandatory, not optional,
+# so it has to be present even though DcatOpenApiResource hands the scanner its own class
+# set and never lets ClassGraph run.
+io.github.classgraph:classgraph:4.8.165
+
+# swagger-core-jakarta:3.0.0 was built against JAXB 3 and imports
+# jakarta.xml.bind.annotation at [3.0,4). The workspace otherwise uses
+# jakarta.xml.bind-api 4.0.2, which exports that package at 4.0.2 - outside the range - so
+# the 3.x API is present alongside it purely to satisfy swagger. OSGi wires each consumer by
+# its own range, so nothing else is affected. Removable once upstream widens the range.
+jakarta.xml.bind:jakarta.xml.bind-api:3.0.1
+
+# The YAML side of the descriptor: jackson-dataformat-yaml needs snakeyaml-engine 3.x.
+org.snakeyaml:snakeyaml-engine:3.0.1
+
+
 
 org.apache.thrift:libthrift:0.23.0
 

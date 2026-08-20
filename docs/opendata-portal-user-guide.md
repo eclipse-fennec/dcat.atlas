@@ -45,6 +45,29 @@ public.
 
 > _TODO: standalone microservice and container (Docker) deployment._
 
+### The base URL, and the identities you get back
+
+Every example here uses `http://localhost:8085/dcat/rest`, which is what `run.local`
+serves. **That base is configuration, not a constant**, and two things follow from it.
+
+The servlet context and the JAX-RS path are set per deployment, so the prefix differs: the
+container image serves `/rest` with no `/dcat` segment by default. Take the base from
+whoever runs the portal rather than from this guide.
+
+More importantly, the base is what every `rdf:about` you read is rendered under. Resources
+are *stored* with host-free identities (`http://dcat.atlas/catalogs/{id}`) so the same data
+can be served from any host, and the configured public base is substituted on the way out.
+So:
+
+- the `about` you read back is the URL clients should dereference — it is not necessarily
+  the URL you sent the request to (behind a reverse proxy it is deliberately not);
+- an `about` you *send* is accepted if it sits under either the public base or the
+  host-free one, and refused with `400` otherwise (see below);
+- if the `about` values look wrong for your deployment — pointing at `localhost`, or at the
+  wrong host — that is the portal's public base URL being misconfigured, not your request.
+  It is a single setting (`PUBLIC_BASE_URL` in the shipped configurations) and the portal
+  refuses to start without it.
+
 ## Managing the catalog
 
 The portal maintains the catalog through an **admin interface** exposed as two
@@ -219,6 +242,10 @@ content returns the *same* ETag.
 > ETag values are quoted strings; keep the double quotes in the header
 > (`-H 'If-Match: "…"'`). An unquoted value is rejected as `400`.
 
+`If-Match` guards the resource it names. The one operation where that is narrower than it
+looks is a cascading delete, which also rewrites resources you did not name — see
+[Deleting something that is still referenced](#deleting-something-that-is-still-referenced).
+
 ### Removing a catalog
 
 `DELETE /admin/catalogs/{id}` → `204 No Content` (or `404` if unknown). It also
@@ -228,7 +255,65 @@ honours `If-Match` for optimistic locking.
 curl -i -X DELETE http://localhost:8085/dcat/rest/admin/catalogs/3f2b1c8e-…
 ```
 
-### Managing catalog membership
+#### Deleting something that is still referenced
+
+A resource other resources point at is **not** deleted: the request is refused with
+`409 Conflict`, and the body names every referrer. That is the referential-integrity rule
+(FR-1) — no stored link is ever left resolving to nothing.
+
+To delete it *and* clear the way, ask for a cascade:
+
+```bash
+curl -i -X DELETE 'http://localhost:8085/dcat/rest/admin/datasets/luftqualitaet-2026?cascade=true'
+```
+
+The cascade unlinks every referrer and then deletes, all in **one commit** — so no reader
+ever observes a state where the dataset is gone and a catalog still lists it.
+
+Because a cascade changes resources beyond the one in the URL, it reports them:
+
+| | |
+|---|---|
+| `?cascade=true` that unlinked something | `200 OK`, `text/plain`, one URL per line — the resources that were **modified** |
+| `?cascade=true` with nothing to unlink | `204`, exactly like a plain delete: nothing else changed |
+| `cascade` absent or `false` | `204` (or `409` if referenced) — unchanged |
+
+```
+HTTP/1.1 200 OK
+Content-Type: text/plain
+
+http://localhost:8085/dcat/rest/catalogs/gov
+```
+
+**Read that body carefully — two things it is not.**
+
+*Those resources were not deleted.* Only the resource in the URL is. Each one listed was
+*modified*: the reference to the deleted resource was removed from it. In the example above
+the dataset is gone and `catalogs/gov` still exists, one `dcat:dataset` entry lighter.
+
+*The body carries no ETags* — URLs only, and the `200` sets no `ETag` header either, because
+it is a report rather than a representation of anything. Each listed resource does have a
+new ETag, but publishing it here would be a trap: an ETag identifies a *representation*, so
+recording the new one against the copy you are still holding would make your next
+conditional `GET` send `If-None-Match` with it, collect a `304`, and leave you serving the
+old body believing it current. The right move is a plain `GET` of each URL, which returns
+the new content and its ETag together.
+
+So what the list gives you is exactly *"these URLs changed; drop what you hold for them"* —
+enough to evict or re-fetch, in the one round trip the delete already cost you. `cascade`
+defaults to `false`, so existing callers are unaffected.
+
+> **`If-Match` covers the target only.** The precondition is evaluated against the ETag of
+> the resource named in the URL. A cascade also rewrites the referrers, whose ETags you
+> never saw and therefore cannot have checked — so the optimistic-locking guarantee (F-16)
+> applies to the resource being deleted and *not* to the resources being unlinked.
+>
+> That is deliberate: requiring an ETag for every referrer would mean discovering them all
+> first, which is the work the cascade exists to avoid. But it is a genuine narrowing of
+> what `If-Match` promises on this one operation, so do not read a successful cascade as
+> confirmation that the referrers were unchanged when you last saw them.
+
+### Managing membership
 
 Datasets, data services and sub-catalogs are members of a catalog. Add or remove one
 without re-sending the whole catalog:
@@ -237,6 +322,78 @@ without re-sending the whole catalog:
 - `PUT    /admin/catalogs/{id}/datasets/{memberId}` — no body; adds one that exists
 - `DELETE /admin/catalogs/{id}/datasets/{memberId}`
 - the same three under `/services/…` (`dcat:DataService`) and `/catalogs/…` (sub-catalog)
+
+**Catalogs are not the only container.** A dataset series lists its datasets and a data
+service serves them, and both use the identical three verbs on their own membership path:
+
+| Container | Membership path | Member type | Relation | Held on | Returned / `ETag` |
+|---|---|---|---|---|---|
+| Catalog | `/admin/catalogs/{id}/datasets/…` | `dcat:Dataset` | `dcat:dataset` | the catalog | the catalog |
+| Catalog | `/admin/catalogs/{id}/services/…` | `dcat:DataService` | `dcat:service` | the catalog | the catalog |
+| Catalog | `/admin/catalogs/{id}/catalogs/…` | `dcat:Catalog` | `dcat:catalog` (sub-catalog) | the catalog | the catalog |
+| DatasetSeries | `/admin/dataset-series/{id}/datasets/…` | `dcat:Dataset` | `dcat:inSeries` | **the dataset** | **the dataset** |
+| DataService | `/admin/data-services/{id}/datasets/…` | `dcat:Dataset` | `dcat:servesDataset` | the data service | the data service |
+
+Mind the fourth row. `dcat:inSeries` is a property of the *dataset*, not of the series, so
+adding a dataset to a series edits and returns the **dataset** — and `If-Match` on those
+requests keys on the dataset's `ETag`, not the series'. The other rows behave the way the URL
+reads, editing the container named in the path. The same asymmetry shows up on
+`access-service` below, where the link lives on the distribution.
+
+A `Dataset` has **no** membership path of its own: nothing is a member of a dataset. Its
+distributions are containment rather than membership — see
+[Creating a distribution](#creating-a-distribution) — and its links *out* to a series or a
+service are made from the other end, through the rows above.
+
+#### Modifying a resource that has members
+
+**A resource carrying member references cannot be `PUT` back while SHACL enforcement is on.**
+Read a catalog that lists a dataset, change its title, `PUT` it — and the write is refused
+`422`, even though you changed nothing about the reference:
+
+```
+dcat:Catalog: dcat:dataset MUSS auf eine Klasse vom Typ dcat:Dataset verweisen.
+sh:sourceConstraintComponent  sh:ClassConstraintComponent
+sh:value                      http://dcat.atlas/datasets/luftqualitaet-2026
+```
+
+This is a limitation of how the model encodes a reference, not a bug in your request. A
+member appears as `<dataset href="…"/>`, which names the target and nothing else — it cannot
+carry the target's `rdf:type`. The body is validated as a graph in its own right, so
+`dcat:dataset` points at an IRI that, *within that graph*, is not a `dcat:Dataset`, and the
+shape's class constraint cannot be satisfied. The dataset itself is stored and perfectly
+valid; it is simply not in the graph being checked.
+
+**The way round it is two requests: replace the resource without its members, then re-link
+them.**
+
+```bash
+# 1. read it, and note the members before you drop them — you will need to restore them
+curl -s .../catalogs/gov -H 'Accept: application/xmi' > catalog.xmi
+
+# 2. edit, and remove every <dataset href=…/> <service href=…/> <catalog href=…/> element
+#    (this replaces the catalog, so the references are gone after it)
+curl -i -X PUT .../admin/catalogs/gov \
+  -H 'Content-Type: application/xmi' --data-binary @catalog-without-members.xmi   # 200
+
+# 3. re-link each member that was there
+curl -i -X PUT .../admin/catalogs/gov/datasets/luftqualitaet-2026                 # 200
+```
+
+Three things to be careful of:
+
+- **Enumerate the members before step 2.** `PUT` replaces, so the references are gone once it
+  succeeds, and nothing else records what they were.
+- **It is not atomic.** Each request is its own commit, so between steps 2 and 3 the catalog
+  genuinely has no members and a reader sees it that way. If step 3 never runs, the links stay
+  lost — the members themselves are untouched, but the catalog no longer lists them.
+- **The members are not deleted** by step 2, only unlinked. `GET /datasets/{id}` still answers
+  `200` throughout.
+
+This applies to every container in the table above, and only to the reference-carrying
+properties: `PUT` a catalog that has no members and it behaves normally. With
+`SHACL_ENFORCE=false` the single `PUT` is accepted, but that switches off profile validation
+for every write, which is not a trade worth making to save a request.
 
 The `POST` **stores the member and then links it**, so it follows exactly the rules of
 `POST /admin/datasets`: the `about` must be one of ours or absent (`400` otherwise),
@@ -301,10 +458,12 @@ Practical consequences:
 
 ### Other entities
 
-`Dataset`, `DatasetSeries` and `DataService` work exactly as `Catalog` does — same
-verbs, same identity rules, same `ETag` handling — under `/admin/datasets`,
-`/admin/dataset-series` and `/admin/data-services`. Only the payload differs, because
-each type has its own mandatory properties.
+`Dataset`, `DatasetSeries` and `DataService` are created, replaced and deleted exactly as
+`Catalog` is — same `POST`/`PUT`/`DELETE`, same identity rules, same `ETag` handling — under
+`/admin/datasets`, `/admin/dataset-series` and `/admin/data-services`. The payload differs,
+because each type has its own mandatory properties, and so does membership: `DatasetSeries`
+and `DataService` each take members on one path, `Catalog` on three, and `Dataset` on none
+(see [Managing membership](#managing-membership)).
 
 A **data service** needs at least a title, a description, a publisher and one
 `dcat:endpointURL`:
@@ -371,10 +530,44 @@ cannot be created before the thing it distributes.
 > explains every example above, and it is the usual reason a body that looks right is
 > rejected.
 
+Read distributions back under the same nesting:
+
+```bash
+GET /datasets/{datasetId}/distributions          # the dataset's distributions
+GET /datasets/{datasetId}/distributions/{id}     # one of them
+```
+
+#### Linking a distribution to the service that serves it
+
+`dcat:accessService` says which `dcat:DataService` gives programmatic access to a
+distribution. It is a link between two things that already exist, so there is no `POST` —
+only the two verbs that make and break it:
+
+- `PUT    /admin/datasets/{datasetId}/distributions/{id}/access-service/{serviceId}`
+- `DELETE /admin/datasets/{datasetId}/distributions/{id}/access-service/{serviceId}`
+
+Neither carries a body, and the response is the updated **distribution** with its new
+`ETag` — the data service is referenced by URI and never modified. `If-Match` therefore keys
+on the distribution too.
+
+The data service must already be catalogued: a link to one that is not there is refused with
+`404` rather than left dangling. `404` also answers an unknown `datasetId` or distribution
+`{id}`, so all three path segments have to name something that exists.
+
+```bash
+curl -i -X PUT \
+  'http://localhost:8085/dcat/rest/admin/datasets/luftqualitaet-2026/distributions/csv/access-service/luftqualitaet-api'
+```
+
 ## Consuming the catalog
 
 Reads are open and live under the collection path — e.g. `GET /catalogs/{id}` for a
 single catalog, `GET /catalogs` for the collection.
+
+> **A collection with nothing in it answers `204 No Content`, not `200` with an empty
+> list.** There is no body at all, so a client that unconditionally parses the response
+> fails on a fresh deployment rather than on a broken one. Check the status before reading
+> the body. `GET /catalogs/{id}` for an id that does not exist is a plain `404`.
 
 ### Content negotiation
 
@@ -389,6 +582,8 @@ several RDF syntaxes plus JSON:
 | `application/n-triples` | N-Triples | One triple per line; good for diffing/streaming. |
 | `text/n3` | N3 | Turtle plus rule/logic features (unused by DCAT data). |
 | `application/json` | EMF JSON | Internal object encoding (typed `_type` fields); for round-tripping through this stack — **not** interoperable DCAT. For public JSON, prefer JSON-LD. |
+| `application/xmi` | XMI | The model's own encoding, and **the only format writes accept** — so this is the one to ask for when you intend to read, edit and `PUT` back. One exception, worth knowing before you build on it: a resource that *references* others cannot be `PUT` back as-is — see [Modifying a resource that has members](#modifying-a-resource-that-has-members). |
+| `application/xml` | EMF XML | The model's plain-XML encoding — the same object graph as XMI, written by a different codec. Like XMI it is **not an RDF syntax**: see the note below. On writes, use `application/xmi`. |
 
 ```bash
 curl http://localhost:8085/dcat/rest/catalogs/3f2b1c8e-… -H 'Accept: text/turtle'
@@ -397,6 +592,17 @@ curl http://localhost:8085/dcat/rest/catalogs/3f2b1c8e-… -H 'Accept: applicati
 
 Turtle, JSON-LD, RDF/XML and N-Triples of the same catalog all encode the identical
 RDF graph — pick whichever your consumer prefers.
+
+> **The two XML forms are model encodings, not RDF syntaxes.** `application/xmi` and
+> `application/xml` serialise the EMF object graph, and by design an RDF parser will not
+> read them: their element names sit in the DCAT, DCT and FOAF namespaces and they carry
+> `rdf:about`, which makes them *look* like RDF/XML, but references are encoded the EMF way
+> — as element text with a resource fragment such as `…/luftqualitaet-2026#/` — rather than
+> as `rdf:resource`. Feed one to Jena and it will refuse it. That is the intended split
+> (project decision in issue #5): every endpoint speaks XML, and the `GET` endpoints
+> *additionally* offer the Jena RDF syntaxes. So choose by what is consuming the bytes — an
+> RDF tool wants `application/rdf+xml`, Turtle, JSON-LD or N-Triples; this stack's own
+> clients want `application/xmi`.
 
 ### Querying with SPARQL
 
@@ -643,8 +849,93 @@ operations validate the entity first and reject a non-conformant one with
 `422 Unprocessable Entity` and the report — nothing is stored. Only a hard
 `sh:Violation` (MUSS) blocks a write; a `sh:Warning` (SOLL) is reported but allowed.
 
+## Endpoint reference
+
+Every route, generated from the resource classes. Reads are open; everything under
+`/admin` is the write side, which an upstream policy enforcement point is expected to
+protect (F-6/F-12). Paths are relative to the base described in
+[The base URL](#the-base-url-and-the-identities-you-get-back).
+
+> **There is also a machine-readable descriptor** at `GET /openapi.json` and
+> `GET /openapi.yaml` ([#21](https://github.com/eclipse-fennec/dcat.atlas/issues/21)) —
+> OpenAPI 3.0, generated from the resources, so it lists every route and the media types
+> each one accepts and produces without being able to drift from the code. Use it to
+> generate a client. It deliberately carries **no body schemas** (the bodies are XMI of an
+> EMF model, which does not reduce to a useful JSON Schema) and no status-code semantics,
+> so the identity rules, conditional requests and error taxonomy described elsewhere in
+> this guide remain the reference for behaviour. The `servers` entry is the configured
+> public base, not the address you happened to call.
+
+**Reads** — `Accept`: `application/xmi`, `application/xml`, `application/json`,
+`application/rdf+xml`, `text/turtle`, `application/n-triples`, `application/ld+json`,
+`text/n3`. An empty collection answers `204`.
+
+| | |
+|---|---|
+| `GET /catalogs` · `GET /catalogs/{id}` | catalogs |
+| `GET /datasets` · `GET /datasets/{id}` | datasets |
+| `GET /dataset-series` · `GET /dataset-series/{id}` | dataset series |
+| `GET /data-services` · `GET /data-services/{id}` | data services |
+| `GET /datasets/{datasetId}/distributions` · `GET /datasets/{datasetId}/distributions/{id}` | distributions of a dataset |
+
+**Writes** — `Content-Type: application/xmi` only. `POST` creates (`201`, `Location`,
+`ETag`; `409` on a taken identity, `400` on a foreign `about`), `PUT` creates-or-replaces
+(`201`/`200`), `DELETE` returns `204` (`404` if unknown, `409` if still referenced). All
+honour `If-Match` and `If-None-Match: *`.
+
+The four collection `DELETE`s also take **`?cascade=true`**, which unlinks every referrer
+first and answers `200` with the identities it changed — see
+[Deleting something that is still referenced](#deleting-something-that-is-still-referenced).
+A distribution has no `cascade`: it is contained in its dataset rather than referenced.
+
+`PUT` of a resource that carries member references is refused `422` under SHACL enforcement —
+replace it without them and re-link, per
+[Modifying a resource that has members](#modifying-a-resource-that-has-members).
+
+| | |
+|---|---|
+| `POST /admin/catalogs` · `PUT`/`DELETE /admin/catalogs/{id}` | catalogs |
+| `POST /admin/datasets` · `PUT`/`DELETE /admin/datasets/{id}` | datasets |
+| `POST /admin/dataset-series` · `PUT`/`DELETE /admin/dataset-series/{id}` | dataset series |
+| `POST /admin/data-services` · `PUT`/`DELETE /admin/data-services/{id}` | data services |
+| `POST /admin/datasets/{datasetId}/distributions` · `PUT`/`DELETE /admin/datasets/{datasetId}/distributions/{id}` | distributions (no collection of their own) |
+
+**Membership and links** — see [Managing membership](#managing-membership) for which entity
+each one edits, and therefore which `ETag` applies. `POST` takes a new member in the body;
+`PUT` and `DELETE` take no body.
+
+| | |
+|---|---|
+| `POST /admin/catalogs/{id}/datasets` · `PUT`/`DELETE …/datasets/{datasetId}` | `dcat:dataset` |
+| `POST /admin/catalogs/{id}/services` · `PUT`/`DELETE …/services/{serviceId}` | `dcat:service` |
+| `POST /admin/catalogs/{id}/catalogs` · `PUT`/`DELETE …/catalogs/{subCatalogId}` | `dcat:catalog` (sub-catalog) |
+| `POST /admin/dataset-series/{id}/datasets` · `PUT`/`DELETE …/datasets/{datasetId}` | `dcat:inSeries` — **edits the dataset** |
+| `POST /admin/data-services/{id}/datasets` · `PUT`/`DELETE …/datasets/{datasetId}` | `dcat:servesDataset` |
+| `PUT`/`DELETE /admin/datasets/{datasetId}/distributions/{id}/access-service/{serviceId}` | `dcat:accessService` — edits the distribution |
+
+**Validation** — dry run, stores nothing. `Content-Type: application/xmi`; the report
+negotiates over the RDF syntaxes.
+
+| | |
+|---|---|
+| `POST /admin/validate/catalogs` · `/datasets` · `/dataset-series` · `/data-services` · `/distributions` | see [Dry-run validation](#dry-run-validation) |
+
+**SPARQL** — see [Querying with SPARQL](#querying-with-sparql).
+
+| | |
+|---|---|
+| `GET /sparql?query=…` | query in the URL |
+| `POST /sparql` (`application/sparql-query`) | query as the body |
+| `POST /sparql` (`application/x-www-form-urlencoded`) | form-encoded `query=` |
+| `POST /admin/sparql/reindex` | rebuild the projection (`202`) |
+
+**Operations** — not part of the DCAT API, but useful to a client: `GET /health/live` and
+`GET /health/ready` (`200`/`503`), served beside `/rest` rather than under it.
+
 ## Further reading
 
 - [Planning document](./opendata-portal-planung.md) — goals, scope, architecture,
   work packages.
 - [Admin-API specification](./opendata-portal-admin-api.md) — OSGi + REST write side.
+- `GET /openapi.json` · `GET /openapi.yaml` — the generated OpenAPI 3.0 descriptor
+  ([#21](https://github.com/eclipse-fennec/dcat.atlas/issues/21)), for client generation.

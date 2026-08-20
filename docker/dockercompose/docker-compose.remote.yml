@@ -1,0 +1,101 @@
+# DCAT.Atlas, single container, durable locally *and* mirrored to a remote git repository
+# over SSH.
+#
+# This is the mode to prefer when the store has to live in an upstream git host (GitLab,
+# Gitea, GitHub) as well as on the box: `GIT_REPO` stays a path, so every commit is durable
+# on the volume the moment it is written, and `GIT_REMOTE` sends it upstream too. Neither
+# durability nor the mirror is given up.
+#
+# Build the image first:
+#   ./gradlew :org.eclipse.fennec.dcat.atlas.runtime:export.docker
+#   ./gradlew :docker:dcatatlas:prepareDocker
+#   docker build -t eclipse-fennec/dcat.atlas:latest docker/dcatatlas
+#
+# then from this directory:
+#   DCAT_GIT_REMOTE=git@gitlab.example.de:opendata/dcat-store.git \
+#   DCAT_SSH_KEY=$HOME/.ssh/dcat_store_ed25519 \
+#   DCAT_KNOWN_HOSTS=$HOME/.ssh/known_hosts \
+#   PUBLIC_BASE_URL=https://opendata.example.de/dcat/rest/ \
+#   docker compose -f docker-compose.remote.yml up
+#
+# ─────────────────────────────────────────────────────────────────────────────────────
+# What this mode does and does not do
+#
+#   * A commit is written into the volume's object database first, then pushed. If the push
+#     fails the commit is still durable locally and a later push completes it — the failure
+#     surfaces on the write path as 503, not as lost data.
+#   * The remote is NOT a startup dependency. An unreachable remote at activation logs a
+#     warning and the container serves the volume as it is; fetch() retries later. Contrast
+#     the GIT_REPO=url mode, where the activation fetch is the only source of objects and so
+#     is allowed to fail the start.
+#   * Nothing is held in the heap: EU-7's unbounded in-memory growth does not apply here.
+#     The store is on disk, exactly as in the default single-container setup.
+#   * Readiness reports whether the branch and the remote's copy of it agree, and that
+#     signal is now accurate — a successful push advances the remote-tracking ref (EU-13).
+#
+# Do not also point GIT_REPO at a URL. That is the in-memory mirror mode, and naming a
+# separate GIT_REMOTE alongside it is refused at activation rather than silently resolved.
+# ─────────────────────────────────────────────────────────────────────────────────────
+
+services:
+  dcat-atlas:
+    image: eclipse-fennec/dcat.atlas:latest
+    container_name: dcat-atlas-remote
+    ports:
+      - "${DCAT_PORT:-8080}:8080"
+    environment:
+      HTTP_PORT: "8080"
+      CONTEXT_PATH: "/"
+
+      # The repository itself: a path, so it stays on the volume and stays durable.
+      GIT_REPO: /opt/dcat/store.git
+      # The mirror. git@host:path, ssh://, git://, http(s):// — a path on disk is refused
+      # here, because a path belongs in GIT_REPO.
+      GIT_REMOTE: "${DCAT_GIT_REMOTE:?set DCAT_GIT_REMOTE to the upstream repository, e.g. git@gitlab.example.de:opendata/dcat-store.git}"
+      GIT_BRANCH: "${DCAT_GIT_BRANCH:-main}"
+      # Push every commit as it is made, rather than letting them pile up locally.
+      GIT_PUSH_ON_COMMIT: "true"
+      GIT_AUTHOR_NAME: "${DCAT_GIT_AUTHOR_NAME:-DCAT.Atlas}"
+      GIT_AUTHOR_EMAIL: "${DCAT_GIT_AUTHOR_EMAIL:-dcat-atlas@example.org}"
+
+      # SSH authentication. Both of these are *paths to files*, not the key material and
+      # not the host keys — they are read from disk by the Apache MINA sshd backend, so
+      # they have to be mounted (below) and readable by uid 65532.
+      GIT_SSH_PRIVATE_KEY: /opt/dcat/ssh/id_key
+      GIT_SSH_KNOWN_HOSTS: /opt/dcat/ssh/known_hosts
+      # Only if the key is encrypted. Prefer an unencrypted key held as a secret over a
+      # passphrase in the environment.
+      GIT_SSH_PRIVATE_KEY_PWD: "${DCAT_SSH_KEY_PWD:-}"
+
+      SHACL_SHAPES_DIR: /opt/dcat/shapes
+      SHACL_VOCAB_DIR: /opt/dcat/vocabularies
+      SHACL_ENFORCE: "true"
+
+      # No default: it becomes the host in every published 'about'. The container will not
+      # start without it.
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL to the absolute URL clients reach this portal on}"
+
+    volumes:
+      # The store, as in the default setup: a named volume, seeded from the bare repository
+      # the image ships at this path. A bind mount is never seeded — for those, run
+      # `git init --bare -b main` on the host and chown it to 65532 first.
+      - dcat-store:/opt/dcat/store.git
+      # The key and known_hosts, read-only, as single files. known_hosts is not optional in
+      # practice: leave GIT_SSH_KNOWN_HOSTS empty and the sshd backend falls back to
+      # ~/.ssh/known_hosts, which does not exist in a distroless image — so host key
+      # verification has nothing to verify against.
+      - ${DCAT_SSH_KEY:?set DCAT_SSH_KEY to the private key file}:/opt/dcat/ssh/id_key:ro
+      - ${DCAT_KNOWN_HOSTS:?set DCAT_KNOWN_HOSTS to a known_hosts file covering the git host}:/opt/dcat/ssh/known_hosts:ro
+      - ${DCAT_SHAPES_DIR:-./shapes}:/opt/dcat/shapes:ro
+      - ${DCAT_VOCAB_DIR:-./vocabularies}:/opt/dcat/vocabularies:ro
+
+    restart: unless-stopped
+    # No `healthcheck:` — the image is distroless, so an in-container probe has nothing to
+    # run. Probe over HTTP from outside:
+    #   liveness  GET /health/live   200 while the process is up
+    #   readiness GET /health/ready  200 when the store and shapes are usable, else 503
+    # Readiness also reports the branch against the remote's copy; in this mode a divergence
+    # means pushes are genuinely not landing.
+
+volumes:
+  dcat-store:

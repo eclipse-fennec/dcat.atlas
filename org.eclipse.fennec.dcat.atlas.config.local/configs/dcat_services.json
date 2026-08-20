@@ -4,14 +4,18 @@
 	//
 	// A *bare* local repository by default: commits are written straight into the object
 	// database and leave a working tree untouched, so a non-bare repo would show its whole
-	// tree as deleted. Point GIT_REPO at a remote (git@..., https://...) to mirror instead -
-	// and then set GIT_PUSH_ON_COMMIT=true, because a remote is held in memory and an
-	// unpushed commit is lost on restart.
+	// tree as deleted.
+	//
+	// Set GIT_REMOTE to also mirror this repository upstream: commits stay durable here and
+	// are pushed there as well. Pointing GIT_REPO itself at a remote is the other mode - an
+	// in-memory mirror, no local objects at all - and then GIT_PUSH_ON_COMMIT must be true,
+	// because an unpushed commit is lost on restart. The two cannot be combined.
 	//
 	// Create the default before the first run:  git init --bare /tmp/dcat-store.git
 	"GitConfig~dcatStore": {
 		"id": "dcatStore",
 		"repo": "$[env:GIT_REPO;default=/tmp/dcat-store.git]",
+		"remote": "$[env:GIT_REMOTE;default=]",
 		"branch": "$[env:GIT_BRANCH;default=main]",
 		"authorName": "$[env:GIT_AUTHOR_NAME;default=DCAT.Atlas]",
 		"authorEmail": "$[env:GIT_AUTHOR_EMAIL;default=dcat-atlas@example.org]",

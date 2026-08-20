@@ -23,12 +23,22 @@ services:
     environment:
       HTTP_PORT: "8080"
       CONTEXT_PATH: "/"
-      STORE_FOLDER: /opt/dcat/data
+      GIT_REPO: /opt/dcat/store.git
+      GIT_BRANCH: main
       SHACL_SHAPES_DIR: /opt/dcat/shapes
       SHACL_VOCAB_DIR: /opt/dcat/vocabularies
       SHACL_ENFORCE: "true"
+      # Stored identities are host-free; this is the base they are rendered under
+      # at read time, so it must be the URL clients actually reach — behind a
+      # reverse proxy that is not the address the container sees.
+      PUBLIC_BASE_URL: "http://localhost:${DCAT_PORT:-8080}/rest/"
     volumes:
-      - dcat-data:/opt/dcat/data
+      # A *named* volume, because Docker seeds a new one from the image content at
+      # the mount point — that is how the bare repository the image ships with
+      # becomes the volume's initial state. A bind mount is not seeded: point one
+      # here only at a directory you have already `git init --bare -b main`ed and
+      # chowned to uid 65532.
+      - dcat-store:/opt/dcat/store.git
       - ${DCAT_SHAPES_DIR:-./shapes}:/opt/dcat/shapes:ro
       - ${DCAT_VOCAB_DIR:-./vocabularies}:/opt/dcat/vocabularies:ro
     restart: unless-stopped
@@ -42,4 +52,4 @@ services:
     #   readinessProbe: { httpGet: { path: /health/ready, port: 8080 } }
 
 volumes:
-  dcat-data:
+  dcat-store:

@@ -63,19 +63,40 @@ public final class StoreHealth {
 	/**
 	 * Whether a remote's copy of the branch agrees with ours, appended to the detail text.
 	 * <p>
-	 * Reported rather than failed. For a remote the repository is held in the heap, so a
-	 * commit that has not reached the remote survives only until the next restart — an
-	 * operator needs to see that, but the portal is still serving correctly and taking it
-	 * out of rotation would not help. Empty for a repository on disk, which has no remote
-	 * and where a commit is durable the moment it is written.
+	 * Reported rather than failed: the portal is serving correctly either way, and taking it
+	 * out of rotation would not get a commit to the remote. Empty when the two agree, and
+	 * empty for a repository that has no remote at all.
+	 * <p>
+	 * The consequence depends on which repository this is, and saying the wrong one is worse
+	 * than saying nothing. A repository given as a URL is held in memory, so a commit that
+	 * has not reached the remote is genuinely gone at the next restart. A repository on disk
+	 * that mirrors to a remote has its commits in the volume's object database already — a
+	 * divergence there means the mirror is behind, not that anything is at risk. Both were
+	 * measured: with the remote stopped, a write returned 503 and the commit was still on the
+	 * volume, survived a restart, and was pushed by the next successful write.
 	 */
 	private static String remoteState(GitService gitService, String commitId) {
 		String remoteHead = gitService.getRemoteHead();
 		if (remoteHead == null || remoteHead.equals(commitId)) {
 			return "";
 		}
-		return "; WARNING: the branch differs from the remote's copy (%s) as of the last fetch - unpushed commits are lost on restart"
-				.formatted(remoteHead);
+		if (heldInMemory(gitService.getGitUrl())) {
+			return ("; WARNING: the branch differs from the remote's copy (%s): this repository is held in memory,"
+					+ " so a commit that has not reached the remote is lost on restart").formatted(remoteHead);
+		}
+		return ("; WARNING: the branch differs from the remote's copy (%s): pushes are not landing, so the mirror is"
+				+ " behind. The commits are durable in this repository and a later push completes them")
+						.formatted(remoteHead);
+	}
+
+	/**
+	 * Whether the store is the in-memory mirror of a remote rather than a repository on
+	 * disk — decided by the same rule the git service itself uses, that a repository named
+	 * by a URL <em>is</em> its remote.
+	 */
+	private static boolean heldInMemory(String repo) {
+		return repo != null && (repo.startsWith("git://") || repo.startsWith("git@") || repo.startsWith("ssh://")
+				|| repo.startsWith("http://") || repo.startsWith("https://"));
 	}
 
 	/** What was checked and what was found, for an operator reading the readiness response. */

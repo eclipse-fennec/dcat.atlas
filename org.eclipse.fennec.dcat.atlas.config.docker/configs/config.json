@@ -85,8 +85,14 @@
 	// URL clients actually reach the portal on - behind a reverse proxy that is NOT the
 	// address the container sees. ADDITIONAL_OWNED_BASES is a migration aid for absorbing
 	// data written under an old hostname, and is normally empty.
+	// PUBLIC_BASE_URL has NO default, here or on the component, and the container will not
+	// start without it. There is no value that is right for more than one deployment: it
+	// becomes the host in every rendered 'about', so a default would have this container
+	// advertising IRIs belonging to whatever host the default names - on every response,
+	// each of which still looks perfectly well-formed. Refusing to start is the only
+	// failure mode an operator can see.
 	"PublicIris": {
-		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]",
+		"publicBaseUrl": "$[env:PUBLIC_BASE_URL]",
 		"additionalOwnedBases": "$[env:ADDITIONAL_OWNED_BASES;default=]"
 	},
 

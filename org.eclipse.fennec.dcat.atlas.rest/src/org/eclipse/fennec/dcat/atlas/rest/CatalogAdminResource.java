@@ -22,9 +22,12 @@ import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.PublicUri;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
@@ -49,7 +52,6 @@ import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Admin (write) REST adapter for the {@code Catalog} collection (F-4/F-11).
@@ -82,6 +84,15 @@ public class CatalogAdminResource {
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
 	private static final String READ_COLLECTION = "catalogs";
 
+	/**
+	 * The configured public base, used here to build the {@code Location} of a create
+	 * and of the {@code 409} that refuses one, so those headers carry the same URL as
+	 * the {@code about} the resource is served with. Mandatory also to gate
+	 * registration — see {@link PublicIriFilter}.
+	 */
+	@Reference
+	PublicIris identityRendering;
+
 	@Reference
 	CatalogAdminService catalogAdminService;
 
@@ -99,18 +110,18 @@ public class CatalogAdminResource {
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createCatalog(Catalog catalog, @Context UriInfo uriInfo) {
+	public Response createCatalog(Catalog catalog) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second catalog; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
 		// Location header — stamping it here is what used to freeze the writing host into
 		// the stored file (and, behind a proxy, an internal address).
-		CreateIdentity identity = CreateIdentity.resolve(DcatIds.CATALOGS, catalog, this::catalogExists, uriInfo);
+		CreateIdentity identity = CreateIdentity.resolve(DcatIds.CATALOGS, catalog, this::catalogExists, identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
-		URI about = readUri(uriInfo, id);
+		URI about = readUri(id);
 		catalogAdminService.upsertCatalog(catalog);
 		ResponseBuilder created = Response.created(about).entity(catalog);
 		catalogAdminService.etag(id).ifPresent(created::tag);
@@ -121,7 +132,7 @@ public class CatalogAdminResource {
 	@Path("/{id}")
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog, @Context UriInfo uriInfo,
+	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog,
 			@Context Request request) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
@@ -173,10 +184,10 @@ public class CatalogAdminResource {
 	@Path("/{id}/datasets")
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response addDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
+	public Response addDataset(@PathParam("id") String id, Dataset dataset,
 			@Context Request request) {
 		return addMember(id, request,
-				() -> refuseMember(DcatIds.DATASETS, dataset, this::datasetExists, membership(id, "datasets"), uriInfo),
+				() -> refuseMember(DcatIds.DATASETS, dataset, this::datasetExists, membership(id, "datasets")),
 				() -> catalogAdminService.addDatasetToCatalog(id, dataset));
 	}
 
@@ -205,11 +216,10 @@ public class CatalogAdminResource {
 	@Path("/{id}/services")
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response addService(@PathParam("id") String id, DataService service, @Context UriInfo uriInfo,
+	public Response addService(@PathParam("id") String id, DataService service,
 			@Context Request request) {
 		return addMember(id, request,
-				() -> refuseMember(DcatIds.DATA_SERVICES, service, this::dataServiceExists, membership(id, "services"),
-						uriInfo),
+				() -> refuseMember(DcatIds.DATA_SERVICES, service, this::dataServiceExists, membership(id, "services")),
 				() -> catalogAdminService.addDataServiceToCatalog(id, service));
 	}
 
@@ -233,11 +243,10 @@ public class CatalogAdminResource {
 	@Path("/{id}/catalogs")
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response addSubCatalog(@PathParam("id") String id, Catalog subCatalog, @Context UriInfo uriInfo,
+	public Response addSubCatalog(@PathParam("id") String id, Catalog subCatalog,
 			@Context Request request) {
 		return addMember(id, request,
-				() -> refuseMember(DcatIds.CATALOGS, subCatalog, this::catalogExists, membership(id, "catalogs"),
-						uriInfo),
+				() -> refuseMember(DcatIds.CATALOGS, subCatalog, this::catalogExists, membership(id, "catalogs")),
 				() -> catalogAdminService.addSubCatalogToCatalog(id, subCatalog));
 	}
 
@@ -315,8 +324,8 @@ public class CatalogAdminResource {
 	 * @return the response refusing the member, or {@code null} when it may be stored
 	 */
 	private ResponseBuilder refuseMember(String collection, IdentifiedResource member, Predicate<String> exists,
-			String membershipPath, UriInfo uriInfo) {
-		CreateIdentity identity = CreateIdentity.resolveMember(collection, member, exists, membershipPath, uriInfo);
+			String membershipPath) {
+		CreateIdentity identity = CreateIdentity.resolveMember(collection, member, exists, membershipPath, identityRendering);
 		return identity.refused() ? identity.refusal() : null;
 	}
 
@@ -353,7 +362,7 @@ public class CatalogAdminResource {
 	}
 
 	/** The public (read-side) URI of the catalog, e.g. {@code {base}/catalogs/{id}}. */
-	private static URI readUri(UriInfo uriInfo, String id) {
-		return uriInfo.getBaseUriBuilder().path(READ_COLLECTION).path(id).build();
+	private URI readUri(String id) {
+		return PublicUri.of(identityRendering, READ_COLLECTION, id);
 	}
 }

@@ -42,7 +42,7 @@ public class PublicIrisImpl implements PublicIris {
 
 	/** Package-visible for tests. */
 	PublicIrisImpl(String publicBaseUrl, String... additionalOwnedBases) {
-		this.publicBase = withTrailingSlash(publicBaseUrl);
+		this.publicBase = withTrailingSlash(requirePublicBase(publicBaseUrl));
 		List<String> owned = new ArrayList<>();
 		owned.add(this.publicBase);
 		owned.add(StoreLayout.LOGICAL_BASE);
@@ -106,5 +106,41 @@ public class PublicIrisImpl implements PublicIris {
 			throw new IllegalArgumentException("A base URL is required");
 		}
 		return base.endsWith("/") ? base : base + "/";
+	}
+
+	/**
+	 * Refuses a public base that would render IRIs nobody can dereference.
+	 * <p>
+	 * The component has no default for this, so an unconfigured deployment arrives
+	 * here with {@code null}, with the empty string, or — when the shipped
+	 * configuration reads it from an environment variable that is not set — with the
+	 * {@code $[env:...]} placeholder unsubstituted. All three have to fail
+	 * activation: every one of them otherwise yields a syntactically fine
+	 * {@code about} on every response, pointing somewhere useless, and nothing
+	 * downstream can tell that from a correct one.
+	 *
+	 * @param base the configured {@code publicBaseUrl}
+	 * @return {@code base} unchanged when it is usable
+	 * @throws IllegalArgumentException naming the setting and what was wrong with it
+	 */
+	private static String requirePublicBase(String base) {
+		if (base == null || base.isBlank()) {
+			throw new IllegalArgumentException(
+					"publicBaseUrl is required and has no default: set it on the PublicIris"
+							+ " configuration (PUBLIC_BASE_URL in the shipped configurations) to the"
+							+ " absolute URL clients reach this portal on, e.g."
+							+ " https://opendata.example.de/dcat/rest/");
+		}
+		if (base.startsWith("$[")) {
+			throw new IllegalArgumentException("publicBaseUrl is still the uninterpolated placeholder " + base
+					+ ": the environment variable it reads is not set. Set PUBLIC_BASE_URL to the absolute"
+					+ " URL clients reach this portal on.");
+		}
+		if (!base.startsWith("http://") && !base.startsWith("https://")) {
+			throw new IllegalArgumentException("publicBaseUrl must be an absolute http(s) URL, but was " + base
+					+ ". It is the base every stored identity is rendered under, so a relative or"
+					+ " scheme-less value produces IRIs that cannot be dereferenced.");
+		}
+		return base;
 	}
 }

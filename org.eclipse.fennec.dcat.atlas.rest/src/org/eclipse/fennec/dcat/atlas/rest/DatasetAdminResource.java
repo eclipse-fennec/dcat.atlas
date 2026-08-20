@@ -18,9 +18,12 @@ import java.net.URI;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.PublicUri;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
@@ -40,7 +43,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -65,25 +67,34 @@ public class DatasetAdminResource {
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
 	private static final String READ_COLLECTION = "datasets";
 
+	/**
+	 * The configured public base, used here to build the {@code Location} of a create
+	 * and of the {@code 409} that refuses one, so those headers carry the same URL as
+	 * the {@code about} the resource is served with. Mandatory also to gate
+	 * registration — see {@link PublicIriFilter}.
+	 */
+	@Reference
+	PublicIris identityRendering;
+
 	@Reference
 	DatasetAdminService datasetAdminService;
 
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createDataset(Dataset dataset, @Context UriInfo uriInfo) {
+	public Response createDataset(Dataset dataset) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second dataset; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
 		// Location header — stamping it here is what used to freeze the writing host into
 		// the stored file (and, behind a proxy, an internal address).
 		CreateIdentity identity = CreateIdentity.resolve(DcatIds.DATASETS, dataset,
-				candidate -> datasetAdminService.getDataset(candidate).isPresent(), uriInfo);
+				candidate -> datasetAdminService.getDataset(candidate).isPresent(), identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
-		URI about = readUri(uriInfo, id);
+		URI about = readUri(id);
 		datasetAdminService.upsertDataset(dataset);
 		ResponseBuilder created = Response.created(about).entity(dataset);
 		datasetAdminService.etag(id).ifPresent(created::tag);
@@ -94,7 +105,7 @@ public class DatasetAdminResource {
 	@Path("/{id}")
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response upsertDataset(@PathParam("id") String id, Dataset dataset, @Context UriInfo uriInfo,
+	public Response upsertDataset(@PathParam("id") String id, Dataset dataset,
 			@Context Request request) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
@@ -129,7 +140,7 @@ public class DatasetAdminResource {
 	}
 
 	/** The public (read-side) URI of the dataset, e.g. {@code {base}/datasets/{id}}. */
-	private static URI readUri(UriInfo uriInfo, String id) {
-		return uriInfo.getBaseUriBuilder().path(READ_COLLECTION).path(id).build();
+	private URI readUri(String id) {
+		return PublicUri.of(identityRendering, READ_COLLECTION, id);
 	}
 }

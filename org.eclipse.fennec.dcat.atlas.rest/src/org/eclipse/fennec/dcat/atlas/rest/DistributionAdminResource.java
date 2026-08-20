@@ -19,11 +19,13 @@ import java.util.Optional;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
+import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
+import org.eclipse.fennec.dcat.atlas.rest.helper.PublicUri;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
@@ -44,7 +46,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -70,6 +71,15 @@ public class DistributionAdminResource {
 	private static final String READ_DATASETS = "datasets";
 	private static final String READ_DISTRIBUTIONS = "distributions";
 
+	/**
+	 * The configured public base, used here to build the {@code Location} of a create
+	 * and of the {@code 409} that refuses one, so those headers carry the same URL as
+	 * the {@code about} the resource is served with. Mandatory also to gate
+	 * registration — see {@link PublicIriFilter}.
+	 */
+	@Reference
+	PublicIris identityRendering;
+
 	@Reference
 	DistributionAdminService distributionAdminService;
 
@@ -88,23 +98,22 @@ public class DistributionAdminResource {
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution,
-			@Context UriInfo uriInfo) {
+	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Logical identity, nested under the dataset, and taken from the body when it names
 		// one of this dataset's distributions so that the same request sent twice conflicts
 		// instead of creating a second one; only then is an id minted (see CreateIdentity).
-		// The request URL supplies nothing but Location.
+		// The configured public base supplies nothing but Location.
 		CreateIdentity identity = CreateIdentity.resolveDistribution(datasetId, distribution,
 				candidate -> distributionAdminService.getDistributionForDataset(datasetId, candidate).isPresent(),
-				uriInfo);
+				identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
-		URI about = readUri(uriInfo, datasetId, id);
+		URI about = readUri(datasetId, id);
 		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);
 		ResponseBuilder created = Response.created(about).entity(distribution);
 		distributionAdminService.etag(datasetId, id).ifPresent(created::tag);
@@ -116,7 +125,7 @@ public class DistributionAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
-			Distribution distribution, @Context UriInfo uriInfo, @Context Request request) {
+			Distribution distribution, @Context Request request) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -207,9 +216,8 @@ public class DistributionAdminResource {
 	}
 
 	/** The public (read-side) URI of the distribution, e.g. {@code {base}/datasets/{datasetId}/distributions/{id}}. */
-	private static URI readUri(UriInfo uriInfo, String datasetId, String id) {
-		return uriInfo.getBaseUriBuilder().path(READ_DATASETS).path(datasetId).path(READ_DISTRIBUTIONS).path(id)
-				.build();
+	private URI readUri(String datasetId, String id) {
+		return PublicUri.of(identityRendering, READ_DATASETS, datasetId, READ_DISTRIBUTIONS, id);
 	}
 
 }

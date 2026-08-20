@@ -120,6 +120,13 @@ public final class TestGitStore {
 			}
 
 			@Override
+			public String remote() {
+				// A local repository standing alone: the store's own tests are about what the
+				// git object database holds, not about mirroring it anywhere.
+				return "";
+			}
+
+			@Override
 			public String privateKey() {
 				return "";
 			}

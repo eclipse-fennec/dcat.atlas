@@ -31,6 +31,29 @@ rm -rf org.eclipse.fennec.dcat.atlas.runtime/generated/distributions
 ./gradlew :org.eclipse.fennec.dcat.atlas.runtime:export.docker --rerun-tasks
 ```
 
+## Published images
+
+CI builds and pushes the image; you do not have to build it yourself to run it. A verified
+push to `snapshot` publishes the `snapshot` tag, a verified push to `main` the `latest` tag.
+Both also push an immutable tag carrying the bundle version bnd stamped into the build
+(`1.0.0.<yyyyMMddHHmm>-SNAPSHOT`), and both go to Docker Hub and GHCR:
+
+```bash
+docker pull docker.io/eclipsefennec/dcat.atlas:snapshot
+docker pull ghcr.io/eclipse-fennec/dcat.atlas:snapshot
+```
+
+Images are `linux/amd64` and `linux/arm64/v8`. The workflows are
+`.github/workflows/snapshot.yml` and `release.yml`, both calling the repo-local
+`reusable-container.yml` — the same layout as event.atlas and model.atlas, except that the
+runtime jar is exported in the container job itself (with the two Gradle commands above)
+rather than downloaded from a Maven release build. The Docker Hub push needs the
+`DOCKER_USERNAME` and `DOCKER_API_TOKEN` secrets, inherited by the reusable from the
+calling workflow.
+
+The compose files below name the locally built `eclipse-fennec/dcat.atlas:latest`; point
+their `image:` at one of the tags above to run a published image instead.
+
 ## Run
 
 ```bash

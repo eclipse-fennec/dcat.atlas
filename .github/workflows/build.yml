@@ -1,13 +1,15 @@
 name: CI Build
 
-# Every branch and every pull request is verified. Unlike other Fennec repos this
-# one has no snapshot/release publishing workflow (nothing is deployed to Maven
-# Central), so `main` and `snapshot` are not excluded here — otherwise they would
-# get no CI at all.
+# Build-only on every branch EXCEPT main and snapshot: those publish the container
+# image via their dedicated workflows (release.yml / snapshot.yml), which run the
+# same reusable verify first and gate the image push on it. Nothing is deployed to
+# Maven Central from this workspace — the publishing workflows exist for the
+# container image only.
 on:
   push:
-    branches:
-      - '**'
+    branches-ignore:
+      - main
+      - snapshot
   pull_request:
     branches:
       - '*'

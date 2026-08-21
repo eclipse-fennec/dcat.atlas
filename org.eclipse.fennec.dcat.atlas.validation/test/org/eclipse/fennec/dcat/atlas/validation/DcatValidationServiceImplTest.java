@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.apache.jena.shacl.validation.Severity;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.apache.felix.hc.api.Result;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,8 +41,7 @@ import terms.TermsFactory;
  * against a tiny, self-authored shape (so the test is deterministic and carries no
  * upstream-licensed shapes). The real DCAT-AP.de shapes are pointed at via config
  * at runtime, not bundled here. Assertions are against the native Jena
- * {@link ValidationReport} that {@code validate} now returns; the deprecated
- * {@code validateLegacy} projection is covered by a single test.
+ * {@link ValidationReport} that {@code validate} returns.
  */
 public class DcatValidationServiceImplTest {
 
@@ -269,17 +267,6 @@ public class DcatValidationServiceImplTest {
 		ValidationReport report = service.validate(dataset(BASE + "air", null));
 		assertTrue(report.conforms());
 		assertTrue(report.getEntries().isEmpty());
-	}
-
-	@Test
-	@SuppressWarnings("deprecation")
-	void legacyProjectionMirrorsTheReport() throws IOException {
-		ValidationResult legacy = serviceWithTitleShape().validateLegacy(dataset(BASE + "air", null));
-		assertFalse(legacy.conforms());
-		assertEquals(1, legacy.violations().size());
-		assertTrue(legacy.hasBlockingViolations());
-		assertTrue(legacy.violations().get(0).message().contains("dct:title"));
-		assertTrue(legacy.reportTurtle().contains("ValidationReport"), legacy.reportTurtle());
 	}
 
 	/** True when the report has a hard ({@code sh:Violation}) entry — a null severity defaults to it. */

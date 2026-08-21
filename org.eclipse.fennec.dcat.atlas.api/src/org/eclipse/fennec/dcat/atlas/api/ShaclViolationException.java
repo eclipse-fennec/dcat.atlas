@@ -21,8 +21,9 @@ import org.apache.jena.shacl.ValidationReport;
  * <h2>Why it carries the native report</h2>
  *
  * The report is the whole diagnostic: which node failed, on which property path, against
- * which shape, at which severity. Flattening it to strings here would repeat the mistake
- * {@link ValidationResult} was deprecated for. Carrying Jena's own type costs nothing —
+ * which shape, at which severity. Flattening it to strings here would repeat the mistake of
+ * the string-projected wrappers this API used to carry and has since dropped. Carrying
+ * Jena's own type costs nothing —
  * {@link DcatValidationService#validate(org.eclipse.emf.ecore.EObject)} already returns it,
  * so this API is coupled to Jena either way — and lets the REST layer serialize the full
  * {@code sh:ValidationReport} in any RDF syntax the client negotiates (FR-19), which is the

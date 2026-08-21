@@ -13,12 +13,10 @@
  */
 package org.eclipse.fennec.dcat.atlas.validation;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -42,8 +40,6 @@ import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
-import org.eclipse.fennec.dcat.atlas.api.Violation;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -129,16 +125,6 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 		Graph dataGraph = ModelFactory.createUnion(data, vocabulary).getGraph();
 		ValidationReport report = ShaclValidator.get().validate(shapes, dataGraph);
 		return onlyEntityResults(report, data.getGraph(), dataGraph);
-	}
-
-	@Deprecated
-	@Override
-	public ValidationResult validateLegacy(EObject entity) {
-		ValidationReport report = validate(entity);
-		List<Violation> violations = report.getEntries().stream() //
-				.map(DcatValidationServiceImpl::toViolation) //
-				.collect(Collectors.toList());
-		return new ValidationResult(report.conforms(), violations, toTurtle(report));
 	}
 
 	@Override
@@ -288,25 +274,6 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 		return vocabulary;
 	}
 
-	private static Violation toViolation(ReportEntry entry) {
-		// entry.severity() is a Jena Severity wrapper; the IRI is its level() node. A null
-		// severity means the SHACL default, which is sh:Violation.
-		var severity = entry.severity();
-		var level = severity == null ? null : severity.level();
-		String severityIri = level == null ? Violation.SH_VIOLATION : str(level);
-		return new Violation(str(entry.focusNode()), str(entry.resultPath()), entry.message(), severityIri,
-				str(entry.source()));
-	}
-
-	private static String toTurtle(ValidationReport report) {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		RDFDataMgr.write(out, report.getModel(), Lang.TURTLE);
-		return out.toString(StandardCharsets.UTF_8);
-	}
-
-	private static String str(Object value) {
-		return value == null ? null : value.toString();
-	}
 	// --- F-25 readiness -----------------------------------------------------
 
 	/**

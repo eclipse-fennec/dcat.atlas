@@ -23,7 +23,6 @@ import org.apache.felix.hc.api.ResultLog;
 import org.apache.felix.hc.api.Result.Status;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -130,10 +129,6 @@ public class AdminWriteHealthCheckTest {
 			return ValidationReport.reportConformsTrue();
 		}
 
-		@Override
-		public ValidationResult validateLegacy(EObject entity) {
-			throw new UnsupportedOperationException("not used by the health check");
-		}
 
 		@Override
 		public boolean isWriteEnforced() {

@@ -26,7 +26,6 @@ import org.apache.jena.shacl.validation.Severity;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.api.ShaclViolationException;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -156,10 +155,6 @@ public class ShaclWriteEnforcementTest {
 			return report;
 		}
 
-		@Override
-		public ValidationResult validateLegacy(EObject entity) {
-			throw new UnsupportedOperationException("not used by the write path");
-		}
 
 		@Override
 		public boolean isWriteEnforced() {

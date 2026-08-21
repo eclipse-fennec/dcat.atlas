@@ -22,24 +22,16 @@ import org.eclipse.emf.ecore.EObject;
  * The entity is serialized to RDF and checked against the configured shape graph; the
  * native Jena {@link ValidationReport} is returned so the REST layer can serialize the
  * full, spec-compliant {@code sh:ValidationReport} in any RDF syntax (FR-19) with no
- * loss of fidelity. This deliberately couples the API to Jena — the earlier
- * {@link ValidationResult}/{@link Violation} wrappers kept it Jena-free but could only
- * carry a lossy projection of the report; they are retained, deprecated, via
- * {@link #validateLegacy(EObject)} as a fallback. The shape files themselves are loaded
- * from an external, operator-configured location — they are not bundled with the app.
+ * loss of fidelity. This deliberately couples the API to Jena, and that is the trade
+ * that was made: the earlier Jena-free {@code ValidationResult}/{@code Violation} wrappers
+ * kept the API clean and could only carry a lossy projection of the report, so they were
+ * removed rather than carried. The shape files themselves are loaded from an external,
+ * operator-configured location — they are not bundled with the app.
  */
 public interface DcatValidationService {
 
 	/** Validates {@code entity} against the loaded shapes. Never {@code null}. */
 	ValidationReport validate(EObject entity);
-
-	/**
-	 * @deprecated Legacy Jena-free projection of the report; superseded by
-	 *             {@link #validate(EObject)} which returns the native, full-fidelity
-	 *             {@link ValidationReport}. Kept as a fallback while the new path beds in.
-	 */
-	@Deprecated
-	ValidationResult validateLegacy(EObject entity);
 
 	/**
 	 * Whether the admin write path must enforce validation (FR-4): reject a

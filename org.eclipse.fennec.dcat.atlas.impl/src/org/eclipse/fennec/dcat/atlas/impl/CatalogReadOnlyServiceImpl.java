@@ -18,6 +18,8 @@ import java.util.Optional;
 
 import org.apache.felix.hc.api.HealthCheck;
 import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.Page;
+import org.eclipse.fennec.dcat.atlas.api.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -65,5 +67,10 @@ public class CatalogReadOnlyServiceImpl extends AbstractEntityStore<Catalog> imp
 	@Override
 	public List<Catalog> listCatalogs() {
 		return listEntities();
+	}
+
+	@Override
+	public Page<Catalog> listCatalogs(PageRequest page) {
+		return listEntities(page);
 	}
 }

@@ -27,7 +27,17 @@ public interface DatasetSeriesReadOnlyService {
 	
 	Optional<DatasetSeries> getDatasetSeries(String id);
 
+	/** Every entry, materialised. See {@link #listDatasetSeries(PageRequest)} first. */
 	List<DatasetSeries> listDatasetSeries();
+
+	/**
+	 * One page of the collection, resuming after {@code page.after()}.
+	 * <p>
+	 * The paged read is what a client should use: listDatasetSeries() loads and
+	 * materialises every stored entity, which is affordable for the graph projection
+	 * that needs all of them anyway and not for an HTTP response.
+	 */
+	Page<DatasetSeries> listDatasetSeries(PageRequest page);
 
 	/** Strong ETag validator for the stored dataset series {@code id}, or empty if absent (F-16). */
 	Optional<String> etag(String id);

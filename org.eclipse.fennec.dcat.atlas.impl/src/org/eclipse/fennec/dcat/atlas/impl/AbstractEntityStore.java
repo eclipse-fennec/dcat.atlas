@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +25,8 @@ import org.apache.felix.hc.api.Result;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.Page;
+import org.eclipse.fennec.dcat.atlas.api.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
@@ -94,6 +98,48 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 
 	protected List<T> listEntities() {
 		return store().list(collection);
+	}
+
+	/**
+	 * One page of the collection, and the total it was taken from.
+	 * <p>
+	 * The two halves cost very different things, which is the whole point of paging here:
+	 * {@code ids} is a git tree listing and reads no blob at all, so the total is free and
+	 * only the entries on this page are materialised. Listing the ids in full on every
+	 * request and slicing afterwards is deliberate — a collection's ids are one tree
+	 * object, while its entries are one blob each.
+	 * <p>
+	 * Both halves are read through <em>one</em> session, so the ids and the entities cannot
+	 * disagree: a resource that is in the id list is one this session can also read.
+	 */
+	protected Page<T> listEntities(PageRequest page) {
+		Store store = store();
+		List<String> ids = store.ids(collection);
+		int total = ids.size();
+		int from = firstIndexAfter(ids, page.after());
+		int to = Math.min(from + page.limit(), total);
+		List<T> items = new ArrayList<>(to - from);
+		for (String id : ids.subList(from, to)) {
+			store.<T>get(collection, id).ifPresent(items::add);
+		}
+		String nextAfter = to < total ? ids.get(to - 1) : null;
+		return new Page<>(items, nextAfter, total);
+	}
+
+	/**
+	 * Where a page resuming at {@code after} starts: the first id strictly greater than it.
+	 * <p>
+	 * "Greater than", not "the one after the one that equals it", so a cursor whose resource
+	 * has since been deleted still resumes in the right place instead of restarting the
+	 * collection. {@code ids} is sorted, so this is a binary search — {@code insertionPoint}
+	 * when absent, and one past the match when present.
+	 */
+	private static int firstIndexAfter(List<String> ids, String after) {
+		if (after == null) {
+			return 0;
+		}
+		int found = Collections.binarySearch(ids, after);
+		return found >= 0 ? found + 1 : -(found + 1);
 	}
 
 	public Optional<String> etag(String id) {

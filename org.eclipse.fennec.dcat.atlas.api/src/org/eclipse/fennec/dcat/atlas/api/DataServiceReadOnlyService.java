@@ -27,7 +27,17 @@ public interface DataServiceReadOnlyService {
 	
 	Optional<DataService> getDataService(String id);
 
+    /** Every entry, materialised. See {@link #listDataServices(PageRequest)} first. */
     List<DataService> listDataServices();
+
+    /**
+     * One page of the collection, resuming after {@code page.after()}.
+     * <p>
+     * The paged read is what a client should use: listDataServices() loads and
+     * materialises every stored entity, which is affordable for the graph projection
+     * that needs all of them anyway and not for an HTTP response.
+     */
+    Page<DataService> listDataServices(PageRequest page);
 
     /** Strong ETag validator for the stored data service {@code id}, or empty if absent (F-16). */
     Optional<String> etag(String id);

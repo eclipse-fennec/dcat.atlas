@@ -564,10 +564,57 @@ curl -i -X PUT \
 Reads are open and live under the collection path — e.g. `GET /catalogs/{id}` for a
 single catalog, `GET /catalogs` for the collection.
 
-> **A collection with nothing in it answers `204 No Content`, not `200` with an empty
+> **A collection with nothing to serve answers `204 No Content`, not `200` with an empty
 > list.** There is no body at all, so a client that unconditionally parses the response
 > fails on a fresh deployment rather than on a broken one. Check the status before reading
-> the body. `GET /catalogs/{id}` for an id that does not exist is a plain `404`.
+> the body. That covers both an empty collection and a page cursor that has walked past the
+> end. `GET /catalogs/{id}` for an id that does not exist is a plain `404`.
+
+### Paging through a collection
+
+`GET /catalogs` answers **one page**, not the whole collection. Without parameters that is
+the first 50 entries in id order; `limit` asks for a different size, up to 500.
+
+```bash
+curl -i 'http://localhost:8085/dcat/rest/catalogs?limit=2'
+#   -> HTTP/1.1 200 OK
+#      X-Total-Count: 137
+#      Link: <http://localhost:8085/dcat/rest/catalogs?limit=2>; rel="first"
+#      Link: <http://localhost:8085/dcat/rest/catalogs?limit=2&after=8c1f…>; rel="next"
+#      ETag: "b41e…:2:"
+#      Cache-Control: no-cache
+```
+
+Two headers carry everything a client needs:
+
+| header | meaning |
+|---|---|
+| `X-Total-Count` | how many entries the whole collection holds, not just this page |
+| `Link … rel="next"` | the URL of the following page. **Absent on the last page** — that, rather than a short page, is how a walk ends |
+| `Link … rel="first"` | the collection from the start, at the same page size |
+
+**Follow `rel="next"` rather than building the URL yourself.** The cursor is `after=<id>`,
+the last id of the page you just read, and not a numeric offset. That is deliberate: an
+offset shifts when somebody inserts or deletes a resource that sorts before your cursor, so
+an offset-based walk can skip an entry or serve one twice. Resuming from an id cannot,
+because an id does not move when its neighbours change.
+
+A few consequences worth knowing:
+
+- **A cursor stays usable after the resource it names is deleted.** `after` is a position in
+  a sorted list, not a reference, so the next page still starts in the right place.
+- **A limit outside 1–500 is corrected, never refused.** `?limit=0` serves one entry and
+  `?limit=100000` serves 500; the `rel="first"` link always shows the size actually applied.
+  A limit that is not a number at all is a `400`, with the parameter named in the body —
+  not the `404` that JAX-RS would otherwise give you for an unconvertible query parameter.
+- **A cursor past the end is `204 No Content`**, the same as an empty collection.
+- **The `ETag` identifies the page, not the collection.** Two pages of an unchanged
+  collection have different validators, so `If-None-Match` while walking does what you
+  would expect: `304` for the page you already hold, `200` for the next one.
+
+The RDF representations carry no paging vocabulary — a page of Catalogs is a graph of
+Catalogs and nothing else, so nothing about this portal's paging ends up in a harvester's
+graph. Everything above is in the headers, identically for all eight formats.
 
 ### Content negotiation
 

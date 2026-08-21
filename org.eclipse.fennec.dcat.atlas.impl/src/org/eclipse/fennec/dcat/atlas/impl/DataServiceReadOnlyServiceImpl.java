@@ -18,6 +18,8 @@ import java.util.Optional;
 
 import org.apache.felix.hc.api.HealthCheck;
 import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.Page;
+import org.eclipse.fennec.dcat.atlas.api.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -60,5 +62,10 @@ public class DataServiceReadOnlyServiceImpl extends AbstractEntityStore<DataServ
 	@Override
 	public List<DataService> listDataServices() {
 		return listEntities();
+	}
+
+	@Override
+	public Page<DataService> listDataServices(PageRequest page) {
+		return listEntities(page);
 	}
 }

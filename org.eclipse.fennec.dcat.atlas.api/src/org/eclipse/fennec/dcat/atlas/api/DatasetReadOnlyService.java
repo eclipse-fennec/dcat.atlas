@@ -16,7 +16,6 @@ package org.eclipse.fennec.dcat.atlas.api;
 import java.util.List;
 import java.util.Optional;
 
-
 import dcat.Dataset;
 
 /**
@@ -28,7 +27,17 @@ public interface DatasetReadOnlyService {
 	
 	Optional<Dataset> getDataset(String id);
 
+    /** Every entry, materialised. See {@link #listDatasets(PageRequest)} first. */
     List<Dataset> listDatasets();
+
+    /**
+     * One page of the collection, resuming after {@code page.after()}.
+     * <p>
+     * The paged read is what a client should use: listDatasets() loads and
+     * materialises every stored entity, which is affordable for the graph projection
+     * that needs all of them anyway and not for an HTTP response.
+     */
+    Page<Dataset> listDatasets(PageRequest page);
 
     /** Strong ETag validator for the stored dataset {@code id}, or empty if absent (F-16). */
     Optional<String> etag(String id);

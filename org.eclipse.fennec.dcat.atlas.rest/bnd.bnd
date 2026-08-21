@@ -5,6 +5,7 @@
 	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.osgi.service.jakartars;version=latest,\
+	org.glassfish.jersey.core.jersey-server;version=latest,\
 	jakarta.ws.rs-api;version=latest,\
 	org.osgi.util.promise;version=latest,\
 	org.osgi.service.servlet;version=latest,\

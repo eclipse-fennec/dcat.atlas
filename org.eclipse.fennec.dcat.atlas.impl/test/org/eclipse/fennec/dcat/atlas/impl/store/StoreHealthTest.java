@@ -11,10 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl.helper;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+package org.eclipse.fennec.dcat.atlas.impl.store;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -23,6 +20,9 @@ import org.eclipse.fennec.dcat.atlas.impl.TestGitStore;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * F-25 store readiness, over a git-backed store.

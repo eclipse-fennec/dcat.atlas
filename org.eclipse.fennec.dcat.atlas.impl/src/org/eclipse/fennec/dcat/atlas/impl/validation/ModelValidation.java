@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl.helper;
+package org.eclipse.fennec.dcat.atlas.impl.validation;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -28,6 +28,7 @@ import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EObjectValidator;
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
+import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 
 import rdf.IdentifiedResource;
 

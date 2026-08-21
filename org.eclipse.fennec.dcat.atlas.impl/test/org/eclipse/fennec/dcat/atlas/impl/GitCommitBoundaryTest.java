@@ -13,22 +13,21 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Catalog;
-import dcat.DcatFactory;
 import dcat.Dataset;
+import dcat.DcatFactory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * That one API operation is one commit (persistence plan Phase 2, D5).

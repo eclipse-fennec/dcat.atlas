@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl.helper;
+package org.eclipse.fennec.dcat.atlas.impl.store;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -28,7 +28,10 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.fennec.dcat.atlas.api.store.StoreConflictException;
 import org.eclipse.fennec.dcat.atlas.api.store.StoreUnavailableException;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.impl.helper.PendingChanges.State;
+import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
+import org.eclipse.fennec.dcat.atlas.impl.store.PendingChanges.State;
+import org.eclipse.fennec.dcat.atlas.impl.validation.ModelValidation;
+import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.eclipse.fennec.jgit.api.TreeResult;

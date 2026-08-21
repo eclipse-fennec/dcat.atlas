@@ -14,7 +14,6 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.util.List;
-
 import java.util.NoSuchElementException;
 
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetSeriesAdminService;
@@ -22,10 +21,12 @@ import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
-import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
-import org.eclipse.fennec.dcat.atlas.impl.helper.References;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
+import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
@@ -84,7 +85,7 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	 * this service is the persistence boundary, and REST is only one of its callers.
 	 * <p>
 	 * Optional and dynamic, so absence simply means no enforcement — see
-	 * {@link org.eclipse.fennec.dcat.atlas.impl.helper.ShaclValidation}. An operator who
+	 * {@link org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation}. An operator who
 	 * needs the strict reading raises this reference's minimum cardinality in
 	 * configuration ({@code validationService.cardinality.minimum=1}), which makes this
 	 * component unsatisfiable without a validation service instead of letting writes

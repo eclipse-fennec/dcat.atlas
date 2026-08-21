@@ -13,10 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 
 import org.apache.jena.graph.NodeFactory;
@@ -31,6 +27,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * On-write SHACL enforcement at the <em>service</em>, not the REST resource.
@@ -50,8 +49,8 @@ import dcat.DcatFactory;
  */
 public class ShaclWriteEnforcementTest {
 
-	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE
-			+ org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.DATASETS + "/";
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE
+			+ org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.DATASETS + "/";
 
 	private static final String SHACL_MIN_COUNT = "http://www.w3.org/ns/shacl#MinCountConstraintComponent";
 

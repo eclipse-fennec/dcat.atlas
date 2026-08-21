@@ -11,13 +11,13 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl;
+package org.eclipse.fennec.dcat.atlas.impl.identity;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.metatype.annotations.Designate;
@@ -40,8 +40,12 @@ public class PublicIrisImpl implements PublicIris {
 		this(config.publicBaseUrl(), config.additionalOwnedBases());
 	}
 
-	/** Package-visible for tests. */
-	PublicIrisImpl(String publicBaseUrl, String... additionalOwnedBases) {
+	/**
+	 * For tests. Public rather than package-visible because the tests that build a mapping
+	 * directly sit in sibling packages since the impl bundle was split by concern, and this
+	 * package is not exported — "public" here means visible inside the bundle.
+	 */
+	public PublicIrisImpl(String publicBaseUrl, String... additionalOwnedBases) {
 		this.publicBase = withTrailingSlash(requirePublicBase(publicBaseUrl));
 		List<String> owned = new ArrayList<>();
 		owned.add(this.publicBase);

@@ -11,15 +11,15 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl;
+package org.eclipse.fennec.dcat.atlas.impl.identity;
+
+import org.apache.felix.hc.api.Result.Status;
+import org.apache.felix.hc.api.Result;
+import org.apache.felix.hc.api.ResultLog;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.apache.felix.hc.api.Result;
-import org.apache.felix.hc.api.Result.Status;
-import org.apache.felix.hc.api.ResultLog;
-import org.junit.jupiter.api.Test;
 
 /**
  * The check that explains a portal which cannot render identities (F-25).

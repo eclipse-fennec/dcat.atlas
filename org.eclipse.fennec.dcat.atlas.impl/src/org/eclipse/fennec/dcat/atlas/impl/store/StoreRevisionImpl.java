@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl;
+package org.eclipse.fennec.dcat.atlas.impl.store;
 
 import java.util.Optional;
 

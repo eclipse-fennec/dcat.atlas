@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl.helper;
+package org.eclipse.fennec.dcat.atlas.impl.integrity;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,7 +26,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.fennec.dcat.atlas.api.integrity.DanglingReferenceException;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 
 /**
  * Reverse-reference handling for deletes (FR-1).

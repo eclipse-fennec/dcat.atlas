@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl;
+package org.eclipse.fennec.dcat.atlas.impl.store;
 
 import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
@@ -41,7 +41,7 @@ public @interface StoreConfig {
 	 * Configurable so the portal can share a repository with unrelated content; the
 	 * collection folders below it are not, because they are the collection segment of
 	 * every stored identity rather than a storage detail — see
-	 * {@link org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout}.
+	 * {@link org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout}.
 	 */
 	@AttributeDefinition(name = "Store base path", description = "Folder inside the repository holding the per-collection store folders", required = false)
 	String basePath() default "dcat";

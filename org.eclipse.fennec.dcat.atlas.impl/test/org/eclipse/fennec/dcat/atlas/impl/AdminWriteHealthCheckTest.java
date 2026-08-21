@@ -13,20 +13,19 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 
+import org.apache.felix.hc.api.Result.Status;
 import org.apache.felix.hc.api.Result;
 import org.apache.felix.hc.api.ResultLog;
-import org.apache.felix.hc.api.Result.Status;
+import org.apache.jena.shacl.ValidationReport;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.jena.shacl.ValidationReport;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The check that explains a write path which has vanished (F-25).

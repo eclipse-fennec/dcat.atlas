@@ -18,8 +18,9 @@ import java.util.Optional;
 
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;

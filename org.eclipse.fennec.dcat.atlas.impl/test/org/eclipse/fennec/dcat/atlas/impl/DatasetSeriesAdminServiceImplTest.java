@@ -13,11 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -28,6 +23,10 @@ import org.junit.jupiter.api.io.TempDir;
 import dcat.Dataset;
 import dcat.DatasetSeries;
 import dcat.DcatFactory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Round-trips the file-backed dataset-series store (admin impl, which also covers
@@ -36,8 +35,8 @@ import dcat.DcatFactory;
  */
 public class DatasetSeriesAdminServiceImplTest {
 
-	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "dataset-series/";
-	private static final String DATASET_BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "datasets/";
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE + "dataset-series/";
+	private static final String DATASET_BASE = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE + "datasets/";
 
 	@TempDir
 	Path storage;

@@ -14,8 +14,8 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import dcat.DataService;
-import dcat.DcatResource;
 import dcat.Dataset;
+import dcat.DcatResource;
 import dcat.Distribution;
 import foaf.Agent;
 import foaf.FoafFactory;

@@ -13,11 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
@@ -34,6 +29,10 @@ import foaf.Agent;
 import foaf.FoafFactory;
 import rdf.PlainLiteral;
 import rdf.RdfFactory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * On-write enforcement of the model's own constraints: the OCL invariants annotated on
@@ -51,10 +50,10 @@ import rdf.RdfFactory;
  */
 public class ModelConstraintValidationTest {
 
-	private static final String DATASETS = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE
-			+ org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.DATASETS + "/";
-	private static final String SERVICES = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE
-			+ org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.DATA_SERVICES + "/";
+	private static final String DATASETS = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE
+			+ org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.DATASETS + "/";
+	private static final String SERVICES = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE
+			+ org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.DATA_SERVICES + "/";
 
 	/**
 	 * Only for the fail-closed test below, which takes the delegates away and puts them back.

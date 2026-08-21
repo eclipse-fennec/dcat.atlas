@@ -11,7 +11,7 @@
  * Contributors:
  *     Data In Motion - initial API and implementation
  */
-package org.eclipse.fennec.dcat.atlas.impl.helper;
+package org.eclipse.fennec.dcat.atlas.impl.store;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,7 +24,7 @@ import java.util.Map;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.impl.URIHandlerImpl;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
-import org.eclipse.fennec.dcat.atlas.impl.helper.PendingChanges.State;
+import org.eclipse.fennec.dcat.atlas.impl.store.PendingChanges.State;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.eclipse.fennec.jgit.exceptions.GitFileNotFoundException;
 

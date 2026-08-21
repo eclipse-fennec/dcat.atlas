@@ -5,6 +5,8 @@
 Model-Atlas, SensiNact)*.
 **Depended on:** #26 (pagination and caching on the read collections) — **done**, so the
 read contract this is written against is the shipped one. See [§8](#8-the-read-contract-26).
+**Worked example:** [`model-atlas-dcat-mapping.md`](model-atlas-dcat-mapping.md) — what a
+model.atlas EPackage becomes in DCAT, what MDO did instead, and the mapping that follows.
 
 ---
 
@@ -149,14 +151,20 @@ prevents three consumers from each learning that a foreign `about` on a root res
 
 | status | exception | notes |
 |---|---|---|
-| 400 with a report body | `DcatValidationException` | The interesting one — validation is enforced by default, so this is a normal outcome a caller must act on. **Open:** what it carries. The API's own `ShaclViolationException` holds a native Jena `ValidationReport`, and the string-projected `ValidationResult`/`Violation` wrappers that used to offer a Jena-free view were deleted on 2026-08-21. So the client either brings Jena in to parse the report, or carries it raw (bytes plus media type) and leaves parsing to the caller. See §6.9. |
-| 400 without a report body | `BadRequestException` | A malformed request rather than invalid metadata — an unconvertible query parameter, for one, which `QueryParamExceptionMapper` renders as a 400 rather than the 404 JAX-RS prescribes. The two 400s are told apart by whether there is a report. |
+| **422** with an RDF body | `DcatShaclException` | SHACL enforcement refused the write. **Not a 400** — measured: `ShaclViolationExceptionMapper` answers `422 Unprocessable Entity` with `X-SHACL-Conforms: false`, and the body is the native `sh:ValidationReport` in whichever RDF syntax the request's `Accept` allows (`WriteValidation.reportType`, first supported wins, with a default). The header, not body sniffing, is the discriminator. |
+| **422** with `text/plain` | `DcatModelConstraintException` | The model's own OCL constraints refused it. `ModelConstraintExceptionMapper` joins the violation lines as plain text — already strings, so nothing to parse. |
+| 400 | `BadRequestException` | A malformed request rather than invalid metadata: an unconvertible query parameter, which `QueryParamExceptionMapper` renders as 400 rather than the 404 JAX-RS prescribes. |
 | 404 | `NotFoundException` | |
-| 409 | `ConflictException` | Repeat POST, or a dangling reference refused by referential integrity. |
+| 409 | `ConflictException` | Repeat POST of an `about` we already hold, or a dangling reference refused by referential integrity. |
 | 412 | `PreconditionFailedException` | Stale `If-Match`; feeds the retry in §6.4. |
-| 415 | `TransportException` | Almost always the `application/xml` mistake. |
+| 415 | `TransportException` | Almost always `application/xml` where `application/xmi` was meant. |
 | 503 | `RetryableException` | **Easy to miss:** the git remote push failed. The commit *is* durable locally and the portal will push it later, so this is retryable and must not be reported as data loss. |
 | other 5xx / IO | `TransportException` | |
+
+Two of those statuses were wrong in the first draft of this plan, which said 400 for a
+validation failure. They are 422, and the fix matters to a client: 400 and 422 mean
+different things here, and conflating them would have had callers retry-or-report the wrong
+one.
 
 ### 6.4 An optimistic-locking helper
 
@@ -194,20 +202,27 @@ is a separate issue and should be filed as one rather than smuggled in here.
 
 ---
 
-### 6.9 Reuse the API's exception types, or mirror them?
+### 6.9 No Jena in the client, and only some of the API's exceptions reused
 
-The api bundle was split by concern on 2026-08-21, and the split made something visible
-that was not before: every failure this client has to report already exists there as a
-type — `api.validation.ShaclViolationException`, `api.integrity.ResourceInUseException` and
+The api bundle was split by concern on 2026-08-21, and the split made visible that every
+failure this client reports already exists there as a type —
+`api.validation.ShaclViolationException`, `api.integrity.ResourceInUseException` and
 `ReferentialIntegrityException`, `api.identity.ForeignIdentityException`,
-`api.store.StoreUnavailableException`. A client that threw those would give a caller the
-same type whether it went through HTTP or called the OSGi service directly, which is worth
-something to Data-Atlas and Model-Atlas, who could do either.
+`api.store.StoreUnavailableException`. Throwing those would give a caller the same type
+whether it went over HTTP or called the OSGi service directly, which is worth something to
+Data-Atlas and Model-Atlas, either of which could do both.
 
-The cost is what those types carry. `ShaclViolationException` holds a Jena
-`ValidationReport`, so reusing it drags Jena into every consumer of the client. The middle
-option is to reuse the ones that carry only strings and define client-side types for the
-rest; the honest one is to decide this against a real consumer rather than on paper.
+One of them cannot be reused: `ShaclViolationException` carries a Jena `ValidationReport`,
+so throwing it would put Jena in every consumer of the client. It does not need to be,
+because the report's syntax follows the request's `Accept` — the client asks for Turtle (or
+JSON-LD) and **carries the report as it arrived**, bytes plus media type, with no parsing.
+Callers that want structure bring their own parser; callers that want to log or display a
+refusal — which is most of them — need nothing. That also means the API needs no
+machine-readable error body added for the client's sake.
+
+So: reuse the exceptions that carry only strings, and define client-side types for the two
+validation failures. Worth revisiting against a real consumer rather than settling harder
+than that on paper.
 
 ## 7. Testing and the issue's "evidence"
 
@@ -243,7 +258,7 @@ rather than one that is coming. What it has to honour:
 
 | phase | content |
 |---|---|
-| **P1** | The three bundles, `ClientConfiguration`, the XMI round trip, and Catalog register/read/delete end-to-end. Transport and error mapping get settled here; the rest is repetition. |
+| **P1** | The three bundles, `ClientConfiguration`, the XMI round trip, and one end-to-end registration. Transport and error mapping get settled here; the rest is repetition. The target should be the first slice of the [model.atlas mapping](model-atlas-dcat-mapping.md) — a scope as a Catalog, one EPackage-in-a-stage as a Dataset with its formats as Distributions, and the model.atlas API as the DataService — rather than Catalog-because-it-is-first-in-the-list. It exercises membership, `inSeries` and `accessService` in P1 instead of discovering them in P2. |
 | **P2** | The other four entity types and all the membership endpoints. |
 | **P3** | OSGi front-end: ConfigAdmin factory component, Whiteboard `ClientBuilder`, `Promise` facade, readiness gate. |
 | **P4** | The evidence of §7, including the registration from model.atlas. |
@@ -251,20 +266,25 @@ rather than one that is coming. What it has to honour:
 Smaller than the model.atlas client, which additionally carries EPackage resolution, caching
 and drift detection that none of this needs — roughly a third of it.
 
-**P1 is the phase to do before committing to the rest.** It is where the one assumption I
-cannot check from this repository gets tested: that **XMI-only writes are acceptable to
-SensiNact**. If they are not, the answer is a change on the API side (accepting RDF on write)
-rather than anything in the client, and it is much cheaper to learn that at P1 than at P4.
+**P1 is still the phase to do before committing to the rest**, though no longer because of
+the XMI question — that is settled (§10). It is where the transport and the error mapping
+get decided against a running portal, and those two are what the other three phases repeat.
 
 ---
 
 ## 10. Open questions
 
-- Does SensiNact hold EMF DCAT objects, or RDF? (Determines §9's P1 outcome.)
+- ~~Does SensiNact hold EMF DCAT objects, or RDF?~~ **Answered 2026-08-21:** "SensiNact" in
+  the issue means **event.atlas**, the mapping runtime, rather than sensiNact itself — and
+  it is EMF throughout, like the other two consumers. So all three hold EMF objects and
+  XMI-only writes are no obstacle anywhere. *Follow-on, and a better question:* event.atlas
+  maps southbound payloads (MQTT, REST) onto EMF models, so what does it register — a
+  DataService per adapter endpoint, a Dataset per mapped profile, or both? That decides
+  whether it needs the whole surface or mostly DataService and Dataset upserts.
 - Sync-only in `.api`, or `CompletionStage` there as well as `Promise` in `.osgi`?
 - Should the client expose the SPARQL endpoint (`/rest/sparql`) as a query method, or is
   that out of scope for a registration library?
 - One client per portal, or a multi-portal facade? MDO registered against a single Piveau;
   ConfigAdmin factory components give us one-per-instance cheaply either way.
-- Does a validation failure carry a parsed report or a raw one? (§6.9 — the answer decides
-  whether Jena becomes a client dependency.)
+- ~~Does a validation failure carry a parsed report or a raw one?~~ **Answered:** raw, see
+  §6.9. The report's syntax follows the client's `Accept`, so no Jena and no API change.

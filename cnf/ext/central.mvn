@@ -138,14 +138,6 @@ org.eclipse.fennec.m2x:org.eclipse.fennec.m2x.library.workspace:0.1.0-SNAPSHOT
 org.eclipse.fennec.persistence.jpa:org.eclipse.fennec.persistence.jpa.library.workspace:0.1.0-SNAPSHOT
 org.eclipse.fennec.models:org.eclipse.fennec.common.models.library:0.0.1-SNAPSHOT
 
-
-# Swagger OpenAPI
-#io.swagger.core.v3:swagger-annotations:2.2.28
-#io.swagger.core.v3:swagger-jaxrs2-jakarta:2.2.28
-#io.swagger.core.v3:swagger-models-jakarta:2.2.28
-#io.swagger.core.v3:swagger-integration-jakarta:2.2.28
-#io.swagger.core.v3:swagger-core-jakarta:2.2.28
-
 #Swagger with Jackson 3.x
 io.github.vpelikh:swagger-annotations-jakarta:3.0.0
 io.github.vpelikh:swagger-models-jakarta:3.0.0

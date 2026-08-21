@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException;
-import org.eclipse.fennec.dcat.atlas.api.ResourceInUseException;
+import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
-import org.eclipse.fennec.dcat.atlas.api.DanglingReferenceException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.DanglingReferenceException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

@@ -16,8 +16,8 @@ package org.eclipse.fennec.dcat.atlas.impl;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;

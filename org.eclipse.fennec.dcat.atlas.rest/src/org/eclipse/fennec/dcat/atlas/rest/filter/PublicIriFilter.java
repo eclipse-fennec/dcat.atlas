@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.PublicView;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicView;
 import org.eclipse.fennec.model.utilities.UtilitiesFactory;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;

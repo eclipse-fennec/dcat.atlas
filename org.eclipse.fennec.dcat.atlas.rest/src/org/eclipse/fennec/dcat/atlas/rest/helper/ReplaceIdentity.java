@@ -13,7 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.helper;
 
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;

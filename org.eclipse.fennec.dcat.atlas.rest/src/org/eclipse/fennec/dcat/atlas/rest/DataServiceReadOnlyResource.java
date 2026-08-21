@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.Page;
-import org.eclipse.fennec.dcat.atlas.api.PageRequest;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.StoreRevision;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.Pagination;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;

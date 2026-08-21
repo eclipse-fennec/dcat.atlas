@@ -24,8 +24,8 @@ import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.apache.jena.shacl.validation.Severity;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.ShaclViolationException;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.validation.ShaclViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

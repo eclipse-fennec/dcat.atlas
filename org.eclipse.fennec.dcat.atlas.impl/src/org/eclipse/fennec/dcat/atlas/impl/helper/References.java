@@ -24,8 +24,8 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
-import org.eclipse.fennec.dcat.atlas.api.DanglingReferenceException;
-import org.eclipse.fennec.dcat.atlas.api.ResourceInUseException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.DanglingReferenceException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 
 /**

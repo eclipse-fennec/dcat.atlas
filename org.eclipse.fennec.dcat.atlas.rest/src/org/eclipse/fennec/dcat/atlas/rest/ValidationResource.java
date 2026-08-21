@@ -16,7 +16,7 @@ package org.eclipse.fennec.dcat.atlas.rest;
 import org.apache.jena.shacl.ValidationReport;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;

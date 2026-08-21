@@ -17,9 +17,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.felix.hc.api.HealthCheck;
-import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.Page;
-import org.eclipse.fennec.dcat.atlas.api.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;

@@ -15,7 +15,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.StoreRevision;
+import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;

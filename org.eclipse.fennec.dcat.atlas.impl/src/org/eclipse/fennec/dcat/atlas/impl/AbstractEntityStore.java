@@ -23,10 +23,10 @@ import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.Page;
-import org.eclipse.fennec.dcat.atlas.api.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
@@ -151,7 +151,7 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	 * nothing at all (D2/FR-3).
 	 * <p>
 	 * An {@code about} that is not ours is <em>refused</em>
-	 * ({@link org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException}) rather than
+	 * ({@link org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException}) rather than
 	 * quietly replaced by a minted id: filing an entity under a segment carved out of
 	 * somebody else's URL would claim a resource we do not own, and minting instead told
 	 * the caller nothing. The rule is {@link DcatIds#idForWrite}, shared with the REST

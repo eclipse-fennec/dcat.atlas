@@ -24,10 +24,10 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
-import org.eclipse.fennec.dcat.atlas.api.DataServiceAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.DistributionAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

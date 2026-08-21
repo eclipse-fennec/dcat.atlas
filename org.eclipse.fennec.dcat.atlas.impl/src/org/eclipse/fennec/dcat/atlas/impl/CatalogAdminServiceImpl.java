@@ -20,11 +20,11 @@ import java.util.function.Function;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
-import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
+import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
+import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
 import org.eclipse.fennec.dcat.atlas.impl.helper.References;

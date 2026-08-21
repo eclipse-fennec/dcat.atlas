@@ -18,9 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.http.HttpResponse;
 
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.junit.jupiter.api.Test;
 import org.osgi.test.common.annotation.InjectService;
 

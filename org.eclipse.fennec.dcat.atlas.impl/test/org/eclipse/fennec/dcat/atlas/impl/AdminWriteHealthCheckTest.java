@@ -22,7 +22,7 @@ import org.apache.felix.hc.api.Result;
 import org.apache.felix.hc.api.ResultLog;
 import org.apache.felix.hc.api.Result.Status;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

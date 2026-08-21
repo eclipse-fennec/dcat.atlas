@@ -21,7 +21,7 @@ import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.ResourceInUseException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

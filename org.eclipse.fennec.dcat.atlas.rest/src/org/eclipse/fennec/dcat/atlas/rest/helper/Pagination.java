@@ -16,9 +16,9 @@ package org.eclipse.fennec.dcat.atlas.rest.helper;
 import java.net.URI;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.Page;
-import org.eclipse.fennec.dcat.atlas.api.PageRequest;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
 
 import jakarta.ws.rs.container.ContainerRequestContext;

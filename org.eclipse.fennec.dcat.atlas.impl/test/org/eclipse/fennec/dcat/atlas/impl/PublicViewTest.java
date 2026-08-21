@@ -27,7 +27,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
-import org.eclipse.fennec.dcat.atlas.api.PublicView;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicView;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreResourceSets;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class PublicViewTest {
 	private static final String LOGICAL = StoreLayout.LOGICAL_BASE;
 	private static final String PUBLIC = "https://opendata.example.de/dcat/rest/";
 
-	private final org.eclipse.fennec.dcat.atlas.api.PublicIris iris = new PublicIrisImpl(PUBLIC);
+	private final org.eclipse.fennec.dcat.atlas.api.identity.PublicIris iris = new PublicIrisImpl(PUBLIC);
 
 	@TempDir
 	Path storage;

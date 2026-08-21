@@ -13,7 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.sparql;
 
-import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;

@@ -19,13 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.Page;
-import org.eclipse.fennec.dcat.atlas.api.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 
 import dcat.Catalog;
 import dcat.DataService;

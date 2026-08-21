@@ -24,7 +24,7 @@ import org.apache.jena.query.QueryExecution;
  * types stay inside this bundle.
  * <p>
  * Kept separate from
- * {@link org.eclipse.fennec.dcat.atlas.api.DcatGraphService} because the two have
+ * {@link org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService} because the two have
  * different audiences — the persistence boundary maintains the graph, the REST
  * endpoint queries it — and nothing should need both.
  */

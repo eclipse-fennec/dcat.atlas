@@ -25,8 +25,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
-import org.eclipse.fennec.dcat.atlas.api.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

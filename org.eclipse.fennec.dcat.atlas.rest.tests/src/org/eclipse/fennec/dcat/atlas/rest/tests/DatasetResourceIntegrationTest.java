@@ -13,8 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.osgi.test.common.annotation.InjectService;
 
 import dcat.Dataset;

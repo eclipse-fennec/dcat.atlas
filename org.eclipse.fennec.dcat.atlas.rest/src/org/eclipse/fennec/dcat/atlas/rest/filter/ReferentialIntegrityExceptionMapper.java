@@ -13,7 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.filter;
 
-import org.eclipse.fennec.dcat.atlas.api.ReferentialIntegrityException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.ReferentialIntegrityException;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsExtension;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;

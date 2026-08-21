@@ -16,7 +16,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;

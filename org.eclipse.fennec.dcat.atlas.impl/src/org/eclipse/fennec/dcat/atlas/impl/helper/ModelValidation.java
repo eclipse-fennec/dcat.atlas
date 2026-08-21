@@ -27,7 +27,7 @@ import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EObjectValidator;
-import org.eclipse.fennec.dcat.atlas.api.ModelConstraintException;
+import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
 
 import rdf.IdentifiedResource;
 

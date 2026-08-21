@@ -16,10 +16,10 @@ package org.eclipse.fennec.dcat.atlas.impl;
 import java.util.List;
 
 
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
-import org.eclipse.fennec.dcat.atlas.api.DcatGraphService;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
+import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.References;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;

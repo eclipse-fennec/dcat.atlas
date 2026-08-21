@@ -39,7 +39,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;

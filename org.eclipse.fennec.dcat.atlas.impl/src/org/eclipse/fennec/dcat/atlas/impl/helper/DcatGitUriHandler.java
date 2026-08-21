@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.impl.URIHandlerImpl;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.impl.helper.PendingChanges.State;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.eclipse.fennec.jgit.exceptions.GitFileNotFoundException;

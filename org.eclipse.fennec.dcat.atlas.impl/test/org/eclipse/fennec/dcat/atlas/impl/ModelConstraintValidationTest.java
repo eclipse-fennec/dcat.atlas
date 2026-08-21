@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
-import org.eclipse.fennec.dcat.atlas.api.ModelConstraintException;
+import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
 import org.eclipse.fennec.m2x.ocl.engine.OclEngineImpl;
 import org.eclipse.fennec.m2x.ocl.parser.OclParserSupport;
 import org.junit.jupiter.api.Test;

@@ -6,7 +6,6 @@
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.osgi.service.jakartars;version=latest,\
 	jakarta.ws.rs-api;version=latest,\
-	io.swagger.core.v3.swagger-annotations;version=latest,\
 	org.osgi.util.promise;version=latest,\
 	org.osgi.service.servlet;version=latest,\
 	jakarta.persistence-api;version=latest,\
@@ -16,4 +15,10 @@
 	org.apache.jena.shacl;version=latest,\
 	org.apache.jena.core;version=latest,\
 	org.apache.jena.base;version=latest,\
-	org.eclipse.fennec.model;version=latest
+	org.eclipse.fennec.model;version=latest,\
+	io.github.vpelikh.swagger-annotations.jakarta;version=latest,\
+	io.github.vpelikh.swagger-models.jakarta;version=latest,\
+	io.github.vpelikh.swagger-core.jakarta;version=latest,\
+	io.github.vpelikh.swagger-integration.jakarta;version=latest,\
+	io.github.vpelikh.swagger-jaxrs2.jakarta;version=latest,\
+	jakarta.servlet-api;version=latest

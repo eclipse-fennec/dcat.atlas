@@ -57,11 +57,11 @@ class PublicViewTest {
 
 	@Test
 	void theRenderedDocumentIsTheStoredOneWithOnlyTheBaseChanged() throws Exception {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), storage);
+		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
 
-		String stored = Files.readString(StoreLayout.file(storage, StoreLayout.CATALOGS, "gov"));
+		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		String rendered = toXmi(PublicView.render(catalogs.getCatalog("gov").orElseThrow(), iris));
 
 		assertEquals(stored.replace(LOGICAL, PUBLIC), rendered,
@@ -70,11 +70,11 @@ class PublicViewTest {
 
 	@Test
 	void noFileUriAppearsInEitherForm() throws Exception {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), storage);
+		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
 
-		String stored = Files.readString(StoreLayout.file(storage, StoreLayout.CATALOGS, "gov"));
+		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		String rendered = toXmi(PublicView.render(catalogs.getCatalog("gov").orElseThrow(), iris));
 
 		// EMF deresolves hrefs against the saving resource by default, which would turn
@@ -86,7 +86,7 @@ class PublicViewTest {
 
 	@Test
 	void identitiesAndLinksAreBothPublic() {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), storage);
+		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
 
@@ -102,9 +102,8 @@ class PublicViewTest {
 
 	@Test
 	void containedObjectsAreRebasedToo() {
-		DatasetAdminServiceImpl datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
-		DistributionAdminServiceImpl distributions = new DistributionAdminServiceImpl(TestResourceSets.factory(),
-				storage, datasets);
+		DatasetAdminServiceImpl datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		DistributionAdminServiceImpl distributions = new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasets);
 		datasets.upsertDataset(dataset("air", "Air quality"));
 		distributions.upsertDistributionToDataset("air", distribution("csv"));
 
@@ -115,7 +114,7 @@ class PublicViewTest {
 
 	@Test
 	void aForeignIriSurvivesRendering() {
-		DatasetAdminServiceImpl datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
+		DatasetAdminServiceImpl datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		Dataset air = dataset("air", "Air quality");
 		air.getTheme().add("http://publications.europa.eu/resource/authority/data-theme/ENVI");
 		datasets.upsertDataset(air);
@@ -128,7 +127,7 @@ class PublicViewTest {
 
 	@Test
 	void renderingDoesNotDisturbTheStoredEntity() {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), storage);
+		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 
 		Catalog stored = catalogs.getCatalog("gov").orElseThrow();

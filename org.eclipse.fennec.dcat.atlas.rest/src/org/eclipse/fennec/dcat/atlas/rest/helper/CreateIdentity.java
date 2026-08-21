@@ -20,12 +20,12 @@ import java.util.function.UnaryOperator;
 
 import org.eclipse.fennec.dcat.atlas.api.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException;
+import org.eclipse.fennec.dcat.atlas.api.PublicIris;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriInfo;
 import rdf.IdentifiedResource;
 
 /**
@@ -104,11 +104,11 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 	 * that will be stored.
 	 *
 	 * @param exists  whether an entity is already stored under a given id in this collection
-	 * @param uriInfo the request, for the {@code Location} a conflict points at
+	 * @param publicIris the configured public base, for the {@code Location} a conflict points at
 	 */
 	public static CreateIdentity resolve(String collection, IdentifiedResource entity, Predicate<String> exists,
-			UriInfo uriInfo) {
-		return resolve(collection, entity, exists, uriInfo, () -> DcatIds.idForWrite(collection, aboutOf(entity)),
+			PublicIris publicIris) {
+		return resolve(collection, entity, exists, publicIris, () -> DcatIds.idForWrite(collection, aboutOf(entity)),
 				id -> DcatIds.logicalIri(collection, id), id -> replaceAdvice(collection, id));
 	}
 
@@ -128,11 +128,11 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 	 *                       {@code catalogs/gov/datasets}, used to name the link request
 	 */
 	public static CreateIdentity resolveMember(String collection, IdentifiedResource member, Predicate<String> exists,
-			String membershipPath, UriInfo uriInfo) {
+			String membershipPath, PublicIris publicIris) {
 		// The Location is the member's own read URL, not one under the membership path: the
 		// member it collided with is a resource of that collection, and the link request the
 		// message points at is spelled out there in full.
-		return resolve(collection, member, exists, uriInfo, () -> DcatIds.idForWrite(collection, aboutOf(member)),
+		return resolve(collection, member, exists, publicIris, () -> DcatIds.idForWrite(collection, aboutOf(member)),
 				id -> DcatIds.logicalIri(collection, id), id -> memberAdvice(collection, membershipPath, id));
 	}
 
@@ -141,9 +141,9 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 	 * than sitting in a collection of its own.
 	 */
 	public static CreateIdentity resolveDistribution(String datasetId, IdentifiedResource distribution,
-			Predicate<String> exists, UriInfo uriInfo) {
+			Predicate<String> exists, PublicIris publicIris) {
 		String path = DcatIds.DATASETS + "/" + datasetId + "/" + DcatIds.DISTRIBUTIONS;
-		return resolve(path, distribution, exists, uriInfo,
+		return resolve(path, distribution, exists, publicIris,
 				() -> DcatIds.distributionIdForWrite(datasetId, aboutOf(distribution)),
 				id -> DcatIds.distributionIri(datasetId, id), id -> replaceAdvice(path, id));
 	}
@@ -153,13 +153,14 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 	 * taken or that we could not file, mint only when none was sent.
 	 *
 	 * @param path        how this collection is named in a message and a URL
-	 * @param uriInfo     the request, whose base URI a conflict's {@code Location} is built on
+	 * @param publicIris  the configured public base a conflict's {@code Location} is built on,
+	 *                    so it matches the {@code about} the same resource is served with
 	 * @param idForWrite  the shared identity rule for this collection; throws when refused
 	 * @param logicalIri  the identity to stamp for an id, which differs for a Distribution
 	 * @param takenAdvice what to tell a client whose id is already taken
 	 */
 	private static CreateIdentity resolve(String path, IdentifiedResource entity, Predicate<String> exists,
-			UriInfo uriInfo, Supplier<String> idForWrite, UnaryOperator<String> logicalIri,
+			PublicIris publicIris, Supplier<String> idForWrite, UnaryOperator<String> logicalIri,
 			UnaryOperator<String> takenAdvice) {
 		String id;
 		try {
@@ -172,7 +173,7 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 		}
 		if (exists.test(id)) {
 			return refuse(Status.CONFLICT, path + "/" + id + " already exists. " + takenAdvice.apply(id),
-					readUri(uriInfo, path, id));
+					PublicUri.of(publicIris, path, id));
 		}
 		stamp(entity, logicalIri.apply(id));
 		return new CreateIdentity(id, null);
@@ -190,8 +191,9 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 
 	/**
 	 * The same, pointing at the resource the write collided with. {@code location} is the
-	 * public read URL, which is the request's own base plus the collection path — the header
-	 * the {@code 201} would have carried had the identity been free.
+	 * public read URL, built from the configured public base — the header the {@code 201}
+	 * would have carried had the identity been free, and the same URL the resource's
+	 * {@code about} is served with.
 	 */
 	private static CreateIdentity refuse(Status status, String message, URI location) {
 		ResponseBuilder refusal = Response.status(status).entity(message).type(MediaType.TEXT_PLAIN);
@@ -199,15 +201,6 @@ public record CreateIdentity(String id, ResponseBuilder refusal) {
 			refusal.location(location);
 		}
 		return new CreateIdentity(null, refusal);
-	}
-
-	/**
-	 * The read URL of {@code path/id} on the host this request came in on. {@code path} may
-	 * carry several segments (a Distribution's does); {@link jakarta.ws.rs.core.UriBuilder}
-	 * keeps its slashes as delimiters and encodes the rest.
-	 */
-	private static URI readUri(UriInfo uriInfo, String path, String id) {
-		return uriInfo == null ? null : uriInfo.getBaseUriBuilder().path(path).path(id).build();
 	}
 
 	private static String replaceAdvice(String path, String id) {

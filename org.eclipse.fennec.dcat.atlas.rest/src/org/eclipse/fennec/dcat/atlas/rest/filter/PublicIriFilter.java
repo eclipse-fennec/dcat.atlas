@@ -50,6 +50,24 @@ import jakarta.ws.rs.ext.ReaderInterceptorContext;
  * publish an internal identity that a harvester might then treat as canonical.
  * Here it cannot be forgotten, including by endpoints added later.
  *
+ * <h2>Why the resources require {@link PublicIris} too</h2>
+ *
+ * Each of the ten collection resources holds a mandatory {@code @Reference PublicIris}.
+ * The five admin ones call it, to build the {@code Location} of a create; the five
+ * read-only ones hold it purely to gate registration. That gate is not redundant with
+ * this class: a filter is a JAX-RS <em>extension</em>, so when {@code PublicIris} is
+ * absent the whiteboard simply unregisters the filter and leaves every resource
+ * serving. Measured in a container started without {@code PUBLIC_BASE_URL}:
+ * {@code POST /admin/catalogs} answered <b>201</b>, with no logical-to-public mapping
+ * applied in either direction — responses would carry raw {@code http://dcat.atlas/…}
+ * identities, and an inbound {@code about} under the public base would no longer fold
+ * back and so read as foreign.
+ * <p>
+ * Requiring the service in the resources turns that into an unregistered endpoint: a
+ * misconfigured portal answers 404 and publishes nothing, instead of quietly
+ * publishing identities nobody can dereference. The 404 is explained by the
+ * {@code public-iris} readiness check rather than left to be guessed at.
+ *
  * @see PublicView
  */
 @Component

@@ -67,11 +67,11 @@ public class ModelConstraintValidationTest {
 	Path storage;
 
 	private DatasetAdminServiceImpl datasets(boolean validateOnWrite) {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), storage, validateOnWrite);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, validateOnWrite);
 	}
 
 	private DataServiceAdminServiceImpl dataServices(boolean validateOnWrite) {
-		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage, validateOnWrite);
+		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, validateOnWrite);
 	}
 
 	// --- what a conformant entity looks like --------------------------------

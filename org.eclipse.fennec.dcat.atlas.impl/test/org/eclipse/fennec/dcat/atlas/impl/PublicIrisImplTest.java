@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -111,5 +112,38 @@ class PublicIrisImplTest {
 		assertEquals(null, iris.toPublic(null));
 		assertEquals(null, iris.toLogical(null));
 		assertFalse(iris.isOwned(null));
+	}
+
+	/**
+	 * There is no default public base, so these are the three shapes an
+	 * unconfigured deployment actually arrives in. Each has to fail activation:
+	 * accepted, any of them renders a well-formed {@code about} pointing nowhere
+	 * useful, on every single response, with nothing downstream able to notice.
+	 */
+	@Test
+	void anUnconfiguredPublicBaseIsRefused() {
+		// Cast needed: an uncast null would bind to the PublicIrisConfig constructor.
+		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl((String) null));
+		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl(""));
+		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl("   "));
+	}
+
+	@Test
+	void anUninterpolatedPlaceholderIsRefusedByName() {
+		// The shipped container configuration reads the value from PUBLIC_BASE_URL. When
+		// that variable is unset the placeholder can reach the component verbatim, which
+		// would otherwise become the literal base of every rendered IRI.
+		IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+				() -> new PublicIrisImpl("$[env:PUBLIC_BASE_URL]"));
+
+		assertTrue(e.getMessage().contains("PUBLIC_BASE_URL"), e.getMessage());
+	}
+
+	@Test
+	void aBaseWithoutASchemeIsRefused() {
+		// Relative or scheme-less values yield IRIs that cannot be dereferenced, which is
+		// the one thing the public base exists to guarantee.
+		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl("opendata.example.de/dcat/rest/"));
+		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl("/dcat/rest/"));
 	}
 }

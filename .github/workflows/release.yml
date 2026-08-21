@@ -1,0 +1,33 @@
+name: Release Build
+
+# Verified push to `main` publishes the container image under the moving `latest`
+# tag (plus the immutable bundle version). Nothing is published to Maven from this
+# workspace, so unlike the other Fennec repos there is no release job between
+# verify and container. `main` currently trails `snapshot`, so this workflow stays
+# dormant until the first release lands there.
+on:
+  push:
+    branches:
+      - main
+
+# Workflow-level ceiling for the called reusables. The container job gets the
+# Docker Hub credentials via `secrets: inherit` below (verify never sees them);
+# packages: write is needed for the GHCR image push.
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-publish
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: eclipse-fennec/.github/.github/workflows/reusable-verify.yml@227b1dfa5f323fdd6d857d0a61fbaaf6e7288716 # v1.0.0
+
+  container:
+    needs: verify
+    uses: ./.github/workflows/reusable-container.yml
+    with:
+      docker-label: latest
+    secrets: inherit

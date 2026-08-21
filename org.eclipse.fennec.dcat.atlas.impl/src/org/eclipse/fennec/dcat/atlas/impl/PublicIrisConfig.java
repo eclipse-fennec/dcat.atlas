@@ -25,9 +25,16 @@ public @interface PublicIrisConfig {
 	 * {@code https://opendata.example.de/dcat/rest/}. Stored identities are rendered
 	 * under this at read time and folded back to the logical base on write, so the
 	 * same data serves correctly from any host.
+	 * <p>
+	 * Deliberately <em>without</em> a default. There is no value that is right for
+	 * more than one deployment: whatever is chosen becomes the host that every
+	 * rendered {@code about} points at, so a wrong one is not a degraded mode but a
+	 * portal advertising IRIs that resolve to somebody else — silently, since every
+	 * response still looks well-formed. A missing configuration has to stop the
+	 * component instead, which {@code PublicIrisImpl} enforces.
 	 */
-	@AttributeDefinition(name = "Public base URL", description = "Base URL resources are served under")
-	String publicBaseUrl() default "http://localhost:8085/dcat/rest/";
+	@AttributeDefinition(name = "Public base URL", description = "Base URL resources are served under. Required: an absolute http(s) URL clients can actually reach")
+	String publicBaseUrl();
 
 	/**
 	 * Extra bases to treat as ours when folding inbound IRIs back to logical ones.

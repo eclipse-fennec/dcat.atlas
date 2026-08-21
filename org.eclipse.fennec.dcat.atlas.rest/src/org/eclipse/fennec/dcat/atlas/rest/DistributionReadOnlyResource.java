@@ -18,6 +18,8 @@ import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -61,6 +63,13 @@ public class DistributionReadOnlyResource {
 	static final String N_TRIPLES = "application/n-triples";
 	static final String JSON_LD = "application/ld+json";
 	static final String N3 = "text/n3";
+
+	/**
+	 * Held only to gate registration — see {@link PublicIriFilter} for why every
+	 * collection resource has to require it.
+	 */
+	@Reference
+	PublicIris identityRendering;
 
 	@Reference
 	DistributionReadOnlyService distributionReadOnlyService;

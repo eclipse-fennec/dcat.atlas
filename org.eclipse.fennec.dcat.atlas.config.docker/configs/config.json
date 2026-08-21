@@ -42,29 +42,74 @@
 		"statusForMissing": "CRITICAL"
 	},
 
-	// One store root under the mounted volume (F-23); the per-collection subdirectories
-	// are fixed, because a Catalog's dcat:dataset link is an EMF cross-resource reference
-	// that has to resolve into the dataset store through one shared URI map. Distributions
-	// have no directory: dcat:distribution is containment, so they live in their Dataset's
-	// file (FR-10).
-	"CatalogReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"CatalogAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
-	"DatasetReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DatasetAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
-	"DataServiceReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DataServiceAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
-	"DatasetSeriesReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DatasetSeriesAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
-	"DistributionReadOnlyService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]" },
-	"DistributionAdminService": { "root": "$[env:STORE_FOLDER;default=/opt/dcat/data]", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
+	// The one repository every store reads and writes (persistence plan Phase 2). The
+	// mounted volume (F-23) is now a *bare* git repository rather than a directory of files:
+	// commits go straight into the object database and leave a working tree untouched, so a
+	// non-bare repo would show its whole tree as deleted. The image ships an initialised one
+	// at /opt/dcat/store.git, which a fresh named volume is seeded from.
+	//
+	// Three modes, and GIT_REMOTE is what picks between the last two:
+	//
+	//   GIT_REPO=path                    the volume stands alone. No remote.
+	//   GIT_REPO=path  GIT_REMOTE=url    durable on the volume AND mirrored upstream. This
+	//                                    is the deployment shape to prefer: a commit is
+	//                                    durable the moment it is written, and it also goes
+	//                                    to the remote.
+	//   GIT_REPO=url                     no volume; an in-memory mirror of that remote.
+	//                                    The whole store is in the heap and grows (EU-7),
+	//                                    and an unpushed commit dies with the process.
+	//
+	// Setting both GIT_REPO to a URL and GIT_REMOTE is refused rather than guessed at.
+	//
+	// basePath is the folder inside the repository; the four collection folders below it are
+	// fixed, because they are the collection segment of every stored identity rather than a
+	// storage detail. Distributions have no folder: dcat:distribution is containment, so
+	// they live in their Dataset's blob (FR-10).
+	"GitConfig~dcatStore": {
+		"id": "dcatStore",
+		"repo": "$[env:GIT_REPO;default=/opt/dcat/store.git]",
+		"remote": "$[env:GIT_REMOTE;default=]",
+		"branch": "$[env:GIT_BRANCH;default=main]",
+		"authorName": "$[env:GIT_AUTHOR_NAME;default=DCAT.Atlas]",
+		"authorEmail": "$[env:GIT_AUTHOR_EMAIL;default=dcat-atlas@example.org]",
+		// Defaults to true, unlike the component's own default. For a local repository a push
+		// is a no-op (GitServiceImpl skips it and says so), so the only thing this default
+		// changes is the remote case - where leaving it off means every commit lives in the
+		// heap-held repository and is gone at the next restart. An operator who wants to
+		// batch pushes has to say so explicitly, which is the right way round.
+		"pushOnCommit": "$[env:GIT_PUSH_ON_COMMIT;default=true]",
+		"privateKey": "$[env:GIT_SSH_PRIVATE_KEY;default=]",
+		"privateKeyPassphrase": "$[env:GIT_SSH_PRIVATE_KEY_PWD;default=]",
+		"knownHosts": "$[env:GIT_SSH_KNOWN_HOSTS;default=]",
+		"username": "$[env:GIT_USERNAME;default=]",
+		"password": "$[env:GIT_PASSWORD;default=]"
+	},
+
+	"CatalogReadOnlyService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)" },
+	"CatalogAdminService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
+	"DatasetReadOnlyService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)" },
+	"DatasetAdminService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
+	"DataServiceReadOnlyService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)" },
+	"DataServiceAdminService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
+	"DatasetSeriesReadOnlyService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)" },
+	"DatasetSeriesAdminService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
+	"DistributionReadOnlyService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)" },
+	"DistributionAdminService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 
 	// Stored identities are host-free (http://dcat.atlas/...) so data is portable between
 	// environments; this is the base they are rendered under at read time. It must be the
 	// URL clients actually reach the portal on - behind a reverse proxy that is NOT the
 	// address the container sees. ADDITIONAL_OWNED_BASES is a migration aid for absorbing
 	// data written under an old hostname, and is normally empty.
+	//
+	// PUBLIC_BASE_URL has NO default, here or on the component, and the container will not
+	// start without it. There is no value that is right for more than one deployment: it
+	// becomes the host in every rendered 'about', so a default would have this container
+	// advertising IRIs belonging to whatever host the default names - on every response,
+	// each of which still looks perfectly well-formed. Refusing to start is the only
+	// failure mode an operator can see.
 	"PublicIris": {
-		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]",
+		"publicBaseUrl": "$[env:PUBLIC_BASE_URL]",
 		"additionalOwnedBases": "$[env:ADDITIONAL_OWNED_BASES;default=]"
 	},
 

@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +28,7 @@ import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 
 import rdf.IdentifiedResource;
 
@@ -47,7 +47,9 @@ import rdf.IdentifiedResource;
 abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 
 	protected final ResourceSetFactory resourceSetFactory;
-	protected final Path root;
+	protected final GitService gitService;
+	/** The folder inside the repository the collection folders sit under; see {@link StoreConfig}. */
+	protected final String basePath;
 	/** Which collection this store holds; see {@link StoreLayout}. */
 	protected final String collection;
 	/**
@@ -58,18 +60,20 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	 */
 	protected final boolean validateOnWrite;
 
-	protected AbstractEntityStore(ResourceSetFactory resourceSetFactory, Path root, String collection,
-			boolean validateOnWrite) {
+	protected AbstractEntityStore(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			String collection, boolean validateOnWrite) {
 		this.resourceSetFactory = resourceSetFactory;
-		this.root = root;
+		this.gitService = gitService;
+		this.basePath = StoreLayout.requireSafeBasePath(basePath);
 		this.collection = collection;
 		this.validateOnWrite = validateOnWrite;
-		DcatHelper.prepare(root);
+		// Nothing to prepare: git has no empty directories, so a collection folder starts
+		// existing when its first blob is committed and needs no creating before that.
 	}
 
 	/** A store session; everything read through one resolves against everything else. */
 	protected Store store() {
-		return DcatHelper.open(resourceSetFactory, root, validateOnWrite, writeValidation());
+		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation());
 	}
 
 	/**
@@ -93,7 +97,7 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	}
 
 	public Optional<String> etag(String id) {
-		return DcatHelper.etag(root, collection, id);
+		return DcatHelper.etag(gitService, basePath, collection, id);
 	}
 
 	/**
@@ -116,17 +120,16 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 
 	/**
 	 * Reports whether this store can serve (F-25). CRITICAL rather than WARN: an
-	 * unusable store directory is a misconfiguration that no retry fixes, and the
+	 * unreachable repository is a misconfiguration that no retry fixes, and the
 	 * portal should be taken out of rotation.
 	 */
 	@Override
 	public Result execute() {
-		Path directory = StoreLayout.directory(root, collection);
 		FormattingResultLog log = new FormattingResultLog();
-		if (StoreHealth.ready(directory)) {
-			log.info("{}", StoreHealth.detail(directory));
+		if (StoreHealth.ready(gitService)) {
+			log.info("{}", StoreHealth.detail(gitService, basePath, collection));
 		} else {
-			log.critical("{}", StoreHealth.detail(directory));
+			log.critical("{}", StoreHealth.detail(gitService, basePath, collection));
 		}
 		return new Result(log);
 	}

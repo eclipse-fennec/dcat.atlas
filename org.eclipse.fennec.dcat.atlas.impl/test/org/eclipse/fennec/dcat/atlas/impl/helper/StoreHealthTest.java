@@ -16,17 +16,27 @@ package org.eclipse.fennec.dcat.atlas.impl.helper;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
+import org.eclipse.fennec.dcat.atlas.impl.TestGitStore;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * F-25 store readiness. The cases that matter operationally are the two that are
- * deliberately <em>not</em> failures — a store that does not exist yet, and one that is
- * mounted read-only — because failing either would take a working portal out of service.
+ * F-25 store readiness, over a git-backed store.
+ * <p>
+ * The case that matters operationally is the one that is deliberately <em>not</em> a
+ * failure: a repository with no commits in it at all. That is what a brand-new deployment
+ * looks like — git has no empty directories, so the collection folders do not exist until
+ * the first write — and reporting it CRITICAL would mean the portal never started serving.
+ * It is the direct successor of the old "store directory does not exist yet" case.
+ * <p>
+ * The unreadable-repository branch is not covered here. Producing one means either a stub
+ * {@code GitService} — implementing an eighteen-method {@code @ProviderType} to throw from
+ * one of them — or corrupting a repository on disk and hoping JGit fails the way the test
+ * assumed. Neither would be testing this class; both would be testing JGit.
  */
 public class StoreHealthTest {
 
@@ -34,45 +44,47 @@ public class StoreHealthTest {
 	Path root;
 
 	@Test
-	void existingReadableDirectoryIsReady() {
-		assertTrue(StoreHealth.ready(root));
-		assertTrue(StoreHealth.detail(root).contains("readable and writable"), StoreHealth.detail(root));
-	}
-
-	@Test
-	void missingDirectoryUnderAWritableParentIsReady() {
-		// Stores are created lazily on first write, so a fresh install has no store
-		// directories at all and must still become ready.
-		Path store = root.resolve("catalogs");
-		assertTrue(StoreHealth.ready(store));
-		assertTrue(StoreHealth.detail(store).contains("will be created on first write"), StoreHealth.detail(store));
-	}
-
-	@Test
-	void missingDirectorySeveralLevelsDownIsReady() {
-		// e.g. /data/dcat/catalogs where only /data exists.
-		Path store = root.resolve("dcat").resolve("nested").resolve("catalogs");
-		assertTrue(StoreHealth.ready(store));
-	}
-
-	@Test
-	void missingDirectoryWithNoWritableParentIsNotReady() {
-		Path store = Path.of("/proc/definitely-not-writable/catalogs");
-		assertFalse(StoreHealth.ready(store));
-		assertTrue(StoreHealth.detail(store).contains("cannot be created"), StoreHealth.detail(store));
-	}
-
-	@Test
-	void pathThatIsAFileIsNotReady() throws IOException {
-		Path file = Files.createFile(root.resolve("not-a-dir"));
-		assertFalse(StoreHealth.ready(file));
-		assertTrue(StoreHealth.detail(file).contains("not a directory"), StoreHealth.detail(file));
-	}
-
-	@Test
-	void nullDirectoryIsNotReady() {
+	void noGitServiceIsNotReady() {
 		assertFalse(StoreHealth.ready(null));
-		assertTrue(StoreHealth.detail(null).contains("no store directory configured"));
+		assertTrue(StoreHealth.detail(null, TestGitStore.BASE_PATH, StoreLayout.CATALOGS).contains("no git service"),
+				StoreHealth.detail(null, TestGitStore.BASE_PATH, StoreLayout.CATALOGS));
 	}
 
+	@Test
+	void aRepositoryWithNoCommitsIsReady() {
+		GitService git = TestGitStore.at(root);
+
+		assertTrue(StoreHealth.ready(git));
+		String detail = StoreHealth.detail(git, TestGitStore.BASE_PATH, StoreLayout.CATALOGS);
+		assertTrue(detail.contains("no commits yet"), detail);
+		// Names where the first write will put things, so an operator can see the layout
+		// before anything exists.
+		assertTrue(detail.contains(StoreLayout.collectionPrefix(TestGitStore.BASE_PATH, StoreLayout.CATALOGS)),
+				detail);
+	}
+
+	@Test
+	void aRepositoryWithAStoredResourceIsReadyAndCountsIt() {
+		GitService git = TestGitStore.at(root);
+		git.writeFile(StoreLayout.repoPath(TestGitStore.BASE_PATH, StoreLayout.CATALOGS, "gov"),
+				"<catalog/>".getBytes(StandardCharsets.UTF_8), "Store catalog gov");
+
+		assertTrue(StoreHealth.ready(git));
+		String detail = StoreHealth.detail(git, TestGitStore.BASE_PATH, StoreLayout.CATALOGS);
+		assertTrue(detail.contains("store readable"), detail);
+		assertTrue(detail.contains("1 resource(s)"), detail);
+	}
+
+	@Test
+	void aCollectionWithNothingInItIsStillReady() {
+		GitService git = TestGitStore.at(root);
+		git.writeFile(StoreLayout.repoPath(TestGitStore.BASE_PATH, StoreLayout.CATALOGS, "gov"),
+				"<catalog/>".getBytes(StandardCharsets.UTF_8), "Store catalog gov");
+
+		// Nothing has ever been written to the datasets collection, so its folder does not
+		// exist. That is not a fault - there is nothing to create ahead of time.
+		assertTrue(StoreHealth.ready(git));
+		String detail = StoreHealth.detail(git, TestGitStore.BASE_PATH, StoreLayout.DATASETS);
+		assertTrue(detail.contains("0 resource(s)"), detail);
+	}
 }

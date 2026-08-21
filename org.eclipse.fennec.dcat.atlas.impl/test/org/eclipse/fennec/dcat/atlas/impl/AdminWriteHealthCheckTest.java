@@ -104,12 +104,12 @@ public class AdminWriteHealthCheckTest {
 
 	private AdminWriteHealthCheck check(boolean withValidation) {
 		AdminWriteHealthCheck check = new AdminWriteHealthCheck();
-		check.catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), storage);
-		check.datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
-		check.datasetSeries = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), storage);
-		check.dataServices = new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage);
-		check.distributions = new DistributionAdminServiceImpl(TestResourceSets.factory(), storage,
-				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), storage));
+		check.catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		check.datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		check.datasetSeries = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		check.dataServices = new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		check.distributions = new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
+				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		check.validation = withValidation ? new AlwaysEnforcing() : null;
 		return check;
 	}

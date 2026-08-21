@@ -117,7 +117,7 @@ public class ShaclWriteEnforcementTest {
 	// --- fixtures -----------------------------------------------------------
 
 	private DatasetAdminServiceImpl service(DcatValidationService validation) {
-		DatasetAdminServiceImpl service = new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
+		DatasetAdminServiceImpl service = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		service.validationService = validation;
 		return service;
 	}

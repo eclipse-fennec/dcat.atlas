@@ -53,8 +53,8 @@ public class DistributionAdminServiceImplTest {
 	private DatasetAdminServiceImpl datasetService;
 
 	private DistributionAdminServiceImpl service() {
-		datasetService = new DatasetAdminServiceImpl(TestResourceSets.factory(), storage);
-		return new DistributionAdminServiceImpl(TestResourceSets.factory(), storage, datasetService);
+		datasetService = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		return new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasetService);
 	}
 
 	/** Seeds an (empty) owning dataset "air" and returns the ready distribution service. */
@@ -85,9 +85,10 @@ public class DistributionAdminServiceImplTest {
 		DistributionAdminServiceImpl service = serviceWithDataset();
 		service.upsertDistributionToDataset("air", distribution(DIST_BASE + "csv", "CSV download"));
 
-		String stored = Files.readString(StoreLayout.file(storage, StoreLayout.DATASETS, "air"));
+		String stored = TestGitStore.stored(storage, StoreLayout.DATASETS, "air");
 		assertTrue(stored.contains("CSV download"), stored);
-		assertFalse(Files.exists(storage.resolve("distributions")), "there is no distribution store any more");
+		assertFalse(TestGitStore.paths(storage).stream().anyMatch(path -> path.contains("/distributions/")),
+				"there is no distribution store any more: " + TestGitStore.paths(storage));
 	}
 
 	@Test
@@ -236,7 +237,7 @@ public class DistributionAdminServiceImplTest {
 		assertThrows(NoSuchElementException.class,
 				() -> service.linkAccessServiceToDistribution("air", "csv", "wfs"));
 
-		new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage)
+		new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)
 				.upsertDataService(dataService(SERVICES + "wfs", "Air WFS"));
 		Distribution linked = service.linkAccessServiceToDistribution("air", "csv", "wfs");
 		assertEquals(1, linked.getAccessService().size());
@@ -275,7 +276,7 @@ public class DistributionAdminServiceImplTest {
 		assertEquals(1, loaded.getAccessService().size());
 		assertEquals(SERVICES + "ogcapi", loaded.getAccessService().get(0).getAbout());
 		// The DataService itself survives — only the link went.
-		assertTrue(new DataServiceAdminServiceImpl(TestResourceSets.factory(), storage).getDataService("wfs")
+		assertTrue(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH).getDataService("wfs")
 				.isPresent());
 	}
 

@@ -13,8 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl.helper;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -65,27 +63,37 @@ public final class References {
 
 	/**
 	 * Clears the way to delete {@code collection}/{@code id}.
+	 * <p>
+	 * The returned identities are the referrers this call rewrote, and they are the same
+	 * list the refusal carries on the other branch — the scan happens once and serves both
+	 * outcomes. A caller reports them so that whoever asked for the cascade can invalidate
+	 * the ETags it just invalidated on their behalf; every one of those resources moved.
 	 *
 	 * @param cascade when {@code true}, unlink from every referrer; when
 	 *                {@code false}, refuse the delete if there is one
+	 * @return the logical IRIs of the resources that were unlinked, in the order found;
+	 *         empty when nothing referenced the target, which is also the only case where
+	 *         {@code cascade} makes no difference
 	 * @throws ResourceInUseException if something still references the target and
 	 *                                {@code cascade} is {@code false}
 	 */
-	public static void detach(Store store, Path root, String collection, String id, boolean cascade) {
+	public static List<String> detach(Store store, String collection, String id, boolean cascade) {
 		String targetIri = StoreLayout.logicalIri(collection, id);
-		List<Referrer> referrers = referrersTo(store, root, targetIri);
+		List<Referrer> referrers = referrersTo(store, targetIri);
 		if (referrers.isEmpty()) {
-			return;
+			return List.of();
 		}
+		List<String> iris = referrers.stream().map(Referrer::iri).toList();
 		if (!cascade) {
 			throw new ResourceInUseException(
 					"Cannot delete %s: still referenced by %d resource(s)".formatted(targetIri, referrers.size()),
-					referrers.stream().map(Referrer::iri).toList());
+					iris);
 		}
 		for (Referrer referrer : referrers) {
 			store.<EObject>get(referrer.collection(), referrer.id())
 					.ifPresent(owner -> unlinkAll(owner, targetIri, store));
 		}
+		return iris;
 	}
 
 	/**
@@ -131,10 +139,12 @@ public final class References {
 	}
 
 	/** The stored roots that link to {@code targetIri}, each reported once. */
-	private static List<Referrer> referrersTo(Store store, Path root, String targetIri) {
+	private static List<Referrer> referrersTo(Store store, String targetIri) {
 		List<Referrer> referrers = new ArrayList<>();
 		for (String collection : StoreLayout.COLLECTIONS) {
-			for (String id : idsIn(root, collection)) {
+			// Through the session, so a scan sees what the operation running it has already
+			// staged - a cascade unlinks referrers one at a time and must not re-find them.
+			for (String id : store.ids(collection)) {
 				if (targetIri.equals(StoreLayout.logicalIri(collection, id))) {
 					// A resource does not hold itself up.
 					continue;
@@ -145,18 +155,6 @@ public final class References {
 			}
 		}
 		return referrers;
-	}
-
-	private static List<String> idsIn(Path root, String collection) {
-		Path directory = StoreLayout.directory(root, collection);
-		if (!Files.isDirectory(directory)) {
-			return List.of();
-		}
-		try (var files = Files.list(directory)) {
-			return files.filter(Files::isRegularFile).map(p -> p.getFileName().toString()).sorted().toList();
-		} catch (java.io.IOException e) {
-			throw new java.io.UncheckedIOException("Could not scan " + directory, e);
-		}
 	}
 
 	private static boolean linksTo(EObject owner, String targetIri) {

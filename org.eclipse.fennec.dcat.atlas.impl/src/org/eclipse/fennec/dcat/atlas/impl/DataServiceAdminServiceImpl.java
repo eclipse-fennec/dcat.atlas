@@ -13,7 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
+import java.util.List;
+
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -27,6 +28,7 @@ import org.eclipse.fennec.dcat.atlas.impl.helper.Members;
 import org.eclipse.fennec.dcat.atlas.impl.helper.References;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -44,18 +46,20 @@ import dcat.Dataset;
 public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl implements DataServiceAdminService {
 
 	@Activate
-	public DataServiceAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		super(resourceSetFactory, config);
+	public DataServiceAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference(name = "gitService") GitService gitService, StoreConfig config) {
+		super(resourceSetFactory, gitService, config);
 	}
 
 	/** Package-visible for tests. */
-	DataServiceAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		super(resourceSetFactory, root);
+	DataServiceAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		super(resourceSetFactory, gitService, basePath);
 	}
 
 	/** Package-visible for tests that need the model constraints enforced. */
-	DataServiceAdminServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		super(resourceSetFactory, root, validateOnWrite);
+	DataServiceAdminServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		super(resourceSetFactory, gitService, basePath, validateOnWrite);
 	}
 
 	/**
@@ -89,17 +93,23 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	@Override
 	public DataService upsertDataService(DataService service) {
 		String id = idOrMint(service);
-		store().put(collection, id, service);
+		Store store = store();
+		store.put(collection, id, service);
+		store.commit("Store data service " + id);
 		reproject(id);
 		return service;
 	}
 
 	@Override
-	public void deleteDataService(String id, boolean cascade) {
+	public List<String> deleteDataService(String id, boolean cascade) {
 		Store store = store();
-		References.detach(store, root, collection, id, cascade);
+		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
+		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.
+		store.commit(cascade ? "Delete data service " + id + " and unlink its referrers"
+				: "Delete data service " + id);
 		reproject(id);
+		return unlinked;
 	}
 
 	// --- dcat:servesDataset membership -------------------------------------
@@ -119,7 +129,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		// reference this design refuses to create.
 		String datasetId = datasetIdOrMint(dataset);
 		store.put(StoreLayout.DATASETS, datasetId, dataset);
-		return connect(store, dataServiceId, datasetId);
+		return connect(store, dataServiceId, datasetId,
+				"Add dataset %s to data service %s".formatted(datasetId, dataServiceId));
 	}
 
 	@Override
@@ -129,7 +140,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		if (store.get(StoreLayout.DATASETS, datasetId).isEmpty()) {
 			throw new NoSuchElementException("Unknown dataset: " + datasetId);
 		}
-		return connect(store, dataServiceId, datasetId);
+		return connect(store, dataServiceId, datasetId,
+				"Link dataset %s to data service %s".formatted(datasetId, dataServiceId));
 	}
 
 	@Override
@@ -138,18 +150,20 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		DataService dataService = requireDataService(store, dataServiceId);
 		if (Members.remove(dataService.getServesDataset(), StoreLayout.DATASETS, datasetId)) {
 			store.save(dataService);
+			store.commit("Unlink dataset %s from data service %s".formatted(datasetId, dataServiceId));
 			reproject(dataServiceId);
 		}
 	}
 
-	private DataService connect(Store store, String dataServiceId, String datasetId) {
+	private DataService connect(Store store, String dataServiceId, String datasetId, String message) {
 		DataService dataService = requireDataService(store, dataServiceId);
-		if (Members.contains(dataService.getServesDataset(), StoreLayout.DATASETS, datasetId)) {
-			return dataService;
+		if (!Members.contains(dataService.getServesDataset(), StoreLayout.DATASETS, datasetId)) {
+			dataService.getServesDataset().add(store.<Dataset>get(StoreLayout.DATASETS, datasetId)
+					.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId)));
+			store.save(dataService);
 		}
-		dataService.getServesDataset().add(store.<Dataset>get(StoreLayout.DATASETS, datasetId)
-				.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId)));
-		store.save(dataService);
+		// Commits whatever the operation staged, as one commit; see CatalogAdminServiceImpl.
+		store.commit(message);
 		reproject(dataServiceId);
 		return dataService;
 	}

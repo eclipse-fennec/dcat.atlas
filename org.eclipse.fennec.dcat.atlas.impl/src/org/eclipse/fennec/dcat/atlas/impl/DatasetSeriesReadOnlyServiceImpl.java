@@ -13,7 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +20,7 @@ import org.apache.felix.hc.api.HealthCheck;
 import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
+import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -36,18 +36,20 @@ public class DatasetSeriesReadOnlyServiceImpl extends AbstractEntityStore<Datase
 		implements DatasetSeriesReadOnlyService {
 
 	@Activate
-	public DatasetSeriesReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory, StoreConfig config) {
-		this(resourceSetFactory, Path.of(config.root()), config.validateOnWrite());
+	public DatasetSeriesReadOnlyServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
+			@Reference(name = "gitService") GitService gitService, StoreConfig config) {
+		this(resourceSetFactory, gitService, config.basePath(), config.validateOnWrite());
 	}
 
 	/** Package-visible for the admin subclass and tests; validates as the shipped configurations do. */
-	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root) {
-		this(resourceSetFactory, root, true);
+	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
+		this(resourceSetFactory, gitService, basePath, true);
 	}
 
 	/** Package-visible for the admin subclass and tests. */
-	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, Path root, boolean validateOnWrite) {
-		super(resourceSetFactory, root, StoreLayout.DATASET_SERIES, validateOnWrite);
+	DatasetSeriesReadOnlyServiceImpl(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
+			boolean validateOnWrite) {
+		super(resourceSetFactory, gitService, basePath, StoreLayout.DATASET_SERIES, validateOnWrite);
 	}
 
 	@Override

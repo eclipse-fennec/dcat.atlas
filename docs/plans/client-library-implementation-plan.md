@@ -106,8 +106,7 @@ public interface DcatAtlasClient extends AutoCloseable {
 ```
 
 `Promise`-returning variants live in `…client.osgi` only, so `.api` stays free of
-`org.osgi.util.promise`. If an async API is wanted in plain Java too, `CompletionStage` is
-the portable choice.
+`org.osgi.util.promise` — and there is no `CompletionStage` twin of them (§10).
 
 ---
 
@@ -281,10 +280,26 @@ get decided against a running portal, and those two are what the other three pha
   maps southbound payloads (MQTT, REST) onto EMF models, so what does it register — a
   DataService per adapter endpoint, a Dataset per mapped profile, or both? That decides
   whether it needs the whole surface or mostly DataService and Dataset upserts.
-- Sync-only in `.api`, or `CompletionStage` there as well as `Promise` in `.osgi`?
-- Should the client expose the SPARQL endpoint (`/rest/sparql`) as a query method, or is
-  that out of scope for a registration library?
-- One client per portal, or a multi-portal facade? MDO registered against a single Piveau;
-  ConfigAdmin factory components give us one-per-instance cheaply either way.
+- ~~Sync-only in `.api`, or `CompletionStage` there as well as `Promise` in `.osgi`?~~
+  **Answered 2026-08-21: `.api` is synchronous, `.osgi` adds a `Promise` facade, and there
+  is no `CompletionStage`.** Every operation existing three times is not worth it when all
+  three consumers are OSGi and `Promise` is the idiom there — it is what MDO offered. A
+  plain-Java consumer that wants async wraps the sync call in its own executor. What makes
+  this low-stakes: registration happens when a package is released or an adapter deployed,
+  never per message, so async is about not blocking a DS `@Activate` rather than about
+  volume.
+- ~~Should the client expose the SPARQL endpoint (`/rest/sparql`) as a query method?~~
+  **Answered 2026-08-21: no.** Out of scope for a registration library. It is a different
+  concern, its results are not EMF (so it would drag a result-format decision in), and if a
+  consumer needs it later it can go on a separate optional interface without touching this
+  API.
+- ~~One client per portal, or a multi-portal facade?~~ **Answered 2026-08-21: one client
+  per portal.** A ConfigAdmin factory component, one configuration per portal, each service
+  tagged so a consumer names the one it means
+  (`@Reference(target = "(dcat.portal=jena)")`); publishing to two portals is then an
+  explicit loop over two references. A facade would have to define what "it worked" means
+  when one portal accepts and another refuses — all-or-nothing, per-portal results,
+  first-failure-wins — and that is a semantics to invent only once somebody asks for it. It
+  can be layered on later without touching `.api`.
 - ~~Does a validation failure carry a parsed report or a raw one?~~ **Answered:** raw, see
   §6.9. The report's syntax follows the client's `Accept`, so no Jena and no API change.

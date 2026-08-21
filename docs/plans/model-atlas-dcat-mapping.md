@@ -126,7 +126,28 @@ URL, and the series makes that a widening rather than a migration.
 
 ---
 
-## 5. Worth noting
+## 5. Not every package gets published
+
+Publication is **selective**: a model.atlas instance holds packages that have no business
+in an open-data portal — internal, experimental, or simply not the kind of thing a
+catalogue is for. So something has to say which packages are publishable, and the mechanism
+is undecided: a configured list of namespace URIs, an EAnnotation on the package that opts
+it in, or both with configuration winning.
+
+Whichever it is, it is the same mechanism as the metadata in §3 — a package that opts itself
+in is also the natural place to carry its own title, licence and theme — so the two should
+be decided together rather than separately.
+
+It changes nothing structural in the mapping, and one consequence is worth writing down
+before it surprises somebody: **selective publication implies unpublication.** When a
+package drops off the list, or is deprecated, its Dataset is already in the portal. Deleting
+it means a cascade, because the Catalog references it and so may a DatasetSeries — which is
+exactly what `DELETE …?cascade=true` and the unlinked-resource report exist for. Leaving it
+means the portal advertises a model that model.atlas no longer serves. That is a policy
+decision for whoever runs the portal, not something the client should choose, so the client
+has to be able to do either.
+
+## 6. Worth noting
 
 This mapping is the first consumer of three things dcat.atlas has built and nothing uses:
 `dcat:accessService` on a Distribution (FR-10), `dcat:inSeries` membership (FR-11), and

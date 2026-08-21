@@ -4,7 +4,7 @@
 > (persistence, issue #32), **WP-DCAT-5** (SPARQL) and decision **C1**.
 > Internal document, not published to the docs site.
 >
-> Companion: [`sparql-and-fennec-persistence.md`](sparql-and-fennec-persistence.md) — the
+> Companion: [`sparql-and-fennec-persistence.md`](../sparql-and-fennec-persistence.md) — the
 > feasibility findings this plan acts on. **This plan supersedes §6/§7 of that document:**
 > the store of record stays file-based (later git-based) and Fennec Persistence is *not*
 > adopted. Everything else in the findings doc still holds, in particular §4 (why SPARQL is

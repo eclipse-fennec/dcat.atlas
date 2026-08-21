@@ -593,7 +593,7 @@ hard-coded, and there is no `@QueryParam`, so a delete of a referenced resource 
 `409` and the cascade path is unreachable from the API. The service-level cascade works and
 is covered by unit tests (`cascadeUnlinksThenDeletes`, `aCascadeDeleteIsOneCommit`). It is an
 API gap, not a storage one, and is drafted as an issue at the end of
-[`DCAT-github-issues.md`](DCAT-github-issues.md) rather than fixed here.
+[`DCAT-github-issues.md`](../DCAT-github-issues.md) rather than fixed here.
 
 ⚠️ **Correction to an earlier note:** `resolve.*` *does* write `-runbundles`, but only for
 the bndrun that declares them. `resolve.local` succeeded and changed nothing because

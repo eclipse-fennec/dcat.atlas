@@ -16,6 +16,9 @@ package org.eclipse.fennec.dcat.atlas.msg.body.readerwriter;
 import java.util.Collection;
 import java.util.List;
 
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+
 import org.apache.jena.irix.IRIException;
 import org.apache.jena.irix.IRIx;
 import org.apache.jena.rdf.model.Literal;
@@ -295,12 +298,62 @@ public final class EObjectToJena {
 					: model.createTypedLiteral(typed.getValue(), datatype);
 		}
 		if (eObject instanceof DateOrDateTimeLiteral dated) {
-			String lexical = lexical(RdfPackage.Literals.DATE_OR_DATE_TIME, dated.getValue());
-			Datatype datatype = dated.getDatatype();
-			return datatype == null ? model.createLiteral(lexical)
-					: model.createTypedLiteral(lexical, datatype.getLiteral());
+			return dateLiteral(model, dated);
 		}
 		return null;
+	}
+
+	/**
+	 * A date or dateTime literal, typed by what the value <em>is</em> when the model does not
+	 * say (N29).
+	 *
+	 * <h2>Why {@code getDatatype()} cannot be trusted on its own</h2>
+	 *
+	 * {@code datatype} is an {@link Datatype} {@code EEnum} whose first literal is
+	 * {@code xsd:date}, so EMF's generated default is that, and the getter returns it even
+	 * when nobody ever set it — an enum getter never returns {@code null}. Reading it
+	 * directly stamped {@code ^^xsd:date} on every value, which for a dateTime is an
+	 * <em>ill-typed</em> literal: {@code "2026-01-15T08:00:00+01:00"^^xsd:date} is not in
+	 * {@code xsd:date}'s lexical space. It was not an error anywhere — SHACL does not
+	 * constrain the datatype of {@code dcterms:issued} — but a consumer comparing it against
+	 * an {@code xsd:dateTime} gets no match, so a harvester's "published since" query
+	 * silently skipped the resource.
+	 * <p>
+	 * The ecore marks the attribute {@code unsettable="true"} precisely so that "not set" is
+	 * distinguishable, so the fix is to ask.
+	 *
+	 * <h2>Why the value decides, and not the lexical form</h2>
+	 *
+	 * {@link XMLGregorianCalendar#getXMLSchemaType()} is computed from which fields the value
+	 * actually carries, so it cannot disagree with the lexical form the way a "does it contain
+	 * a T" test could. It is also honest about a value that is neither a date nor a dateTime —
+	 * a client may legitimately store {@code 2026} — and reports {@code xsd:gYear} rather than
+	 * forcing it into one of the enum's two literals. For a field combination that is no XML
+	 * Schema type at all it throws, and then the value is emitted as a plain literal: saying
+	 * nothing about the type is better than saying something false.
+	 */
+	private static Literal dateLiteral(Model model, DateOrDateTimeLiteral dated) {
+		String lexical = lexical(RdfPackage.Literals.DATE_OR_DATE_TIME, dated.getValue());
+		if (dated.eIsSet(RdfPackage.Literals.DATE_OR_DATE_TIME_LITERAL__DATATYPE)) {
+			Datatype datatype = dated.getDatatype();
+			return model.createTypedLiteral(lexical, datatype.getLiteral());
+		}
+		String derived = schemaTypeOf(dated.getValue());
+		return derived == null ? model.createLiteral(lexical) : model.createTypedLiteral(lexical, derived);
+	}
+
+	/** The XSD datatype IRI {@code value} is an instance of, or {@code null} if it is none. */
+	private static String schemaTypeOf(XMLGregorianCalendar value) {
+		if (value == null) {
+			return null;
+		}
+		try {
+			QName schemaType = value.getXMLSchemaType();
+			return schemaType.getNamespaceURI() + "#" + schemaType.getLocalPart();
+		} catch (IllegalStateException e) {
+			// The set fields are not any one XML Schema type — see the note above.
+			return null;
+		}
 	}
 
 	/** The lexical form EMF would write for {@code value}. */

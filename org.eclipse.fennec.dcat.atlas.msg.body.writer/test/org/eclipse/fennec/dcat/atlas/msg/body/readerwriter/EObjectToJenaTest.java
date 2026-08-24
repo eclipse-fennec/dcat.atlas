@@ -22,6 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import javax.xml.datatype.DatatypeFactory;
+
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.riot.Lang;
@@ -39,6 +41,8 @@ import foaf.FoafPackage;
 import foaf.FoafFactory;
 import org.eclipse.emf.ecore.EObject;
 
+import rdf.DateOrDateTimeLiteral;
+import rdf.Datatype;
 import rdf.PlainLiteral;
 import rdf.RdfPackage;
 import rdf.RdfFactory;
@@ -72,6 +76,7 @@ class EObjectToJenaTest {
 	private static final String DCAT = "http://www.w3.org/ns/dcat#";
 	private static final String DCT = "http://purl.org/dc/terms/";
 	private static final String FOAF = "http://xmlns.com/foaf/0.1/";
+	private static final String XSD = "http://www.w3.org/2001/XMLSchema#";
 	private static final String DCATDE = "http://dcat-ap.de/def/dcatde/";
 
 	// --- identity and typing ------------------------------------------------
@@ -411,6 +416,86 @@ class EObjectToJenaTest {
 				() -> "round trip changed the graph\nfirst:\n" + dump(first) + "\nsecond:\n" + dump(second));
 	}
 
+	// --- date and dateTime literals (N29) -----------------------------------
+
+	/**
+	 * A dateTime must be typed {@code xsd:dateTime}. It used to come out
+	 * {@code ^^xsd:date} — ill-typed, since that lexical form is not in
+	 * {@code xsd:date}'s lexical space — because {@code datatype} is an enum whose
+	 * generated default is {@code xsd:date} and the converter read the getter without
+	 * asking whether anybody had set it.
+	 * <p>
+	 * Nothing rejected it: SHACL does not constrain the datatype of
+	 * {@code dcterms:issued}, so the only visible symptom was a consumer's
+	 * {@code xsd:dateTime} comparison quietly not matching.
+	 */
+	@Test
+	void aDateTimeValueIsTypedAsADateTime() {
+		Dataset dataset = dataset();
+		dataset.setIssued(dateLiteral("2026-01-15T08:00:00.000+01:00"));
+
+		assertDatatype(EObjectToJena.toModel(dataset), DCT + "issued", XSD + "dateTime");
+	}
+
+	/** A date-only value is a date. The old default got this one right, by accident. */
+	@Test
+	void aDateOnlyValueIsTypedAsADate() {
+		Dataset dataset = dataset();
+		dataset.setIssued(dateLiteral("2026-01-15"));
+
+		assertDatatype(EObjectToJena.toModel(dataset), DCT + "issued", XSD + "date");
+	}
+
+	/**
+	 * A datatype the model states explicitly wins over anything derived from the value —
+	 * the derivation exists only to fill the gap when the attribute is unset.
+	 */
+	@Test
+	void anExplicitDatatypeIsHonoured() {
+		Dataset dataset = dataset();
+		DateOrDateTimeLiteral issued = dateLiteral("2026-01-15T08:00:00.000+01:00");
+		issued.setDatatype(Datatype.HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE);
+		dataset.setIssued(issued);
+
+		assertDatatype(EObjectToJena.toModel(dataset), DCT + "issued", XSD + "date");
+	}
+
+	/**
+	 * A value that is neither — a client may legitimately store just a year — is reported
+	 * as what it is rather than forced into one of the enum's two literals.
+	 * <p>
+	 * It round-trips too, which is the part worth pinning: {@code Datatype} has no
+	 * {@code gYear} literal, so {@link JenaToEObject} leaves the attribute unset, and the
+	 * forward direction derives it from the value again. Deriving rather than storing is
+	 * what makes a datatype the model cannot name survive the trip.
+	 */
+	@Test
+	void aPartialValueKeepsItsOwnSchemaType() {
+		Dataset dataset = dataset();
+		dataset.setIssued(dateLiteral("2026"));
+
+		assertDatatype(EObjectToJena.toModel(dataset), DCT + "issued", XSD + "gYear");
+		assertRoundTrips(dataset);
+	}
+
+	/** {@code dcterms:modified} goes through the same path, on the same class. */
+	@Test
+	void modifiedIsTypedTheSameWay() {
+		Dataset dataset = dataset();
+		dataset.setModified(dateLiteral("2026-08-01T06:00:00.000+02:00"));
+
+		assertDatatype(EObjectToJena.toModel(dataset), DCT + "modified", XSD + "dateTime");
+	}
+
+	/** And a date survives a write/read/write cycle with its datatype intact. */
+	@Test
+	void aDateTimeRoundTrips() {
+		Dataset dataset = dataset();
+		dataset.setIssued(dateLiteral("2026-01-15T08:00:00.000+01:00"));
+
+		assertRoundTrips(dataset);
+	}
+
 	// --- helpers ------------------------------------------------------------
 
 	/**
@@ -426,6 +511,22 @@ class EObjectToJenaTest {
 		assertTrue(object.isURIResource(),
 				() -> what + " must be an IRI, not a blank node or literal\n" + dump(model));
 		assertEquals(expected, object.asResource().getURI(), () -> dump(model));
+	}
+
+	/** The object of {@code subject property ?o} must be one literal with exactly this datatype. */
+	private static void assertDatatype(Model model, String property, String expectedDatatype) {
+		List<RDFNode> objects = model
+				.listObjectsOfProperty(model.createResource(DATASET), model.createProperty(property)).toList();
+		assertEquals(1, objects.size(), () -> "expected exactly one " + property + "\n" + dump(model));
+		RDFNode object = objects.get(0);
+		assertTrue(object.isLiteral(), () -> property + " must be a literal\n" + dump(model));
+		assertEquals(expectedDatatype, object.asLiteral().getDatatypeURI(), () -> dump(model));
+	}
+
+	private static DateOrDateTimeLiteral dateLiteral(String lexical) {
+		DateOrDateTimeLiteral literal = RdfFactory.eINSTANCE.createDateOrDateTimeLiteral();
+		literal.setValue(DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(lexical));
+		return literal;
 	}
 
 	private static String dump(Model model) {

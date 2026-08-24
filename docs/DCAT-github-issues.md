@@ -175,7 +175,7 @@ the API rather than the service, not by breaking anything.
 
 ---
 
-### [DCAT] Every `dcterms:issued`/`modified` dateTime is published as `^^xsd:date` - Status DRAFT (not yet filed)
+### [DCAT] Every `dcterms:issued`/`modified` dateTime is published as `^^xsd:date` - Status FIXED (https://github.com/eclipse-fennec/dcat.atlas/issues/29)
 
 *Found 2026-08-24 while testing the new `text/html` representation (#25) against a running
 container. The HTML view prints a literal's datatype, which is how a defect that had been in
@@ -286,6 +286,23 @@ but never its datatype, which is why this survived: assert the emitted datatype 
 date-only value, a dateTime value, and a value with the datatype set explicitly.
 
 **Not a regression.** The behaviour predates #25 and predates the git store; it was found by
-looking at a representation that happens to display datatypes. `EObjectToJena` is shared with
-the validation and SPARQL bundles, so the fix wants its own change and its own review rather
-than riding along with unrelated work.
+looking at a representation that happens to display datatypes.
+
+**Fixed 2026-08-24** (issue #29). `EObjectToJena.asLiteral` now asks `eIsSet` before trusting
+the enum getter and derives an unset datatype from
+`XMLGregorianCalendar.getXMLSchemaType()`; the unreachable `datatype == null` guard is gone.
+Verified against the same running container, on the *same* store written by the old code:
+
+- the untouched blob still carries no `datatype` attribute and now serialises
+  `^^xsd:dateTime` — confirming no migration was needed;
+- the SPARQL query above went from **1 of 2** to **2 of 2**;
+- `EObjectToJenaTest` gained six cases (dateTime, date-only, explicit-datatype-wins,
+  `gYear`, `dcterms:modified`, round-trip). Three fail against the old serialiser, checked
+  by reverting it — the file previously had no assertion on a date's datatype at all, which
+  is how this survived.
+
+One property that was not obvious beforehand: **`gYear` round-trips now.** `Datatype` has no
+literal for it, so `JenaToEObject` leaves the attribute unset and the forward direction
+derives it from the value again. Deriving rather than storing is what lets a datatype the
+model cannot name survive the trip — the old code stamped `xsd:date` on it and the round trip
+faithfully preserved that error.

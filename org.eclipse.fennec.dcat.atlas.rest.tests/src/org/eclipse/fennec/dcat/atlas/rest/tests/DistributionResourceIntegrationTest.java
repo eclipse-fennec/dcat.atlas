@@ -63,6 +63,8 @@ public class DistributionResourceIntegrationTest {
 	/** The only format the admin endpoints accept: our EMF model's own XMI. */
 	private static final String XML = "application/xmi";
 	private static final String TURTLE = "text/turtle";
+	/** The browser's representation of a single distribution (N25). */
+	private static final String HTML = "text/html";
 
 	private static final String DATASET_ID = "dist-e2e-ds";
 	/** The id {@link #distributionBody} names, and therefore the one a create lands under. */
@@ -238,6 +240,34 @@ public class DistributionResourceIntegrationTest {
 				HttpRequest.newBuilder(URI.create(distributions() + "/csv")).GET().header("If-None-Match", etag),
 				TURTLE);
 		assertEquals(304, conditional.statusCode());
+	}
+
+	/**
+	 * A distribution is dereferenceable in a browser like every other entity, even though
+	 * it has no collection of its own — its {@code about} is parent-derived, and that URL
+	 * is what a harvester follows.
+	 */
+	@Test
+	void getServesHtmlWithSchemaOrgJsonLd() throws Exception {
+		send(HttpRequest.newBuilder(URI.create(adminDistributions() + "/csv")).header("Content-Type", XML)
+				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
+
+		HttpResponse<String> response = get(distributions() + "/csv", HTML);
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith(HTML),
+				"Content-Type was " + response.headers().firstValue("Content-Type").orElse("(absent)"));
+		assertTrue(response.body().startsWith("<!DOCTYPE html>"), response.body());
+		assertTrue(response.body().contains("CSV download"), response.body());
+		assertTrue(response.body().contains(distributions() + "/csv"),
+				"the page should show its own public IRI: " + response.body());
+		assertTrue(response.body().contains("\"@type\": \"DataDownload\""),
+				"a distribution is a DataDownload to schema.org: " + response.body());
+	}
+
+	/** The nested collection refuses HTML, exactly as the root collections do. */
+	@Test
+	void theDistributionCollectionDoesNotServeHtml() throws Exception {
+		assertEquals(406, get(distributions(), HTML).statusCode());
 	}
 
 	@Test

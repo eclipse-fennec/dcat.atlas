@@ -118,6 +118,28 @@ public class OpenApiIntegrationTest {
 	}
 
 	/**
+	 * {@code text/html} is offered on a single resource and not on a collection, and the
+	 * descriptor has to draw that line too — it is generated from the same
+	 * {@code @Produces} the runtime dispatches on, so a client generated from it cannot
+	 * ask a collection for a page that endpoint would refuse with a 406.
+	 */
+	@Test
+	void theDescriptorOffersHtmlOnEntitiesButNotOnCollections() throws Exception {
+		String body = get("/openapi.json").body();
+
+		for (String path : Set.of("/catalogs/{id}", "/datasets/{id}", "/dataset-series/{id}", "/data-services/{id}",
+				"/datasets/{datasetId}/distributions/{id}")) {
+			assertTrue(operation(body, path, "get").contains("text/html"),
+					"the entity read should offer text/html: " + path);
+		}
+		for (String path : Set.of("/catalogs", "/datasets", "/dataset-series", "/data-services",
+				"/datasets/{datasetId}/distributions")) {
+			assertFalse(operation(body, path, "get").contains("text/html"),
+					"a collection must not advertise text/html: " + path);
+		}
+	}
+
+	/**
 	 * Swagger caches the {@code OpenAPI} model per context id, so the resource decorates
 	 * an object that survives between requests. Appending to it instead of assigning grew
 	 * {@code servers} by one entry per call — measured at 7 after seven requests before

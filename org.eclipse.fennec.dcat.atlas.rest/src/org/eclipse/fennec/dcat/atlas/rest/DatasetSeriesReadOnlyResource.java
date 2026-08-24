@@ -69,6 +69,12 @@ public class DatasetSeriesReadOnlyResource {
 	static final String N_TRIPLES = "application/n-triples";
 	static final String JSON_LD = "application/ld+json";
 	static final String N3 = "text/n3";
+	/**
+	 * The browser's representation of a single resource (N25). Offered on the entity
+	 * {@code GET} only: a collection index is separate work, so a collection still
+	 * answers {@code 406} for it.
+	 */
+	static final String HTML = "text/html";
 
 	/**
 	 * Held only to gate registration — see {@link PublicIriFilter} for why every
@@ -105,7 +111,7 @@ public class DatasetSeriesReadOnlyResource {
 
 	@GET
 	@Path("/{id}")
-	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3, HTML })
 	public Response getDatasetSeries(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
 		Optional<DatasetSeries> datasetSeries = datasetSeriesReadOnlyService.getDatasetSeries(id);
 		if (datasetSeries.isEmpty()) {

@@ -619,7 +619,7 @@ graph. Everything above is in the headers, identically for all eight formats.
 ### Content negotiation
 
 Ask for a representation with the `Accept` header. The same catalog is available in
-several RDF syntaxes plus JSON:
+several RDF syntaxes, plus JSON, plus HTML for a browser:
 
 | `Accept` | Format | Notes |
 |---|---|---|
@@ -631,6 +631,7 @@ several RDF syntaxes plus JSON:
 | `application/json` | EMF JSON | Internal object encoding (typed `_type` fields); for round-tripping through this stack — **not** interoperable DCAT. For public JSON, prefer JSON-LD. |
 | `application/xmi` | XMI | The model's own encoding, and **the only format writes accept** — so this is the one to ask for when you intend to read, edit and `PUT` back. One exception, worth knowing before you build on it: a resource that *references* others cannot be `PUT` back as-is — see [Modifying a resource that has members](#modifying-a-resource-that-has-members). |
 | `application/xml` | EMF XML | The model's plain-XML encoding — the same object graph as XMI, written by a different codec. Like XMI it is **not an RDF syntax**: see the note below. On writes, use `application/xmi`. |
+| `text/html` | HTML | A page for a browser, **on a single resource only** — a collection answers `406`. It is the same graph as the RDF syntaxes rendered as a property table, so it shows every property the resource has, and it carries a schema.org `application/ld+json` block for crawlers. Ask for RDF if you are parsing; this is for reading. |
 
 ```bash
 curl http://localhost:8085/dcat/rest/catalogs/3f2b1c8e-… -H 'Accept: text/turtle'
@@ -915,7 +916,8 @@ protect (F-6/F-12). Paths are relative to the base described in
 
 **Reads** — `Accept`: `application/xmi`, `application/xml`, `application/json`,
 `application/rdf+xml`, `text/turtle`, `application/n-triples`, `application/ld+json`,
-`text/n3`. An empty collection answers `204`.
+`text/n3`. An empty collection answers `204`. A single resource additionally serves
+`text/html`; a collection does not, and answers `406` for it.
 
 | | |
 |---|---|

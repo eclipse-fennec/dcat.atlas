@@ -65,6 +65,8 @@ public abstract class AbstractEntityResourceIntegrationTest {
 	protected static final String N_TRIPLES = "application/n-triples";
 	protected static final String JSON_LD = "application/ld+json";
 	protected static final String N3 = "text/n3";
+	/** The browser's representation of a single resource (N25); a collection refuses it. */
+	protected static final String HTML = "text/html";
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
@@ -158,6 +160,73 @@ public abstract class AbstractEntityResourceIntegrationTest {
 		assertEquals(200, response.statusCode());
 		assertTrue(response.body().contains(typeName()), response.body());
 		assertTrue(response.body().contains("Hello"), response.body());
+	}
+
+	// --- the browser's representation (N25) -------------------------------
+
+	/**
+	 * Following a minted {@code about} IRI in a browser has to yield a page rather than a
+	 * {@code 406}. The page is rendered from the same graph the RDF representations are, so
+	 * this also pins that the IRI it displays is the public one a harvester was handed.
+	 */
+	@Test
+	void getServesHtml() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> response = get(reads() + "/e1", HTML);
+		assertEquals(200, response.statusCode(), response.body());
+		assertEquals(HTML, mediaType(response));
+		assertTrue(response.body().startsWith("<!DOCTYPE html>"), response.body());
+		assertTrue(response.body().contains("Hello"), response.body());
+		assertTrue(response.body().contains(reads() + "/e1"),
+				"the page should show its own public IRI: " + response.body());
+	}
+
+	/** The crawler's half of the page: schema.org, embedded as JSON-LD. */
+	@Test
+	void htmlEmbedsSchemaOrgJsonLd() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		String body = get(reads() + "/e1", HTML).body();
+		assertTrue(body.contains("<script type=\"application/ld+json\">"), body);
+		assertTrue(body.contains("\"@context\": \"https://schema.org\""), body);
+		assertTrue(body.contains("\"@id\": \"" + reads() + "/e1\""), body);
+	}
+
+	/**
+	 * HTML is one more representation of the one URI, not a URI of its own, so it shares
+	 * the resource's validator — the ETag is state-based. That sharing is precisely why the
+	 * response has to vary on {@code Accept}, or a cache would serve HTML to a harvester
+	 * asking for Turtle.
+	 */
+	@Test
+	void htmlSharesTheValidatorWithTheRdfRepresentations() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> html = get(reads() + "/e1", HTML);
+		assertEquals(200, html.statusCode(), html.body());
+		String etag = html.headers().firstValue("ETag").orElseThrow();
+		assertTrue(html.headers().allValues("Vary").stream().anyMatch(value -> value.toLowerCase().contains("accept")),
+				"a negotiated response must vary on Accept");
+		assertEquals(etag, get(reads() + "/e1", TURTLE).headers().firstValue("ETag").orElseThrow(),
+				"one state, one validator — it cannot differ per representation");
+
+		HttpResponse<String> conditional = send(
+				HttpRequest.newBuilder(URI.create(reads() + "/e1")).GET().header("If-None-Match", etag), HTML);
+		assertEquals(304, conditional.statusCode(), "a conditional GET for HTML behaves as one for Turtle");
+	}
+
+	/**
+	 * A collection index is deliberately out of scope, so the collection still answers
+	 * {@code 406} for HTML. Worth asserting rather than leaving implicit: adding the media
+	 * type to the wrong {@code @Produces} would not fail, it would serve a page rendered
+	 * from the {@code utilities.Response} wrapper a collection is put in.
+	 */
+	@Test
+	void theCollectionDoesNotServeHtml() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		assertEquals(406, get(reads(), HTML).statusCode());
 	}
 
 	@Test

@@ -17,9 +17,9 @@
 	org.apache.jena.core;version=latest,\
 	org.apache.jena.base;version=latest,\
 	org.eclipse.fennec.model;version=latest,\
-	io.github.vpelikh.swagger-annotations.jakarta;version=latest,\
-	io.github.vpelikh.swagger-models.jakarta;version=latest,\
-	io.github.vpelikh.swagger-core.jakarta;version=latest,\
-	io.github.vpelikh.swagger-integration.jakarta;version=latest,\
-	io.github.vpelikh.swagger-jaxrs2.jakarta;version=latest,\
+	io.github.vpelikh.swagger-annotations;version=latest,\
+	io.github.vpelikh.swagger-models;version=latest,\
+	io.github.vpelikh.swagger-core;version=latest,\
+	io.github.vpelikh.swagger-integration;version=latest,\
+	io.github.vpelikh.swagger-jakarta-rest;version=latest,\
 	jakarta.servlet-api;version=latest

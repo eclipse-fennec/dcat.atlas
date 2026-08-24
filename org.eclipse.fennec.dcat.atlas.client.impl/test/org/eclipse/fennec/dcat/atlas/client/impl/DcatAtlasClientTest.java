@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.client.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,7 @@ import org.eclipse.fennec.dcat.atlas.client.api.DcatShaclException;
 import org.eclipse.fennec.dcat.atlas.client.api.DeleteMode;
 import org.eclipse.fennec.dcat.atlas.client.api.NotFoundException;
 import org.eclipse.fennec.dcat.atlas.client.api.PreconditionFailedException;
+import org.eclipse.fennec.dcat.atlas.client.api.Registration;
 import org.eclipse.fennec.dcat.atlas.client.api.RetryableException;
 import org.eclipse.fennec.dcat.atlas.client.api.TransportException;
 import org.eclipse.fennec.dcat.atlas.client.impl.StubPortal.Received;
@@ -87,7 +89,7 @@ class DcatAtlasClientTest {
 	void registeringADatasetPutsXmiToTheAdminPath() {
 		portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("Luftqualität 2026"))));
 
-		Dataset stored = client.registerDataset("luftqualitaet-2026", dataset("Luftqualität 2026"));
+		Dataset stored = client.registerDataset("luftqualitaet-2026", dataset("Luftqualität 2026")).entity();
 
 		Received request = portal.lastRequest();
 		assertEquals("PUT", request.method());
@@ -312,6 +314,102 @@ class DcatAtlasClientTest {
 		try (DcatAtlasClient closeable = unreachable) {
 			assertThrows(TransportException.class, () -> closeable.registerDataset("d1", dataset("x")));
 		}
+	}
+
+	// --- conditional registration ------------------------------------------
+
+	/** An ordinary registration sends no precondition: last writer wins, by design. */
+	@Test
+	void anUnconditionalRegistrationSendsNoIfMatch() {
+		portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("x"))).withHeader("ETag", "\"v1\""));
+
+		Registration<Dataset> registration = client.registerDataset("d1", dataset("x"));
+
+		assertTrue(registration.applied());
+		assertNull(portal.lastRequest().header("if-match"), "an unconditional write must not send If-Match");
+	}
+
+	/**
+	 * The validator comes back on the write, which is what makes the next registration
+	 * conditional without a read.
+	 */
+	@Test
+	void aRegistrationHandsBackTheValidatorForTheNextOne() {
+		portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("x"))).withHeader("ETag", "\"v1\""));
+
+		assertEquals("\"v1\"", client.registerDataset("d1", dataset("x")).etag());
+	}
+
+	@Test
+	void aConditionalRegistrationSendsTheValidatorItWasGiven() {
+		portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("x"))).withHeader("ETag", "\"v2\""));
+
+		Registration<Dataset> registration = client.registerDataset("d1", dataset("x"), "\"v1\"");
+
+		assertTrue(registration.applied());
+		assertEquals("\"v1\"", portal.lastRequest().header("if-match"));
+		assertEquals("\"v2\"", registration.etag(), "the new validator replaces the one that was sent");
+	}
+
+	/**
+	 * Somebody else wrote in the meantime: nothing is stored, and this is <em>not</em> an
+	 * exception.
+	 *
+	 * <h2>Why not</h2>
+	 *
+	 * The 412 is the outcome the validator was sent to produce. A registration loop that
+	 * unwound on it would stop publishing every later resource because one of them had been
+	 * edited elsewhere. So the client logs it and reports it, and the caller decides.
+	 */
+	@Test
+	void aConditionalRegistrationIsNotAppliedWhenSomebodyElseWrote() {
+		portal.enqueue(Reply.of(412));
+
+		Registration<Dataset> registration = client.registerDataset("d1", dataset("x"), "\"stale\"");
+
+		assertFalse(registration.applied(), "nothing should have been written");
+	}
+
+	/**
+	 * Asking for the entity of a write that did not happen is a programming error, not a
+	 * null — a null here would surface much later and somewhere else.
+	 */
+	@Test
+	void askingForTheResultOfARefusedRegistrationFailsLoudly() {
+		portal.enqueue(Reply.of(412));
+
+		Registration<Dataset> registration = client.registerDataset("d1", dataset("x"), "\"stale\"");
+
+		assertThrows(IllegalStateException.class, registration::entity);
+		assertThrows(IllegalStateException.class, registration::etag);
+	}
+
+	/**
+	 * A 412 on an <em>unconditional</em> write is a different matter: no precondition was
+	 * sent, so the portal cannot have evaluated one, and something is wrong rather than
+	 * merely contended. That still throws.
+	 */
+	@Test
+	void anUnexpected412OnAnUnconditionalWriteStillThrows() {
+		portal.enqueue(Reply.of(412));
+
+		assertThrows(PreconditionFailedException.class, () -> client.registerDataset("d1", dataset("x")));
+	}
+
+	/** Every entity type takes a validator, not just Dataset. */
+	@Test
+	void everyEntityTypeCanBeRegisteredConditionally() {
+		portal.enqueue(Reply.of(412));
+		assertFalse(client.registerCatalog("c1", catalog(), "\"stale\"").applied());
+
+		portal.enqueue(Reply.of(412));
+		assertFalse(client.registerDatasetSeries("s1", series(), "\"stale\"").applied());
+
+		portal.enqueue(Reply.of(412));
+		assertFalse(client.registerDataService("api", service(), "\"stale\"").applied());
+
+		portal.enqueue(Reply.of(412));
+		assertFalse(client.registerDistribution("d1", "csv", distribution(), "\"stale\"").applied());
 	}
 
 	// --- deletion ---------------------------------------------------------

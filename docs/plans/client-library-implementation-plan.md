@@ -200,10 +200,44 @@ and every step is idempotent, so re-running the whole thing is the intended usag
 than a workaround. Verified: after a re-register the dataset came back with
 `inSeries=0 distributions=0`, and re-linking restored it.
 
-This also means a conditional *register* (`If-Match` on a caller-built entity) is the only
-shape optimistic locking could sensibly take here — the caller already holds the full
-entity, so nothing needs reading. Not built in P1; worth deciding when a consumer actually
-has two writers.
+### 6.4b Conditional *registration* — built 2026-08-24
+
+A conditional register is the only shape optimistic locking can sensibly take here: the
+caller already holds the full entity, so nothing needs reading, and the read-back that
+breaks §6.4 never happens. Ilenia's call was to build it now — "just so we are prepared in
+case someone else modifies the dcat in the meantime" — and to **log** rather than throw when
+the validator no longer matches.
+
+So every `registerX` has a three-argument form taking an `ifMatch`, and returns
+`Registration<T>` (the stored entity plus the new `ETag`) instead of a bare entity. The
+validator comes from the *previous* registration's response, so a loop needs no extra
+request.
+
+**A refused write is not an exception.** `Registration.applied()` comes back `false`, the
+client logs it at WARNING, and the loop carries on to the next resource. Unwinding on a 412
+would stop a publisher from updating every later resource because one of them had been
+edited elsewhere. Every other non-success status still throws, and a 412 on an
+*unconditional* write does too — no precondition was sent, so the portal cannot have
+evaluated one and something else is wrong.
+
+Measured against the running portal:
+
+```
+first register                  applied=true  etag="b7a1903f…"
+another writer registers        applied=true  etag="904a3078…"
+register with the stale etag    applied=false      <- nothing written, WARNING logged
+  portal still says             "version two"      <- confirmed by reading it back
+register with the current etag  applied=true
+  portal now says               "version three"
+re-register identical content   applied=true  sameEtag=true
+```
+
+Two properties worth keeping in mind. The **ETag is content-based**, so an idle loop that
+re-registers identical content gets the same validator back and never invalidates its own
+token — the last line above. And a **412 carries no body and no `ETag`**, so a refusal
+cannot report the portal's current validator; getting back in step means either reading the
+resource or registering unconditionally, and which is right depends on whether the publisher
+or the portal owns the truth.
 
 ### 6.5 Membership through the link endpoints
 
@@ -334,7 +368,8 @@ membership links. 29 plain-Java tests drive the real Jersey client against a stu
 
 What the phase settled, beyond the code:
 
-- **§6.4 is withdrawn** and §6.4a replaces it — see above. The one substantive plan change.
+- **§6.4 is withdrawn**, §6.4a (the registration loop) and §6.4b (conditional
+  registration) replace it — see above. The one substantive plan change.
 - **§6.9's exception reuse is not implementable**; the client owns its hierarchy.
 - **A write must ask for `application/xmi`.** The admin endpoints `@Produces` XMI, JSON,
   XML and RDF/XML — *not* Turtle — so `Accept: text/turtle` on a write is a `406` that

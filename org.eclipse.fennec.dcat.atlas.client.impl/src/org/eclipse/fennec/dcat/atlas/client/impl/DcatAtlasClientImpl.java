@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.function.UnaryOperator;
 
 import org.eclipse.emf.ecore.EObject;
@@ -26,6 +28,7 @@ import org.eclipse.fennec.dcat.atlas.client.api.DcatAtlasClient;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatCollection;
 import org.eclipse.fennec.dcat.atlas.client.api.DeleteMode;
 import org.eclipse.fennec.dcat.atlas.client.api.NotFoundException;
+import org.eclipse.fennec.dcat.atlas.client.api.Registration;
 import org.eclipse.fennec.dcat.atlas.client.api.TransportException;
 
 import dcat.Catalog;
@@ -66,6 +69,8 @@ import jakarta.ws.rs.core.Response;
  */
 final class DcatAtlasClientImpl implements DcatAtlasClient {
 
+	private static final Logger logger = Logger.getLogger(DcatAtlasClientImpl.class.getName());
+
 	private static final String ADMIN = "admin";
 	private static final String DISTRIBUTIONS = "distributions";
 	private static final String DATASETS = "datasets";
@@ -83,28 +88,31 @@ final class DcatAtlasClientImpl implements DcatAtlasClient {
 	// --- registration -----------------------------------------------------
 
 	@Override
-	public Catalog registerCatalog(String id, Catalog catalog) {
-		return put(admin(DcatCollection.CATALOGS).path(required(id, "id")), catalog, Catalog.class);
+	public Registration<Catalog> registerCatalog(String id, Catalog catalog, String ifMatch) {
+		return put(admin(DcatCollection.CATALOGS).path(required(id, "id")), catalog, Catalog.class, ifMatch);
 	}
 
 	@Override
-	public Dataset registerDataset(String id, Dataset dataset) {
-		return put(admin(DcatCollection.DATASETS).path(required(id, "id")), dataset, Dataset.class);
+	public Registration<Dataset> registerDataset(String id, Dataset dataset, String ifMatch) {
+		return put(admin(DcatCollection.DATASETS).path(required(id, "id")), dataset, Dataset.class, ifMatch);
 	}
 
 	@Override
-	public DatasetSeries registerDatasetSeries(String id, DatasetSeries series) {
-		return put(admin(DcatCollection.DATASET_SERIES).path(required(id, "id")), series, DatasetSeries.class);
+	public Registration<DatasetSeries> registerDatasetSeries(String id, DatasetSeries series, String ifMatch) {
+		return put(admin(DcatCollection.DATASET_SERIES).path(required(id, "id")), series, DatasetSeries.class,
+				ifMatch);
 	}
 
 	@Override
-	public DataService registerDataService(String id, DataService service) {
-		return put(admin(DcatCollection.DATA_SERVICES).path(required(id, "id")), service, DataService.class);
+	public Registration<DataService> registerDataService(String id, DataService service, String ifMatch) {
+		return put(admin(DcatCollection.DATA_SERVICES).path(required(id, "id")), service, DataService.class,
+				ifMatch);
 	}
 
 	@Override
-	public Distribution registerDistribution(String datasetId, String id, Distribution distribution) {
-		return put(distributions(datasetId).path(required(id, "id")), distribution, Distribution.class);
+	public Registration<Distribution> registerDistribution(String datasetId, String id, Distribution distribution,
+			String ifMatch) {
+		return put(distributions(datasetId).path(required(id, "id")), distribution, Distribution.class, ifMatch);
 	}
 
 	// --- membership -------------------------------------------------------
@@ -292,14 +300,34 @@ final class DcatAtlasClientImpl implements DcatAtlasClient {
 		return admin(DcatCollection.DATASETS).path(required(datasetId, "datasetId")).path(DISTRIBUTIONS);
 	}
 
-	private <T extends EObject> T put(WebTarget target, EObject entity, Class<T> type) {
+	/**
+	 * A registration.
+	 *
+	 * <h2>Why a 412 is not thrown here</h2>
+	 *
+	 * A conditional registration that loses the race is the outcome the validator was sent
+	 * to produce, not a failure of the call: nothing was written, and a registration loop
+	 * should carry on to the next resource rather than unwind. So it is logged and reported
+	 * as {@link Registration#applied()} {@code == false}. It is logged at WARNING because
+	 * the portal's copy now diverges from what this publisher intended, which somebody
+	 * ought to see. Every other non-success status still throws.
+	 */
+	private <T extends EObject> Registration<T> put(WebTarget target, EObject entity, Class<T> type,
+			String ifMatch) {
 		Objects.requireNonNull(entity, "entity");
 		String what = "PUT " + target.getUri();
-		try (Response response = invoke(target, null, null, entity)) {
+		try (Response response = invoke(target, ifMatch, entity)) {
+			if (ifMatch != null && RestSupport.isPreconditionFailed(response)) {
+				logger.log(Level.WARNING, () -> what + " was not applied: the portal's copy has changed since the "
+						+ "validator " + ifMatch + " was issued, so nothing was written. Somebody else wrote to "
+						+ "this resource.");
+				return Registration.notApplied();
+			}
 			if (!RestSupport.isSuccess(response)) {
 				throw RestSupport.statusError(response, what);
 			}
-			return XmiCodec.read(response.readEntity(byte[].class), type, what);
+			T stored = XmiCodec.read(response.readEntity(byte[].class), type, what);
+			return Registration.applied(stored, response.getHeaderString(HttpHeaders.ETAG));
 		}
 	}
 
@@ -347,10 +375,10 @@ final class DcatAtlasClientImpl implements DcatAtlasClient {
 				"GET " + target.getUri());
 	}
 
-	private Response invoke(WebTarget target, String conditionalHeader, String validator, EObject entity) {
+	private Response invoke(WebTarget target, String ifMatch, EObject entity) {
 		Invocation.Builder request = target.request(ClientConfiguration.XMI);
-		if (conditionalHeader != null && validator != null) {
-			request = request.header(conditionalHeader, validator);
+		if (ifMatch != null) {
+			request = request.header(HttpHeaders.IF_MATCH, ifMatch);
 		}
 		byte[] body = XmiCodec.write(entity);
 		return send(request, builder -> builder.put(Entity.entity(body, ClientConfiguration.XMI)),

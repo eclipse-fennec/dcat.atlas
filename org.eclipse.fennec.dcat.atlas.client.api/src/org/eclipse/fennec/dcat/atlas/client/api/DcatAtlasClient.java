@@ -104,23 +104,69 @@ public interface DcatAtlasClient extends AutoCloseable {
 	// --- registration -----------------------------------------------------
 
 	/**
-	 * Create or replace the catalog at {@code id}.
+	 * Create or replace the catalog at {@code id}, unconditionally.
+	 * <p>
+	 * "Unconditionally" means last writer wins: whatever the portal holds is replaced. That
+	 * is what a single publisher wants. Where something else may also write the resource,
+	 * pass the validator from the previous registration to
+	 * {@link #registerCatalog(String, Catalog, String)} instead.
 	 *
 	 * @param id      the caller's stable identifier; becomes the last path segment
 	 * @param catalog the entity to store
-	 * @return the stored entity as the portal returned it, with its identities rendered
-	 *         under the public base
+	 * @return the stored entity and its validator; always {@link Registration#applied()}
 	 */
-	Catalog registerCatalog(String id, Catalog catalog);
+	default Registration<Catalog> registerCatalog(String id, Catalog catalog) {
+		return registerCatalog(id, catalog, null);
+	}
 
-	/** Create or replace the dataset at {@code id}. @see #registerCatalog */
-	Dataset registerDataset(String id, Dataset dataset);
+	/**
+	 * Create or replace the catalog at {@code id}, but only if the portal's copy is still
+	 * the one {@code ifMatch} identifies.
+	 *
+	 * <h2>What this is for</h2>
+	 *
+	 * Without it a registration loop silently overwrites anything another writer did to
+	 * the resource in the meantime — an edit made through the portal, or a second
+	 * publisher. With it, such a write comes back
+	 * {@link Registration#applied() not applied}, the client logs it, and the caller
+	 * decides what that means: skip, or re-register unconditionally because it owns the
+	 * truth.
+	 * <p>
+	 * The validator comes from the previous registration's {@link Registration#etag()}, so
+	 * no read is involved. It is content-based, so a loop that re-registers identical
+	 * content gets the same one back and never invalidates its own token.
+	 *
+	 * @param id      the caller's stable identifier
+	 * @param catalog the entity to store
+	 * @param ifMatch the expected validator; {@code null} makes the write unconditional
+	 * @return the outcome — {@link Registration#applied()} is {@code false} when the
+	 *         resource had moved on and nothing was written
+	 */
+	Registration<Catalog> registerCatalog(String id, Catalog catalog, String ifMatch);
 
-	/** Create or replace the dataset series at {@code id}. @see #registerCatalog */
-	DatasetSeries registerDatasetSeries(String id, DatasetSeries series);
+	/** Create or replace the dataset at {@code id}. @see #registerCatalog(String, Catalog) */
+	default Registration<Dataset> registerDataset(String id, Dataset dataset) {
+		return registerDataset(id, dataset, null);
+	}
 
-	/** Create or replace the data service at {@code id}. @see #registerCatalog */
-	DataService registerDataService(String id, DataService service);
+	/** Conditionally create or replace the dataset at {@code id}. @see #registerCatalog(String, Catalog, String) */
+	Registration<Dataset> registerDataset(String id, Dataset dataset, String ifMatch);
+
+	/** Create or replace the dataset series at {@code id}. @see #registerCatalog(String, Catalog) */
+	default Registration<DatasetSeries> registerDatasetSeries(String id, DatasetSeries series) {
+		return registerDatasetSeries(id, series, null);
+	}
+
+	/** Conditionally create or replace the dataset series. @see #registerCatalog(String, Catalog, String) */
+	Registration<DatasetSeries> registerDatasetSeries(String id, DatasetSeries series, String ifMatch);
+
+	/** Create or replace the data service at {@code id}. @see #registerCatalog(String, Catalog) */
+	default Registration<DataService> registerDataService(String id, DataService service) {
+		return registerDataService(id, service, null);
+	}
+
+	/** Conditionally create or replace the data service. @see #registerCatalog(String, Catalog, String) */
+	Registration<DataService> registerDataService(String id, DataService service, String ifMatch);
 
 	/**
 	 * Create or replace a distribution of {@code datasetId}.
@@ -133,9 +179,22 @@ public interface DcatAtlasClient extends AutoCloseable {
 	 * @param datasetId    the owning dataset
 	 * @param id           the distribution's own identifier within that dataset
 	 * @param distribution the entity to store
-	 * @return the stored entity
+	 * @return the stored entity and its validator
 	 */
-	Distribution registerDistribution(String datasetId, String id, Distribution distribution);
+	default Registration<Distribution> registerDistribution(String datasetId, String id,
+			Distribution distribution) {
+		return registerDistribution(datasetId, id, distribution, null);
+	}
+
+	/**
+	 * Conditionally create or replace a distribution.
+	 * <p>
+	 * The validator is the <em>distribution's</em> own, not its dataset's.
+	 *
+	 * @see #registerCatalog(String, Catalog, String)
+	 */
+	Registration<Distribution> registerDistribution(String datasetId, String id, Distribution distribution,
+			String ifMatch);
 
 	// --- membership -------------------------------------------------------
 

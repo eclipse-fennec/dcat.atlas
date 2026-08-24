@@ -1,6 +1,6 @@
 # Client library for integration — implementation plan
 
-**Status:** design exploration, 2026-08-21. Not implemented, on branch `dcat_client`.
+**Status:** P1 implemented 2026-08-24 on branch `dcat_client`; P2–P4 outstanding.
 **Issue:** eclipse-fennec/dcat.atlas#27 — *Client Library for integration (Data-Atlas,
 Model-Atlas, SensiNact)*.
 **Depended on:** #26 (pagination and caching on the read collections) — **done**, so the
@@ -165,11 +165,45 @@ validation failure. They are 422, and the fix matters to a client: 400 and 422 m
 different things here, and conflating them would have had callers retry-or-report the wrong
 one.
 
-### 6.4 An optimistic-locking helper
+### 6.4 ~~An optimistic-locking helper~~ — withdrawn, P1 2026-08-24
 
-Read the ETag, mutate, `PUT` with `If-Match`, retry once on 412. Without it every consumer
-either skips `If-Match` entirely — losing the protection F-16 exists for — or reimplements
-the loop slightly differently.
+The plan said: read the ETag, mutate, `PUT` with `If-Match`, retry once on 412. It was
+built that way in P1 and **it does not work**, for a reason that has nothing to do with
+ETags. Measured against a running portal with SHACL enforced:
+
+```
+sh:resultMessage "dcat:Dataset: dcat:inSeries MUSS auf eine Klasse vom Typ
+                  dcat:DatasetSeries verweisen."@de ;
+sh:resultPath    dcat:inSeries ;
+```
+
+Reading a linked resource and `PUT`ting it back sends `dcat:inSeries <series>` in a graph
+that says nothing about `<series>`, so the profile's "MUSS auf eine Klasse vom Typ …
+verweisen" rule fails — the same trap the user guide documents as *Modifying a resource
+that has members*. It fires for `dcat:accessService` on a distribution too. Any entity
+that has been linked to anything is therefore un-round-trippable, which after registration
+is most of them.
+
+`updateDataset` was removed from the API rather than shipped with that caveat. **What
+replaces it is the registration loop** (below), which needs no read at all.
+
+### 6.4a The registration loop, measured
+
+A `PUT` replaces, and two consequences follow that a consumer has to plan for:
+
+1. **Distributions go away** — `dcat:distribution` is containment, so a body without them
+   says the resource has none.
+2. **Membership links go away** — `dcat:inSeries`, `dcat:dataset`, `dcat:servesDataset`.
+
+So the loop is **register the entity → register its distributions → assert its links**,
+and every step is idempotent, so re-running the whole thing is the intended usage rather
+than a workaround. Verified: after a re-register the dataset came back with
+`inSeries=0 distributions=0`, and re-linking restored it.
+
+This also means a conditional *register* (`If-Match` on a caller-built entity) is the only
+shape optimistic locking could sensibly take here — the caller already holds the full
+entity, so nothing needs reading. Not built in P1; worth deciding when a consumer actually
+has two writers.
 
 ### 6.5 Membership through the link endpoints
 
@@ -223,6 +257,28 @@ So: reuse the exceptions that carry only strings, and define client-side types f
 validation failures. Worth revisiting against a real consumer rather than settling harder
 than that on paper.
 
+**Revisited in P1, 2026-08-24 — the reuse is not implementable, and the client defines its
+own hierarchy.** Read from the mappers rather than the service layer:
+
+- **409 has two causes** — a repeat identity (`StoreConflictExceptionMapper`) and a dangling
+  reference (`ReferentialIntegrityExceptionMapper`) — and both answer `text/plain` with **no
+  discriminating header**.
+- **400 likewise** — a foreign `about` (`ForeignIdentityExceptionMapper`) and an
+  unconvertible query parameter (`QueryParamExceptionMapper`).
+
+From a response the two cannot be told apart without matching on a human-readable message,
+which breaks the first time somebody rewords it. So there is one client type per status
+carrying the message verbatim. Giving those mappers a discriminating header would make the
+finer split possible later; that is a portal change, not a client one.
+
+The one discrimination the plan *did* get right is the important one: **`X-SHACL-Conforms`
+separates the two 422s**, and it has to be the header rather than the body's media type,
+because the SHACL branch can itself answer `text/plain`. Confirmed live — a bare dataset
+was refused by **OCL** (`DcatModelConstraintException`, two violation lines) while a
+complete one that broke the profile was refused by **SHACL**
+(`DcatShaclException`, a Turtle report). Note the ordering that implies: OCL runs first, so
+a very incomplete entity never reaches SHACL at all.
+
 ## 7. Testing and the issue's "evidence"
 
 1. **Plain-Java unit suite** against a stub HTTP server: status→exception mapping, XMI round
@@ -268,6 +324,39 @@ and drift detection that none of this needs — roughly a third of it.
 **P1 is still the phase to do before committing to the rest**, though no longer because of
 the XMI question — that is settled (§10). It is where the transport and the error mapping
 get decided against a running portal, and those two are what the other three phases repeat.
+
+### P1, done 2026-08-24
+
+`client.api` and `client.impl` are implemented and the mapping slice runs end to end
+against a portal in a container: scope → Catalog, EPackage → DatasetSeries, EPackage-in-a-
+stage → Dataset, the API → DataService, content type → Distribution, plus all five
+membership links. 29 plain-Java tests drive the real Jersey client against a stub portal.
+
+What the phase settled, beyond the code:
+
+- **§6.4 is withdrawn** and §6.4a replaces it — see above. The one substantive plan change.
+- **§6.9's exception reuse is not implementable**; the client owns its hierarchy.
+- **A write must ask for `application/xmi`.** The admin endpoints `@Produces` XMI, JSON,
+  XML and RDF/XML — *not* Turtle — so `Accept: text/turtle` on a write is a `406` that
+  reads like a rejected registration. Costs nothing on the report path: `reportType` falls
+  back to Turtle when the `Accept` holds no RDF type, so an XMI write still gets a Turtle
+  report and no compound `Accept` is needed.
+- **A membership link sends no body at all** — those endpoints declare no `@Consumes`.
+- **`ready()` looks beside the REST application, not under it**: with base `…/rest/` the
+  checks are at `…/health/ready`.
+- **`dcat:inSeries`, `dcat:accessService` and sub-catalogues all work** — the three things
+  §6 of the mapping document noted nothing had exercised yet. Read back after linking:
+  `inSeries=1 distributions=1 accessService=1`.
+- **A cascade delete reports referrers, and `inSeries` is not one of them.** Deleting a
+  dataset linked to a catalog, a series and a service unlinked **two** — the series link
+  lives *on* the dataset, so it dies with it and there is nothing to rewrite.
+- `@ServiceProvider` alone does not make `builder()` work off a plain classpath: bnd emits
+  the `META-INF/services` entry into the *jar*, and a plain-Java consumer runs against
+  classes. The descriptor is written out as a file as well.
+
+Not in P1, and unchanged from the plan: the paged collection reads of §8 (nothing in the
+mapping slice walks a collection, and `Page`/`PageRequest` would pull the portal's api
+bundle into the client — worth deciding with a caller in hand), and the whole of P3.
 
 ---
 

@@ -1,0 +1,35 @@
+Test-Cases: ${classes;HIERARCHY_INDIRECTLY_ANNOTATED;org.junit.platform.commons.annotation.Testable;CONCRETE}
+
+-library: \
+	enableOSGi-Test,\
+	enableEMF
+
+# sets the usually required buildpath using the bnd library, you can extend it with the normal -buildpath to your liking
+# The Jena entries are for ShaclViolationException's ValidationReport, which the
+# direct-service tests in WriteValidationIntegrationTest assert on.
+-buildpath: \
+	org.osgi.framework;version=latest,\
+	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot
+	
+# Projects that test.bndrun needs at *run* time but that are not on the -buildpath.
+# bnd derives the build order (and thus the Gradle task graph for resolve.test/testOSGi)
+# from -buildpath/-testpath only, so without this the resolve can run before these
+# bundles exist in the Workspace repo. Eclipse never hits this because its Workspace
+# repo always sees every project.
+-dependson: \
+	org.eclipse.fennec.dcat.atlas.client.impl
+
+Private-Package: \
+	org.eclipse.fennec.dcat.atlas.client.osgi.tests,\
+	org.eclipse.fennec.dcat.atlas.client.osgi.tests.helper
+
+Bundle-Version: 1.0.0.SNAPSHOT
+
+# Sometimes without DynamicImport Mockito will not find certain classes
+#DynamicImport-Package: *
+
+-includeresource: \
+	OSGI-INF/configurator/=configs/
+
+Require-Capability: osgi.extender;filter:='(osgi.extender=osgi.configurator)'

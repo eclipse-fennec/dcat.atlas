@@ -235,9 +235,53 @@ re-register identical content   applied=true  sameEtag=true
 Two properties worth keeping in mind. The **ETag is content-based**, so an idle loop that
 re-registers identical content gets the same validator back and never invalidates its own
 token — the last line above. And a **412 carries no body and no `ETag`**, so a refusal
-cannot report the portal's current validator; getting back in step means either reading the
-resource or registering unconditionally, and which is right depends on whether the publisher
-or the portal owns the truth.
+cannot report the portal's current validator.
+
+### 6.4c Where the validator lives — `etagOf`
+
+**The client stores nothing.** `Registration.etag()` hands the validator to the caller and
+the client forgets it; there is no cache, because a cache inside the client would be empty
+after a restart anyway and would only move the problem somewhere less visible.
+
+Which raised the question Ilenia asked, and it found a hole: with `Registration` as the only
+source of a validator, conditional registration worked *within* one process lifetime and not
+across a restart. A publisher coming back up held nothing, so its first write had to be
+unconditional — precisely the overwrite the precondition exists to prevent.
+
+`Optional<String> etagOf(DcatCollection, String)` closes it with a `HEAD`, plus
+`etagOfDistribution(datasetId, id)` for the nested case. Header only, no entity — so it is
+cheap and stays clear of the read-modify-write trap, since there is nothing parsed and
+nothing to send back. **Empty means "no validator to guard with"**, whether the resource is
+absent or simply carries none; a caller passing the empty result straight to a conditional
+register gets an unconditional write, which is what a create needs, so the pattern takes no
+branch:
+
+```java
+String validator = client.etagOf(DcatCollection.DATASETS, id).orElse(null);
+Registration<Dataset> result = client.registerDataset(id, dataset, validator);
+```
+
+Measured against the running portal — a create, a foreign write, then a restart:
+
+```
+etagOf before create           Optional.empty      -> the create goes unconditional
+created                        etag="589f56f7…"
+(somebody else registers)
+etagOf after restart           etag="f40dac37…"    -> differs, as it should
+guarded write                  applied=true
+etagOf a missing resource      Optional.empty
+```
+
+**So: hold it in memory and re-seed it with one `etagOf` per resource at startup.** Nothing
+to persist, nothing to keep in sync, and it is self-correcting — whatever happened while the
+publisher was down, it picks up the current truth. Persisting the validator next to the
+publisher's own state (model.atlas already tracks a `PackageDescriptor.fingerprint`) is
+possible but buys nothing: a stored validator can go stale in a way a `HEAD` cannot.
+
+Worth saying plainly for model.atlas: it already detects its own changes through the
+fingerprint, so this guard is not protecting it from its own staleness — it protects
+*foreign* edits from being clobbered. If nothing else ever writes those resources, the
+unconditional two-argument form is the honest choice and none of this is needed.
 
 ### 6.5 Membership through the link endpoints
 

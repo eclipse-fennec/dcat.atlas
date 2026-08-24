@@ -217,6 +217,42 @@ final class DcatAtlasClientImpl implements DcatAtlasClient {
 				.path(required(id, "id")), Distribution.class);
 	}
 
+	// --- validators -------------------------------------------------------
+
+	@Override
+	public Optional<String> etagOf(DcatCollection collection, String id) {
+		Objects.requireNonNull(collection, "collection");
+		return validatorOf(publicPath(collection).path(required(id, "id")));
+	}
+
+	@Override
+	public Optional<String> etagOfDistribution(String datasetId, String id) {
+		return validatorOf(publicPath(DcatCollection.DATASETS).path(required(datasetId, "datasetId"))
+				.path(DISTRIBUTIONS).path(required(id, "id")));
+	}
+
+	/**
+	 * A {@code HEAD} for the validator alone.
+	 * <p>
+	 * Absent and unversioned collapse to the same answer deliberately: in both cases there
+	 * is no validator to guard a write with, and a caller passing the empty result straight
+	 * to a conditional register gets an unconditional write, which is correct for a
+	 * resource that does not exist yet.
+	 */
+	private Optional<String> validatorOf(WebTarget target) {
+		String what = "HEAD " + target.getUri();
+		try (Response response = send(target.request(configuration.getReadAcceptMediaType()),
+				Invocation.Builder::head, what)) {
+			if (RestSupport.isNotFound(response)) {
+				return Optional.empty();
+			}
+			if (!RestSupport.isSuccess(response)) {
+				throw RestSupport.statusError(response, what);
+			}
+			return Optional.ofNullable(response.getHeaderString(HttpHeaders.ETAG));
+		}
+	}
+
 	// --- deletion ---------------------------------------------------------
 
 	@Override

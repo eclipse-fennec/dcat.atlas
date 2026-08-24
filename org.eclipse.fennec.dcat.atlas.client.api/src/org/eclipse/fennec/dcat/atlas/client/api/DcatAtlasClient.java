@@ -273,6 +273,51 @@ public interface DcatAtlasClient extends AutoCloseable {
 	/** @return the distribution, or empty when the portal answers {@code 404} */
 	Optional<Distribution> distribution(String datasetId, String id);
 
+	// --- validators -------------------------------------------------------
+
+	/**
+	 * The current validator of a resource, without fetching the resource.
+	 *
+	 * <h2>What this is for</h2>
+	 *
+	 * A conditional registration needs a validator, and the only other source of one is a
+	 * previous {@link Registration} — which lives in the caller's memory and does not
+	 * survive a restart. Without this method a publisher coming back up could not register
+	 * conditionally at all: it would have to write unconditionally first, which is exactly
+	 * the overwrite the precondition exists to prevent.
+	 * <p>
+	 * So the startup pattern is one call of this per resource the publisher manages, and
+	 * conditional registrations from there:
+	 *
+	 * <pre>
+	 * String validator = client.etagOf(DcatCollection.DATASETS, id).orElse(null);
+	 * Registration&lt;Dataset&gt; result = client.registerDataset(id, dataset, validator);
+	 * </pre>
+	 *
+	 * A {@code null} validator makes that write unconditional, which is the right thing in
+	 * both empty cases below — so the pattern above needs no branch.
+	 *
+	 * <h2>Why it is a HEAD and not a read</h2>
+	 *
+	 * It takes only the header, never the entity. That keeps it cheap, and it keeps it
+	 * clear of the trap that killed read-modify-write: nothing is parsed, so there is no
+	 * entity to send back and nothing for SHACL to reject.
+	 *
+	 * @param collection the collection the resource lives in
+	 * @param id         the resource
+	 * @return the validator, or empty when the resource does not exist <em>or</em> carries
+	 *         no validator — in both cases there is nothing to guard a write with, and the
+	 *         caller's next move is the same
+	 */
+	Optional<String> etagOf(DcatCollection collection, String id);
+
+	/**
+	 * The current validator of a distribution — its own, not its dataset's.
+	 *
+	 * @see #etagOf(DcatCollection, String)
+	 */
+	Optional<String> etagOfDistribution(String datasetId, String id);
+
 	// --- deletion ---------------------------------------------------------
 
 	/**

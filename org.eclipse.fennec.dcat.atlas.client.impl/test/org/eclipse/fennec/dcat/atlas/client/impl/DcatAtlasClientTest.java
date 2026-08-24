@@ -412,6 +412,92 @@ class DcatAtlasClientTest {
 		assertFalse(client.registerDistribution("d1", "csv", distribution(), "\"stale\"").applied());
 	}
 
+	// --- validators -------------------------------------------------------
+
+	/** The validator comes from a HEAD on the public read path — header only, no entity. */
+	@Test
+	void etagOfFetchesTheValidatorWithoutTheEntity() {
+		portal.enqueue(Reply.of(200).withHeader("ETag", "\"v7\""));
+
+		assertEquals("\"v7\"", client.etagOf(DcatCollection.DATASETS, "d1").orElseThrow());
+
+		Received request = portal.lastRequest();
+		assertEquals("HEAD", request.method());
+		assertEquals("/rest/datasets/d1", request.path());
+	}
+
+	@Test
+	void etagOfADistributionUsesTheNestedPath() {
+		portal.enqueue(Reply.of(200).withHeader("ETag", "\"v8\""));
+
+		assertEquals("\"v8\"", client.etagOfDistribution("d1", "csv").orElseThrow());
+		assertEquals("/rest/datasets/d1/distributions/csv", portal.lastRequest().path());
+	}
+
+	/** A resource that is not there has no validator. */
+	@Test
+	void etagOfIsEmptyForAMissingResource() {
+		portal.enqueue(Reply.of(404));
+
+		assertTrue(client.etagOf(DcatCollection.DATASETS, "nope").isEmpty());
+	}
+
+	/**
+	 * A resource that exists but carries no validator is empty too. Collapsing the two is
+	 * deliberate: in both cases there is nothing to guard a write with, so a caller feeding
+	 * the result to a conditional register does the right thing without branching.
+	 */
+	@Test
+	void etagOfIsEmptyWhenTheResponseCarriesNoValidator() {
+		portal.enqueue(Reply.of(200));
+
+		assertTrue(client.etagOf(DcatCollection.DATASETS, "d1").isEmpty());
+	}
+
+	/** A real failure is still a failure — empty means "no validator", not "something broke". */
+	@Test
+	void etagOfStillThrowsOnARealFailure() {
+		portal.enqueue(Reply.of(500, "text/plain", "boom"));
+
+		assertThrows(TransportException.class, () -> client.etagOf(DcatCollection.DATASETS, "d1"));
+	}
+
+	/**
+	 * The pattern this method exists for: a publisher that has restarted, holding no
+	 * validator of its own, picks up the current one and registers conditionally against
+	 * it — no unconditional first write, so a foreign edit cannot be clobbered on startup.
+	 */
+	@Test
+	void aRestartedPublisherCanRegisterConditionallyWithoutClobbering() {
+		portal.enqueue(Reply.of(200).withHeader("ETag", "\"current\""));
+		portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("x"))).withHeader("ETag", "\"next\""));
+
+		String validator = client.etagOf(DcatCollection.DATASETS, "d1").orElse(null);
+		Registration<Dataset> result = client.registerDataset("d1", dataset("x"), validator);
+
+		assertTrue(result.applied());
+		assertEquals("HEAD", portal.received().get(0).method());
+		assertEquals("\"current\"", portal.received().get(1).header("if-match"),
+				"the write must be guarded by the validator the HEAD just reported");
+		assertEquals("\"next\"", result.etag());
+	}
+
+	/**
+	 * And the same pattern on a resource that does not exist yet: the empty validator makes
+	 * the write unconditional, which is what a create needs.
+	 */
+	@Test
+	void theSamePatternCreatesAResourceThatIsNotThereYet() {
+		portal.enqueue(Reply.of(404));
+		portal.enqueue(Reply.of(201, XMI, xmiOf(dataset("x"))).withHeader("ETag", "\"first\""));
+
+		String validator = client.etagOf(DcatCollection.DATASETS, "d1").orElse(null);
+		Registration<Dataset> result = client.registerDataset("d1", dataset("x"), validator);
+
+		assertTrue(result.applied());
+		assertNull(portal.received().get(1).header("if-match"), "a create must not send a precondition");
+	}
+
 	// --- deletion ---------------------------------------------------------
 
 	/**

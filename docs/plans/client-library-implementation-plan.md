@@ -446,6 +446,79 @@ Not in P1, and unchanged from the plan: the paged collection reads of §8 (nothi
 mapping slice walks a collection, and `Page`/`PageRequest` would pull the portal's api
 bundle into the client — worth deciding with a caller in hand), and the whole of P3.
 
+### P3, done 2026-08-24
+
+`client.osgi` and `client.osgi.tests` are implemented: the ConfigAdmin factory component,
+the Whiteboard `ClientBuilder`, the `Promise` facade and the readiness gate, with an
+**11-test OSGi integration suite** that hosts the portal in its own framework and drives
+the client through the service registry over a real socket. `client.impl` stays at 43 and
+`rest.tests` at 213.
+
+The component publishes one instance as both `DcatAtlasClient` and `AsyncDcatAtlasClient`,
+tagged `dcat.portal`, and reuses the plain-Java client through the
+`DcatAtlasClientFactory` *service* — only the Jakarta RS seam is overridden. Nothing in the
+design changed; what the run measured was four things about the runtime it lives in:
+
+- **The Whiteboard's `ClientBuilder` cannot be resolved against, and that is an upstream
+  omission.** The osgitech whiteboard registers `jakarta.ws.rs.client.ClientBuilder`
+  programmatically — a prototype `ServiceFactory` created in
+  `ClientBuilderComponent.activate()` — and declares no `@Capability` for it, so there is no
+  `osgi.service` capability for the component's mandatory `@Reference` to resolve against.
+  The convention it misses is the one this workspace and model.atlas both follow: a service
+  registered programmatically gets an explicit
+  `@Capability(namespace = "osgi.service", …)`, exactly as the generated model bundles here
+  do (`DcatConfigurationComponent` and friends) and as `AtlasClientComponent` does in
+  model.atlas. Telling: the whiteboard *does* declare it for the `SseEventSourceFactory` it
+  registers in the same method — so this is one missing annotation, and worth reporting
+  upstream rather than working around.
+  <br>
+  The fix here is therefore not to skip a namespace but simply **not to set
+  `-resolve.effective: active`** in `client.osgi.tests/test.bndrun`. Bnd only considers
+  `effective:=active` requirements when asked to, so without the instruction the unsatisfiable
+  service requirement never enters the resolve — which is precisely why model.atlas's
+  `client.osgi.tests`, whose component takes the same `@Reference ClientBuilder`, has no such
+  line either. `rest.tests` sets it and should not be copied from. Nothing is lost by leaving
+  it out, measured: SPI-Fly and the Jena providers still arrive on their extender and package
+  requirements, the JUnit engines come from the test launcher's own `-runpath`, and the
+  resolve drops from 124 to 121 bundles with the suite still green.
+- **`require.ready` cannot be tested as an absent service.** The component is a *delayed*
+  component, so DS registers its service as soon as a configuration satisfies it and only
+  builds the instance when somebody first asks for it. A refused activation therefore
+  leaves a `ServiceReference` in the registry and shows up only as `getService()` answering
+  `null`. The gate still works — a consumer's `@Reference` to it stays unsatisfied — but
+  "no service reference" is the wrong assertion, and one that would pass for the wrong
+  reason.
+- **The hosted portal is reliably *not* ready, so the gate has a realistic test.**
+  Measured over five seconds: `503 CRITICAL` from the first probe, the `shacl` check
+  reporting "Shapes directory configured but no `*.ttl` shapes loaded … validation would
+  silently pass everything" while every other check is OK. Since the DCAT-AP.de shapes are
+  AGPL and cannot be vendored, that is the steady state of every test runtime — the same
+  behaviour `rest.tests`' `HealthEndpointIntegrationTest` pins. So `require.ready` is
+  exercised twice: against this portal, which answers and refuses (the realistic path), and
+  against an unreachable one, where `ready()` maps a refused connection to `false` instead
+  of reading a status. The ready-and-activating case stays untested because it is
+  unreachable here by design.
+- **A write must satisfy the model, and `validateOnWrite` defaults to `true`.** A dataset
+  needs `title`, `description` (the OCL invariant `HasDescription`) *and* `publisher` — a
+  `foaf:Agent` whose own `name` is required, so an empty Agent will not do. A distribution
+  needs `accessURL` and `license` instead, having no publisher. Worth noting: the javadoc on
+  `rest.tests`' `ModelConstraintWriteIntegrationTest` says enforcement is off in the test
+  runtime and that is **not** true of `StoreConfig`'s default — the test flips on something
+  already on.
+- **A deleted `Configuration` throws from `equals()`.** Felix's `ConfigurationAdapter`
+  checks for deletion in `getPid()`, so even a `List.remove()` looking for a configuration
+  that has just been deleted fails with `IllegalStateException`. Take it off the cleanup
+  list before deleting it, not after.
+
+The suite covers: both faces published from one instance and tagged; two portals as two
+independent clients selected by target filter; a configuration deletion retiring both
+faces; a registration out through the Whiteboard client and back; conditional registration
+guarded by the validator a `HEAD` reports; the publishing sequence composed into one
+promise, with the distribution and the series link both surviving; work running off the
+calling thread on a thread named for its portal; `close()` on the shared service being a
+no-op; and all three readiness cases — a reachable portal reporting not ready, an
+unreachable one, and the advisory check that only warns.
+
 ---
 
 ## 10. Open questions

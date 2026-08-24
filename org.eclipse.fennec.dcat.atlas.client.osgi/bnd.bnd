@@ -1,5 +1,22 @@
+Bundle-Name: DCAT.Atlas client — OSGi front-end
+Bundle-Description: OSGi DS front-end for the DCAT.Atlas client: a ConfigAdmin \
+ factory component (PID org.eclipse.fennec.dcat.atlas.client) that maps one \
+ configuration onto the shared ClientConfiguration and builds one plain-Java \
+ client per portal, publishing it as both a synchronous DcatAtlasClient and an \
+ asynchronous AsyncDcatAtlasClient tagged with its dcat.portal name. The Jakarta \
+ RS client comes from the Whiteboard's ClientBuilder.
+
 -library: enableEMF
 
+Export-Package: org.eclipse.fennec.dcat.atlas.client.osgi
 
 -buildpath: \
-	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot
+	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.client.impl;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	jakarta.ws.rs-api;version=latest,\
+	org.osgi.service.component.annotations;version=latest,\
+	org.osgi.service.metatype.annotations;version=latest,\
+	org.osgi.annotation.versioning;version=latest,\
+	org.osgi.util.promise;version=latest,\
+	org.osgi.util.function;version=latest

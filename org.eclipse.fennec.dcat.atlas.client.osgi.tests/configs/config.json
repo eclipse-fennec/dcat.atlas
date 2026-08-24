@@ -1,0 +1,60 @@
+{
+  ":configurator:resource-version": 1,
+
+  "org.apache.felix.http~clientTestHttp": {
+    "org.osgi.service.http.port": "8186",
+    "org.osgi.service.http.host": "localhost",
+    "org.apache.felix.http.context_path": "/",
+    "org.apache.felix.http.name": "Dcat Atlas Client Test HTTP",
+    "org.apache.felix.http.runtime.init.id": "clientTestHttp"
+  },
+  "JakartarsServletWhiteboardRuntimeComponent~clientTestRest": {
+    "jersey.jakartars.whiteboard.name": "Dcat Atlas Client Test REST",
+    "jersey.context.path": "rest",
+    "name": "dcatatlas-client-test",
+    "osgi.http.whiteboard.target": "(id=clientTestHttp)"
+  },
+  "org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatLive": {
+  	"servletPath": "/health/live",
+  	"tags": ["live"],
+  	"format": "json",
+  	"httpStatusMapping": "OK:200,WARN:200,CRITICAL:503,TEMPORARILY_UNAVAILABLE:503,HEALTH_CHECK_ERROR:500"
+  },
+  "org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatReady": {
+  	"servletPath": "/health/ready",
+  	"tags": ["ready"],
+  	"format": "json",
+  	"httpStatusMapping": "OK:200,WARN:200,CRITICAL:503,TEMPORARILY_UNAVAILABLE:503,HEALTH_CHECK_ERROR:500"
+  },
+  "org.apache.felix.hc.generalchecks.ServicesCheck": {
+  	"hc.name": "services",
+  	"hc.tags": ["ready"],
+  	"services.list": ["(objectClass=org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService)"],
+  	"statusForMissing": "CRITICAL"
+  },
+  "GitConfig~dcatStore": {
+    "id": "dcatStore",
+    "repo": "$[env:GIT_REPO;default=/tmp/dcat-atlas-client-test-store.git]",
+    "branch": "main",
+    "authorName": "DCAT.Atlas Client Integration Tests",
+    "authorEmail": "tests@dcat.atlas",
+    "pushOnCommit": false,
+    "privateKey": "",
+    "privateKeyPassphrase": "",
+    "knownHosts": "",
+    "username": "",
+    "password": ""
+  },
+  "CatalogReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "CatalogAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DatasetReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DatasetAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DataServiceReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DataServiceAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DatasetSeriesReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DatasetSeriesAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DistributionReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "DistributionAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "PublicIris": { "publicBaseUrl": "http://localhost:8186/rest/" },
+  "DcatValidationService":        { "shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]", "vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]", "enforceOnWrite": "$[env:SHACL_ENFORCE;default=false]" }
+}

@@ -99,9 +99,45 @@ somewhere else. Two layers, and both are needed:
    Without it every published model carries an identical publisher and licence, which is
    tolerable to start and wrong as soon as two teams publish into one portal.
 
+> **Decided (Ilenia, 2026-08-24): layer 1 only, for now.** A single default publisher is
+> acceptable to get publishing working; the per-model EAnnotation override comes later.
+>
+> **Sharper than this section assumed, measured in P3 of the client:** `publisher` is not
+> merely a SHACL expectation. It is a **declared multiplicity `[1]` on `DcatResource`**, and
+> `description` is the OCL invariant `HasDescription` — both enforced by
+> `StoreConfig.validateOnWrite()`, which **defaults to on**, entirely independently of whether
+> any SHACL shapes are mounted. So `title` + `description` + `publisher` is the hard floor for
+> *every* write: without a publisher, not one registration succeeds even against a portal with
+> no shapes at all. A `foaf:Agent` needs its own `name` too — an empty Agent does not satisfy
+> the reference. Licence and theme, by contrast, really are SHACL-level and only bite where
+> the shapes are mounted.
+
+## 3a. Where this gets built
+
+**Decided (Ilenia, 2026-08-24): on the model.atlas side.** The publisher component lives in
+model.atlas and consumes the dcat client as jars, rather than dcat.atlas driving model.atlas
+over HTTP. dcat.atlas publishes nothing to Maven today (`snapshot.yml` ships only the
+container), so for now the four jars are hand-placed in model.atlas's `cnf/local` — the
+`fennec.jgit` arrangement, accepted as non-reproducible until publishing is switched on.
+
+The four:
+
+| jar | why |
+|---|---|
+| `org.eclipse.fennec.dcat.atlas.client.api` | `DcatAtlasClient`, `Registration`, the exception hierarchy |
+| `org.eclipse.fennec.dcat.atlas.client.impl` | the implementation + the XMI codec; also the `…impl.spi` seam |
+| `org.eclipse.fennec.dcat.atlas.client.osgi` | the DS factory component and `AsyncDcatAtlasClient` — only needed for the OSGi front-end |
+| `org.eclipse.fennec.dcat.atlas.dcatap.de.model` | the `dcat`, `rdf`, `foaf`, `terms`, `spdx`, `vcard`, `adms` EMF packages the client signatures are written in |
+
+Runtime notes for that side: the OSGi front-end needs **SPI-Fly** (the `osgi.serviceloader`
+mediation behind `DcatAtlasClientFactory`) and a Jakarta RS whiteboard to source its
+`ClientBuilder` — model.atlas's own `client.osgi.tests` runbundles already carry both. And do
+**not** set `-resolve.effective: active` in a bndrun that includes `client.osgi`, for the
+reason recorded in the client plan's §9.
+
 ---
 
-## 4. Two things to decide
+## 4. Two things to decide — both decided 2026-08-24
 
 **Distributions that differ only by media type.** `SchemaPackagesResource` declares a bare
 `@Produces` and negotiates on `Accept`; there is no `?format=` or `.json` variant. So every
@@ -111,6 +147,11 @@ specific representation without knowing to set a header, and `dcat:downloadURL` 
 property that means "this URL returns this representation" — has nothing to point at.
 Either model.atlas grows a format selector, or the distributions stay negotiation-only and
 we accept that a crawler gets whichever format the server prefers.
+
+> **Decided (Ilenia, 2026-08-24): one Distribution per media type, negotiation-only.** The
+> shared `accessURL` and the empty `dcat:downloadURL` are accepted for now. A format selector
+> in model.atlas would turn this into a widening later — each Distribution gains its own
+> `downloadURL` — and nothing has to be re-modelled to get there.
 
 **Dataset per stage, or per version?** Both exist in `PackageDescriptor`, and only the
 stage is addressable:
@@ -123,6 +164,8 @@ stage is addressable:
 
 Per stage now; per version becomes available if model.atlas ever serves a version-pinned
 URL, and the series makes that a widening rather than a migration.
+
+> **Decided (Ilenia, 2026-08-24): a Dataset per stage**, as proposed.
 
 ---
 

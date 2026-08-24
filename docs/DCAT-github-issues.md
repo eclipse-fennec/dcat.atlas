@@ -172,3 +172,120 @@ than inferred:
 
 **Not a regression.** The REST layer has never exposed the flag; this was found by testing
 the API rather than the service, not by breaking anything.
+
+---
+
+### [DCAT] Every `dcterms:issued`/`modified` dateTime is published as `^^xsd:date` - Status DRAFT (not yet filed)
+
+*Found 2026-08-24 while testing the new `text/html` representation (#25) against a running
+container. The HTML view prints a literal's datatype, which is how a defect that had been in
+every RDF syntax all along became visible.*
+
+**Summary.** A date value written without an explicit `datatype` is serialised with
+`^^xsd:date` whatever it actually is. So a dateTime is published as
+
+```
+dcterms:issued "2026-01-15T08:00:00.000+01:00"^^xsd:date
+```
+
+which is an **ill-typed literal** — that lexical form belongs to `xsd:dateTime`, not
+`xsd:date`. It affects every RDF representation the portal serves and the SPARQL projection.
+The stored data is fine; only what we emit is wrong.
+
+**Where it is.** `EObjectToJena.asLiteral`, in
+`org.eclipse.fennec.dcat.atlas.msg.body.writer`:
+
+```java
+if (eObject instanceof DateOrDateTimeLiteral dated) {
+    String lexical = lexical(RdfPackage.Literals.DATE_OR_DATE_TIME, dated.getValue());
+    Datatype datatype = dated.getDatatype();
+    return datatype == null ? model.createLiteral(lexical)          // <- dead code
+            : model.createTypedLiteral(lexical, datatype.getLiteral());
+}
+```
+
+`datatype` is an `EEnum` whose **first literal is `xsd:date`** (`rdf.ecore`, `Datatype`), so
+EMF generates `DATATYPE_EDEFAULT = HTTP_WWW_W3_ORG2001_XML_SCHEMA_DATE` and `getDatatype()`
+returns it whenever the attribute was never set. An enum getter never returns `null`, so the
+`datatype == null` branch above is unreachable and the plain-literal case never happens.
+
+The model itself is *not* at fault: the ecore marks the attribute `unsettable="true"`, so
+`isSetDatatype()` exists and distinguishes "not set" from "set to date" correctly. This one
+call site simply never asks.
+
+**Affected features** — seven, across three ecores: `dcterms:issued` (Catalog, Dataset,
+Distribution), `dcterms:modified` (Dataset, Distribution), and `startDate`/`endDate` on
+`dcterms:PeriodOfTime`.
+
+**Reproduce.** Against a running portal:
+
+```bash
+# POST a dataset whose <issued value="2026-01-15T08:00:00.000+01:00"/> carries no datatype
+curl -H 'Accept: application/n-triples' "$BASE/datasets/luftqualitaet-2026" | grep issued
+#   "2026-01-15T08:00:00.000+01:00"^^<http://www.w3.org/2001/XMLSchema#date>     <- wrong
+
+# the same value with datatype="…#dateTime" stated explicitly comes out correct,
+# so the defect is purely the default
+```
+
+A **date-only** value (`<issued value="2026-01-15"/>`) comes out as `xsd:date`, which is
+right — by accident. The default is correct for exactly the one case and wrong for every
+dateTime.
+
+**Impact, measured.** Two datasets carrying the *identical instant*, one with the datatype
+stated and one without, against the portal's own SPARQL endpoint:
+
+```sparql
+SELECT (COUNT(*) AS ?n) WHERE {
+  GRAPH ?g { ?d dcterms:issued ?i }
+  FILTER(?i > "2025-01-01T00:00:00Z"^^xsd:dateTime)
+}
+```
+
+→ **1**, not 2. A harvester asking "everything published since March" silently drops every
+dataset we wrote without an explicit datatype: the comparison is between incomparable
+datatypes, so it is not an error, just a missing row. Strict consumers may drop the triple
+entirely, since the literal is ill-typed.
+
+**Nothing in the stack catches it.**
+
+- **SHACL cannot.** The DCAT-AP.de shapes constrain `dcterms:issued` to "MUSS auf ein Literal
+  verweisen" plus cardinality — there is no `sh:datatype` anywhere near it. Verified against
+  the real shapes: `X-SHACL-Conforms: true`.
+- **The XMI/JSON/XML codec is unaffected** and round-trips faithfully: an unset datatype stays
+  absent on read-back, and the git store's blob shows the attribute absent too.
+
+**So no data migration is needed.** The store holds XMI in which the datatype is genuinely
+unset; fixing the serialiser makes every existing resource start serialising correctly on the
+next read.
+
+**Proposed fix.** In `asLiteral`, honour the `unsettable` flag and, when the datatype is not
+set, take it from the value rather than from an enum default:
+
+```java
+if (!dated.eIsSet(RdfPackage.Literals.DATE_OR_DATE_TIME_LITERAL__DATATYPE)) {
+    // XMLGregorianCalendar knows its own XSD type: DatatypeConstants.DATE / DATETIME / …
+    // It throws IllegalStateException for a field combination that is not a schema type,
+    // so fall back to a plain literal there rather than guessing.
+}
+```
+
+`XMLGregorianCalendar.getXMLSchemaType()` is the right source: it is derived from which fields
+the value actually has, so it cannot disagree with the lexical form the way a hand-rolled
+"contains a T" test could. The unreachable `datatype == null` guard should go at the same time.
+
+Two alternatives, both worse:
+
+- **Reorder the `Datatype` enum so `dateTime` is first.** Moves which case is silently wrong
+  rather than fixing either, and edits generated model code.
+- **Make `datatype` mandatory in the model.** Pushes the burden onto every client and
+  invalidates stored resources that legitimately omit it.
+
+**Tests to add.** `EObjectToJenaTest` currently asserts the *lexical form* of a date literal
+but never its datatype, which is why this survived: assert the emitted datatype for a
+date-only value, a dateTime value, and a value with the datatype set explicitly.
+
+**Not a regression.** The behaviour predates #25 and predates the git store; it was found by
+looking at a representation that happens to display datatypes. `EObjectToJena` is shared with
+the validation and SPARQL bundles, so the fix wants its own change and its own review rather
+than riding along with unrelated work.

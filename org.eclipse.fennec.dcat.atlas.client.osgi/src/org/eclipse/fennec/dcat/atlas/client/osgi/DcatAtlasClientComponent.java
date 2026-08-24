@@ -63,9 +63,9 @@ import jakarta.ws.rs.client.ClientBuilder;
  *
  * <h2>Reusing the plain-Java client rather than reimplementing it</h2>
  *
- * The client comes from the {@link DcatAtlasClientFactory} <em>service</em> — the impl bundle
- * registers it through bnd's {@code @ServiceProvider}, so nothing here calls
- * {@code ServiceLoader} inside the framework or touches the impl's unexported classes. Only
+ * The client comes from the {@link DcatAtlasClientFactory} <em>service</em> — a DS component
+ * in the impl bundle, so nothing here calls {@code ServiceLoader} inside the framework, needs
+ * a ServiceLoader mediator on the runtime, or touches the impl's unexported classes. Only
  * the Jakarta RS seam differs: {@link WhiteboardJakartaRsClientProvider} hands over the
  * Whiteboard's {@link ClientBuilder}, so the runtime's own HTTP client and registered
  * providers apply while the timeout and authentication wiring is reused as-is. That reference

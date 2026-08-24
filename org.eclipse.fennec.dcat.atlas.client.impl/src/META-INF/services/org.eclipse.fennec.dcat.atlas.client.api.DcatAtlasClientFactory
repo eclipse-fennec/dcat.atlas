@@ -1,8 +1,9 @@
 # Makes DcatAtlasClient.builder() work off a plain classpath.
 #
-# @ServiceProvider on DefaultDcatAtlasClientFactory generates this same entry into the
-# bundle, plus the osgi.serviceloader capability an OSGi mediator needs. It is written out
-# here as well because the annotation only reaches the *jar*: a plain-Java consumer — and
-# this project's own test task — runs against the classes directory, where a generated
-# resource never appears. Without it the ServiceLoader finds nothing and builder() throws.
+# Maintained by hand, and it has to be: a generated resource would only ever reach the
+# *jar*, while a plain-Java consumer — and this project's own test task — runs against the
+# classes directory. Without this file the ServiceLoader finds nothing and builder() throws.
+#
+# Inside a framework this file is ignored; DefaultDcatAtlasClientFactory is a DS component
+# there and the front-end takes it from the service registry.
 org.eclipse.fennec.dcat.atlas.client.impl.DefaultDcatAtlasClientFactory

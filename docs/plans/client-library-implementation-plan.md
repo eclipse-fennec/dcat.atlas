@@ -438,9 +438,12 @@ What the phase settled, beyond the code:
 - **A cascade delete reports referrers, and `inSeries` is not one of them.** Deleting a
   dataset linked to a catalog, a series and a service unlinked **two** — the series link
   lives *on* the dataset, so it dies with it and there is nothing to rewrite.
-- `@ServiceProvider` alone does not make `builder()` work off a plain classpath: bnd emits
-  the `META-INF/services` entry into the *jar*, and a plain-Java consumer runs against
-  classes. The descriptor is written out as a file as well.
+- **How the factory is found, twice over.** `builder()` needs a `META-INF/services` entry
+  on the classpath and an OSGi consumer needs a service. bnd's `@ServiceProvider` was the
+  first answer and is **no longer used** — see the P3 note below on why it was withdrawn.
+  The descriptor is a checked-in file (a generated one reaches only the jar, and a
+  plain-Java consumer — this project's own test task included — runs against classes), and
+  `-includeresource` puts it in the jar as well.
 
 Not in P1, and unchanged from the plan: the paged collection reads of §8 (nothing in the
 mapping slice walks a collection, and `Page`/`PageRequest` would pull the portal's api
@@ -478,8 +481,8 @@ design changed; what the run measured was four things about the runtime it lives
   service requirement never enters the resolve — which is precisely why model.atlas's
   `client.osgi.tests`, whose component takes the same `@Reference ClientBuilder`, has no such
   line either. `rest.tests` sets it and should not be copied from. Nothing is lost by leaving
-  it out, measured: SPI-Fly and the Jena providers still arrive on their extender and package
-  requirements, the JUnit engines come from the test launcher's own `-runpath`, and the
+  it out, measured: the Jena providers and the SPI-Fly they need still arrive on their
+  extender and package requirements, the JUnit engines come from the test launcher's own `-runpath`, and the
   resolve drops from 124 to 121 bundles with the suite still green.
 - **`require.ready` cannot be tested as an absent service.** The component is a *delayed*
   component, so DS registers its service as soon as a configuration satisfies it and only
@@ -505,6 +508,24 @@ design changed; what the run measured was four things about the runtime it lives
   `rest.tests`' `ModelConstraintWriteIntegrationTest` says enforcement is off in the test
   runtime and that is **not** true of `StoreConfig`'s default — the test flips on something
   already on.
+- **bnd's `@ServiceProvider` was withdrawn from `client.impl`.** It needs
+  `biz.aQute.bnd.annotation` on the buildpath, and `cnf/ext/central.mvn` pulls that in at
+  `${bndversion}` — the version of whichever bnd is *driving* the build. This workspace's
+  `gradle.properties` pins 7.2.1 while bndtools here runs 7.5.0 (both caches exist under
+  `cnf/cache/`, and the local Maven repository has the annotation only up to 7.4.0), so the
+  bundle compiled under gradle and **failed to compile in the IDE** — caught by Ilenia, and
+  invisible to a command-line build. It was the only `${bndversion}` build dependency in the
+  workspace, which is why nothing else broke.
+  <br>
+  `DefaultDcatAtlasClientFactory` is now a plain `@Component(service =
+  DcatAtlasClientFactory.class)`, which is better independently of the version trap: SCR
+  registers it, bnd derives the `osgi.service` capability from the component, and SPI-Fly
+  stops being load-bearing for reaching our own factory (Jena still needs it for its own
+  reasons). Watch the one trap: the annotation used to generate the `META-INF/services` entry
+  into the jar and a DS component does not, so `-includeresource` now carries the checked-in
+  descriptor there — without it `builder()` works in this workspace's tests, which run against
+  `bin/`, and throws for anyone consuming the jar.
+
 - **A deleted `Configuration` throws from `equals()`.** Felix's `ConfigurationAdapter`
   checks for deletion in `getPid()`, so even a `List.remove()` looking for a configuration
   that has just been deleted fails with `IllegalStateException`. Take it off the cleanup

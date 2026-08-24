@@ -39,9 +39,10 @@
 # ClientBuilderComponent.activate()) and, unlike the SseEventSourceFactory it registers
 # in the same method, declares no matching @Capability for it — so the resolve fails on a
 # requirement that is satisfied perfectly well at runtime. model.atlas's client.osgi.tests
-# omits the instruction for the same reason. Nothing is lost by leaving it out: SPI-Fly and
-# the Jena providers still come in on their extender and package requirements, and the JUnit
-# engines come from the test launcher's own -runpath.
+# omits the instruction for the same reason. Nothing is lost by leaving it out: the Jena
+# providers and the SPI-Fly they need still come in on their extender and package
+# requirements, and the JUnit engines come from the test launcher's own -runpath. The client
+# itself does not use SPI-Fly at all — DcatAtlasClientFactory is a DS component.
 
 -runproperties: \
 	org.osgi.service.http.port=-1,\

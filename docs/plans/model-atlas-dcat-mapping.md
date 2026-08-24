@@ -129,11 +129,15 @@ The four:
 | `org.eclipse.fennec.dcat.atlas.client.osgi` | the DS factory component and `AsyncDcatAtlasClient` — only needed for the OSGi front-end |
 | `org.eclipse.fennec.dcat.atlas.dcatap.de.model` | the `dcat`, `rdf`, `foaf`, `terms`, `spdx`, `vcard`, `adms` EMF packages the client signatures are written in |
 
-Runtime notes for that side: the OSGi front-end needs **SPI-Fly** (the `osgi.serviceloader`
-mediation behind `DcatAtlasClientFactory`) and a Jakarta RS whiteboard to source its
-`ClientBuilder` — model.atlas's own `client.osgi.tests` runbundles already carry both. And do
-**not** set `-resolve.effective: active` in a bndrun that includes `client.osgi`, for the
-reason recorded in the client plan's §9.
+Runtime notes for that side: the OSGi front-end needs **SCR** and a **Jakarta RS whiteboard**
+to source its `ClientBuilder` — model.atlas already has both. It does *not* need SPI-Fly:
+`DcatAtlasClientFactory` is a plain DS component, so the service registry has it without any
+ServiceLoader mediation. And do **not** set `-resolve.effective: active` in a bndrun that
+includes `client.osgi`, for the reason recorded in the client plan's §9.
+
+Off a framework — a plain-Java publisher rather than a component — use
+`DcatAtlasClient.builder()`, which finds the same factory through the `META-INF/services`
+entry in the impl jar.
 
 ---
 

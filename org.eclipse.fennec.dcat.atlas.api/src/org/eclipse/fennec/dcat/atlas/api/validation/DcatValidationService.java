@@ -34,6 +34,34 @@ public interface DcatValidationService {
 	ValidationReport validate(EObject entity);
 
 	/**
+	 * Validates {@code entity}, letting the shapes see what the resources it references
+	 * <em>are</em>.
+	 *
+	 * <h2>Why context is needed at all</h2>
+	 *
+	 * A submitted entity is validated as a graph on its own, so a reference to another
+	 * stored resource arrives as a bare IRI with no type. DCAT-AP.de states several
+	 * constraints as "MUSS auf eine Klasse vom Typ … verweisen", and those cannot be
+	 * satisfied by a graph that does not say what the target is — so a resource that has
+	 * been linked to anything could not be re-submitted as it was served.
+	 * <p>
+	 * Only the {@code rdf:type} of each context entity is used. Their own properties stay
+	 * out, so a neighbour's non-conformance is never reported against this write, and the
+	 * caller is not made responsible for data it did not send.
+	 *
+	 * @param entity  the entity under validation
+	 * @param context resources {@code entity} references, as read from the store; may be
+	 *                {@code null} or empty
+	 * @return the report, never {@code null}
+	 * @implSpec The default ignores {@code context} and validates {@code entity} alone, so
+	 *           an implementation that cannot resolve references stays correct — merely
+	 *           stricter.
+	 */
+	default ValidationReport validate(EObject entity, java.util.Collection<? extends EObject> context) {
+		return validate(entity);
+	}
+
+	/**
 	 * Whether the admin write path must enforce validation (FR-4): reject a
 	 * non-conformant entity with {@code 422} before persisting it. When {@code false},
 	 * validation is offered only as the explicit dry run (FR-5) and writes are never

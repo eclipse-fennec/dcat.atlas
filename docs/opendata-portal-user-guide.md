@@ -347,53 +347,44 @@ service are made from the other end, through the rows above.
 
 #### Modifying a resource that has members
 
-**A resource carrying member references cannot be `PUT` back while SHACL enforcement is on.**
-Read a catalog that lists a dataset, change its title, `PUT` it — and the write is refused
-`422`, even though you changed nothing about the reference:
-
-```
-dcat:Catalog: dcat:dataset MUSS auf eine Klasse vom Typ dcat:Dataset verweisen.
-sh:sourceConstraintComponent  sh:ClassConstraintComponent
-sh:value                      http://dcat.atlas/datasets/luftqualitaet-2026
-```
-
-This is a limitation of how the model encodes a reference, not a bug in your request. A
-member appears as `<dataset href="…"/>`, which names the target and nothing else — it cannot
-carry the target's `rdf:type`. The body is validated as a graph in its own right, so
-`dcat:dataset` points at an IRI that, *within that graph*, is not a `dcat:Dataset`, and the
-shape's class constraint cannot be satisfied. The dataset itself is stored and perfectly
-valid; it is simply not in the graph being checked.
-
-**The way round it is two requests: replace the resource without its members, then re-link
-them.**
+**A resource carrying member references can be read, edited and `PUT` straight back.** Keep
+the `<dataset href="…"/>`, `<service href="…"/>`, `<catalog href="…"/>` and `<inSeries
+href="…"/>` elements in the body and the write is accepted with SHACL enforcement on:
 
 ```bash
-# 1. read it, and note the members before you drop them — you will need to restore them
 curl -s .../catalogs/gov -H 'Accept: application/xmi' > catalog.xmi
-
-# 2. edit, and remove every <dataset href=…/> <service href=…/> <catalog href=…/> element
-#    (this replaces the catalog, so the references are gone after it)
+# edit the title, leave the member references alone
 curl -i -X PUT .../admin/catalogs/gov \
-  -H 'Content-Type: application/xmi' --data-binary @catalog-without-members.xmi   # 200
-
-# 3. re-link each member that was there
-curl -i -X PUT .../admin/catalogs/gov/datasets/luftqualitaet-2026                 # 200
+  -H 'Content-Type: application/xmi' --data-binary @catalog.xmi                  # 200
 ```
 
-Three things to be careful of:
+This used to be refused `422`. A member appears as an `href` that names the target and
+nothing else — it cannot carry the target's `rdf:type` — and the body is validated as a graph
+in its own right, so `dcat:dataset` pointed at an IRI that, *within that graph*, was not a
+`dcat:Dataset`. The write path now hands the shapes the `rdf:type` of every resource the body
+references, read from the store, so the class constraint can be answered. Only the type is
+borrowed: a member's own non-conformance is never reported against your write.
 
-- **Enumerate the members before step 2.** `PUT` replaces, so the references are gone once it
-  succeeds, and nothing else records what they were.
-- **It is not atomic.** Each request is its own commit, so between steps 2 and 3 the catalog
-  genuinely has no members and a reader sees it that way. If step 3 never runs, the links stay
-  lost — the members themselves are untouched, but the catalog no longer lists them.
-- **The members are not deleted** by step 2, only unlinked. `GET /datasets/{id}` still answers
-  `200` throughout.
+**The constraint still bites when it should.** A reference to a resource that does not exist
+is a `409`, and a reference to one that exists but is the wrong class is still a `422`:
 
-This applies to every container in the table above, and only to the reference-carrying
-properties: `PUT` a catalog that has no members and it behaves normally. With
-`SHACL_ENFORCE=false` the single `PUT` is accepted, but that switches off profile validation
-for every write, which is not a trade worth making to save a request.
+```
+# <inSeries href="…/catalogs/gov#/"/> — a catalog where a series belongs
+dcat:Dataset: dcat:inSeries MUSS auf eine Klasse vom Typ dcat:DatasetSeries verweisen.
+```
+
+**What has not changed: `PUT` replaces.** Leave the member elements out and the links are gone
+once it succeeds — the members themselves are untouched and still answer `200` on their own
+URLs, but the container no longer lists them. So either send the references you want kept, or
+re-link afterwards:
+
+```bash
+curl -i -X PUT .../admin/catalogs/gov/datasets/luftqualitaet-2026                # 200
+```
+
+The same applies to a dataset's **distributions**, which are containment rather than
+references: a `PUT` without them removes them, so a body meant to preserve them has to carry
+them.
 
 The `POST` **stores the member and then links it**, so it follows exactly the rules of
 `POST /admin/datasets`: the `about` must be one of ours or absent (`400` otherwise),
@@ -629,7 +620,7 @@ several RDF syntaxes, plus JSON, plus HTML for a browser:
 | `application/n-triples` | N-Triples | One triple per line; good for diffing/streaming. |
 | `text/n3` | N3 | Turtle plus rule/logic features (unused by DCAT data). |
 | `application/json` | EMF JSON | Internal object encoding (typed `_type` fields); for round-tripping through this stack — **not** interoperable DCAT. For public JSON, prefer JSON-LD. |
-| `application/xmi` | XMI | The model's own encoding, and **the only format writes accept** — so this is the one to ask for when you intend to read, edit and `PUT` back. One exception, worth knowing before you build on it: a resource that *references* others cannot be `PUT` back as-is — see [Modifying a resource that has members](#modifying-a-resource-that-has-members). |
+| `application/xmi` | XMI | The model's own encoding, and **the only format writes accept** — so this is the one to ask for when you intend to read, edit and `PUT` back, which round-trips including member references. One thing to know before you build on it: `PUT` *replaces*, so anything you leave out of the body is removed — see [Modifying a resource that has members](#modifying-a-resource-that-has-members). |
 | `application/xml` | EMF XML | The model's plain-XML encoding — the same object graph as XMI, written by a different codec. Like XMI it is **not an RDF syntax**: see the note below. On writes, use `application/xmi`. |
 | `text/html` | HTML | A page for a browser, **on a single resource only** — a collection answers `406`. It is the same graph as the RDF syntaxes rendered as a property table, so it shows every property the resource has, and it carries a schema.org `application/ld+json` block for crawlers. Ask for RDF if you are parsing; this is for reading. |
 

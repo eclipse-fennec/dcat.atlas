@@ -214,7 +214,10 @@ public final class DcatHelper {
 			if (validateOnWrite) {
 				ModelValidation.check(object);
 			}
-			ShaclValidation.check(validation, object);
+			// The referenced resources come along as SHACL context — only their rdf:type —
+			// so a reference-typing constraint can be answered. requireResolvable above has
+			// already established that they all exist.
+			ShaclValidation.check(validation, object, References.referenced(this, object));
 			URI uri = StoreResourceSets.resourceUri(collection, id);
 			Resource resource = resourceSet.getResource(uri, false);
 			if (resource == null) {

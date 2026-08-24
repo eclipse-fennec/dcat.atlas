@@ -15,7 +15,10 @@ package org.eclipse.fennec.dcat.atlas.impl.integrity;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
@@ -126,6 +129,53 @@ public final class References {
 							.formatted(missing.size(), String.join(", ", missing)),
 					List.copyOf(missing));
 		}
+	}
+
+	/**
+	 * The stored resources {@code entity} points at, for use as SHACL context.
+	 *
+	 * <h2>Why the shapes need these</h2>
+	 *
+	 * A submitted entity is validated as a graph on its own, so {@code dcat:inSeries} or
+	 * {@code dcat:accessService} arrives as a bare IRI. DCAT-AP.de says such a reference
+	 * MUSS point at a node of a given class, which no graph lacking the target's type can
+	 * satisfy — so without this a resource that had been linked could not be re-submitted
+	 * as it was served. Only the {@code rdf:type} of what is returned here is used; see
+	 * {@code EObjectToJena.typeGraph}.
+	 *
+	 * <h2>What is left out</h2>
+	 *
+	 * Only identities under one of our collection bases, exactly as
+	 * {@link #requireResolvable}: somebody else's publisher, licence or vocabulary concept
+	 * is not ours to type, and asserting a type for it would be inventing data. A
+	 * reference that does not resolve is skipped rather than raised — {@code requireResolvable}
+	 * runs first and is what reports that, with a better message.
+	 *
+	 * @return the referenced resources, each once, in encounter order
+	 */
+	public static List<EObject> referenced(Store store, EObject entity) {
+		Map<String, EObject> resolved = new LinkedHashMap<>();
+		for (EObject object : withContents(entity)) {
+			for (EReference reference : nonContainmentRefs(object)) {
+				for (String iri : targets(object, reference)) {
+					if (iri != null && !resolved.containsKey(iri)) {
+						ourResource(store, iri).ifPresent(target -> resolved.put(iri, target));
+					}
+				}
+			}
+		}
+		return List.copyOf(resolved.values());
+	}
+
+	/** The stored resource {@code iri} names, if it is one of ours and it is there. */
+	private static Optional<EObject> ourResource(Store store, String iri) {
+		for (String collection : StoreLayout.COLLECTIONS) {
+			String id = StoreLayout.idOf(collection, iri);
+			if (id != null) {
+				return store.get(collection, id);
+			}
+		}
+		return Optional.empty();
 	}
 
 	/** True when {@code iri} names a resource in one of our collections and it is absent. */

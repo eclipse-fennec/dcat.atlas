@@ -19,6 +19,7 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -113,18 +114,55 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 
 	@Override
 	public ValidationReport validate(EObject entity) {
+		return validate(entity, List.of());
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <h2>One union, two kinds of borrowed triple</h2>
+	 *
+	 * The reference vocabularies and the context are unioned in for the same reason and
+	 * handled the same way: they make a constraint <em>answerable</em> — the CV shapes'
+	 * {@code skos:inScheme} / {@code sh:class} checks against the authority tables (F-22),
+	 * and a {@code sh:class} on a reference target — while belonging to somebody other than
+	 * the caller. So both go on the far side of {@link #onlyEntityResults}, and a result
+	 * that describes a defect in either is dropped rather than blamed on this write.
+	 * <p>
+	 * That matters most for the context. Saying {@code <series> a dcat:DatasetSeries} brings
+	 * the series within reach of every shape that targets that class, and the context holds
+	 * only its type — so "a DatasetSeries MUSS have a title" would fire on it. Reporting
+	 * that would make a write fail for a property the caller never sent and cannot set from
+	 * here.
+	 * <p>
+	 * The union is a view, not a copy: the vocabularies are large and this runs on every
+	 * write.
+	 */
+	@Override
+	public ValidationReport validate(EObject entity, Collection<? extends EObject> context) {
 		Model data = EObjectToJena.toModel(entity);
+		Model borrowed = borrowed(context);
 		// With no shapes configured this validates against an empty shapes set, which always
 		// conforms — so callers that gate writes on validation don't block.
-		if (vocabulary.isEmpty()) {
+		if (borrowed.isEmpty()) {
 			return ShaclValidator.get().validate(shapes, data.getGraph());
 		}
-		// Union the reference vocabularies in (read-only) so the CV shapes' skos:inScheme /
-		// sh:class checks can resolve against the authority-table triples (F-22), then drop
-		// the results that belong to the vocabularies rather than to the caller.
-		Graph dataGraph = ModelFactory.createUnion(data, vocabulary).getGraph();
+		Graph dataGraph = ModelFactory.createUnion(data, borrowed).getGraph();
 		ValidationReport report = ShaclValidator.get().validate(shapes, dataGraph);
-		return onlyEntityResults(report, data.getGraph(), dataGraph);
+		return onlyEntityResults(report, data.getGraph(), borrowed.getGraph(), dataGraph);
+	}
+
+	/**
+	 * The triples that are present so constraints can be answered, but that the caller is
+	 * not answerable for: the reference vocabularies, plus the {@code rdf:type} of each
+	 * referenced resource.
+	 */
+	private Model borrowed(Collection<? extends EObject> context) {
+		Model types = EObjectToJena.typeGraph(context);
+		if (types.isEmpty()) {
+			return vocabulary;
+		}
+		return vocabulary.isEmpty() ? types : ModelFactory.createUnion(types, vocabulary);
 	}
 
 	@Override
@@ -158,14 +196,16 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 	 * table" is then still the caller's error, while a table entry failing a shape the caller
 	 * cannot influence is not.
 	 */
-	private ValidationReport onlyEntityResults(ValidationReport report, Graph entityGraph, Graph dataGraph) {
+	private ValidationReport onlyEntityResults(ValidationReport report, Graph entityGraph, Graph borrowedGraph,
+			Graph dataGraph) {
 		List<ReportEntry> entries = report.getEntries().stream() //
-				.filter(entry -> isEntityResult(entry, entityGraph, vocabulary.getGraph())) //
+				.filter(entry -> isEntityResult(entry, entityGraph, borrowedGraph)) //
 				.collect(Collectors.toList());
 		if (entries.size() == report.getEntries().size()) {
 			return report;
 		}
-		LOGGER.log(Level.DEBUG, "Suppressed {0} SHACL result(s) originating in the reference vocabularies.",
+		LOGGER.log(Level.DEBUG,
+				"Suppressed {0} SHACL result(s) originating in the reference vocabularies or the referenced resources.",
 				report.getEntries().size() - entries.size());
 		ValidationReport.Builder filtered = ValidationReport.create();
 		// Mirrors what the engine puts on its own report (ValidationContext).
@@ -175,15 +215,19 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 		return filtered.build();
 	}
 
-	/** True when the reported {@code (focusNode, resultPath, value)} is the entity's own. */
-	private static boolean isEntityResult(ReportEntry entry, Graph entityGraph, Graph vocabularyGraph) {
+	/**
+	 * True when the reported {@code (focusNode, resultPath, value)} is the entity's own —
+	 * as opposed to belonging to a borrowed graph (a reference vocabulary, or a referenced
+	 * resource contributed as context).
+	 */
+	private static boolean isEntityResult(ReportEntry entry, Graph entityGraph, Graph borrowedGraph) {
 		Node focusNode = entry.focusNode();
 		if (focusNode == null) {
 			return true;
 		}
 		org.apache.jena.sparql.path.Path resultPath = entry.resultPath();
 		if (resultPath == null || entry.value() == null) {
-			return mentions(entityGraph, focusNode) && !vocabularyGraph.contains(focusNode, Node.ANY, Node.ANY);
+			return mentions(entityGraph, focusNode) && !borrowedGraph.contains(focusNode, Node.ANY, Node.ANY);
 		}
 		// ShaclPaths is what the engine itself uses to walk a path, so this asks exactly the
 		// question the constraint asked, only of the entity graph.

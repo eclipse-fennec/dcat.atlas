@@ -165,7 +165,16 @@ validation failure. They are 422, and the fix matters to a client: 400 and 422 m
 different things here, and conflating them would have had callers retry-or-report the wrong
 one.
 
-### 6.4 ~~An optimistic-locking helper~~ — withdrawn, P1 2026-08-24
+### 6.4 ~~An optimistic-locking helper~~ — withdrawn P1 2026-08-24; its cause fixed 2026-08-24
+
+> **The reason for the withdrawal no longer holds.** The portal now hands the shapes the
+> `rdf:type` of every resource a submitted body references, so a linked resource can be read,
+> edited and `PUT` back — verified against the container. Re-adding a read-modify-write helper
+> to the client is therefore possible again, and is an open question rather than a settled no:
+> the registration loop of §6.4a needs no read and the conditional register of §6.4b already
+> covers the concurrency case, so it would be a convenience rather than a necessity. The
+> record below is kept because it is why the client looks the way it does.
+
 
 The plan said: read the ETag, mutate, `PUT` with `If-Match`, retry once on 412. It was
 built that way in P1 and **it does not work**, for a reason that has nothing to do with

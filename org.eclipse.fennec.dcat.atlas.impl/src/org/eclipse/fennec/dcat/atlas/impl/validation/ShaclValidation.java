@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl.validation;
 
+import java.util.List;
+
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.apache.jena.shacl.validation.Severity;
@@ -68,10 +70,24 @@ public final class ShaclValidation {
 	 * IRI, and a report naming a node that is not the stored one is not actionable.
 	 */
 	public static void check(DcatValidationService validation, EObject entity) {
+		check(validation, entity, List.of());
+	}
+
+	/**
+	 * As {@link #check(DcatValidationService, EObject)}, with the resources {@code entity}
+	 * references supplied so the shapes can see what they are.
+	 * <p>
+	 * Without them a reference-typing constraint ("MUSS auf eine Klasse vom Typ …
+	 * verweisen") cannot pass, because the submitted graph names the target without saying
+	 * what it is — which made a linked resource impossible to re-submit. Only the context's
+	 * {@code rdf:type} is used, so a referenced resource's own conformance is never put on
+	 * this write.
+	 */
+	public static void check(DcatValidationService validation, EObject entity, List<EObject> context) {
 		if (validation == null || !validation.isWriteEnforced()) {
 			return;
 		}
-		ValidationReport report = validation.validate(entity);
+		ValidationReport report = validation.validate(entity, context);
 		if (report.getEntries().stream().noneMatch(ShaclValidation::isViolation)) {
 			return;
 		}

@@ -90,6 +90,51 @@ public final class EObjectToJena {
 		return model;
 	}
 
+	/**
+	 * The bare {@code rdf:type} triples of {@code entities} — their identity and their
+	 * class, and nothing else.
+	 *
+	 * <h2>What this is for</h2>
+	 *
+	 * SHACL validates a submitted entity as a graph in isolation, so a constraint like
+	 * "{@code dcat:inSeries} MUSS auf eine Klasse vom Typ {@code dcat:DatasetSeries}
+	 * verweisen" cannot be satisfied: the reference is in the graph, but the target's type
+	 * is not, because the target is a resource stored in its own right. Adding just the
+	 * type triple of each referenced resource makes such a constraint answerable without
+	 * pulling in the referenced entity's own properties — which would put <em>its</em>
+	 * conformance under test on somebody else's write.
+	 * <p>
+	 * An entity without an {@code about} is skipped: a blank node cannot be the target of
+	 * a reference, so it can never be the thing a constraint is asking about. An
+	 * {@code about} that is not a usable IRI is skipped too rather than throwing, because
+	 * failing here would make writing one entity impossible on account of a neighbour.
+	 *
+	 * @param entities the referenced resources, typically read from the store
+	 * @return a graph of {@code rdf:type} triples; empty when there is nothing to say
+	 */
+	public static Model typeGraph(Collection<? extends EObject> entities) {
+		Model model = ModelFactory.createDefaultModel();
+		if (entities == null) {
+			return model;
+		}
+		for (EObject entity : entities) {
+			String about = aboutOf(entity);
+			if (about == null) {
+				continue;
+			}
+			Resource type = typeOf(model, entity.eClass());
+			if (type == null) {
+				continue;
+			}
+			try {
+				model.add(iri(model, about, entity.eClass().getName() + ".about"), RDF.type, type);
+			} catch (IllegalArgumentException e) {
+				// Not a usable IRI — see above on why this is skipped and not raised.
+			}
+		}
+		return model;
+	}
+
 	@SuppressWarnings("unchecked")
 	private static List<EObject> toEObjects(Object entity) {
 		if (entity instanceof EObject eObject) {

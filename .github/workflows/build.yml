@@ -1,10 +1,9 @@
 name: CI Build
 
-# Build-only on every branch EXCEPT main and snapshot: those publish the container
-# image via their dedicated workflows (release.yml / snapshot.yml), which run the
-# same reusable verify first and gate the image push on it. Nothing is deployed to
-# Maven Central from this workspace — the publishing workflows exist for the
-# container image only.
+# Build-only on every branch EXCEPT main and snapshot: those publish to Maven and
+# push the container image via their dedicated workflows (release.yml /
+# snapshot.yml), which run this same reusable verify first and gate the publish on
+# it. Feature branches and PRs only verify — they publish nothing.
 on:
   push:
     branches-ignore:
@@ -24,4 +23,4 @@ concurrency:
 
 jobs:
   verify:
-    uses: eclipse-fennec/.github/.github/workflows/reusable-verify.yml@227b1dfa5f323fdd6d857d0a61fbaaf6e7288716 # v1.0.0
+    uses: eclipse-fennec/.github/.github/workflows/reusable-verify.yml@4c8b1daf597d0ae439253b59c42d7e52049d5137 # v1.1.2

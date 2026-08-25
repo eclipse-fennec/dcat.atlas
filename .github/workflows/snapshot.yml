@@ -1,21 +1,25 @@
 name: Snapshot Build
 
-# Verified push to `snapshot` — the development branch — publishes the container
-# image under the moving `snapshot` tag (plus the immutable bundle version).
-# Nothing is published to Maven from this workspace, so unlike the other Fennec
-# repos there is no release job between verify and container.
+# Verified push to `snapshot` — the development branch — deploys the bundles to the
+# Maven snapshot repository AND publishes the container image under the moving
+# `snapshot` tag (plus the immutable bundle version).
+#
+# The runtime jar the image embeds is exported inside the release job's single
+# Gradle invocation, so the image and the published bundles come out of the same
+# build rather than two independent ones.
+#
 # The docs site is deployed by its own workflow (docs-pages.yml), also from
 # `snapshot`.
 on:
   push:
     branches:
       - snapshot
-  # Manual re-publish of the snapshot image without a new commit.
+  # Manual re-publish of the snapshot without a new commit.
   workflow_dispatch:
 
-# Workflow-level ceiling for the called reusables. The container job gets the
-# Docker Hub credentials via `secrets: inherit` below (verify never sees them);
-# packages: write is needed for the GHCR image push.
+# Workflow-level ceiling for the called reusables. The credential-scoped release
+# and container jobs get their secrets via `secrets: inherit` below (verify never
+# sees them); packages: write is needed for the GHCR image push.
 permissions:
   contents: read
   packages: write
@@ -25,11 +29,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Not redundant with the release job's own `build testOSGi`: verify adds the
+  # license-header gate and the second JDK of the default matrix (21 + 25).
   verify:
-    uses: eclipse-fennec/.github/.github/workflows/reusable-verify.yml@227b1dfa5f323fdd6d857d0a61fbaaf6e7288716 # v1.0.0
+    uses: eclipse-fennec/.github/.github/workflows/reusable-verify.yml@4c8b1daf597d0ae439253b59c42d7e52049d5137 # v1.1.2
+
+  release:
+    needs: verify
+    uses: eclipse-fennec/.github/.github/workflows/reusable-release.yml@4c8b1daf597d0ae439253b59c42d7e52049d5137 # v1.1.2
+    with:
+      # Snapshot deploy, not a Central release. do-release=false makes the fennec
+      # bnd library include releng/snapshot.bnd, which appends `${tstamp}-SNAPSHOT`
+      # to the bundle version and gives the pom an `x.y.z-SNAPSHOT` version.
+      do-release: false
+      # bnd resolve/export tasks are not parallel-safe in this workspace.
+      gradle-parallel: false
+      # Export the docker runtime jar in the SAME build that publishes to Maven,
+      # and hand it to the container job as the release-jars artifact.
+      extra-gradle-tasks: >-
+        org.eclipse.fennec.dcat.atlas.runtime:export.docker
+      # docker.jar is what the image runs; the api jar travels along only so the
+      # container job can read its Bundle-Version for the immutable image tag.
+      artifact-paths: |
+        org.eclipse.fennec.dcat.atlas.runtime/generated/distributions/executable/docker.jar
+        org.eclipse.fennec.dcat.atlas.api/generated/org.eclipse.fennec.dcat.atlas.api.jar
+    secrets: inherit
 
   container:
-    needs: verify
+    needs: release
     uses: ./.github/workflows/reusable-container.yml
     with:
       docker-label: snapshot

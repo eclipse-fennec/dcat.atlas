@@ -439,11 +439,11 @@ What the phase settled, beyond the code:
   dataset linked to a catalog, a series and a service unlinked **two** — the series link
   lives *on* the dataset, so it dies with it and there is nothing to rewrite.
 - **How the factory is found, twice over.** `builder()` needs a `META-INF/services` entry
-  on the classpath and an OSGi consumer needs a service. bnd's `@ServiceProvider` was the
-  first answer and is **no longer used** — see the P3 note below on why it was withdrawn.
-  The descriptor is a checked-in file (a generated one reaches only the jar, and a
-  plain-Java consumer — this project's own test task included — runs against classes), and
-  `-includeresource` puts it in the jar as well.
+  on the classpath and an OSGi consumer needs a service. bnd's `@ServiceProvider` supplies
+  both from one annotation, and after a detour through a checked-in descriptor plus
+  `@Component` it is what `client.impl` uses again — see the P3 note below for the round
+  trip. The generated descriptor reaches the **jar only**, so the plain-JUnit suite builds
+  its client from `DefaultDcatAtlasClientFactory` directly rather than through `builder()`.
 
 Not in P1, and unchanged from the plan: the paged collection reads of §8 (nothing in the
 mapping slice walks a collection, and `Page`/`PageRequest` would pull the portal's api
@@ -517,14 +517,28 @@ design changed; what the run measured was four things about the runtime it lives
   invisible to a command-line build. It was the only `${bndversion}` build dependency in the
   workspace, which is why nothing else broke.
   <br>
-  `DefaultDcatAtlasClientFactory` is now a plain `@Component(service =
-  DcatAtlasClientFactory.class)`, which is better independently of the version trap: SCR
-  registers it, bnd derives the `osgi.service` capability from the component, and SPI-Fly
-  stops being load-bearing for reaching our own factory (Jena still needs it for its own
-  reasons). Watch the one trap: the annotation used to generate the `META-INF/services` entry
-  into the jar and a DS component does not, so `-includeresource` now carries the checked-in
-  descriptor there — without it `builder()` works in this workspace's tests, which run against
-  `bin/`, and throws for anyone consuming the jar.
+  `DefaultDcatAtlasClientFactory` became a plain `@Component(service =
+  DcatAtlasClientFactory.class)` with a checked-in `META-INF/services` descriptor carried into
+  the jar by `-includeresource`.
+  <br>
+  **Reverted 2026-08-25 — `@ServiceProvider` is back.** The checked-in descriptor failed the
+  license-header gate (an extension-less SPI file with no obvious owner), which prompted the
+  question of why it existed at all when `model.atlas` — the template this client follows —
+  has no such folder. It does not because `DefaultModelAtlasClientFactory` carries
+  `@ServiceProvider` and lets bnd generate the entry. Both objections to that had dissolved:
+  Ilenia pinned `biz.aQute.bnd.annotation` to **7.1.0** in `cnf/ext/central.mvn` (matching
+  `model.atlas`), so the `${bndversion}` IDE trap is gone; and SPI-Fly was never actually
+  avoidable — it is already in `client.osgi.tests`' `-runbundles` and in the runtime's
+  `base.bndrun` for Jena. Measured on the rebuilt jar: `@ServiceProvider` emits the descriptor
+  **and** `osgi.service;objectClass=…DcatAtlasClientFactory;effective:=active` alongside the
+  `osgi.serviceloader` capability, so the front-end's `@Reference` has a declared capability
+  to resolve against — the concern about programmatically registered services needing a hand-
+  written `@Capability` does not apply here. `@Component` was **not** kept alongside it: that
+  would register the factory twice, once by SCR and once by the SPI-Fly bridge, while still
+  taking the extender requirement. Verified: 43 plain-JUnit tests and 11 OSGi tests green, and
+  the licence gate clean with nothing added to `paths-ignore`. The cost is the hard
+  `osgi.extender=osgi.serviceloader.registrar` requirement — `effective:=resolve`, so any
+  future bndrun holding `client.impl` must include SPI-Fly.
 
 - **A deleted `Configuration` throws from `equals()`.** Felix's `ConfigurationAdapter`
   checks for deletion in `getPid()`, so even a `List.remove()` looking for a configuration

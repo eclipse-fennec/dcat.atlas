@@ -1,0 +1,35 @@
+
+def resolveTask = tasks.named("resolve.test") {
+	outputBndrun = layout.buildDirectory.file("test.bndrun")
+}
+
+tasks.named("testOSGi") {
+	bndrun = resolveTask.flatMap { it.outputBndrun }
+}
+
+// The git store the portal in this suite's framework writes to. GitService opens a
+// repository, it does not create one, so it has to exist before the framework starts - and
+// it is recreated for every run, which is what stops a suite from inheriting the previous
+// run's data. Deliberately not the path rest.tests uses: the two suites assert on their own
+// resources and sharing one store would couple them for no benefit.
+def testStoreRepo = providers.environmentVariable("GIT_REPO")
+		.orElse("/tmp/dcat-atlas-client-test-store.git")
+
+// Both task names reach the suite - `testrun.test` is the bnd plugin's own, `testOSGi` the
+// one wired above - and which one gets invoked varies between the IDE, the command line and
+// CI. Preparing the store on whichever runs is the difference between a green suite and a
+// tally of silently *skipped* tests, because an unopenable repository leaves the store
+// services unsatisfied, the portal never serves, and the tests are then never even
+// attempted.
+["testrun.test", "testOSGi"].each { name ->
+	tasks.named(name) {
+		doFirst {
+			def repo = file(testStoreRepo.get())
+			project.delete(repo)
+			project.exec {
+				commandLine "git", "init", "--bare", "-b", "main", repo.absolutePath
+				standardOutput = new ByteArrayOutputStream()
+			}
+		}
+	}
+}

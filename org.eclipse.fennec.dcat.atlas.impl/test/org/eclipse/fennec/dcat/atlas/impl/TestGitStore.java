@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.jgit.GitServiceImpl;
 import org.eclipse.fennec.jgit.api.GitConfig;
 import org.eclipse.fennec.jgit.api.GitService;

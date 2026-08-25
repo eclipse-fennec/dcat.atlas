@@ -1,0 +1,48 @@
+Test-Cases: ${classes;HIERARCHY_INDIRECTLY_ANNOTATED;org.junit.platform.commons.annotation.Testable;CONCRETE}
+
+-library: \
+	enableOSGi-Test,\
+	enableEMF
+
+# This suite drives the *published services*, not the client's classes, so the buildpath is
+# the two client APIs plus what the fixtures need: ConfigurationAdmin, because every test
+# here starts by creating a factory configuration and ends by deleting it, and the Jakarta
+# RS runtime DTOs, to wait for the whiteboard to stop reloading before the first write.
+-buildpath: \
+	org.osgi.framework;version=latest,\
+	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.client.osgi;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.osgi.service.cm;version=latest,\
+	org.osgi.service.jakartars;version=latest,\
+	org.osgi.util.promise;version=latest,\
+	org.osgi.util.function;version=latest
+
+# Projects that test.bndrun needs at *run* time but that are not on the -buildpath.
+# bnd derives the build order (and thus the Gradle task graph for resolve.test/testOSGi)
+# from -buildpath/-testpath only, so without this the resolve can run before these
+# bundles exist in the Workspace repo. Eclipse never hits this because its Workspace
+# repo always sees every project. The portal bundles are here because this suite talks
+# to a real portal hosted in its own framework, and the client impl because the front-end
+# reaches it through the service registry rather than by type.
+-dependson: \
+	org.eclipse.fennec.dcat.atlas.client.impl,\
+	org.eclipse.fennec.dcat.atlas.impl,\
+	org.eclipse.fennec.dcat.atlas.msg.body.writer,\
+	org.eclipse.fennec.dcat.atlas.rest,\
+	org.eclipse.fennec.dcat.atlas.sparql,\
+	org.eclipse.fennec.dcat.atlas.validation
+
+Private-Package: \
+	org.eclipse.fennec.dcat.atlas.client.osgi.tests,\
+	org.eclipse.fennec.dcat.atlas.client.osgi.tests.helper
+
+Bundle-Version: 1.0.0.SNAPSHOT
+
+# Sometimes without DynamicImport Mockito will not find certain classes
+#DynamicImport-Package: *
+
+-includeresource: \
+	OSGI-INF/configurator/=configs/
+
+Require-Capability: osgi.extender;filter:='(osgi.extender=osgi.configurator)'

@@ -18,9 +18,9 @@ import java.util.List;
 import java.net.URI;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;

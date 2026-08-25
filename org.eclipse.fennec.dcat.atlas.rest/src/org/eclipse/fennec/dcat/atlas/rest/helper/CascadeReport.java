@@ -15,7 +15,7 @@ package org.eclipse.fennec.dcat.atlas.rest.helper;
 
 import java.util.List;
 
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;

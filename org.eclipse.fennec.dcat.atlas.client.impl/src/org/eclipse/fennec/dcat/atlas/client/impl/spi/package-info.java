@@ -1,0 +1,23 @@
+/**
+ * Copyright (c) 2012 - 2026 Data In Motion and others.
+ * All rights reserved.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Data In Motion - initial API and implementation
+ */
+/**
+ * The one seam this bundle exports: {@code DefaultJakartaRsClientProvider}, so the OSGi
+ * front-end can extend it and take its {@code ClientBuilder} from the Whiteboard while
+ * reusing the timeout and authentication wiring.
+ */
+@org.osgi.annotation.versioning.Version("1.0.0")
+@Export
+package org.eclipse.fennec.dcat.atlas.client.impl.spi;
+
+import org.osgi.annotation.bundle.Export;

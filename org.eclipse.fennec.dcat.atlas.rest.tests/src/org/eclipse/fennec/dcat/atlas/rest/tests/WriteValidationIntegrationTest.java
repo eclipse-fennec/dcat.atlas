@@ -33,9 +33,9 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.fennec.dcat.atlas.api.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.ShaclViolationException;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.validation.ShaclViolationException;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.ResourceAware;
 import dcat.Dataset;
 import dcat.DcatFactory;

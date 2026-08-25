@@ -18,9 +18,9 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;

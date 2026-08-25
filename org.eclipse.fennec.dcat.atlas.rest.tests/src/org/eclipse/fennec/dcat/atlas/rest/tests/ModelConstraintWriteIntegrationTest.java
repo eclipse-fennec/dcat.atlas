@@ -53,11 +53,26 @@ import org.osgi.test.junit5.service.ServiceExtension;
  * {@code @RequireOCL} pulled the engine into the runtime, and that a violation surfaces as
  * {@code 422} rather than a {@code 500}.
  * <p>
- * Enforcement is off in the test runtime's configuration (as SHACL's is), so the test flips
- * {@code validateOnWrite} on the {@code DatasetAdminService} through
- * {@link ConfigurationAdmin} and restores it afterwards — the arrangement
- * {@link WriteValidationIntegrationTest} established. The store is shared with the live
- * runtime, so everything written here is cleaned up.
+ * <h2>Enforcement is already on — this class pins it, it does not switch it on</h2>
+ *
+ * {@code StoreConfig.validateOnWrite()} defaults to <b>{@code true}</b> and
+ * {@code configs/config.json} does not override it, so OCL and the declared multiplicities
+ * are enforced throughout this runtime. That is why {@link RestEntities} gives every dataset
+ * a title, a publisher and a description: the whole suite writes entities that clear the
+ * model's floor because it has to.
+ * <p>
+ * The {@code validateOnWrite=true} written through {@link ConfigurationAdmin} in
+ * {@link #enableEnforcement(BundleContext)} therefore states a precondition rather than
+ * changing behaviour — it keeps this class honest if the default ever moves, at the cost of
+ * one reconfiguration and the poll that waits for it. {@code @AfterEach} writes the same
+ * value back, so the runtime is left exactly as it was found.
+ * <p>
+ * <b>Do not read this as the arrangement {@link WriteValidationIntegrationTest} uses.</b>
+ * That one is about SHACL, which genuinely <em>is</em> off by default
+ * ({@code enforceOnWrite} defaults to false) and which it must turn on along with shapes of
+ * its own. The two switches are independent, and only one of them starts off.
+ * <p>
+ * The store is shared with the live runtime, so everything written here is cleaned up.
  */
 @ExtendWith(BundleContextExtension.class)
 @ExtendWith(ServiceExtension.class)
@@ -86,8 +101,10 @@ public class ModelConstraintWriteIntegrationTest {
 		setValidateOnWrite(true);
 
 		// The reconfigured service rebinds asynchronously, so poll the write path itself
-		// until enforcement is live: an idempotent PUT of a title-only dataset flips from
-		// 2xx to 422. A fixed id keeps the probe from minting a resource per attempt.
+		// rather than trusting the update to have landed: an idempotent PUT of a title-only
+		// dataset must answer 422. It normally does so on the first probe, enforcement being
+		// on by default — the loop covers the window in which the rebind is still in flight.
+		// A fixed id keeps the probe from minting a resource per attempt.
 		HttpResponse<String> ready = awaitEnforcementActive(30_000);
 		assertEquals(422, ready.statusCode(), "enforcement did not become active; last probe: " + ready.statusCode()
 				+ " " + ready.body());
@@ -157,7 +174,12 @@ public class ModelConstraintWriteIntegrationTest {
 				</dcat:Dataset>""".formatted(logicalIri(id));
 	}
 
-	/** Title only — what most of this suite writes, and what enforcement now refuses. */
+	/**
+	 * Title only — deliberately under the model's floor. A {@code dcat:Dataset} needs a
+	 * {@code publisher} by declared multiplicity and a {@code description} by the OCL
+	 * invariant {@code HasDescription}, so this is refused twice over. Everything else in the
+	 * suite builds complete entities through {@link RestEntities}.
+	 */
 	private static String titleOnly(String id) {
 		return """
 				<?xml version="1.0" encoding="UTF-8"?>

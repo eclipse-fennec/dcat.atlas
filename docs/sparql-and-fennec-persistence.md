@@ -11,7 +11,7 @@
 > **Outcome (2026-08-10):** §§1–5 stand as the analysis. **§6 and §7 are superseded** —
 > Fennec Persistence was *not* adopted; the store of record stays file-based and later moves
 > to git, with SPARQL served by the in-memory graph of §5.2. The agreed plan is
-> [`persistence-and-sparql-implementation-plan.md`](persistence-and-sparql-implementation-plan.md).
+> [`persistence-and-sparql-implementation-plan.md`](plans/persistence-and-sparql-implementation-plan.md).
 
 ---
 

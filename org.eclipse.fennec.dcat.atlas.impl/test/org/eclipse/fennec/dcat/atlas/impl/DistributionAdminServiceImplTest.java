@@ -13,18 +13,13 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -32,6 +27,10 @@ import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
 import dcat.Distribution;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * FR-10: a Distribution exists only in the context of its Dataset.

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
@@ -30,8 +30,8 @@ import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsResource;
 
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
-import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
-import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource;
+import io.swagger.v3.jakartarest.integration.JaxrsOpenApiContextBuilder;
+import io.swagger.v3.jakartarest.integration.resources.BaseOpenApiResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenApiContext;

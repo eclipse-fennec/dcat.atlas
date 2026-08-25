@@ -1,0 +1,19 @@
+Bundle-Description: DCAT.Atlas client — public API. \
+ The DcatAtlasClient contract, the ClientConfiguration value type, the \
+ JakartaRsClientProvider seam and the typed exception hierarchy. Shared by the \
+ plain-Java and the OSGi client implementations, and intentionally free of OSGi \
+ runtime dependencies (DS / framework / ConfigAdmin) so it is consumable as a \
+ plain library.
+
+-library: enableEMF
+
+Export-Package: org.eclipse.fennec.dcat.atlas.client.api
+
+# The model bundle is the point of the whole client: callers hand over Catalog and
+# Dataset instances rather than composing requests. The client must NOT reach for
+# ...atlas.impl or ...atlas.rest — those are the portal's insides.
+-buildpath: \
+	org.osgi.annotation.versioning,\
+	org.osgi.annotation.bundle,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	jakarta.ws.rs-api;version=latest

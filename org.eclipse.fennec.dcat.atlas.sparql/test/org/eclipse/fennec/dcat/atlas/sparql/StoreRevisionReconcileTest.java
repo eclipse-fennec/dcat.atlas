@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.StoreRevision;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

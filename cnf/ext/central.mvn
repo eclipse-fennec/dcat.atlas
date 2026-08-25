@@ -139,23 +139,27 @@ org.eclipse.fennec.persistence.jpa:org.eclipse.fennec.persistence.jpa.library.wo
 org.eclipse.fennec.models:org.eclipse.fennec.common.models.library:0.0.1-SNAPSHOT
 
 #Swagger with Jackson 3.x
-io.github.vpelikh:swagger-annotations-jakarta:3.0.0
-io.github.vpelikh:swagger-models-jakarta:3.0.0
-io.github.vpelikh:swagger-core-jakarta:3.0.0
-io.github.vpelikh:swagger-integration-jakarta:3.0.0
-io.github.vpelikh:swagger-jaxrs2-jakarta:3.0.0
+# The 4.x line: the artifacts went jakarta-native (no -jakarta suffix) and swagger-jaxrs2
+# became swagger-jakarta-rest, packages io.swagger.v3.jakartarest.*. Two OSGi defects had to
+# be fixed upstream first, both reported from here: swagger-core:4.0.3 declared 1 of its 22
+# imported packages (vpelikh/swagger-core#156, fixed in 4.0.4), and swagger-jakarta-rest
+# required the osgi.cdi extender unconditionally in every 4.x release up to 4.0.4, which no
+# DS runtime can satisfy (fixed in 4.0.5).
+io.github.vpelikh:swagger-annotations:4.0.5
+io.github.vpelikh:swagger-models:4.0.5
+io.github.vpelikh:swagger-core:4.0.5
+io.github.vpelikh:swagger-integration:4.0.5
+io.github.vpelikh:swagger-jakarta-rest:4.0.5
 
-# Required by swagger-jaxrs2-jakarta for its classpath scanning. Mandatory, not optional,
-# so it has to be present even though DcatOpenApiResource hands the scanner its own class
-# set and never lets ClassGraph run.
+# swagger-core:4.x imports jakarta.validation* at [3.1,4); the fennec libraries bring 3.0.2,
+# which is outside that range. Jersey asks for [3.0,4) and takes 3.1.0 as well, so this is a
+# bump rather than a second API alongside the first.
+jakarta.validation:jakarta.validation-api:3.1.0
+
+# Required by swagger-jakarta-rest and swagger-integration for their classpath scanning.
+# Mandatory, not optional, so it has to be present even though DcatOpenApiResource hands the
+# scanner its own class set and never lets ClassGraph run.
 io.github.classgraph:classgraph:4.8.165
-
-# swagger-core-jakarta:3.0.0 was built against JAXB 3 and imports
-# jakarta.xml.bind.annotation at [3.0,4). The workspace otherwise uses
-# jakarta.xml.bind-api 4.0.2, which exports that package at 4.0.2 - outside the range - so
-# the 3.x API is present alongside it purely to satisfy swagger. OSGi wires each consumer by
-# its own range, so nothing else is affected. Removable once upstream widens the range.
-jakarta.xml.bind:jakarta.xml.bind-api:3.0.1
 
 # The YAML side of the descriptor: jackson-dataformat-yaml needs snakeyaml-engine 3.x.
 org.snakeyaml:snakeyaml-engine:3.0.1

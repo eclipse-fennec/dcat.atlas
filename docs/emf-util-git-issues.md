@@ -1,7 +1,7 @@
 # Issue sketches for `eclipse-fennec/emf.util`
 
 Thirteen issues found in `org.eclipse.fennec.jgit` while designing the DCAT.Atlas git-backed
-store ([`persistence-phase2-git-store.md`](persistence-phase2-git-store.md)). They are
+store ([`persistence-phase2-git-store.md`](plans/persistence-phase2-git-store.md)). They are
 written to be filed as-is upstream; the DCAT-side references are there so whoever picks one
 up can see what it is for, not because the fix should be DCAT-specific.
 

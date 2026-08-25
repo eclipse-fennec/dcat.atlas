@@ -38,7 +38,7 @@
 	"org.apache.felix.hc.generalchecks.ServicesCheck": {
 		"hc.name": "services",
 		"hc.tags": ["ready"],
-		"services.list": ["(objectClass=org.eclipse.fennec.dcat.atlas.api.DcatValidationService)"],
+		"services.list": ["(objectClass=org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService)"],
 		"statusForMissing": "CRITICAL"
 	},
 

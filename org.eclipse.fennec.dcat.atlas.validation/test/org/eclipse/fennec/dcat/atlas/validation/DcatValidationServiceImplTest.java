@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.apache.jena.shacl.validation.Severity;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
 import org.apache.felix.hc.api.Result;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -42,8 +41,7 @@ import terms.TermsFactory;
  * against a tiny, self-authored shape (so the test is deterministic and carries no
  * upstream-licensed shapes). The real DCAT-AP.de shapes are pointed at via config
  * at runtime, not bundled here. Assertions are against the native Jena
- * {@link ValidationReport} that {@code validate} now returns; the deprecated
- * {@code validateLegacy} projection is covered by a single test.
+ * {@link ValidationReport} that {@code validate} returns.
  */
 public class DcatValidationServiceImplTest {
 
@@ -139,6 +137,43 @@ public class DcatValidationServiceImplTest {
 			        sh:minCount 1 ;
 			        sh:severity sh:Warning ;
 			        sh:message "A Dataset should have a dct:title."
+			    ] .
+			""";
+
+	/**
+	 * The shape that made a linked resource un-resubmittable: the target of
+	 * {@code dcat:inSeries} must <em>be</em> a {@code dcat:DatasetSeries}, which a graph
+	 * that only names the target cannot show. Modelled on DCAT-AP.de's
+	 * "MUSS auf eine Klasse vom Typ … verweisen".
+	 */
+	private static final String IN_SERIES_CLASS_SHAPE = """
+			@prefix sh:   <http://www.w3.org/ns/shacl#> .
+			@prefix dcat: <http://www.w3.org/ns/dcat#> .
+			@prefix ex:   <http://example/shapes#> .
+
+			ex:InSeriesShape a sh:NodeShape ;
+			    sh:targetClass dcat:Dataset ;
+			    sh:property [
+			        sh:path dcat:inSeries ;
+			        sh:class dcat:DatasetSeries ;
+			    ] .
+			""";
+
+	/**
+	 * A shape the <em>context</em> cannot satisfy: a series must have a title, and context
+	 * contributes only types. Used to prove such a result is not blamed on the caller.
+	 */
+	private static final String SERIES_TITLE_SHAPE = """
+			@prefix sh:   <http://www.w3.org/ns/shacl#> .
+			@prefix dcat: <http://www.w3.org/ns/dcat#> .
+			@prefix dct:  <http://purl.org/dc/terms/> .
+			@prefix ex:   <http://example/shapes#> .
+
+			ex:SeriesTitleShape a sh:NodeShape ;
+			    sh:targetClass dcat:DatasetSeries ;
+			    sh:property [
+			        sh:path dct:title ;
+			        sh:minCount 1 ;
 			    ] .
 			""";
 
@@ -271,17 +306,6 @@ public class DcatValidationServiceImplTest {
 		assertTrue(report.getEntries().isEmpty());
 	}
 
-	@Test
-	@SuppressWarnings("deprecation")
-	void legacyProjectionMirrorsTheReport() throws IOException {
-		ValidationResult legacy = serviceWithTitleShape().validateLegacy(dataset(BASE + "air", null));
-		assertFalse(legacy.conforms());
-		assertEquals(1, legacy.violations().size());
-		assertTrue(legacy.hasBlockingViolations());
-		assertTrue(legacy.violations().get(0).message().contains("dct:title"));
-		assertTrue(legacy.reportTurtle().contains("ValidationReport"), legacy.reportTurtle());
-	}
-
 	/** True when the report has a hard ({@code sh:Violation}) entry — a null severity defaults to it. */
 	private static boolean blocks(ValidationReport report) {
 		return report.getEntries().stream().anyMatch(e -> e.severity() == null || Severity.Violation.equals(e.severity()));
@@ -358,4 +382,115 @@ public class DcatValidationServiceImplTest {
 		assertTrue(result.toString().contains("1 shape file(s) loaded"), result.toString());
 	}
 
+
+	// --- reference context (the read-modify-write fix) ----------------------
+
+	/**
+	 * Without context this is the failure that made a linked resource impossible to
+	 * re-submit: the graph says the dataset is in a series, but nothing says the series is
+	 * a series.
+	 */
+	@Test
+	void aReferenceTypingConstraintCannotPassWithoutContext() throws IOException {
+		Files.writeString(shapesDir.resolve("in-series.ttl"), IN_SERIES_CLASS_SHAPE);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
+
+		ValidationReport report = service.validate(datasetInSeries());
+
+		assertFalse(report.conforms(), "expected the sh:class constraint to fail with no context");
+	}
+
+	/** Told what the series is, the same entity conforms. */
+	@Test
+	void aReferenceTypingConstraintPassesWithContext() throws IOException {
+		Files.writeString(shapesDir.resolve("in-series.ttl"), IN_SERIES_CLASS_SHAPE);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
+
+		ValidationReport report = service.validate(datasetInSeries(), List.of(series()));
+
+		assertTrue(report.conforms(), () -> "expected conformance with the series typed: " + report.getEntries());
+	}
+
+	/**
+	 * The failure mode that would make this change worse than the bug: naming the series
+	 * brings it within reach of every shape targeting its class, and context carries only a
+	 * type — so a "series MUSS have a title" shape fires on it. That is not the caller's
+	 * doing and must not fail the caller's write.
+	 */
+	@Test
+	void aContextResourcesOwnDefectIsNotBlamedOnTheCaller() throws IOException {
+		Files.writeString(shapesDir.resolve("in-series.ttl"), IN_SERIES_CLASS_SHAPE);
+		Files.writeString(shapesDir.resolve("series-title.ttl"), SERIES_TITLE_SHAPE);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
+
+		ValidationReport report = service.validate(datasetInSeries(), List.of(series()));
+
+		assertTrue(report.conforms(),
+				() -> "the series' own missing title must not surface here: " + report.getEntries());
+	}
+
+	/** The caller's own defects are still reported when context is supplied. */
+	@Test
+	void contextDoesNotSuppressTheEntitysOwnViolations() throws IOException {
+		Files.writeString(shapesDir.resolve("in-series.ttl"), IN_SERIES_CLASS_SHAPE);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
+
+		// The series exists and is typed, but the dataset points at something else entirely.
+		Dataset dataset = dataset(BASE + "air", "Air quality");
+		dcat.DatasetSeries other = DcatFactory.eINSTANCE.createDatasetSeries();
+		other.setAbout("https://portal.example/dataset-series/not-typed-here");
+		dataset.getInSeries().add(other);
+
+		ValidationReport report = service.validate(dataset, List.of(series()));
+
+		assertFalse(report.conforms(), "a reference to an untyped target is still the caller's problem");
+	}
+
+	/** Null and empty context behave exactly as the one-argument form. */
+	@Test
+	void noContextIsTheSameAsNoneAtAll() throws IOException {
+		Files.writeString(shapesDir.resolve("in-series.ttl"), IN_SERIES_CLASS_SHAPE);
+		DcatValidationServiceImpl service = new DcatValidationServiceImpl(shapesDir);
+
+		assertFalse(service.validate(datasetInSeries(), List.of()).conforms());
+		assertFalse(service.validate(datasetInSeries(), null).conforms());
+	}
+
+	/** Context only ever adds a type — never a property the caller could have sent. */
+	@Test
+	void contextContributesTypesAndNothingElse() {
+		dcat.DatasetSeries titled = series();
+		PlainLiteral title = RdfFactory.eINSTANCE.createPlainLiteral();
+		title.setValue("A title the context must not lend");
+		title.setLang("en");
+		titled.getTitle().add(title);
+
+		org.apache.jena.rdf.model.Model types = org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena
+				.typeGraph(List.of(titled));
+
+		assertEquals(1, types.size(), () -> "expected exactly one rdf:type triple, got " + types.size());
+		assertTrue(types.contains(types.createResource(SERIES_IRI),
+				org.apache.jena.vocabulary.RDF.type, types.createResource("http://www.w3.org/ns/dcat#DatasetSeries")));
+	}
+
+	/** An entity with no identity cannot be a reference target, so it contributes nothing. */
+	@Test
+	void anEntityWithoutAnAboutContributesNoContext() {
+		assertTrue(org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena
+				.typeGraph(List.of(DcatFactory.eINSTANCE.createDatasetSeries())).isEmpty());
+	}
+
+	private static final String SERIES_IRI = "https://portal.example/dataset-series/air-quality";
+
+	private static Dataset datasetInSeries() {
+		Dataset dataset = dataset(BASE + "air", "Air quality");
+		dataset.getInSeries().add(series());
+		return dataset;
+	}
+
+	private static dcat.DatasetSeries series() {
+		dcat.DatasetSeries series = DcatFactory.eINSTANCE.createDatasetSeries();
+		series.setAbout(SERIES_IRI);
+		return series;
+	}
 }

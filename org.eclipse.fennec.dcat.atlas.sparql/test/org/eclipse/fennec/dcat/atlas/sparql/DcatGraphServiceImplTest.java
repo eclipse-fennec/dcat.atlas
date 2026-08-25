@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.felix.hc.api.Result;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.rdf.model.Model;
-import org.eclipse.fennec.dcat.atlas.api.DcatEntity;
+import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,10 +45,10 @@ class DcatGraphServiceImplTest {
 
 	// The store mints logical identities, and the projection derives ids from them, so
 	// fixtures have to look like stored data rather than like a request URL.
-	private static final String BASE = org.eclipse.fennec.dcat.atlas.api.DcatIds.LOGICAL_BASE;
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.api.identity.DcatIds.LOGICAL_BASE;
 
 	/** Leaves every IRI as it is, so a projection assertion reads as what was stored. */
-	private static final org.eclipse.fennec.dcat.atlas.api.PublicIris IDENTITY_IRIS = new org.eclipse.fennec.dcat.atlas.api.PublicIris() {
+	private static final org.eclipse.fennec.dcat.atlas.api.identity.PublicIris IDENTITY_IRIS = new org.eclipse.fennec.dcat.atlas.api.identity.PublicIris() {
 		@Override
 		public String toPublic(String iri) {
 			return iri;

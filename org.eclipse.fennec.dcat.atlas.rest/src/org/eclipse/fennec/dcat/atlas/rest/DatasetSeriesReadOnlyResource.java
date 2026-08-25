@@ -17,9 +17,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
+import org.eclipse.fennec.dcat.atlas.rest.helper.Pagination;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -33,6 +38,7 @@ import dcat.DatasetSeries;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
@@ -63,6 +69,12 @@ public class DatasetSeriesReadOnlyResource {
 	static final String N_TRIPLES = "application/n-triples";
 	static final String JSON_LD = "application/ld+json";
 	static final String N3 = "text/n3";
+	/**
+	 * The browser's representation of a single resource (N25). Offered on the entity
+	 * {@code GET} only: a collection index is separate work, so a collection still
+	 * answers {@code 406} for it.
+	 */
+	static final String HTML = "text/html";
 
 	/**
 	 * Held only to gate registration — see {@link PublicIriFilter} for why every
@@ -74,21 +86,32 @@ public class DatasetSeriesReadOnlyResource {
 	@Reference
 	DatasetSeriesReadOnlyService datasetSeriesReadOnlyService;
 
+	/**
+	 * The store's version, which is half of a collection response's validator — the
+	 * other half is which page it is. Read here rather than through the read service
+	 * because it is one token for the whole store, not a per-collection property.
+	 */
+	@Reference
+	StoreRevision storeRevision;
+
 	@GET
 	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
-	public Response listDatasetSeriess() {
-		List<DatasetSeries> datasetSeriess = datasetSeriesReadOnlyService.listDatasetSeries();
-		if (datasetSeriess.isEmpty()) {
-			return Response.noContent().build();
-		}
+	public Response listDatasetSeriess(@QueryParam(Pagination.PARAM_AFTER) String after,
+			@QueryParam(Pagination.PARAM_LIMIT) Integer limit, @Context ContainerRequestContext requestContext) {
+		// An out-of-range limit is clamped rather than refused; one that is not a number at
+		// all never reaches here — see QueryParamExceptionMapper for why that is a 400.
+		PageRequest request = PageRequest.of(after, limit);
+		Page<DatasetSeries> page = datasetSeriesReadOnlyService.listDatasetSeries(request);
 		// GenericEntity preserves List<DatasetSeries> so the RDF body writers see the element type.
-		return Response.ok(new GenericEntity<List<DatasetSeries>>(datasetSeriess) {
-		}).build();
+		Object entity = new GenericEntity<List<DatasetSeries>>(page.items()) {
+		};
+		return Pagination.respond(page, entity, request, identityRendering, DcatIds.DATASET_SERIES,
+				storeRevision.current(), requestContext);
 	}
 
 	@GET
 	@Path("/{id}")
-	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3, HTML })
 	public Response getDatasetSeries(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
 		Optional<DatasetSeries> datasetSeries = datasetSeriesReadOnlyService.getDatasetSeries(id);
 		if (datasetSeries.isEmpty()) {

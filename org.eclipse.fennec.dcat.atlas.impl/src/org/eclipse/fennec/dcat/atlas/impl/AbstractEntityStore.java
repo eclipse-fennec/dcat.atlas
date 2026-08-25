@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,12 +23,15 @@ import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.DcatIds;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper;
-import org.eclipse.fennec.dcat.atlas.impl.helper.DcatHelper.Store;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreHealth;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreHealth;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 
@@ -96,6 +101,48 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 		return store().list(collection);
 	}
 
+	/**
+	 * One page of the collection, and the total it was taken from.
+	 * <p>
+	 * The two halves cost very different things, which is the whole point of paging here:
+	 * {@code ids} is a git tree listing and reads no blob at all, so the total is free and
+	 * only the entries on this page are materialised. Listing the ids in full on every
+	 * request and slicing afterwards is deliberate — a collection's ids are one tree
+	 * object, while its entries are one blob each.
+	 * <p>
+	 * Both halves are read through <em>one</em> session, so the ids and the entities cannot
+	 * disagree: a resource that is in the id list is one this session can also read.
+	 */
+	protected Page<T> listEntities(PageRequest page) {
+		Store store = store();
+		List<String> ids = store.ids(collection);
+		int total = ids.size();
+		int from = firstIndexAfter(ids, page.after());
+		int to = Math.min(from + page.limit(), total);
+		List<T> items = new ArrayList<>(to - from);
+		for (String id : ids.subList(from, to)) {
+			store.<T>get(collection, id).ifPresent(items::add);
+		}
+		String nextAfter = to < total ? ids.get(to - 1) : null;
+		return new Page<>(items, nextAfter, total);
+	}
+
+	/**
+	 * Where a page resuming at {@code after} starts: the first id strictly greater than it.
+	 * <p>
+	 * "Greater than", not "the one after the one that equals it", so a cursor whose resource
+	 * has since been deleted still resumes in the right place instead of restarting the
+	 * collection. {@code ids} is sorted, so this is a binary search — {@code insertionPoint}
+	 * when absent, and one past the match when present.
+	 */
+	private static int firstIndexAfter(List<String> ids, String after) {
+		if (after == null) {
+			return 0;
+		}
+		int found = Collections.binarySearch(ids, after);
+		return found >= 0 ? found + 1 : -(found + 1);
+	}
+
 	public Optional<String> etag(String id) {
 		return DcatHelper.etag(gitService, basePath, collection, id);
 	}
@@ -105,7 +152,7 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	 * nothing at all (D2/FR-3).
 	 * <p>
 	 * An {@code about} that is not ours is <em>refused</em>
-	 * ({@link org.eclipse.fennec.dcat.atlas.api.ForeignIdentityException}) rather than
+	 * ({@link org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException}) rather than
 	 * quietly replaced by a minted id: filing an entity under a segment carved out of
 	 * somebody else's URL would claim a resource we do not own, and minting instead told
 	 * the caller nothing. The rule is {@link DcatIds#idForWrite}, shared with the REST

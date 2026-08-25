@@ -13,21 +13,20 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.ResourceInUseException;
+import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Round-trips the file-backed data-service store (admin impl, which also covers
@@ -35,8 +34,8 @@ import dcat.DcatFactory;
  */
 public class DataServiceAdminServiceImplTest {
 
-	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "data-services/";
-	private static final String DATASETS = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE + "datasets/";
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE + "data-services/";
+	private static final String DATASETS = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE + "datasets/";
 
 	@TempDir
 	Path storage;

@@ -17,8 +17,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.felix.hc.api.HealthCheck;
-import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
@@ -63,5 +66,10 @@ public class DatasetReadOnlyServiceImpl extends AbstractEntityStore<Dataset> imp
 	@Override
 	public List<Dataset> listDatasets() {
 		return listEntities();
+	}
+
+	@Override
+	public Page<Dataset> listDatasets(PageRequest page) {
+		return listEntities(page);
 	}
 }

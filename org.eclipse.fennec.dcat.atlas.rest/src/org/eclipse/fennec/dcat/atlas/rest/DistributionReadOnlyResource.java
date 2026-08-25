@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
 import org.osgi.service.component.annotations.Component;
@@ -63,6 +63,12 @@ public class DistributionReadOnlyResource {
 	static final String N_TRIPLES = "application/n-triples";
 	static final String JSON_LD = "application/ld+json";
 	static final String N3 = "text/n3";
+	/**
+	 * The browser's representation of a single resource (N25). Offered on the entity
+	 * {@code GET} only: a collection index is separate work, so a collection still
+	 * answers {@code 406} for it.
+	 */
+	static final String HTML = "text/html";
 
 	/**
 	 * Held only to gate registration — see {@link PublicIriFilter} for why every
@@ -88,7 +94,7 @@ public class DistributionReadOnlyResource {
 
 	@GET
 	@Path("/{id}")
-	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
+	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3, HTML })
 	public Response getDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@Context ContainerRequestContext requestContext) {
 		Optional<Distribution> distribution = distributionReadOnlyService.getDistributionForDataset(datasetId, id);

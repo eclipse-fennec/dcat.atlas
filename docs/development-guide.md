@@ -659,7 +659,7 @@ assumed.
 
 ### 2026-08-11 — SPARQL over an in-memory Jena projection (WP-DCAT-5, persistence plan Phase 1)
 
-**Goal.** Phase 1 of [`persistence-and-sparql-implementation-plan.md`](persistence-and-sparql-implementation-plan.md):
+**Goal.** Phase 1 of [`persistence-and-sparql-implementation-plan.md`](plans/persistence-and-sparql-implementation-plan.md):
 a working SPARQL endpoint with no change to how data is stored. Files stay authoritative;
 the graph is a disposable projection, rebuilt at startup and updated on every write.
 

@@ -1,0 +1,44 @@
+Bundle-Name: DCAT.Atlas client — plain-Java implementation
+Bundle-Description: Plain-Java implementation of the DCAT.Atlas client API: \
+ the builder-based DcatAtlasClient, XMI (de)serialisation through an EMF \
+ ResourceSet, the status-to-exception mapping, the default \
+ JakartaRsClientProvider (ClientBuilder.newBuilder() + timeouts) and the \
+ factory behind DcatAtlasClient.builder(), reachable through ServiceLoader on \
+ a plain classpath and, via SPI-Fly, as an OSGi service. Reused as-is by the \
+ OSGi front-end.
+
+-library: enableEMF
+
+# Only the provider SPI base is exported, as the extension point the OSGi front-end
+# needs: its Whiteboard-backed provider extends it to source the ClientBuilder from
+# DS while reusing the auth wiring. Everything else stays Private-Package, so the
+# implementation can change without an API consequence.
+
+-buildpath: \
+	org.osgi.annotation.versioning,\
+	org.osgi.annotation.bundle,\
+	biz.aQute.bnd.annotation;version=latest,\
+	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.eclipse.emf.common;version=latest,\
+	org.eclipse.emf.ecore;version=latest,\
+	org.eclipse.emf.ecore.xmi;version=latest,\
+	jakarta.ws.rs-api;version=latest
+
+# The plain-Java suite drives the real client against a JDK HttpServer stub, so it needs
+# an actual Jakarta RS implementation rather than just the API: Jersey plus the HK2
+# injection it uses to bootstrap. Same versions as the runtime's -runbundles, so the suite
+# exercises what the portal will be talked to by.
+-testpath: \
+	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
+	org.glassfish.jersey.core.jersey-client,\
+	org.glassfish.jersey.core.jersey-common,\
+	org.glassfish.jersey.inject.jersey-hk2,\
+	org.glassfish.hk2.api,\
+	org.glassfish.hk2.locator,\
+	org.glassfish.hk2.utils,\
+	org.glassfish.hk2.external.aopalliance-repackaged,\
+	org.glassfish.hk2.osgi-resource-locator,\
+	jakarta.inject.jakarta.inject-api,\
+	jakarta.annotation-api,\
+	org.osgi.service.jakartars;version=latest

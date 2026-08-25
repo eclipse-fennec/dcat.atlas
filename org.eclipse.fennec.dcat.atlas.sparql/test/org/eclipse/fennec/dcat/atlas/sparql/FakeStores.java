@@ -19,11 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.fennec.dcat.atlas.api.CatalogReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DatasetSeriesReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 
 import dcat.Catalog;
 import dcat.DataService;
@@ -79,6 +81,12 @@ final class FakeStores {
 			}
 
 			@Override
+			public Page<Catalog> listCatalogs(PageRequest page) {
+				// The projection reads whole collections; nothing here should ever page.
+				throw new UnsupportedOperationException("the graph projection does not page");
+			}
+
+			@Override
 			public Optional<String> etag(String id) {
 				return Optional.empty();
 			}
@@ -95,6 +103,12 @@ final class FakeStores {
 			@Override
 			public List<Dataset> listDatasets() {
 				return new ArrayList<>(datasets.values());
+			}
+
+			@Override
+			public Page<Dataset> listDatasets(PageRequest page) {
+				// The projection reads whole collections; nothing here should ever page.
+				throw new UnsupportedOperationException("the graph projection does not page");
 			}
 
 			@Override
@@ -117,6 +131,12 @@ final class FakeStores {
 			}
 
 			@Override
+			public Page<DatasetSeries> listDatasetSeries(PageRequest page) {
+				// The projection reads whole collections; nothing here should ever page.
+				throw new UnsupportedOperationException("the graph projection does not page");
+			}
+
+			@Override
 			public Optional<String> etag(String id) {
 				return Optional.empty();
 			}
@@ -133,6 +153,12 @@ final class FakeStores {
 			@Override
 			public List<DataService> listDataServices() {
 				return new ArrayList<>(dataServices.values());
+			}
+
+			@Override
+			public Page<DataService> listDataServices(PageRequest page) {
+				// The projection reads whole collections; nothing here should ever page.
+				throw new UnsupportedOperationException("the graph projection does not page");
 			}
 
 			@Override

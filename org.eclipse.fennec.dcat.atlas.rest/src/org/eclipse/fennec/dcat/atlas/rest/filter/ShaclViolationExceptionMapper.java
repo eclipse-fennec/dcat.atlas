@@ -13,7 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.filter;
 
-import org.eclipse.fennec.dcat.atlas.api.ShaclViolationException;
+import org.eclipse.fennec.dcat.atlas.api.validation.ShaclViolationException;
 import org.eclipse.fennec.dcat.atlas.rest.helper.WriteValidation;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsExtension;

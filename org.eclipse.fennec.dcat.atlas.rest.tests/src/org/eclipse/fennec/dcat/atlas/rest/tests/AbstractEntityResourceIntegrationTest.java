@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.rest.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -26,7 +27,9 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
@@ -62,6 +65,8 @@ public abstract class AbstractEntityResourceIntegrationTest {
 	protected static final String N_TRIPLES = "application/n-triples";
 	protected static final String JSON_LD = "application/ld+json";
 	protected static final String N3 = "text/n3";
+	/** The browser's representation of a single resource (N25); a collection refuses it. */
+	protected static final String HTML = "text/html";
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
@@ -157,6 +162,73 @@ public abstract class AbstractEntityResourceIntegrationTest {
 		assertTrue(response.body().contains("Hello"), response.body());
 	}
 
+	// --- the browser's representation (N25) -------------------------------
+
+	/**
+	 * Following a minted {@code about} IRI in a browser has to yield a page rather than a
+	 * {@code 406}. The page is rendered from the same graph the RDF representations are, so
+	 * this also pins that the IRI it displays is the public one a harvester was handed.
+	 */
+	@Test
+	void getServesHtml() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> response = get(reads() + "/e1", HTML);
+		assertEquals(200, response.statusCode(), response.body());
+		assertEquals(HTML, mediaType(response));
+		assertTrue(response.body().startsWith("<!DOCTYPE html>"), response.body());
+		assertTrue(response.body().contains("Hello"), response.body());
+		assertTrue(response.body().contains(reads() + "/e1"),
+				"the page should show its own public IRI: " + response.body());
+	}
+
+	/** The crawler's half of the page: schema.org, embedded as JSON-LD. */
+	@Test
+	void htmlEmbedsSchemaOrgJsonLd() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		String body = get(reads() + "/e1", HTML).body();
+		assertTrue(body.contains("<script type=\"application/ld+json\">"), body);
+		assertTrue(body.contains("\"@context\": \"https://schema.org\""), body);
+		assertTrue(body.contains("\"@id\": \"" + reads() + "/e1\""), body);
+	}
+
+	/**
+	 * HTML is one more representation of the one URI, not a URI of its own, so it shares
+	 * the resource's validator — the ETag is state-based. That sharing is precisely why the
+	 * response has to vary on {@code Accept}, or a cache would serve HTML to a harvester
+	 * asking for Turtle.
+	 */
+	@Test
+	void htmlSharesTheValidatorWithTheRdfRepresentations() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> html = get(reads() + "/e1", HTML);
+		assertEquals(200, html.statusCode(), html.body());
+		String etag = html.headers().firstValue("ETag").orElseThrow();
+		assertTrue(html.headers().allValues("Vary").stream().anyMatch(value -> value.toLowerCase().contains("accept")),
+				"a negotiated response must vary on Accept");
+		assertEquals(etag, get(reads() + "/e1", TURTLE).headers().firstValue("ETag").orElseThrow(),
+				"one state, one validator — it cannot differ per representation");
+
+		HttpResponse<String> conditional = send(
+				HttpRequest.newBuilder(URI.create(reads() + "/e1")).GET().header("If-None-Match", etag), HTML);
+		assertEquals(304, conditional.statusCode(), "a conditional GET for HTML behaves as one for Turtle");
+	}
+
+	/**
+	 * A collection index is deliberately out of scope, so the collection still answers
+	 * {@code 406} for HTML. Worth asserting rather than leaving implicit: adding the media
+	 * type to the wrong {@code @Produces} would not fail, it would serve a page rendered
+	 * from the {@code utilities.Response} wrapper a collection is put in.
+	 */
+	@Test
+	void theCollectionDoesNotServeHtml() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		assertEquals(406, get(reads(), HTML).statusCode());
+	}
+
 	@Test
 	void getUnknownIsNotFound() throws Exception {
 		assertEquals(404, get(reads() + "/does-not-exist", TURTLE).statusCode());
@@ -195,6 +267,158 @@ public abstract class AbstractEntityResourceIntegrationTest {
 			assertTrue(response.body().contains(reads() + "/e1"),
 					accept + " should carry the public IRI: " + response.body());
 		}
+	}
+
+	// --- pagination and caching (#26) --------------------------------------
+
+	/**
+	 * Walking the collection one entry at a time reaches every seeded entity exactly once.
+	 * <p>
+	 * The walk follows {@code Link rel="next"} rather than computing cursors, because that
+	 * link is the contract; and it asserts on the seeded ids only, since the store is shared
+	 * with every other suite and holds entries this test never created.
+	 */
+	@Test
+	void pageWalkVisitsEverySeededEntityOnce() throws Exception {
+		for (String id : List.of("page-a", "page-b", "page-c")) {
+			track(id);
+			seed(id, "Paged " + id);
+		}
+		Set<String> seen = new LinkedHashSet<>();
+		List<String> order = new ArrayList<>();
+		String url = reads() + "?limit=1";
+		for (int guard = 0; guard < 500 && url != null; guard++) {
+			HttpResponse<String> response = get(url, TURTLE);
+			if (response.statusCode() == 204) {
+				break;
+			}
+			assertEquals(200, response.statusCode(), url + " -> " + response.body());
+			for (String id : List.of("page-a", "page-b", "page-c")) {
+				if (response.body().contains(reads() + "/" + id)) {
+					assertTrue(seen.add(id), id + " was served on more than one page");
+					order.add(id);
+				}
+			}
+			url = nextLink(response);
+		}
+		assertEquals(Set.of("page-a", "page-b", "page-c"), seen, "every seeded entity should appear once");
+		assertEquals(List.of("page-a", "page-b", "page-c"), order, "pages should follow the collection's id order");
+	}
+
+	/**
+	 * A cursor beyond the last entry is an empty page, not an error and not the first page
+	 * again — the second of those is what an unclamped offset would do.
+	 */
+	@Test
+	void cursorPastTheEndIsEmpty() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> response = get(reads() + "?after=zzzzzzzz-past-the-end", TURTLE);
+		assertEquals(204, response.statusCode(), response.body());
+	}
+
+	/**
+	 * The total is the whole collection, not the page, so it must exceed a single-entry
+	 * page whenever more than one entry exists.
+	 */
+	@Test
+	void totalCountCountsTheCollectionAndNotThePage() throws Exception {
+		for (String id : List.of("total-a", "total-b")) {
+			track(id);
+			seed(id, "Total " + id);
+		}
+		HttpResponse<String> response = get(reads() + "?limit=1", TURTLE);
+		assertEquals(200, response.statusCode());
+		int total = Integer.parseInt(response.headers().firstValue("X-Total-Count").orElseThrow());
+		assertTrue(total >= 2, "X-Total-Count should count the collection, but was " + total);
+	}
+
+	/**
+	 * A limit outside the allowed range is corrected rather than refused, and the correction
+	 * is visible in the links.
+	 */
+	@Test
+	void limitIsClampedRatherThanRejected() throws Exception {
+		track("e1");
+		seed("e1", "Hello");
+		HttpResponse<String> tooBig = get(reads() + "?limit=100000", TURTLE);
+		assertEquals(200, tooBig.statusCode());
+		assertTrue(firstLink(tooBig).contains("limit=500"), "limit should clamp to the maximum: " + firstLink(tooBig));
+
+		HttpResponse<String> tooSmall = get(reads() + "?limit=0", TURTLE);
+		assertEquals(200, tooSmall.statusCode());
+		assertTrue(firstLink(tooSmall).contains("limit=1"), "limit should clamp to one: " + firstLink(tooSmall));
+	}
+
+	/**
+	 * A limit that is not a number is the caller's mistake, and it is reported as one.
+	 * <p>
+	 * The conversion fails before the resource method is entered, and JAX-RS prescribes
+	 * <b>404</b> for that — the collection would report that it does not exist, sending a
+	 * client to look for a resource that is in fact there.
+	 * {@code QueryParamExceptionMapper} is what turns it into a 400, and this is the test
+	 * that says so.
+	 */
+	@Test
+	void unparseableLimitIsABadRequestAndNotAMissingCollection() throws Exception {
+		HttpResponse<String> response = get(reads() + "?limit=not-a-number", TURTLE);
+		assertEquals(400, response.statusCode(), response.body());
+		assertTrue(response.body().contains("limit"), "the message should name the parameter: " + response.body());
+	}
+
+	/**
+	 * The validator identifies the <em>page</em>, not the collection.
+	 * <p>
+	 * Re-requesting the same page with its own ETag is a 304, which is the caching this
+	 * buys. Requesting the <em>next</em> page with the previous page's ETag must not be:
+	 * a validator built from the store revision alone would 304 there, and a client
+	 * walking the collection would be handed page 1 for ever.
+	 */
+	@Test
+	void pageValidatorDistinguishesPages() throws Exception {
+		for (String id : List.of("etag-a", "etag-b")) {
+			track(id);
+			seed(id, "Etag " + id);
+		}
+		HttpResponse<String> first = get(reads() + "?limit=1", TURTLE);
+		assertEquals(200, first.statusCode());
+		String etag = first.headers().firstValue("ETag").orElseThrow();
+		assertEquals("no-cache", first.headers().firstValue("Cache-Control").orElse(null));
+
+		HttpResponse<String> repeated = send(
+				HttpRequest.newBuilder(URI.create(reads() + "?limit=1")).GET().header("If-None-Match", etag), TURTLE);
+		assertEquals(304, repeated.statusCode(), "the same page with its own validator is unchanged");
+
+		String next = nextLink(first);
+		assertNotNull(next, "a collection of two with limit=1 should offer a next page");
+		HttpResponse<String> second = send(HttpRequest.newBuilder(URI.create(next)).GET()
+				.header("If-None-Match", etag), TURTLE);
+		assertEquals(200, second.statusCode(), "a different page must not match the previous page's validator");
+	}
+
+	/** The {@code rel="next"} target, or {@code null} when this page is the last. */
+	private static String nextLink(HttpResponse<String> response) {
+		return link(response, "next");
+	}
+
+	/** The {@code rel="first"} target. */
+	private static String firstLink(HttpResponse<String> response) {
+		return link(response, "first");
+	}
+
+	private static String link(HttpResponse<String> response, String rel) {
+		for (String header : response.headers().allValues("Link")) {
+			for (String value : header.split(",")) {
+				if (value.contains("rel=\"" + rel + "\"")) {
+					int start = value.indexOf('<');
+					int end = value.indexOf('>');
+					if (start >= 0 && end > start) {
+						return value.substring(start + 1, end);
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	// --- write (admin) tests ----------------------------------------------

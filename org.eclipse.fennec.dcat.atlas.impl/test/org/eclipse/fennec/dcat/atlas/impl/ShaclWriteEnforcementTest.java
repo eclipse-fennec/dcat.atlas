@@ -13,10 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.nio.file.Path;
 
 import org.apache.jena.graph.NodeFactory;
@@ -24,14 +20,16 @@ import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.validation.ReportEntry;
 import org.apache.jena.shacl.validation.Severity;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.DcatValidationService;
-import org.eclipse.fennec.dcat.atlas.api.ShaclViolationException;
-import org.eclipse.fennec.dcat.atlas.api.ValidationResult;
+import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.api.validation.ShaclViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * On-write SHACL enforcement at the <em>service</em>, not the REST resource.
@@ -51,8 +49,8 @@ import dcat.DcatFactory;
  */
 public class ShaclWriteEnforcementTest {
 
-	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.LOGICAL_BASE
-			+ org.eclipse.fennec.dcat.atlas.impl.helper.StoreLayout.DATASETS + "/";
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE
+			+ org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.DATASETS + "/";
 
 	private static final String SHACL_MIN_COUNT = "http://www.w3.org/ns/shacl#MinCountConstraintComponent";
 
@@ -156,10 +154,6 @@ public class ShaclWriteEnforcementTest {
 			return report;
 		}
 
-		@Override
-		public ValidationResult validateLegacy(EObject entity) {
-			throw new UnsupportedOperationException("not used by the write path");
-		}
 
 		@Override
 		public boolean isWriteEnforced() {

@@ -1,9 +1,0 @@
-# Makes DcatAtlasClient.builder() work off a plain classpath.
-#
-# Maintained by hand, and it has to be: a generated resource would only ever reach the
-# *jar*, while a plain-Java consumer — and this project's own test task — runs against the
-# classes directory. Without this file the ServiceLoader finds nothing and builder() throws.
-#
-# Inside a framework this file is ignored; DefaultDcatAtlasClientFactory is a DS component
-# there and the front-end takes it from the service registry.
-org.eclipse.fennec.dcat.atlas.client.impl.DefaultDcatAtlasClientFactory

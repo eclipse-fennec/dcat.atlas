@@ -15,32 +15,30 @@ package org.eclipse.fennec.dcat.atlas.client.impl;
 
 import org.eclipse.fennec.dcat.atlas.client.api.DcatAtlasClient;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatAtlasClientFactory;
-import org.osgi.service.component.annotations.Component;
+
+import aQute.bnd.annotation.spi.ServiceProvider;
 
 /**
- * Makes the client reachable both ways: as an OSGi service, and as
- * {@link DcatAtlasClient#builder()} on a plain classpath.
+ * The {@link java.util.ServiceLoader}-discovered factory behind {@link DcatAtlasClient#builder()}.
  *
- * <h2>Two mechanisms, deliberately</h2>
+ * <h2>One annotation, both worlds</h2>
  *
- * A DS component for OSGi, so the front-end can take this from the service registry, and the
- * hand-written {@code META-INF/services} descriptor beside this package for plain Java, where
- * {@code builder()} finds it through {@code ServiceLoader}. The annotation is inert off a
- * framework and the descriptor is ignored on one, so neither gets in the other's way.
+ * {@code @ServiceProvider} makes bnd generate the {@code META-INF/services} descriptor into the
+ * bundle jar <em>and</em> the matching {@code osgi.serviceloader} capability. Off a framework the
+ * descriptor is what {@code ServiceLoader} finds; on one, SPI-Fly reads the capability and
+ * registers this class as a {@link DcatAtlasClientFactory} service, which is how the OSGi
+ * front-end's mandatory {@code @Reference} is satisfied. Same arrangement as
+ * {@code model.atlas}'s {@code DefaultModelAtlasClientFactory}.
  *
- * <h2>Why not bnd's {@code @ServiceProvider}</h2>
+ * <h2>Two consequences worth knowing</h2>
  *
- * It looks like the tidier answer — one annotation emitting the descriptor <em>and</em> the
- * {@code osgi.serviceloader} capability — and it was what this class used first. Two problems.
- * It needs {@code biz.aQute.bnd.annotation} on the buildpath, which
- * {@code cnf/ext/central.mvn} pulls in at {@code ${bndversion}} — the version of whichever
- * bnd is driving — so the bundle resolves under a gradle build pinned to one version and
- * fails to compile in an IDE running another. And the capability it emits only becomes a
- * usable service through a ServiceLoader mediator, which made SPI-Fly load-bearing for
- * reaching our own factory. A DS component needs neither: SCR registers it, and bnd derives
- * the {@code osgi.service} capability from the component itself.
+ * The generated descriptor reaches the <em>jar</em> only, never the classes directory, so a
+ * plain JUnit test cannot reach this class through {@code builder()} — {@code DcatAtlasClientTest}
+ * constructs the factory directly for that reason. And the annotation adds a hard
+ * {@code osgi.extender=osgi.serviceloader.registrar} requirement, so every bndrun containing
+ * this bundle needs SPI-Fly to resolve; {@code client.osgi.tests} already has it.
  */
-@Component(service = DcatAtlasClientFactory.class)
+@ServiceProvider(DcatAtlasClientFactory.class)
 public class DefaultDcatAtlasClientFactory implements DcatAtlasClientFactory {
 
 	@Override

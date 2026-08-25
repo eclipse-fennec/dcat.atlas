@@ -59,6 +59,14 @@ import rdf.RdfFactory;
  * <p>
  * What this suite is for is the two things P1 exists to settle — the transport and the
  * error mapping — and it asserts them on the wire rather than on the client's internals.
+ * <p>
+ * The builder comes from {@link DefaultDcatAtlasClientFactory} directly rather than from the
+ * static {@link DcatAtlasClient#builder()}, because the {@code ServiceLoader} descriptor bnd
+ * generates from {@code @ServiceProvider} lands in the bundle jar and not in the classes
+ * directory this suite runs against. Both routes reach the same builder. The consequence to
+ * respect: a test must never assert on {@code DcatAtlasClient.builder()} throwing
+ * {@link IllegalStateException}, since here it would throw for the absent descriptor rather
+ * than for whatever the test meant.
  */
 class DcatAtlasClientTest {
 
@@ -67,10 +75,14 @@ class DcatAtlasClientTest {
 	private StubPortal portal;
 	private DcatAtlasClient client;
 
+	private static DcatAtlasClient.Builder builder() {
+		return new DefaultDcatAtlasClientFactory().builder();
+	}
+
 	@BeforeEach
 	void startPortal() throws IOException {
 		portal = new StubPortal();
-		client = DcatAtlasClient.builder().baseUri(portal.baseUri()).build();
+		client = builder().baseUri(portal.baseUri()).build();
 	}
 
 	@AfterEach
@@ -306,7 +318,7 @@ class DcatAtlasClientTest {
 	/** No answer at all is a different thing from any status, and gets its own type. */
 	@Test
 	void anUnreachablePortalIsATransportFailure() {
-		DcatAtlasClient unreachable = DcatAtlasClient.builder() //
+		DcatAtlasClient unreachable = builder() //
 				.baseUri(URI.create("http://127.0.0.1:1/rest/")) //
 				.connectTimeoutMs(250) //
 				.readTimeoutMs(250) //
@@ -567,7 +579,7 @@ class DcatAtlasClientTest {
 	/** Unreachable is not ready. A gate must not throw, or it cannot gate anything. */
 	@Test
 	void anUnreachablePortalIsSimplyNotReady() {
-		DcatAtlasClient unreachable = DcatAtlasClient.builder() //
+		DcatAtlasClient unreachable = builder() //
 				.baseUri(URI.create("http://127.0.0.1:1/rest/")) //
 				.connectTimeoutMs(250) //
 				.readTimeoutMs(250) //
@@ -589,14 +601,14 @@ class DcatAtlasClientTest {
 
 	@Test
 	void aBaseUriIsRequired() {
-		assertThrows(IllegalStateException.class, () -> DcatAtlasClient.builder().build());
+		assertThrows(IllegalStateException.class, () -> builder().build());
 		assertThrows(IllegalStateException.class, () -> ClientConfiguration.builder().build());
 	}
 
 	@Test
 	void aBaseUriWithoutATrailingSlashStillResolvesCorrectly() {
 		URI noSlash = URI.create(portal.baseUri().toString().replaceAll("/$", ""));
-		try (DcatAtlasClient lenient = DcatAtlasClient.builder().baseUri(noSlash).build()) {
+		try (DcatAtlasClient lenient = builder().baseUri(noSlash).build()) {
 			portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("x"))));
 			lenient.registerDataset("d1", dataset("x"));
 			assertEquals("/rest/admin/datasets/d1", portal.lastRequest().path());

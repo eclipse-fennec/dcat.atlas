@@ -3,19 +3,11 @@ Bundle-Description: Plain-Java implementation of the DCAT.Atlas client API: \
  the builder-based DcatAtlasClient, XMI (de)serialisation through an EMF \
  ResourceSet, the status-to-exception mapping, the default \
  JakartaRsClientProvider (ClientBuilder.newBuilder() + timeouts) and the \
- factory behind DcatAtlasClient.builder(), published as a DS service for OSGi \
- and through META-INF/services for a plain classpath. Reused as-is by the \
+ factory behind DcatAtlasClient.builder(), reachable through ServiceLoader on \
+ a plain classpath and, via SPI-Fly, as an OSGi service. Reused as-is by the \
  OSGi front-end.
 
 -library: enableEMF
-
-# The ServiceLoader descriptor has to reach the *jar* as well as the classes directory.
-# bnd assembles a jar from packages, and META-INF/services is not one, so without this the
-# entry exists only in bin/ — enough for this project's own test task, and not enough for
-# anyone consuming the jar, where DcatAtlasClient.builder() would then throw. bnd's
-# @ServiceProvider used to generate it; a DS component does not.
--includeresource: \
-	META-INF/services/=src/META-INF/services/
 
 # Only the provider SPI base is exported, as the extension point the OSGi front-end
 # needs: its Whiteboard-backed provider extends it to source the ClientBuilder from
@@ -25,7 +17,7 @@ Bundle-Description: Plain-Java implementation of the DCAT.Atlas client API: \
 -buildpath: \
 	org.osgi.annotation.versioning,\
 	org.osgi.annotation.bundle,\
-	org.osgi.service.component.annotations;version=latest,\
+	biz.aQute.bnd.annotation;version=latest,\
 	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.eclipse.emf.common;version=latest,\

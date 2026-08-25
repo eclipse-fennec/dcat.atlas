@@ -41,8 +41,12 @@
 # requirement that is satisfied perfectly well at runtime. model.atlas's client.osgi.tests
 # omits the instruction for the same reason. Nothing is lost by leaving it out: the Jena
 # providers and the SPI-Fly they need still come in on their extender and package
-# requirements, and the JUnit engines come from the test launcher's own -runpath. The client
-# itself does not use SPI-Fly at all — DcatAtlasClientFactory is a DS component.
+# requirements, and the JUnit engines come from the test launcher's own -runpath.
+#
+# SPI-Fly is load-bearing here, though, and not only for Jena: client.impl declares its
+# factory with bnd's @ServiceProvider, so DcatAtlasClientFactory reaches the registry through
+# the SPI-Fly bridge rather than through SCR. That is an `effective:=resolve` extender
+# requirement, so the resolver enforces it — SPI-Fly cannot be dropped from -runbundles.
 
 -runproperties: \
 	org.osgi.service.http.port=-1,\

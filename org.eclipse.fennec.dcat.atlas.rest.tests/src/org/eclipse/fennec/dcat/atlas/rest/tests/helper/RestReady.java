@@ -13,10 +13,14 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests.helper;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.jakartars.runtime.JakartarsServiceRuntime;
 import org.osgi.service.jakartars.runtime.dto.ApplicationDTO;
@@ -39,8 +43,17 @@ import org.osgi.service.jakartars.runtime.dto.RuntimeDTO;
  * resource's DTO is <em>present</em> — it does not wait for the reloads to stop.
  * <p>
  * This helper instead polls the runtime until (a) all expected resources are
- * present and (b) the whiteboard's change indicator has been quiet for a short
- * window, i.e. no further reloads are pending.
+ * present, (b) the {@link PublicIris} service every collection resource holds as
+ * a mandatory reference is registered, and (c) neither the whiteboard's change
+ * indicator, its set of resource names, nor that service's identity has moved for
+ * a short window, i.e. no further reloads are pending.
+ * <p>
+ * Watching the whiteboard alone is not enough. It reports its own view, and its
+ * change counter does not move when a service one of its resources depends on is
+ * <em>replaced</em> — yet that replacement unregisters and re-registers every
+ * resource holding it, which is another reload. {@code PublicIris} is the one such
+ * service common to all of them, and since it requires its configuration it can
+ * arrive, or be replaced, later than the resources first appear.
  */
 public final class RestReady {
 
@@ -65,7 +78,7 @@ public final class RestReady {
 	public static boolean awaitStable(BundleContext ctx, Set<String> required, long timeoutMillis, long quietMillis)
 			throws InterruptedException {
 		long deadline = System.currentTimeMillis() + timeoutMillis;
-		Object lastKey = null;
+		List<Object> lastKey = null;
 		long stableSince = System.currentTimeMillis();
 
 		while (System.currentTimeMillis() < deadline) {
@@ -84,11 +97,14 @@ public final class RestReady {
 				}
 			}
 
-			// Prefer the whiteboard's own change counter; fall back to the set of
-			// registered resource names (its changes are what trigger reloads).
-			Object key = changeCount != null ? changeCount : present;
+			// All three, rather than the change counter alone: a resource can be
+			// unregistered and re-registered between two polls without the counter
+			// differing from the one we recorded, and a replaced PublicIris does not
+			// touch the counter at all. Arrays.asList because any of them can be null.
+			Long irisId = serviceId(ctx, PublicIris.class);
+			List<Object> key = Arrays.asList(changeCount, present, irisId);
 			long now = System.currentTimeMillis();
-			if (present.containsAll(required) && key.equals(lastKey)) {
+			if (irisId != null && present.containsAll(required) && key.equals(lastKey)) {
 				if (now - stableSince >= quietMillis) {
 					return true;
 				}
@@ -99,6 +115,16 @@ public final class RestReady {
 			Thread.sleep(100);
 		}
 		return false;
+	}
+
+	/**
+	 * The {@code service.id} of the registered {@code type}, or {@code null} when
+	 * none is. The id rather than a boolean, so that a service replaced between two
+	 * polls is seen as a change rather than as continuous presence.
+	 */
+	private static Long serviceId(BundleContext ctx, Class<?> type) {
+		ServiceReference<?> ref = ctx.getServiceReference(type);
+		return ref == null ? null : (Long) ref.getProperty(Constants.SERVICE_ID);
 	}
 
 	/**

@@ -20,13 +20,24 @@ import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
  * The configured logical &harr; public mapping. See {@link PublicIris} for what it
  * is for; this holds the bases and the segment-boundary matching.
  */
-@Component(name = "PublicIris", service = PublicIris.class)
+/*
+ * configurationPolicy = REQUIRE is load-bearing, not tidiness. Without it the component is
+ * satisfied with no configuration at all, so SCR instantiates it the moment something
+ * dereferences PublicIris - and publicBaseUrl, having no default, arrives absent. That is not
+ * hypothetical: with GIT_REMOTE set, GitService does network I/O on ConfigAdmin's single
+ * UpdateThread during activation, which delays this component's configuration past the event
+ * that satisfies PublicIriFilter. The filter then binds PublicIris on that same thread and gets
+ * an unconfigured instance. REQUIRE makes the component unsatisfiable until its configuration
+ * exists, so the consumer waits instead of forcing a premature instance.
+ */
+@Component(name = "PublicIris", service = PublicIris.class, configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = PublicIrisConfig.class)
 public class PublicIrisImpl implements PublicIris {
 
@@ -116,24 +127,43 @@ public class PublicIrisImpl implements PublicIris {
 	 * Refuses a public base that would render IRIs nobody can dereference.
 	 * <p>
 	 * The component has no default for this, so an unconfigured deployment arrives
-	 * here with {@code null}, with the empty string, or — when the shipped
-	 * configuration reads it from an environment variable that is not set — with the
-	 * {@code $[env:...]} placeholder unsubstituted. All three have to fail
-	 * activation: every one of them otherwise yields a syntactically fine
-	 * {@code about} on every response, pointing somewhere useless, and nothing
-	 * downstream can tell that from a correct one.
+	 * here in one of three shapes. Each gets its own message, because each has a
+	 * different cause and they are not otherwise distinguishable from the outside:
+	 * <ul>
+	 * <li>{@code null} — no configuration carries the property at all.</li>
+	 * <li>blank — a configuration carries it with nothing in it. For the shipped
+	 * container configuration that means {@code PUBLIC_BASE_URL} is present in the
+	 * environment but empty: the interpolation plugin substitutes an empty variable
+	 * verbatim, exactly as it would any other value.</li>
+	 * <li>the literal {@code $[env:...]} placeholder — the variable is not set at
+	 * all, so the plugin found nothing to substitute and left the placeholder
+	 * alone.</li>
+	 * </ul>
+	 * Telling an empty variable from an unset one is the point of the split: they
+	 * arrive here differently but are equally invisible downstream, since all three
+	 * shapes otherwise yield a syntactically fine {@code about} on every response,
+	 * pointing somewhere useless, and nothing can tell that from a correct one.
 	 *
 	 * @param base the configured {@code publicBaseUrl}
 	 * @return {@code base} unchanged when it is usable
 	 * @throws IllegalArgumentException naming the setting and what was wrong with it
 	 */
 	private static String requirePublicBase(String base) {
-		if (base == null || base.isBlank()) {
+		if (base == null) {
 			throw new IllegalArgumentException(
-					"publicBaseUrl is required and has no default: set it on the PublicIris"
-							+ " configuration (PUBLIC_BASE_URL in the shipped configurations) to the"
-							+ " absolute URL clients reach this portal on, e.g."
-							+ " https://opendata.example.de/dcat/rest/");
+					"publicBaseUrl is absent from the PublicIris configuration and has no default: set it"
+							+ " to the absolute URL clients reach this portal on, e.g."
+							+ " https://opendata.example.de/dcat/rest/. In the shipped configurations it"
+							+ " comes from PUBLIC_BASE_URL.");
+		}
+		if (base.isBlank()) {
+			throw new IllegalArgumentException(
+					"publicBaseUrl is configured, but empty. It has no default, so set it to the absolute"
+							+ " URL clients reach this portal on, e.g. https://opendata.example.de/dcat/rest/."
+							+ " In the shipped configurations it comes from PUBLIC_BASE_URL, and an empty"
+							+ " variable is not the same as an unset one: an unset one leaves the"
+							+ " $[env:PUBLIC_BASE_URL] placeholder standing and is reported as such, so"
+							+ " reaching this message means the variable is set and is arriving empty.");
 		}
 		if (base.startsWith("$[")) {
 			throw new IllegalArgumentException("publicBaseUrl is still the uninterpolated placeholder " + base

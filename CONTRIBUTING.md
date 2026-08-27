@@ -187,6 +187,14 @@ BND baselining enforces this automatically during the build.
 * Java 21 (LTS). CI also runs Java 25.
 * No separate Gradle install needed — the project ships the Gradle Wrapper.
 
+Gradle compiles every bundle against Java 21 (`javac.source`/`javac.target` in
+`cnf/ext/fennec.bnd`), so the bundles carry `Require-Capability: osgi.ee=JavaSE 21`.
+In the IDE the same level has to come from JDT: every project keeps a
+`.settings/org.eclipse.jdt.core.prefs` pinning compliance/source/target to 21. If one
+is missing, Eclipse falls back to the workspace default — on a JDK 25 install that
+stamps `osgi.ee=JavaSE 25` on that bundle and every Bndtools resolve that needs it
+fails, while the Gradle build stays green.
+
 ```bash
 ./gradlew clean build testOSGi
 ```

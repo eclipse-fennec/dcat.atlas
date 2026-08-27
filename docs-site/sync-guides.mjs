@@ -5,7 +5,7 @@
 // deliberately NOT published. Cross-links inside the guides that point at a
 // NON-published doc are rewritten to the GitHub blob URL so they keep working
 // instead of 404-ing on the site.
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GUIDES } from './guides.mjs';
@@ -35,11 +35,34 @@ function rewriteLinks(md) {
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
 
+// A guide whose source is absent is skipped rather than fatal. docs/ is no longer
+// in this repository - it moved to DataInMotion/xdp under docs/projects/<repo>/ in
+// 603050f - and nothing here fetches it back, so every entry below currently has no
+// source. Failing the build on that takes the whole site down, including the pages
+// that do not come from docs/ at all; skipping publishes what exists and leaves the
+// allowlist intact, so restoring a source is all that is needed to restore its guide.
+const missing = [];
+
 for (const g of GUIDES) {
   const src = join(srcDir, g.file);
+  if (!existsSync(src)) {
+    missing.push(g.file);
+    console.warn(`SKIPPED ${g.file}: no such file under ${srcDir}`);
+    continue;
+  }
   const md = rewriteLinks(readFileSync(src, 'utf8'));
   writeFileSync(join(outDir, `${g.slug}.md`), md, 'utf8');
   console.log(`synced ${g.file} -> guides/${g.slug}.md`);
 }
 
-console.log(`Done. ${GUIDES.length} guide(s) (branch=${branch}).`);
+console.log(`Done. ${GUIDES.length - missing.length}/${GUIDES.length} guide(s) (branch=${branch}).`);
+
+if (missing.length > 0) {
+  console.warn(
+    `\n${missing.length} guide source(s) missing, so those guides are NOT published: ` +
+      `${missing.join(', ')}.\nThey are expected under ${srcDir}, which this repository no ` +
+      `longer carries. Until their new home is wired up, links to them from index.md resolve ` +
+      `to nothing.`,
+  );
+}
+

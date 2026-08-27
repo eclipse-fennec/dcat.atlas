@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitepress'
 import { GUIDES } from '../../guides.mjs'
 
@@ -19,10 +22,19 @@ const SITE = 'https://eclipse-fennec.github.io/dcat.atlas'
 // `latest` and tagged versions later is a one-liner.
 const versions = [{ text: 'snapshot', link: `${SITE}/snapshot/` }]
 
-const guideItems = GUIDES.map((g) => ({ text: g.title, link: `/guides/${g.slug}` }))
+// Only guides the sync actually wrote. guides.mjs is the allowlist, not a promise
+// that the source exists: docs/ moved out of this repository in 603050f, so an entry
+// there can currently have nothing behind it. Advertising such a guide in the nav
+// would link to a page that was never generated.
+const guidesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'guides')
+const guideItems = GUIDES.filter((g) => existsSync(join(guidesDir, `${g.slug}.md`))).map((g) => ({
+  text: g.title,
+  link: `/guides/${g.slug}`,
+}))
 
 // Single topic → render the guide as a direct nav link. A second entry in
-// guides.mjs automatically switches this back to a "Guides" dropdown.
+// guides.mjs automatically switches this back to a "Guides" dropdown. None at all →
+// no entry, rather than an empty dropdown.
 const guidesNav =
   guideItems.length === 1 ? guideItems[0] : { text: 'Guides', items: guideItems }
 
@@ -63,7 +75,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Home', link: '/' },
-      guidesNav,
+      ...(guideItems.length > 0 ? [guidesNav] : []),
       { text: `version: ${version}`, items: versions },
     ],
 

@@ -70,8 +70,11 @@ public class PublicIrisHealthCheck implements HealthCheck {
 					+ "(or the PublicIris configuration's publicBaseUrl) to the absolute http(s) URL "
 					+ "clients reach this portal on, e.g. https://opendata.example.de/dcat/rest/");
 			log.critical("look for an IllegalArgumentException from the PublicIris component in the startup "
-					+ "log: it says whether the value was absent, an uninterpolated $[env:...] placeholder, "
+					+ "log: it says whether the value was empty, an uninterpolated $[env:...] placeholder, "
 					+ "or missing a scheme");
+			log.critical("if there is no such exception, no PublicIris configuration reached ConfigAdmin at "
+					+ "all: the component requires one, so SCR leaves it unsatisfied rather than activating "
+					+ "it unconfigured");
 			log.critical("every REST collection resource holds this as a mandatory reference, so while it is "
 					+ "missing /rest/... answers 404 rather than serving unrebased identities");
 			return new Result(log);

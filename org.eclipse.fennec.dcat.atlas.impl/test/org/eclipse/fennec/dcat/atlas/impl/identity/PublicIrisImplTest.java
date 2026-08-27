@@ -115,17 +115,39 @@ class PublicIrisImplTest {
 	}
 
 	/**
-	 * There is no default public base, so these are the three shapes an
-	 * unconfigured deployment actually arrives in. Each has to fail activation:
-	 * accepted, any of them renders a well-formed {@code about} pointing nowhere
-	 * useful, on every single response, with nothing downstream able to notice.
+	 * There is no default public base, so an unconfigured deployment arrives in one
+	 * of three shapes — absent, empty, or an uninterpolated placeholder — and each
+	 * has to fail activation: accepted, any of them renders a well-formed
+	 * {@code about} pointing nowhere useful, on every single response, with nothing
+	 * downstream able to notice. The three tests below take one shape each, and
+	 * assert the message says which one it was.
 	 */
 	@Test
-	void anUnconfiguredPublicBaseIsRefused() {
+	void anAbsentPublicBaseIsReportedAsAbsent() {
 		// Cast needed: an uncast null would bind to the PublicIrisConfig constructor.
-		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl((String) null));
-		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl(""));
-		assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl("   "));
+		IllegalArgumentException absent = assertThrows(IllegalArgumentException.class,
+				() -> new PublicIrisImpl((String) null));
+
+		assertTrue(absent.getMessage().contains("absent"), absent.getMessage());
+	}
+
+	/**
+	 * An empty value and an unset one are different faults with the same effect, and
+	 * an operator cannot see which they have without being told. An empty
+	 * {@code PUBLIC_BASE_URL} is substituted verbatim by the interpolation plugin and
+	 * lands here; an unset one leaves the placeholder standing and lands on the test
+	 * below. Reporting both as "required and has no default" sends the reader off to
+	 * check a variable that is demonstrably set.
+	 */
+	@Test
+	void anEmptyPublicBaseIsReportedAsEmptyRatherThanMissing() {
+		for (String empty : new String[] { "", "   " }) {
+			IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new PublicIrisImpl(empty));
+
+			assertTrue(e.getMessage().contains("empty"), e.getMessage());
+			assertTrue(e.getMessage().contains("PUBLIC_BASE_URL"), e.getMessage());
+			assertFalse(e.getMessage().contains("absent"), e.getMessage());
+		}
 	}
 
 	@Test
@@ -137,6 +159,7 @@ class PublicIrisImplTest {
 				() -> new PublicIrisImpl("$[env:PUBLIC_BASE_URL]"));
 
 		assertTrue(e.getMessage().contains("PUBLIC_BASE_URL"), e.getMessage());
+		assertTrue(e.getMessage().contains("placeholder"), e.getMessage());
 	}
 
 	@Test

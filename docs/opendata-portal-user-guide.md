@@ -19,8 +19,8 @@ the model and need no setup, and against the DCAT-AP.de SHACL shapes, which the 
 supplies. See [Validating metadata](#validating-metadata).
 
 For the architecture, scope and work-package plan, see the internal
-[planning document](./opendata-portal-planung.md). For the write-side contract,
-see the [admin-API specification](./opendata-portal-admin-api.md).
+planning document. For the write-side contract,
+see the admin-API specification.
 
 ## Getting started
 
@@ -974,8 +974,8 @@ negotiates over the RDF syntaxes.
 
 ## Further reading
 
-- [Planning document](./opendata-portal-planung.md) — goals, scope, architecture,
+- Planning document — goals, scope, architecture,
   work packages.
-- [Admin-API specification](./opendata-portal-admin-api.md) — OSGi + REST write side.
+- Admin-API specification — OSGi + REST write side.
 - `GET /openapi.json` · `GET /openapi.yaml` — the generated OpenAPI 3.0 descriptor
   ([#21](https://github.com/eclipse-fennec/dcat.atlas/issues/21)), for client generation.

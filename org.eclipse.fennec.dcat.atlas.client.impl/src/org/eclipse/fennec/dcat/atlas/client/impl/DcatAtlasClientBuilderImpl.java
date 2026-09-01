@@ -46,6 +46,12 @@ final class DcatAtlasClientBuilderImpl implements DcatAtlasClient.Builder {
 	}
 
 	@Override
+	public DcatAtlasClient.Builder publicBaseUri(URI publicBaseUri) {
+		configuration.publicBaseUri(publicBaseUri);
+		return this;
+	}
+
+	@Override
 	public DcatAtlasClient.Builder connectTimeoutMs(int connectTimeoutMs) {
 		configuration.connectTimeoutMs(connectTimeoutMs);
 		return this;

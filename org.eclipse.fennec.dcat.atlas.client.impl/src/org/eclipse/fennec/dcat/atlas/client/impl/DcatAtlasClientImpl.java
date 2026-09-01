@@ -313,7 +313,21 @@ final class DcatAtlasClientImpl implements DcatAtlasClient {
 	@Override
 	public URI aboutFor(DcatCollection collection, String id) {
 		Objects.requireNonNull(collection, "collection");
-		return normalise(configuration.getBaseUri()).resolve(collection.segment() + "/" + required(id, "id"));
+		return normalise(publicBase()).resolve(collection.segment() + "/" + required(id, "id"));
+	}
+
+	/**
+	 * The base an identity is rendered under, which is <em>not</em> the base requests go to.
+	 * <p>
+	 * {@code base.uri} is where this client connects; the portal stamps identities from its
+	 * own public base. They are the same URL only in a direct deployment, so an unset
+	 * {@code public.base.uri} falls back to the connect base rather than guessing — that
+	 * keeps a direct deployment configuration-free and makes a proxied one an explicit
+	 * setting instead of a silently wrong answer (issue #42).
+	 */
+	private URI publicBase() {
+		URI publicBaseUri = configuration.getPublicBaseUri();
+		return publicBaseUri == null ? configuration.getBaseUri() : publicBaseUri;
 	}
 
 	@Override

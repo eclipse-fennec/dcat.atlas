@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -344,6 +345,65 @@ public class DcatAtlasClientComponentIntegrationTest {
 
 		assertNotNull(client, "an unreachable portal must not stop activation when require.ready is off");
 		assertFalse(client.ready(), "and it really is unreachable, so the gate was exercised");
+	}
+
+	// --- the public base (#42) --------------------------------------------
+
+	/**
+	 * A split base, end to end through the front-end: the client is reached on the portal
+	 * this framework hosts and reports identities under somebody else's public URL.
+	 *
+	 * <h2>Why this is a real split and not a rigged one</h2>
+	 *
+	 * The write in the middle is the point. It proves the two keys drive different things:
+	 * the registration lands on {@code http://localhost:8186/rest/} — it could not succeed
+	 * otherwise — while {@code aboutFor} answers under
+	 * {@code https://data.example.org/rest/}, a host nothing here listens on. No proxy is
+	 * needed to demonstrate that, only two settings that disagree.
+	 */
+	@Test
+	void aboutForReportsThePublicBaseWhileWritesGoToTheConnectBase() throws Exception {
+		configure("proxied", Map.of("public.base.uri", "https://data.example.org/rest/"));
+		DcatAtlasClient client = client("proxied");
+
+		assertEquals(URI.create("https://data.example.org/rest/datasets/p42-split-base"),
+				client.aboutFor(DcatCollection.DATASETS, "p42-split-base"));
+
+		Registration<Dataset> registration = register(client, "p42-split-base", dataset("Split base"));
+		assertTrue(registration.applied(), "the write must still reach the portal on the connect base");
+
+		assertEquals("https://data.example.org/rest/",
+				reference("proxied").getProperty("public.base.uri"),
+				"the public base belongs on the service properties beside base.uri");
+	}
+
+	/**
+	 * With no {@code public.base.uri}, {@code aboutFor} falls back to {@code base.uri} — so
+	 * a direct deployment needs no second setting and nothing about it changes.
+	 */
+	@Test
+	void aboutForFallsBackToTheConnectBaseWhenNoPublicBaseIsConfigured() throws Exception {
+		configure("direct", Map.of());
+		DcatAtlasClient client = client("direct");
+
+		assertEquals(URI.create(BASE_URI + "datasets/p42-direct"),
+				client.aboutFor(DcatCollection.DATASETS, "p42-direct"));
+	}
+
+	/**
+	 * And in that fallback case the client agrees with the portal, which is the property
+	 * that matters: here the two bases really are the same, so a registration's own
+	 * {@code about} is the oracle.
+	 */
+	@Test
+	void aboutForAgreesWithTheIdentityThePortalServed() throws Exception {
+		configure("oracle", Map.of());
+		DcatAtlasClient client = client("oracle");
+
+		Registration<Dataset> registration = register(client, "p42-oracle", dataset("Oracle"));
+
+		assertEquals(URI.create(registration.entity().getAbout()),
+				client.aboutFor(DcatCollection.DATASETS, "p42-oracle"));
 	}
 
 	// --- fixtures ---------------------------------------------------------

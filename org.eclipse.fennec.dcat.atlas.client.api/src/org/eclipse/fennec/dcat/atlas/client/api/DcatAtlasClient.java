@@ -363,17 +363,22 @@ public interface DcatAtlasClient extends AutoCloseable {
 	boolean ready();
 
 	/**
-	 * The {@code rdf:about} this portal would give a resource, for a caller that wants to
+	 * The {@code rdf:about} the portal serves a resource under, for a caller that wants to
 	 * set it explicitly or to record what it published.
 	 * <p>
-	 * Computed from {@code base.uri}, which is the address this client <em>connects</em> on.
-	 * So this is the identity the portal would serve only where that base is one the portal
-	 * owns — see {@link ClientConfiguration#getBaseUri()} for the reverse-proxy case, where
-	 * it is not.
+	 * Computed from {@code public.base.uri}, falling back to {@code base.uri} when that is
+	 * unset. The fallback is right in a direct deployment and wrong behind a reverse proxy,
+	 * where the two are different URLs — so a proxied deployment has to configure it. See
+	 * {@link ClientConfiguration#getPublicBaseUri()}.
+	 * <p>
+	 * After a write there is a better source that needs no configuration at all: the stored
+	 * entity in the returned {@link Registration} carries the portal's own {@code about}.
+	 * Prefer that where you have it, and this where you do not — before the first write, or
+	 * to send {@code about} yourself.
 	 *
 	 * @param collection the collection
 	 * @param id         the resource's identifier
-	 * @return the IRI under the configured base
+	 * @return the resource's public IRI
 	 */
 	URI aboutFor(DcatCollection collection, String id);
 
@@ -395,8 +400,16 @@ public interface DcatAtlasClient extends AutoCloseable {
 		 */
 		Builder configuration(ClientConfiguration configuration);
 
-		/** Required — the portal's REST base ({@code base.uri}). */
+		/** Required — the portal's REST base ({@code base.uri}), the URL it is reached on. */
 		Builder baseUri(URI baseUri);
+
+		/**
+		 * The base the portal serves its identities under ({@code public.base.uri}), where
+		 * that is not the URL it is reached on.
+		 *
+		 * @see ClientConfiguration#getPublicBaseUri()
+		 */
+		Builder publicBaseUri(URI publicBaseUri);
 
 		/** {@code connect.timeout.ms}. */
 		Builder connectTimeoutMs(int connectTimeoutMs);

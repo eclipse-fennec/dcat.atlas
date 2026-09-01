@@ -56,8 +56,10 @@ the impl bundle, `builder()` throws `IllegalStateException` naming what it looke
 > classes directory. A build that puts the impl on the classpath as loose classes cannot
 > reach it through `builder()`.
 
-The builder's convenience setters cover only `base.uri` and the two timeouts.
-**Authentication and `read.accept` are set through `ClientConfiguration`:**
+The builder's convenience setters cover the two bases and the two timeouts —
+`baseUri`, `publicBaseUri` (see [Two bases](#two-bases-where-you-connect-and-what-the-portal-serves)),
+`connectTimeoutMs`, `readTimeoutMs`. **Authentication and `read.accept` are set through
+`ClientConfiguration`:**
 
 ```java
 ClientConfiguration configuration = ClientConfiguration.builder()
@@ -262,26 +264,50 @@ a child of it.
 With `require.ready` on, a portal that is not ready leaves **no service in the
 registry**. A consumer whose `@Reference` is unsatisfied is seeing exactly that.
 
-## `base.uri`, and the `about` it computes
+## Two bases: where you connect, and what the portal serves
 
 **`base.uri` is a transport address.** Every request is targeted at it and
 `/health/ready` is probed relative to it, so it has to be the URL *this runtime* can
-reach the portal on — behind a reverse proxy, the internal one. It is **not**
-necessarily the portal's own `PUBLIC_BASE_URL`, which is what the portal stamps into the
-identities it serves. The two coincide in a direct deployment, and that is the only case
-in which they may be assumed equal.
+reach the portal on — behind a reverse proxy, the internal one.
 
-The wrinkle is that `aboutFor(collection, id)` has only this base to compute from. So if
-the two differ and you set `rdf:about` explicitly, the portal sees an `about` under a
-base it does not own and answers **400**. Three ways out, in order of preference:
+**`public.base.uri` is what the portal serves its identities under**, and what
+`aboutFor(collection, id)` computes from. In a direct deployment the two are the same URL
+and you leave it unset; `aboutFor` falls back to `base.uri`.
 
-1. **Leave `about` unset.** The path carries the id; this is the normal case and no
-   configuration has to agree with any other.
-2. Point `base.uri` at the same URL as the portal's `PUBLIC_BASE_URL`.
-3. Add the internal base to the portal's `PublicIris.additionalOwnedBases`, so IRIs
-   under it are recognised as its own.
+Behind a proxy they are two different URLs and one value cannot be both, so set it:
 
-A trailing slash is optional — the client normalises `base.uri` to end in one.
+```json
+"org.eclipse.fennec.dcat.atlas.client~portal": {
+  "dcat.portal": "portal",
+  "base.uri": "http://dcat:8080/rest/",
+  "public.base.uri": "https://data.example.org/rest/"
+}
+```
+
+```
+aboutFor(DATASETS, "air-quality")  ->  https://data.example.org/rest/datasets/air-quality
+requests still go to              ->  http://dcat:8080/rest/admin/datasets/air-quality
+readiness still probes            ->  http://dcat:8080/health/ready
+```
+
+Leaving it unset in a proxied deployment is what [#42] was about: `aboutFor` then returns
+an IRI under the internal hostname, which the portal refuses with **400** if you send it
+as `rdf:about`, and which is *silently* unresolvable if you merely record it as what you
+published.
+
+A trailing slash is optional on both — the client normalises them.
+
+> **After a write you do not need either setting.** The registration response carries the
+> stored entity with its `about` already rendered under the portal's public base, so
+> `registration.entity().getAbout()` is correct whatever is configured. Prefer it where
+> you have it; `aboutFor` is for the window before the first write, and for setting
+> `about` yourself.
+
+If you would rather not configure a second base, the alternatives are to leave `about`
+unset (the normal case — the path carries the id) or to add the internal base to the
+portal's `PublicIris.additionalOwnedBases`, so IRIs under it are recognised as its own.
+
+[#42]: https://github.com/eclipse-fennec/dcat.atlas/issues/42
 
 ## What a write must contain
 
@@ -479,7 +505,8 @@ cannot drift.
 | Key | Type | Default | What it is |
 |---|---|---|---|
 | `dcat.portal` | String | *required* | The portal's name, published as a service property for `@Reference(target = "(dcat.portal=…)")`. |
-| `base.uri` | String | *required* | The portal's REST base, e.g. `http://dcat:8080/rest/`. |
+| `base.uri` | String | *required* | The portal's REST base — the URL this runtime reaches it on, e.g. `http://dcat:8080/rest/`. |
+| `public.base.uri` | String | `""` (means `base.uri`) | The base the portal serves its identities under, where that differs. What `aboutFor` computes from. |
 | `connect.timeout.ms` | int | `5000` | Connect timeout. |
 | `read.timeout.ms` | int | `30000` | Read timeout. |
 | `check.ready` | boolean | `true` | Probe `/health/ready` at activation. |

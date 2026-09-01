@@ -167,7 +167,10 @@ public class DcatAtlasClientComponent implements DcatAtlasClient, AsyncDcatAtlas
 				.keystoreType(config.auth_keystore_type()) //
 				.truststoreType(config.auth_truststore_type());
 		// Blank is how metatype spells "unset" for a String, and the configuration value type
-		// wants null rather than "" so the provider can tell them apart.
+		// wants null rather than "" so the provider can tell them apart. For the public base
+		// that distinction is the feature: unset means "the same as base.uri", and only the
+		// null reaches that fallback.
+		text(config.public_base_uri()).map(URI::create).ifPresent(builder::publicBaseUri);
 		text(config.auth_token_env()).ifPresent(builder::authTokenEnv);
 		text(config.auth_apikey_env()).ifPresent(builder::apiKeyEnv);
 		text(config.auth_keystore_path()).ifPresent(builder::keystorePath);

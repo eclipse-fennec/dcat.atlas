@@ -46,6 +46,17 @@ public @interface DcatAtlasClientConfig {
 	 */
 	String base_uri();
 
+	/**
+	 * {@code public.base.uri} — the base the portal serves its identities under, where that
+	 * is not {@link #base_uri()}.
+	 * <p>
+	 * Leave it unset in a direct deployment, where the two are one URL. Set it wherever a
+	 * proxy or a container network means this runtime connects on one URL and clients
+	 * dereference another: it is what {@code aboutFor} computes from, and {@code base.uri}
+	 * cannot serve both purposes — it has to stay the address this runtime can reach.
+	 */
+	String public_base_uri() default "";
+
 	/** {@code connect.timeout.ms} */
 	int connect_timeout_ms() default 5_000;
 

@@ -138,6 +138,25 @@ public class ReferenceIntegrityIntegrationTest {
 		assertTrue(catalogs.getCatalog(CATALOG_ID).isEmpty(), "nothing should have been stored");
 	}
 
+	/**
+	 * #46: and the 409 names the missing member publicly too.
+	 * <p>
+	 * The body deliberately refers to the target by the <em>public</em> IRI, which the portal
+	 * accepts as one of ours. Whatever form a client submits, what comes back has to be the
+	 * form it can dereference.
+	 */
+	@Test
+	void theRejectionNamesTheMissingMemberByItsPublicIdentity() throws Exception {
+		HttpResponse<String> put = putCatalog("""
+				  <dataset href="%s/datasets/%s#/"/>""".formatted(BASE, DATASET_ID));
+
+		assertEquals(409, put.statusCode(), put.body());
+		assertFalse(put.body().contains("http://dcat.atlas/"),
+				"a 409 must not hand back the store's internal base: " + put.body());
+		assertTrue(put.body().contains(BASE + "/datasets/" + DATASET_ID),
+				"it should name the missing member as the client can address it: " + put.body());
+	}
+
 	@Test
 	void foreignReferenceIsAccepted() throws Exception {
 		// Not an identity we own, so it is not ours to refuse — vocabularies, publishers and

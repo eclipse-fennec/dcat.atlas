@@ -7,6 +7,7 @@ Export-Package: org.eclipse.fennec.dcat.atlas.msg.body.readerwriter
 	jakarta.ws.rs-api;version=latest,\
 	org.osgi.service.jakartars;version=latest,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
 	org.apache.jena.base,\
 	org.apache.jena.core,\
 	org.apache.jena.arq,\

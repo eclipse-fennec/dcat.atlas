@@ -90,10 +90,27 @@ public final class ClientConfiguration {
 	}
 
 	/**
-	 * {@code base.uri} — required. The portal's REST base, the URL a client actually
-	 * reaches it on, e.g. {@code http://localhost:8085/dcat/rest/}. This is the same
-	 * value the portal is configured with as {@code PUBLIC_BASE_URL}, and the client
-	 * computes an {@code about} from it when a caller asks for one.
+	 * {@code base.uri} — required. The portal's REST base, the URL this client actually
+	 * reaches the portal on, e.g. {@code http://localhost:8085/dcat/rest/}. A trailing
+	 * slash is optional; the client normalises it.
+	 *
+	 * <h2>A transport address, not necessarily the portal's public base</h2>
+	 *
+	 * Every request is targeted at this URL and {@code /health/ready} is probed relative to
+	 * it, so behind a reverse proxy this is the <em>internal</em> address. It is therefore
+	 * not necessarily the portal's own {@code PUBLIC_BASE_URL}, which is what the portal
+	 * stamps into the identities it serves; the two coincide in a direct deployment, and
+	 * that is the only case in which they may be assumed equal. An earlier version of this
+	 * javadoc claimed they are always the same — they are not, and
+	 * {@code DcatAtlasClientConfig#base_uri()} has said so correctly all along.
+	 * <p>
+	 * The consequence worth knowing:
+	 * {@link DcatAtlasClient#aboutFor(DcatCollection, String)} has only this base to compute
+	 * from, so where the two differ it yields an IRI under the internal base — and the
+	 * portal refuses a body carrying it with {@code 400}, not owning that base. Leaving
+	 * {@code about} unset avoids the question entirely, which is why the client does not set
+	 * it; a caller that must set it should either point this at the public base or have the
+	 * internal one added to the portal's owned bases.
 	 */
 	public URI getBaseUri() {
 		return baseUri;

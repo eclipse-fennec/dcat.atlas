@@ -365,10 +365,15 @@ public interface DcatAtlasClient extends AutoCloseable {
 	/**
 	 * The {@code rdf:about} this portal would give a resource, for a caller that wants to
 	 * set it explicitly or to record what it published.
+	 * <p>
+	 * Computed from {@code base.uri}, which is the address this client <em>connects</em> on.
+	 * So this is the identity the portal would serve only where that base is one the portal
+	 * owns — see {@link ClientConfiguration#getBaseUri()} for the reverse-proxy case, where
+	 * it is not.
 	 *
 	 * @param collection the collection
 	 * @param id         the resource's identifier
-	 * @return the public IRI, computed from the configured base
+	 * @return the IRI under the configured base
 	 */
 	URI aboutFor(DcatCollection collection, String id);
 

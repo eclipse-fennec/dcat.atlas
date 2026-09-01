@@ -18,6 +18,10 @@ Writes are validated twice over: against the model's own constraints, which trav
 the model and need no setup, and against the DCAT-AP.de SHACL shapes, which the operator
 supplies. See [Validating metadata](#validating-metadata).
 
+A Java or OSGi application does not have to compose these requests itself: the DCAT.Atlas
+**client** hands EMF objects to the portal and maps its answers onto typed exceptions. See
+the [Client Guide](./client-guide.md).
+
 For the architecture, scope and work-package plan, see the internal
 planning document. For the write-side contract,
 see the admin-API specification.
@@ -974,6 +978,8 @@ negotiates over the RDF syntaxes.
 
 ## Further reading
 
+- [Client Guide](./client-guide.md) — registering metadata from Java or OSGi: the
+  configuration keys, authentication, readiness, and the registration loop.
 - Planning document — goals, scope, architecture,
   work packages.
 - Admin-API specification — OSGi + REST write side.

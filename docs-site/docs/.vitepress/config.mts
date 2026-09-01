@@ -41,7 +41,7 @@ const guidesNav =
 export default defineConfig({
   title: 'Fennec DCAT.Atlas',
   description:
-    'DCAT-AP 3 open-data portal for EMF — Apache Jena persistence with JSON-LD, Turtle and N3 output, and an OSGi + REST admin API.',
+    'DCAT-AP 3 open-data portal for EMF — a git-backed XMI store with JSON-LD, Turtle, RDF/XML and N3 output, a SPARQL endpoint, and an OSGi + REST admin API.',
   lang: 'en-US',
   base,
   cleanUrls: true,
@@ -64,7 +64,7 @@ export default defineConfig({
       {
         property: 'og:description',
         content:
-          'DCAT-AP 3 open-data portal for EMF — Apache Jena persistence with JSON-LD, Turtle and N3 output.',
+          'DCAT-AP 3 open-data portal for EMF — a git-backed XMI store with JSON-LD, Turtle, RDF/XML and N3 output, and a SPARQL endpoint.',
       },
     ],
   ],

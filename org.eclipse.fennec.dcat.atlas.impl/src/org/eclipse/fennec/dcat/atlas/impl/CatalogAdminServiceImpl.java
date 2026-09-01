@@ -247,7 +247,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		Store store = store();
 		Catalog catalog = requireCatalog(store, catalogId);
 		if (Members.remove(membership.apply(catalog), memberCollection, memberId)) {
-			store.save(catalog);
+			// A removal. See Store.saveRemoval.
+			store.saveRemoval(catalog);
 			store.commit("Unlink %s %s from catalog %s".formatted(memberCollection, memberId, catalogId));
 			reproject(catalogId);
 		}

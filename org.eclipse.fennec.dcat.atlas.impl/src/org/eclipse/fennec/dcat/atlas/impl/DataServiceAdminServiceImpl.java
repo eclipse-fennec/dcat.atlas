@@ -150,7 +150,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		Store store = store();
 		DataService dataService = requireDataService(store, dataServiceId);
 		if (Members.remove(dataService.getServesDataset(), StoreLayout.DATASETS, datasetId)) {
-			store.save(dataService);
+			// A removal. See Store.saveRemoval.
+			store.saveRemoval(dataService);
 			store.commit("Unlink dataset %s from data service %s".formatted(datasetId, dataServiceId));
 			reproject(dataServiceId);
 		}

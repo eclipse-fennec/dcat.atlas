@@ -228,7 +228,11 @@ public final class References {
 			}
 		}
 		if (changed) {
-			store.save(owner);
+			// A removal, and the one that must never be refused: this is what makes a cascade
+			// delete possible, so validating it would leave the dangling reference the cascade
+			// exists to prevent. It also keeps the non-resolving discipline above intact --
+			// validation would resolve and serialize the whole owner. See Store.saveRemoval.
+			store.saveRemoval(owner);
 		}
 	}
 

@@ -150,7 +150,8 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		Store store = store();
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> {
 			if (Members.remove(dataset.getInSeries(), collection, datasetSeriesId)) {
-				store.save(dataset);
+				// A removal. See Store.saveRemoval.
+				store.saveRemoval(dataset);
 				store.commit("Unlink dataset %s from dataset series %s".formatted(datasetId, datasetSeriesId));
 				reproject(DcatEntity.DATASET, datasetId);
 			}

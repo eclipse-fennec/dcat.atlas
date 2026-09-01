@@ -72,6 +72,9 @@ class DcatAtlasClientTest {
 
 	private static final String XMI = "application/xmi";
 
+	/** What a proxied portal serves its identities under, as opposed to what it is reached on. */
+	private static final URI PUBLIC_BASE = URI.create("https://data.example.org/rest/");
+
 	private StubPortal portal;
 	private DcatAtlasClient client;
 
@@ -590,11 +593,118 @@ class DcatAtlasClientTest {
 	}
 
 	@Test
-	void aboutForComputesThePublicIriThePortalWouldMint() {
+	void aboutForFallsBackToTheConnectBaseWhenNoPublicBaseIsConfigured() {
 		assertEquals(URI.create(portal.baseUri() + "datasets/luftqualitaet-2026"),
 				client.aboutFor(DcatCollection.DATASETS, "luftqualitaet-2026"));
 		assertEquals(URI.create(portal.baseUri() + "dataset-series/my-model"),
 				client.aboutFor(DcatCollection.DATASET_SERIES, "my-model"));
+	}
+
+	// --- the public base (#42) --------------------------------------------
+
+	/**
+	 * A proxied deployment: reached on {@code 127.0.0.1}, serving identities under
+	 * {@code https://data.example.org/rest/}.
+	 * <p>
+	 * {@code base.uri} cannot be that public URL — it is what every request and the
+	 * readiness probe are aimed at, so it has to be the address this runtime can connect
+	 * to. {@code public.base.uri} is the other half.
+	 */
+	@Test
+	void aboutForReportsThePublicBaseRatherThanTheConnectBase() {
+		try (DcatAtlasClient proxied = builder() //
+				.baseUri(portal.baseUri()) //
+				.publicBaseUri(PUBLIC_BASE) //
+				.build()) {
+			assertEquals(URI.create("https://data.example.org/rest/datasets/luftqualitaet-2026"),
+					proxied.aboutFor(DcatCollection.DATASETS, "luftqualitaet-2026"));
+			assertEquals(URI.create("https://data.example.org/rest/dataset-series/my-model"),
+					proxied.aboutFor(DcatCollection.DATASET_SERIES, "my-model"));
+		}
+	}
+
+	/**
+	 * The silent half of #42, which is the one worth a test: a publisher that records what
+	 * it published must record the identity the portal actually served, not one under its
+	 * own internal hostname.
+	 * <p>
+	 * The stub answers with an {@code about} already rendered under the public base, which
+	 * is what {@code PublicIriFilter} does to every response entity. So the portal's own
+	 * answer is the oracle here — the assertion is that the two agree, not that either
+	 * matches a literal.
+	 */
+	@Test
+	void aboutForAgreesWithTheIdentityThePortalServed() {
+		Dataset served = dataset("Luftqualität");
+		served.setAbout("https://data.example.org/rest/datasets/luftqualitaet-2026");
+
+		try (DcatAtlasClient proxied = builder() //
+				.baseUri(portal.baseUri()) //
+				.publicBaseUri(PUBLIC_BASE) //
+				.build()) {
+			portal.enqueue(Reply.of(200, XMI, xmiOf(served)));
+
+			Registration<Dataset> registration = proxied.registerDataset("luftqualitaet-2026",
+					dataset("Luftqualität"));
+
+			assertEquals(URI.create(registration.entity().getAbout()),
+					proxied.aboutFor(DcatCollection.DATASETS, "luftqualitaet-2026"),
+					"a publisher recording what it published must not record the connect base");
+		}
+	}
+
+	/** A public base changes identities, never where the requests go. */
+	@Test
+	void aPublicBaseDoesNotChangeWhereRequestsGo() {
+		try (DcatAtlasClient proxied = builder() //
+				.baseUri(portal.baseUri()) //
+				.publicBaseUri(PUBLIC_BASE) //
+				.build()) {
+			portal.enqueue(Reply.of(200, XMI, xmiOf(dataset("x"))));
+
+			proxied.registerDataset("d1", dataset("x"));
+
+			assertEquals("/rest/admin/datasets/d1", portal.lastRequest().path(),
+					"the request must still be aimed at the connect base");
+		}
+	}
+
+	/** Normalised like {@code base.uri} is, so a missing trailing slash is not a trap. */
+	@Test
+	void aPublicBaseWithoutATrailingSlashStillResolvesCorrectly() {
+		try (DcatAtlasClient proxied = builder() //
+				.baseUri(portal.baseUri()) //
+				.publicBaseUri(URI.create("https://data.example.org/rest")) //
+				.build()) {
+			assertEquals(URI.create("https://data.example.org/rest/datasets/d1"),
+					proxied.aboutFor(DcatCollection.DATASETS, "d1"));
+		}
+	}
+
+	/** Set through the value type rather than the builder, since the OSGi front-end does that. */
+	@Test
+	void aPublicBaseSetThroughTheConfigurationIsHonoured() {
+		ClientConfiguration configuration = ClientConfiguration.builder() //
+				.baseUri(portal.baseUri()) //
+				.publicBaseUri(PUBLIC_BASE) //
+				.build();
+		assertEquals(PUBLIC_BASE, configuration.getPublicBaseUri());
+
+		try (DcatAtlasClient proxied = builder().configuration(configuration).build()) {
+			assertEquals(URI.create("https://data.example.org/rest/catalogs/gov"),
+					proxied.aboutFor(DcatCollection.CATALOGS, "gov"));
+		}
+	}
+
+	/**
+	 * Unset is unset: the value type reports {@code null} rather than pre-filling
+	 * {@code base.uri}, so a caller can tell "not configured" from "configured to the same
+	 * thing" — and the OSGi front-end can leave a blank property alone.
+	 */
+	@Test
+	void anUnsetPublicBaseIsNullOnTheConfiguration() {
+		ClientConfiguration configuration = ClientConfiguration.builder().baseUri(portal.baseUri()).build();
+		assertNull(configuration.getPublicBaseUri());
 	}
 
 	// --- configuration ----------------------------------------------------

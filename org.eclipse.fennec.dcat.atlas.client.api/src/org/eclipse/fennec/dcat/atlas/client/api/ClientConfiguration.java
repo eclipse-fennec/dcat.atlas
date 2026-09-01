@@ -48,6 +48,7 @@ public final class ClientConfiguration {
 	public static final String XMI = "application/xmi";
 
 	private final URI baseUri;
+	private final URI publicBaseUri;
 	private final int connectTimeoutMs;
 	private final int readTimeoutMs;
 	private final String readAcceptMediaType;
@@ -64,6 +65,7 @@ public final class ClientConfiguration {
 
 	private ClientConfiguration(Builder builder) {
 		this.baseUri = builder.baseUri;
+		this.publicBaseUri = builder.publicBaseUri;
 		this.connectTimeoutMs = builder.connectTimeoutMs;
 		this.readTimeoutMs = builder.readTimeoutMs;
 		this.readAcceptMediaType = builder.readAcceptMediaType;
@@ -93,27 +95,42 @@ public final class ClientConfiguration {
 	 * {@code base.uri} — required. The portal's REST base, the URL this client actually
 	 * reaches the portal on, e.g. {@code http://localhost:8085/dcat/rest/}. A trailing
 	 * slash is optional; the client normalises it.
-	 *
-	 * <h2>A transport address, not necessarily the portal's public base</h2>
-	 *
-	 * Every request is targeted at this URL and {@code /health/ready} is probed relative to
-	 * it, so behind a reverse proxy this is the <em>internal</em> address. It is therefore
-	 * not necessarily the portal's own {@code PUBLIC_BASE_URL}, which is what the portal
-	 * stamps into the identities it serves; the two coincide in a direct deployment, and
-	 * that is the only case in which they may be assumed equal. An earlier version of this
-	 * javadoc claimed they are always the same — they are not, and
-	 * {@code DcatAtlasClientConfig#base_uri()} has said so correctly all along.
 	 * <p>
-	 * The consequence worth knowing:
-	 * {@link DcatAtlasClient#aboutFor(DcatCollection, String)} has only this base to compute
-	 * from, so where the two differ it yields an IRI under the internal base — and the
-	 * portal refuses a body carrying it with {@code 400}, not owning that base. Leaving
-	 * {@code about} unset avoids the question entirely, which is why the client does not set
-	 * it; a caller that must set it should either point this at the public base or have the
-	 * internal one added to the portal's owned bases.
+	 * Purely a <b>transport address</b>: every request is targeted at it and
+	 * {@code /health/ready} is probed relative to it, so behind a reverse proxy this is the
+	 * internal one. It says nothing about the identities the portal serves — those come from
+	 * {@link #getPublicBaseUri()}.
 	 */
 	public URI getBaseUri() {
 		return baseUri;
+	}
+
+	/**
+	 * {@code public.base.uri} — the base the portal serves its identities under, and what
+	 * {@link DcatAtlasClient#aboutFor(DcatCollection, String)} computes from. Optional;
+	 * {@code null} means "the same as {@code base.uri}".
+	 *
+	 * <h2>Why this is a second setting rather than derived from the first</h2>
+	 *
+	 * {@code base.uri} has to be an address this runtime can connect to, and the portal
+	 * stamps identities from its own {@code PUBLIC_BASE_URL}. In a direct deployment those
+	 * are one URL and this can be left unset. Behind a reverse proxy they are two, and one
+	 * value cannot be both — deriving the identity base from the connect base produced IRIs
+	 * under an internal hostname, which the portal refuses {@code 400} on a write and, worse,
+	 * which a publisher that merely <em>recorded</em> what it published stored with no error
+	 * at all (issue #42).
+	 *
+	 * <h2>After a write there is a better source, needing no configuration</h2>
+	 *
+	 * A registration response carries the stored entity with its {@code about} already
+	 * rendered under the portal's public base, so {@code registration.entity().getAbout()} is
+	 * right whatever this is set to. This setting is for the window before the first write,
+	 * and for a caller that wants to send {@code about} itself.
+	 *
+	 * @return the configured public base, or {@code null} when it is {@code base.uri}
+	 */
+	public URI getPublicBaseUri() {
+		return publicBaseUri;
 	}
 
 	/** {@code connect.timeout.ms} — default {@code 5000}. */
@@ -199,6 +216,7 @@ public final class ClientConfiguration {
 		return connectTimeoutMs == that.connectTimeoutMs //
 				&& readTimeoutMs == that.readTimeoutMs //
 				&& Objects.equals(baseUri, that.baseUri) //
+				&& Objects.equals(publicBaseUri, that.publicBaseUri) //
 				&& Objects.equals(readAcceptMediaType, that.readAcceptMediaType) //
 				&& authType == that.authType //
 				&& Objects.equals(authTokenEnv, that.authTokenEnv) //
@@ -214,7 +232,8 @@ public final class ClientConfiguration {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(baseUri, connectTimeoutMs, readTimeoutMs, readAcceptMediaType, authType, authTokenEnv,
+		return Objects.hash(baseUri, publicBaseUri, connectTimeoutMs, readTimeoutMs, readAcceptMediaType, authType,
+				authTokenEnv,
 				apiKeyHeader, apiKeyEnv, keystorePath, keystorePassword, keystoreType, truststorePath,
 				truststorePassword, truststoreType);
 	}
@@ -222,8 +241,8 @@ public final class ClientConfiguration {
 	/** Deliberately omits every credential field. */
 	@Override
 	public String toString() {
-		return "ClientConfiguration[baseUri=" + baseUri + ", authType=" + authType + ", connectTimeoutMs="
-				+ connectTimeoutMs + ", readTimeoutMs=" + readTimeoutMs + "]";
+		return "ClientConfiguration[baseUri=" + baseUri + ", publicBaseUri=" + publicBaseUri + ", authType="
+				+ authType + ", connectTimeoutMs=" + connectTimeoutMs + ", readTimeoutMs=" + readTimeoutMs + "]";
 	}
 
 	/**
@@ -233,6 +252,7 @@ public final class ClientConfiguration {
 	public static final class Builder {
 
 		private URI baseUri;
+		private URI publicBaseUri;
 		private int connectTimeoutMs = 5_000;
 		private int readTimeoutMs = 30_000;
 		private String readAcceptMediaType = XMI;
@@ -253,6 +273,7 @@ public final class ClientConfiguration {
 
 		private Builder(ClientConfiguration from) {
 			this.baseUri = from.baseUri;
+			this.publicBaseUri = from.publicBaseUri;
 			this.connectTimeoutMs = from.connectTimeoutMs;
 			this.readTimeoutMs = from.readTimeoutMs;
 			this.readAcceptMediaType = from.readAcceptMediaType;
@@ -270,6 +291,17 @@ public final class ClientConfiguration {
 
 		public Builder baseUri(URI baseUri) {
 			this.baseUri = baseUri;
+			return this;
+		}
+
+		/**
+		 * The base the portal serves its identities under; {@code null} to mean
+		 * {@code base.uri}.
+		 *
+		 * @see ClientConfiguration#getPublicBaseUri()
+		 */
+		public Builder publicBaseUri(URI publicBaseUri) {
+			this.publicBaseUri = publicBaseUri;
 			return this;
 		}
 

@@ -14,6 +14,7 @@
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -317,6 +318,28 @@ public class ModelConstraintWriteIntegrationTest {
 				"two Distributions under one licence are ordinary data, but was: " + response.statusCode() + " "
 						+ response.body());
 		assertEquals(2, storedDistributions(OWNER_ID), "both should be stored");
+	}
+
+	/**
+	 * #46: a refusal names the resource by the identity the client can dereference.
+	 * <p>
+	 * Identities are folded to the stored logical form on the way in and validation runs on
+	 * that, which is right — but the client never saw {@code http://dcat.atlas/…}, cannot
+	 * fetch it, and cannot match it against what it sent. {@code CascadeReport} already
+	 * renders its own text body public for exactly this reason.
+	 */
+	@Test
+	void aRefusalNamesTheResourceByItsPublicIdentity() throws Exception {
+		seedOwner();
+
+		HttpResponse<String> response = put(ADMIN_DATASETS + "/" + OWNER_ID, datasetWithDistributions(OWNER_ID,
+				distributionElement(OWNER_ID, "csv", "One"), distributionElement(OWNER_ID, "csv", "Two")));
+
+		assertEquals(422, response.statusCode(), response.body());
+		assertFalse(response.body().contains("http://dcat.atlas/"),
+				"a 422 must not hand back the store's internal base: " + response.body());
+		assertTrue(response.body().contains(distributionIri(OWNER_ID, "csv")),
+				"it should name the IRI the client can dereference: " + response.body());
 	}
 
 	// --- payloads -----------------------------------------------------------

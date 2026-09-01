@@ -72,6 +72,8 @@ public class WriteValidationIntegrationTest {
 	private static final String BASE = "http://localhost:8185/rest";
 	private static final String ADMIN_DATASETS = BASE + "/admin/datasets";
 	private static final String RDF_XML = "application/rdf+xml";
+	/** #46: refused, so never stored — but named here so the cleanup can be sure. */
+	private static final String FOCUS_ID = "public-focus-node-probe";
 	/** The only write format: the codec picks its codec by media type (application/xml selects a plain-XML one). */
 	private static final String XMI = "application/xmi";
 	private static final String PID = "DcatValidationService";
@@ -141,6 +143,7 @@ public class WriteValidationIntegrationTest {
 		// before enforcement kicked in.
 		http.send(delete(ADMIN_DATASETS + "/" + PROBE_ID), BodyHandlers.discarding());
 		http.send(delete(ADMIN_DATASETS + "/" + DIRECT_ID), BodyHandlers.discarding());
+		http.send(delete(ADMIN_DATASETS + "/" + FOCUS_ID), BodyHandlers.discarding());
 	}
 
 	@Test
@@ -159,6 +162,27 @@ public class WriteValidationIntegrationTest {
 			// store outlives the run; a test that creates has to remove what it created.
 			http.send(delete(ADMIN_DATASETS + "/with-keyword"), BodyHandlers.discarding());
 		}
+	}
+
+	/**
+	 * #46: the {@code sh:ValidationReport}'s focus node is the public identity.
+	 * <p>
+	 * This is the case that matters most, the report being meant for machine consumption: a
+	 * consumer correlating {@code sh:focusNode} against its own records must not be handed an
+	 * IRI that matches nothing it sent and nothing it can fetch. The body names itself by the
+	 * public IRI, so there is no ambiguity about what the client asked for.
+	 */
+	@Test
+	void theReportNamesItsFocusNodeByThePublicIdentity() throws Exception {
+		String about = BASE + "/datasets/" + FOCUS_ID;
+
+		HttpResponse<String> rejected = post(ADMIN_DATASETS, entityBody("Dataset", about, null));
+
+		assertEquals(422, rejected.statusCode(), rejected.body());
+		assertFalse(rejected.body().contains("http://dcat.atlas/"),
+				"the report must not carry the store's internal base: " + rejected.body());
+		assertTrue(rejected.body().contains(about),
+				"the focus node should be the IRI the client can dereference: " + rejected.body());
 	}
 
 	/**

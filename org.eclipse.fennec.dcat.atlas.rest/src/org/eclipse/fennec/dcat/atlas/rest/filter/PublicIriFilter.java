@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicView;
 import org.eclipse.fennec.model.utilities.UtilitiesFactory;
@@ -99,10 +100,40 @@ public class PublicIriFilter implements ContainerResponseFilter, ReaderIntercept
 			rendered = PublicView.render(eObject, publicIris);
 		} else if (entity instanceof Collection<?> collection) {
 			rendered = renderCollection(renderAll(collection), responseContext);
+		} else if (entity instanceof String text) {
+			rendered = publicise(text);
 		} else {
 			return;
 		}
 		responseContext.setEntity(rendered, responseContext.getEntityAnnotations(), responseContext.getMediaType());
+	}
+
+	/**
+	 * Rewrites the store's logical base out of a text body (#46).
+	 *
+	 * <h2>Why text bodies belong here too</h2>
+	 *
+	 * A refusal names the resource it is about, and until this existed it named it by the
+	 * stored identity: a {@code 422} said {@code http://dcat.atlas/datasets/x}, which the
+	 * client never sent, cannot fetch, and cannot match against its own records. Validation
+	 * runs on the logical form and should — the stored identity is what is being validated —
+	 * so the mapping belongs at rendering, which is here.
+	 * <p>
+	 * The reasoning is {@code CascadeReport}'s, which already maps its own {@code text/plain}
+	 * body with {@code publicIris::toPublic}: a client's cache is keyed by the URL it was
+	 * served. Doing it in the filter rather than in each of the seven
+	 * {@code ExceptionMapper}s is the same argument this class's own javadoc makes about the
+	 * ten resources — here it cannot be forgotten, including by a mapper added later.
+	 *
+	 * <h2>Why a base replacement is safe</h2>
+	 *
+	 * Only the logical base is rewritten, and an occurrence of it in an <em>outbound</em> body
+	 * is internal by definition. In particular a foreign {@code about} quoted back by a
+	 * {@code 400} is untouched: it is not under our base, which is exactly why it was refused.
+	 */
+	private String publicise(String text) {
+		String logicalBase = DcatIds.LOGICAL_BASE;
+		return text.contains(logicalBase) ? text.replace(logicalBase, publicIris.publicBase()) : text;
 	}
 
 	/**

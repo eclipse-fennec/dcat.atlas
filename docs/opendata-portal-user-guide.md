@@ -67,6 +67,11 @@ So:
   the URL you sent the request to (behind a reverse proxy it is deliberately not);
 - an `about` you *send* is accepted if it sits under either the public base or the
   host-free one, and refused with `400` otherwise (see below);
+- a **refusal** names resources the same way: a `422`'s violation list, a `409`'s missing
+  member and a SHACL report's `sh:focusNode` all carry the public IRI, so what an error tells
+  you can be matched against what you sent and fetched afterwards. The one exception is an
+  `about` the portal does *not* own — a `400` quotes that back verbatim, because it is your
+  value and not one of ours;
 - if the `about` values look wrong for your deployment — pointing at `localhost`, or at the
   wrong host — that is the portal's public base URL being misconfigured, not your request.
   It is a single setting (`PUBLIC_BASE_URL` in the shipped configurations) and the portal

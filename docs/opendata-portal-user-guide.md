@@ -793,6 +793,15 @@ model constraints, but performs **no profile validation at all** — SHACL repor
 conformance because it has nothing to compare against. Configure shapes before treating a
 green validation as meaningful.
 
+**What is checked, and what is not.** Both layers apply to every write that *adds or
+replaces* content, wherever that content lands — including a `Distribution`, which is
+stored inside its `Dataset`, and a membership link, which rewrites its container. A write
+that only *removes* content is deliberately exempt: unlinking a member, deleting a
+distribution, and the unlinking a [cascade](#removing-a-catalog) does on your behalf are
+never refused because of what they are removing. So metadata that is already stored and
+does not conform can always be deleted — validation gates what goes in, and never locks
+anything in.
+
 ### Model constraints
 
 These are declared on the model itself — as multiplicities, and as OCL invariants

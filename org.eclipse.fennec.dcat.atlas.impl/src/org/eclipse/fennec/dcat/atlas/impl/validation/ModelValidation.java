@@ -102,18 +102,44 @@ public final class ModelValidation {
 
 	/**
 	 * Whether a diagnostic is one this model can be held to.
+	 *
+	 * <h2>{@code validate_EveryProxyResolves} is not</h2>
+	 *
+	 * Membership is cross-resource references, and an unresolved proxy is the normal state of
+	 * two legitimate cases: a link to another of our entities that has not been touched yet in
+	 * this session, and a link to a <em>foreign</em> IRI, which by definition cannot resolve
+	 * and is deliberately kept ({@code upsertLeavesAForeignReferenceAlone}). EMF's generic
+	 * check cannot tell either from a dangling link, where
+	 * {@code References.requireResolvable} — which runs first, and knows which IRIs are ours —
+	 * can, and answers 409 naming the missing member.
+	 *
+	 * <h2>Neither is {@code validate_UniqueID}</h2>
+	 *
+	 * {@code about} is declared {@code iD="true"} in {@code rdf.ecore} — the model's only ID —
+	 * so EMF requires it to be unique within a resource. That is an XMI serialization rule,
+	 * and RDF's is the opposite: the same IRI twice <em>is</em> the same resource, which is
+	 * the whole point of an IRI.
 	 * <p>
-	 * {@code validate_EveryProxyResolves} is not. Membership is cross-resource references,
-	 * and an unresolved proxy is the normal state of two legitimate cases: a link to another
-	 * of our entities that has not been touched yet in this session, and a link to a
-	 * <em>foreign</em> IRI, which by definition cannot resolve and is deliberately kept
-	 * ({@code upsertLeavesAForeignReferenceAlone}). EMF's generic check cannot tell either
-	 * from a dangling link, where {@code References.requireResolvable} — which runs first,
-	 * and knows which IRIs are ours — can, and answers 409 naming the missing member.
+	 * The two collide over ordinary data. A Dataset's file holds its Distributions (FR-10),
+	 * and two Distributions of one Dataset sharing a licence —
+	 * {@code <license about="http://dcat-ap.de/def/licenses/dl-by-de/2.0"/>} on both, the most
+	 * common shape there is — puts two contained {@code LicenseDocument} nodes with one IRI in
+	 * one resource. EMF calls that a duplicate ID; DCAT calls it two distributions under the
+	 * same licence. Held to the EMF reading, adding the second Distribution is a {@code 422},
+	 * which is plainly wrong.
+	 * <p>
+	 * Dropping it costs little, because entity identity does not rest on this check: the store
+	 * addresses entities by path, and {@code upsertDistributionToDataset} replaces by id
+	 * rather than accumulating. What is no longer caught is a hand-written Dataset body naming
+	 * two Distributions with the <em>same</em> {@code about} — malformed, and worth its own
+	 * check that distinguishes an entity from a value node rather than this blanket one.
 	 */
 	private static boolean isApplicable(Diagnostic diagnostic) {
-		return !(EObjectValidator.DIAGNOSTIC_SOURCE.equals(diagnostic.getSource())
-				&& diagnostic.getCode() == EObjectValidator.EOBJECT__EVERY_PROXY_RESOLVES);
+		if (!EObjectValidator.DIAGNOSTIC_SOURCE.equals(diagnostic.getSource())) {
+			return true;
+		}
+		return diagnostic.getCode() != EObjectValidator.EOBJECT__EVERY_PROXY_RESOLVES
+				&& diagnostic.getCode() != EObjectValidator.EOBJECT__UNIQUE_ID;
 	}
 
 	/**

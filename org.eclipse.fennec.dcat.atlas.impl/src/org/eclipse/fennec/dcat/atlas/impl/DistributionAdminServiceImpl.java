@@ -133,7 +133,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		Store store = store();
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> {
 			if (find(dataset, datasetId, distributionId).map(dataset.getDistribution()::remove).orElse(false)) {
-				store.save(dataset);
+				// A removal: never refused by what it is removing. See Store.saveRemoval.
+				store.saveRemoval(dataset);
 				store.commit("Delete distribution %s of dataset %s".formatted(distributionId, datasetId));
 				reproject(datasetId, distributionId);
 			}
@@ -176,7 +177,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> find(dataset, datasetId,
 				distributionId).ifPresent(distribution -> {
 					if (Members.remove(distribution.getAccessService(), StoreLayout.DATA_SERVICES, dataServiceId)) {
-						store.save(dataset);
+						// A removal. See Store.saveRemoval.
+						store.saveRemoval(dataset);
 						store.commit("Unlink access service %s from distribution %s of dataset %s"
 								.formatted(dataServiceId, distributionId, datasetId));
 						reproject(datasetId, distributionId);

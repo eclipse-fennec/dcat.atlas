@@ -193,31 +193,11 @@ public final class DcatHelper {
 			if (object instanceof IdentifiedResource identified) {
 				identified.setAbout(StoreLayout.logicalIri(collection, id));
 			}
-			// Refuse a link to an identity of ours that is not there, before anything is
-			// written. Every write funnels through here, so this is the one place the
-			// invariant has to hold — and it is the write-side half of the rule
-			// References.detach enforces on delete.
-			//
-			// It runs before validation on purpose. EMF's own validate_EveryProxyResolves
-			// would also reject a dangling link, but as a generic "a proxy did not resolve"
-			// — losing which member was missing, and answering 422 where the API has always
-			// answered 409. The more specific diagnosis wins.
-			References.requireResolvable(this, object);
-			// Both validations run after the identity is stamped — "a stored entity has an
-			// about" is one constraint, and a SHACL report has to name the node that will
-			// actually be stored — and before anything is staged, because the point is that
-			// an invalid entity never reaches a commit.
-			//
-			// Model constraints first: they are cheap and structural, where SHACL serializes
-			// the entity to RDF and unions the vocabulary graph. An entity missing its
-			// publisher should not pay for a shapes run to be told so.
-			if (validateOnWrite) {
-				ModelValidation.check(object);
-			}
-			// The referenced resources come along as SHACL context — only their rdf:type —
-			// so a reference-typing constraint can be answered. requireResolvable above has
-			// already established that they all exist.
-			ShaclValidation.check(validation, object, References.referenced(this, object));
+			// After the identity is stamped — "a stored entity has an about" is one of the
+			// constraints, and a SHACL report has to name the node that will actually be
+			// stored — and before anything is staged, because the point is that an invalid
+			// entity never reaches a commit.
+			validate(object);
 			URI uri = StoreResourceSets.resourceUri(collection, id);
 			Resource resource = resourceSet.getResource(uri, false);
 			if (resource == null) {
@@ -229,8 +209,78 @@ public final class DcatHelper {
 			return object;
 		}
 
-		/** Re-stages an object previously {@link #get}. */
+		/**
+		 * Re-stages an object previously {@link #get}, checked exactly as {@link #put} checks
+		 * what it stores.
+		 *
+		 * <h2>Why this validates, and why that was issue #34</h2>
+		 *
+		 * A Distribution has no file of its own — it lives in its Dataset (FR-10) — and a
+		 * membership link lives on its container, so both are written by mutating an object
+		 * from {@link #get} and re-staging it here rather than through {@link #put}. While
+		 * this method did not validate, those two whole families of write were unchecked:
+		 * {@code /health/ready} reported {@code enforceOnWrite=true}, a Distribution with no
+		 * {@code accessURL} was answered {@code 201}, and {@code POST /admin/validate/…} then
+		 * called the very same stored entity non-conformant. Measured, not theorised.
+		 * <p>
+		 * So the validating method is the one with the short name, and the caller who wants
+		 * the unchecked path has to say so and be right about why — see {@link #saveRemoval}.
+		 * That way round, forgetting produces a refused write rather than a silent one.
+		 */
 		public void save(EObject object) {
+			validate(object);
+			stage(object);
+		}
+
+		/**
+		 * Re-stages an object whose change only <b>removed</b> content, without validating it.
+		 *
+		 * <h2>Removal must always be possible</h2>
+		 *
+		 * Validating here would build a data jail: an operator who has invalid entities in the
+		 * store — written before #34 was fixed, or while {@code validateOnWrite} was off —
+		 * could not delete their way out of them, because the delete would be refused by the
+		 * very content it was deleting. A cascade would be worse still: {@code References}
+		 * unlinks referrers to make a delete possible, and refusing that leaves the dangling
+		 * reference the cascade exists to prevent.
+		 * <p>
+		 * It is also the honest reading of what on-write validation is for. A write that adds
+		 * or replaces content has to clear the model's floor; a write that only takes content
+		 * away cannot introduce a violation that was not already there, and is not the place
+		 * to discover one.
+		 * <p>
+		 * Use it only where the change is a removal. Everything else uses {@link #save}.
+		 */
+		public void saveRemoval(EObject object) {
+			stage(object);
+		}
+
+		/**
+		 * The write-side floor, shared by {@link #put} and {@link #save} so the two cannot
+		 * drift — which is how #34 happened in the first place.
+		 */
+		private void validate(EObject object) {
+			// Refuse a link to an identity of ours that is not there, before anything is
+			// written — the write-side half of the rule References.detach enforces on delete.
+			//
+			// It runs before validation on purpose. EMF's own validate_EveryProxyResolves
+			// would also reject a dangling link, but as a generic "a proxy did not resolve"
+			// — losing which member was missing, and answering 422 where the API has always
+			// answered 409. The more specific diagnosis wins.
+			References.requireResolvable(this, object);
+			// Model constraints first: they are cheap and structural, where SHACL serializes
+			// the entity to RDF and unions the vocabulary graph. An entity missing its
+			// publisher should not pay for a shapes run to be told so.
+			if (validateOnWrite) {
+				ModelValidation.check(object);
+			}
+			// The referenced resources come along as SHACL context — only their rdf:type —
+			// so a reference-typing constraint can be answered. requireResolvable above has
+			// already established that they all exist.
+			ShaclValidation.check(validation, object, References.referenced(this, object));
+		}
+
+		private void stage(EObject object) {
 			Resource resource = object.eResource();
 			if (resource == null) {
 				throw new IllegalArgumentException(

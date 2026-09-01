@@ -802,6 +802,13 @@ never refused because of what they are removing. So metadata that is already sto
 does not conform can always be deleted — validation gates what goes in, and never locks
 anything in.
 
+One rule beyond the two layers, because the portal's own addressing depends on it: within a
+`Dataset`, **no two `Distribution`s may claim the same `rdf:about`**. A distribution is
+addressed by that identity, so a body naming two is refused `422` naming the repeated IRI.
+Value nodes are the opposite case and repeat freely — two distributions carrying the *same
+licence* is ordinary, and stays accepted, because in RDF one IRI mentioned twice is one
+resource.
+
 ### Model constraints
 
 These are declared on the model itself — as multiplicities, and as OCL invariants

@@ -30,6 +30,8 @@ import org.eclipse.emf.ecore.util.EObjectValidator;
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 
+import dcat.Dataset;
+import dcat.Distribution;
 import rdf.IdentifiedResource;
 
 /**
@@ -101,6 +103,59 @@ public final class ModelValidation {
 	}
 
 	/**
+	 * Refuses a write whose Distributions do not have distinct identities — the precise
+	 * version of what {@link #isApplicable} drops.
+	 *
+	 * <h2>Why this is checked by hand rather than by EMF</h2>
+	 *
+	 * EMF's {@code validate_UniqueID} would catch it, and used to, but only as part of
+	 * refusing every repeated {@code about} in a resource — including a licence carried by two
+	 * Distributions, which is ordinary. The distinction EMF cannot draw is between an
+	 * <b>entity</b>, whose {@code about} is the identity it is addressed by, and a <b>value
+	 * node</b> (a licence, an agent), which is legitimately mentioned more than once. This
+	 * draws it, by looking only at Distributions.
+	 *
+	 * <h2>Why Distributions are the whole of it</h2>
+	 *
+	 * A Distribution is the only entity stored inside another's file: {@code dcat:distribution}
+	 * is containment (FR-10), while catalogue membership is pointer references, so members live
+	 * in their own files and cannot collide within one. Stored roots are addressed by path, so
+	 * they cannot collide with each other either.
+	 *
+	 * <h2>What it prevents</h2>
+	 *
+	 * Every id-based operation resolves the <em>first</em> match
+	 * ({@code DistributionReadOnlyServiceImpl.find} is a {@code findFirst}), so a second
+	 * Distribution under one identity is an unreachable shadow — and a {@code DELETE} of that
+	 * id was answered {@code 204} while leaving the other in place, so the same {@code GET}
+	 * answered {@code 200} straight afterwards. Measured, before this existed.
+	 *
+	 * @throws ModelConstraintException naming each repeated identity
+	 */
+	public static void checkDistinctDistributions(EObject object) {
+		if (!(object instanceof Dataset dataset)) {
+			// Catalog and DatasetSeries are Datasets, so this covers them too.
+			return;
+		}
+		Set<String> seen = new LinkedHashSet<>();
+		Set<String> repeated = new LinkedHashSet<>();
+		for (Distribution distribution : dataset.getDistribution()) {
+			String about = distribution.getAbout();
+			if (about != null && !seen.add(about)) {
+				repeated.add(about);
+			}
+		}
+		if (repeated.isEmpty()) {
+			return;
+		}
+		List<String> violations = repeated.stream() //
+				.map(iri -> "More than one Distribution claims the identity " + iri
+						+ "; a Distribution is addressed by it, so exactly one may carry it.") //
+				.toList();
+		throw new ModelConstraintException(summary(object, violations), violations);
+	}
+
+	/**
 	 * Whether a diagnostic is one this model can be held to.
 	 *
 	 * <h2>{@code validate_EveryProxyResolves} is not</h2>
@@ -128,11 +183,10 @@ public final class ModelValidation {
 	 * same licence. Held to the EMF reading, adding the second Distribution is a {@code 422},
 	 * which is plainly wrong.
 	 * <p>
-	 * Dropping it costs little, because entity identity does not rest on this check: the store
-	 * addresses entities by path, and {@code upsertDistributionToDataset} replaces by id
-	 * rather than accumulating. What is no longer caught is a hand-written Dataset body naming
-	 * two Distributions with the <em>same</em> {@code about} — malformed, and worth its own
-	 * check that distinguishes an entity from a value node rather than this blanket one.
+	 * The half of it worth keeping — a Dataset body naming two Distributions with the
+	 * <em>same</em> {@code about} — is kept, by
+	 * {@link #checkDistinctDistributions(EObject)}, which draws the entity/value-node
+	 * distinction this generic check cannot.
 	 */
 	private static boolean isApplicable(Diagnostic diagnostic) {
 		if (!EObjectValidator.DIAGNOSTIC_SOURCE.equals(diagnostic.getSource())) {

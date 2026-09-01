@@ -268,6 +268,12 @@ public final class DcatHelper {
 			// — losing which member was missing, and answering 422 where the API has always
 			// answered 409. The more specific diagnosis wins.
 			References.requireResolvable(this, object);
+			// Ungated, like requireResolvable above and unlike ModelValidation.check below.
+			// Distinct identities are not a question of conformance an operator may switch off:
+			// the store addresses a Distribution by its about, so two of them under one about
+			// makes the second unreachable and a DELETE of that id answer 204 while leaving it
+			// in place. validateOnWrite=false must still not be able to store that.
+			ModelValidation.checkDistinctDistributions(object);
 			// Model constraints first: they are cheap and structural, where SHACL serializes
 			// the entity to RDF and unions the vocabulary graph. An entity missing its
 			// publisher should not pay for a shapes run to be told so.

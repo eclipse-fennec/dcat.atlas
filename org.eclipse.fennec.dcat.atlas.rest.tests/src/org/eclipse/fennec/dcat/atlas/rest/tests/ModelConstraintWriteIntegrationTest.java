@@ -269,6 +269,56 @@ public class ModelConstraintWriteIntegrationTest {
 		assertEquals(0, storedDistributions(OWNER_ID));
 	}
 
+	// --- distinct Distribution identities -----------------------------------
+
+	/**
+	 * Two Distributions of one Dataset may not claim the same identity.
+	 * <p>
+	 * Measured before this was enforced: the {@code PUT} was answered {@code 201} with both
+	 * stored, {@code GET …/distributions/csv} returned the first, {@code DELETE} of it
+	 * answered {@code 204} with one still stored — and the same {@code GET} then answered
+	 * {@code 200} again. A client told the resource was gone could fetch it straight back,
+	 * because every id-based operation resolves the first match and there were two.
+	 */
+	@Test
+	void twoDistributionsClaimingOneIdentityAreRefused() throws Exception {
+		seedOwner();
+
+		HttpResponse<String> response = put(ADMIN_DATASETS + "/" + OWNER_ID, datasetWithDistributions(OWNER_ID,
+				distributionElement(OWNER_ID, "csv", "One"), distributionElement(OWNER_ID, "csv", "Two")));
+
+		assertEquals(422, response.statusCode(),
+				"two Distributions with one about must not be stored, but was: " + response.statusCode() + " "
+						+ response.body());
+		// The id, not the whole IRI: a request body's identities are folded to the stored
+		// logical form (http://dcat.atlas/…) on the way in, and every model-constraint message
+		// quotes that rather than the public base. Pinning the base here would pin that
+		// separate quirk instead of what this test is about.
+		assertTrue(response.body().contains("distributions/csv"),
+				"the repeated identity should be named, but was: " + response.body());
+		assertEquals(0, storedDistributions(OWNER_ID), "the refused write must not have stored either of them");
+	}
+
+	/**
+	 * And the case that must stay possible, which is why EMF's {@code validate_UniqueID} could
+	 * not simply be kept: two Distributions <em>sharing a licence</em>.
+	 * <p>
+	 * Their identities differ; what repeats is a contained {@code LicenseDocument} with one
+	 * IRI, which in RDF is the same resource mentioned twice and is the commonest shape in a
+	 * catalogue. A fix that refuses this is worse than the gap it closes, so this is pinned
+	 * rather than left to be noticed.
+	 */
+	@Test
+	void twoDistributionsSharingALicenceAreAccepted() throws Exception {
+		HttpResponse<String> response = put(ADMIN_DATASETS + "/" + OWNER_ID, datasetWithDistributions(OWNER_ID,
+				distributionElement(OWNER_ID, "csv", "CSV"), distributionElement(OWNER_ID, "json", "JSON")));
+
+		assertTrue(response.statusCode() / 100 == 2,
+				"two Distributions under one licence are ordinary data, but was: " + response.statusCode() + " "
+						+ response.body());
+		assertEquals(2, storedDistributions(OWNER_ID), "both should be stored");
+	}
+
 	// --- payloads -----------------------------------------------------------
 
 	/** Everything DCAT-AP.de makes Pflicht for a Dataset: title, description, publisher. */
@@ -302,6 +352,33 @@ public class ModelConstraintWriteIntegrationTest {
 
 	private static String logicalIri(String id) {
 		return BASE + "/datasets/" + id;
+	}
+
+	/** The licence both Distributions carry — one IRI, two mentions, which RDF allows. */
+	private static final String LICENCE = "http://dcat-ap.de/def/licenses/dl-by-de/2.0";
+
+	/** A conformant Dataset carrying the given {@code <distribution>} elements verbatim. */
+	private static String datasetWithDistributions(String id, String... distributions) {
+		return """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:Dataset xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				              xmi:version="2.0" about="%s">
+				  <title lang="en" value="Air quality"/>
+				  <description lang="en" value="Hourly air quality measurements"/>
+				  <publisher about="https://example.de/organisation/uba">
+				    <name lang="en" value="Umweltbundesamt"/>
+				  </publisher>
+				%s
+				</dcat:Dataset>""".formatted(logicalIri(id), String.join("\n", distributions));
+	}
+
+	private static String distributionElement(String datasetId, String id, String title) {
+		return """
+				  <distribution about="%s">
+				    <title lang="en" value="%s"/>
+				    <accessURL>https://example.de/%s.csv</accessURL>
+				    <license about="%s"/>
+				  </distribution>""".formatted(distributionIri(datasetId, id), title, id, LICENCE);
 	}
 
 	private static String adminDistributions(String datasetId) {

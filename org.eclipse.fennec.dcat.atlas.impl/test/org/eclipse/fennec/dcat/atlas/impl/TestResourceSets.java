@@ -21,7 +21,7 @@ import org.eclipse.emf.ecore.xml.namespace.XMLNamespacePackage;
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreResourceSets;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
-import org.eclipse.fennec.m2x.ocl.engine.OclEngineImpl;
+import org.eclipse.fennec.m2x.ocl.engine.OclEngines;
 import org.eclipse.fennec.m2x.ocl.parser.OclParserSupport;
 
 import adms.AdmsPackage;
@@ -60,7 +60,7 @@ public final class TestResourceSets {
 		// Not optional: without it the write boundary refuses every write with "unable to
 		// find delegate" rather than silently skipping the constraints, so the whole suite
 		// would fail. That is the fail-closed behaviour ModelConstraintValidationTest pins.
-		new OclEngineImpl(new OclParserSupport()).installDelegates();
+		OclEngines.create(new OclParserSupport()).installDelegates();
 	}
 
 	private TestResourceSets() {

@@ -14,10 +14,6 @@
 
 -runbundles: \
 	org.antlr.antlr4-runtime;version='[4.13.2,4.13.3)',\
-	org.eclipse.fennec.m2x.ocl.api;version='[0.1.0,0.1.1)',\
-	org.eclipse.fennec.m2x.ocl.engine;version='[0.1.0,0.1.1)',\
-	org.eclipse.fennec.m2x.ocl.model;version='[0.1.0,0.1.1)',\
-	org.eclipse.fennec.m2x.ocl.parser;version='[0.1.0,0.1.1)',\
 	com.apicatalog.titanium.jcs;version='[2.0.0,2.0.1)',\
 	com.apicatalog.titanium.json.ld;version='[1.7.0,1.7.1)',\
 	com.apicatalog.titanium.rdf.api;version='[1.0.0,1.0.1)',\
@@ -127,7 +123,12 @@
 	com.fasterxml.jackson.core.jackson-annotations;version='[2.22.0,2.22.1)',\
 	tools.jackson.core.jackson-core;version='[3.2.2,3.2.3)',\
 	tools.jackson.core.jackson-databind;version='[3.2.2,3.2.3)',\
-	tools.jackson.dataformat.jackson-dataformat-yaml;version='[3.2.2,3.2.3)'
+	tools.jackson.dataformat.jackson-dataformat-yaml;version='[3.2.2,3.2.3)',\
+	org.eclipse.fennec.m2x.ocl.api;version='[0.1.1,0.1.2)',\
+	org.eclipse.fennec.m2x.ocl.engine;version='[0.1.1,0.1.2)',\
+	org.eclipse.fennec.m2x.ocl.model;version='[0.1.1,0.1.2)',\
+	org.eclipse.fennec.m2x.ocl.parser;version='[0.1.1,0.1.2)',\
+	org.eclipse.fennec.m2x.unit;version='[0.1.1,0.1.2)'
 
 # org.eclipse.jgit.ssh.apache is required for a repository configured as an SSH remote. It is
 # no longer needed merely to load the service - that was EU-9, fixed upstream 2026-08-19 by

@@ -44,7 +44,7 @@ import rdf.RdfPackage;
  * @generated
  */
 @ProviderType
-@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:0412bd1f74f77b773b1163720704461185874cd712ccb44b94982e9d02629789", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
+@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:8072c4bd375f45e8ac9395789114c259184bb9f1438cb8114e339646edd2537c", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
 public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -179,13 +179,22 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DCAT_RESOURCE__PUBLISHER = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 8;
 
 	/**
+	 * The feature id for the '<em><b>Rights Holder</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DCAT_RESOURCE__RIGHTS_HOLDER = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 9;
+
+	/**
 	 * The feature id for the '<em><b>Issued</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__ISSUED = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 9;
+	int DCAT_RESOURCE__ISSUED = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 10;
 
 	/**
 	 * The feature id for the '<em><b>Modified</b></em>' containment reference.
@@ -194,7 +203,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__MODIFIED = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 10;
+	int DCAT_RESOURCE__MODIFIED = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 11;
 
 	/**
 	 * The feature id for the '<em><b>Landing Page</b></em>' containment reference list.
@@ -203,7 +212,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__LANDING_PAGE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 11;
+	int DCAT_RESOURCE__LANDING_PAGE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 12;
 
 	/**
 	 * The feature id for the '<em><b>Access Rights</b></em>' attribute.
@@ -212,7 +221,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__ACCESS_RIGHTS = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 12;
+	int DCAT_RESOURCE__ACCESS_RIGHTS = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 13;
 
 	/**
 	 * The feature id for the '<em><b>Conforms To</b></em>' containment reference list.
@@ -221,7 +230,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__CONFORMS_TO = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 13;
+	int DCAT_RESOURCE__CONFORMS_TO = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 14;
 
 	/**
 	 * The feature id for the '<em><b>License</b></em>' containment reference.
@@ -230,7 +239,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__LICENSE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 14;
+	int DCAT_RESOURCE__LICENSE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 15;
 
 	/**
 	 * The feature id for the '<em><b>Rights</b></em>' containment reference list.
@@ -239,7 +248,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__RIGHTS = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 15;
+	int DCAT_RESOURCE__RIGHTS = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 16;
 
 	/**
 	 * The feature id for the '<em><b>Has Policy</b></em>' attribute.
@@ -248,7 +257,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__HAS_POLICY = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 16;
+	int DCAT_RESOURCE__HAS_POLICY = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 17;
 
 	/**
 	 * The feature id for the '<em><b>Qualified Attribution</b></em>' attribute list.
@@ -257,7 +266,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__QUALIFIED_ATTRIBUTION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 17;
+	int DCAT_RESOURCE__QUALIFIED_ATTRIBUTION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 18;
 
 	/**
 	 * The feature id for the '<em><b>Qualified Relation</b></em>' containment reference list.
@@ -266,7 +275,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__QUALIFIED_RELATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 18;
+	int DCAT_RESOURCE__QUALIFIED_RELATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 19;
 
 	/**
 	 * The feature id for the '<em><b>Relation</b></em>' attribute list.
@@ -275,7 +284,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__RELATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 19;
+	int DCAT_RESOURCE__RELATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 20;
 
 	/**
 	 * The feature id for the '<em><b>Is Referenced By</b></em>' attribute list.
@@ -284,7 +293,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__IS_REFERENCED_BY = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 20;
+	int DCAT_RESOURCE__IS_REFERENCED_BY = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 21;
 
 	/**
 	 * The feature id for the '<em><b>Language</b></em>' attribute list.
@@ -293,7 +302,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__LANGUAGE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 21;
+	int DCAT_RESOURCE__LANGUAGE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 22;
 
 	/**
 	 * The feature id for the '<em><b>Contributor ID</b></em>' attribute list.
@@ -302,7 +311,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__CONTRIBUTOR_ID = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 22;
+	int DCAT_RESOURCE__CONTRIBUTOR_ID = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 23;
 
 	/**
 	 * The feature id for the '<em><b>Applicable Legislation</b></em>' attribute list.
@@ -311,7 +320,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__APPLICABLE_LEGISLATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 23;
+	int DCAT_RESOURCE__APPLICABLE_LEGISLATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 24;
 
 	/**
 	 * The feature id for the '<em><b>Originator</b></em>' containment reference list.
@@ -320,7 +329,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__ORIGINATOR = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 24;
+	int DCAT_RESOURCE__ORIGINATOR = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 25;
 
 	/**
 	 * The feature id for the '<em><b>Custodian</b></em>' containment reference list.
@@ -329,7 +338,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__CUSTODIAN = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 25;
+	int DCAT_RESOURCE__CUSTODIAN = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 26;
 
 	/**
 	 * The feature id for the '<em><b>Political Geocoding Level URI</b></em>' attribute list.
@@ -338,7 +347,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 26;
+	int DCAT_RESOURCE__POLITICAL_GEOCODING_LEVEL_URI = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 27;
 
 	/**
 	 * The feature id for the '<em><b>Adms Identifier</b></em>' containment reference list.
@@ -347,7 +356,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__ADMS_IDENTIFIER = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 27;
+	int DCAT_RESOURCE__ADMS_IDENTIFIER = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 28;
 
 	/**
 	 * The feature id for the '<em><b>Provenance</b></em>' containment reference list.
@@ -356,7 +365,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE__PROVENANCE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 28;
+	int DCAT_RESOURCE__PROVENANCE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 29;
 
 	/**
 	 * The number of structural features of the '<em>Resource</em>' class.
@@ -365,7 +374,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int DCAT_RESOURCE_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 29;
+	int DCAT_RESOURCE_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 30;
 
 	/**
 	 * The number of operations of the '<em>Resource</em>' class.
@@ -475,6 +484,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int DATASET__PUBLISHER = DCAT_RESOURCE__PUBLISHER;
+
+	/**
+	 * The feature id for the '<em><b>Rights Holder</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATASET__RIGHTS_HOLDER = DCAT_RESOURCE__RIGHTS_HOLDER;
 
 	/**
 	 * The feature id for the '<em><b>Issued</b></em>' containment reference.
@@ -863,6 +881,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int CATALOG__PUBLISHER = DATASET__PUBLISHER;
+
+	/**
+	 * The feature id for the '<em><b>Rights Holder</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CATALOG__RIGHTS_HOLDER = DATASET__RIGHTS_HOLDER;
 
 	/**
 	 * The feature id for the '<em><b>Issued</b></em>' containment reference.
@@ -1742,6 +1769,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DATA_SERVICE__PUBLISHER = DCAT_RESOURCE__PUBLISHER;
 
 	/**
+	 * The feature id for the '<em><b>Rights Holder</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATA_SERVICE__RIGHTS_HOLDER = DCAT_RESOURCE__RIGHTS_HOLDER;
+
+	/**
 	 * The feature id for the '<em><b>Issued</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -2074,6 +2110,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int DATASET_SERIES__PUBLISHER = DATASET__PUBLISHER;
+
+	/**
+	 * The feature id for the '<em><b>Rights Holder</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATASET_SERIES__RIGHTS_HOLDER = DATASET__RIGHTS_HOLDER;
 
 	/**
 	 * The feature id for the '<em><b>Issued</b></em>' containment reference.
@@ -3150,6 +3195,17 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EReference getDcatResource_Publisher();
 
 	/**
+	 * Returns the meta object for the containment reference '{@link dcat.DcatResource#getRightsHolder <em>Rights Holder</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Rights Holder</em>'.
+	 * @see dcat.DcatResource#getRightsHolder()
+	 * @see #getDcatResource()
+	 * @generated
+	 */
+	EReference getDcatResource_RightsHolder();
+
+	/**
 	 * Returns the meta object for the containment reference '{@link dcat.DcatResource#getIssued <em>Issued</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3991,6 +4047,14 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		 * @generated
 		 */
 		EReference DCAT_RESOURCE__PUBLISHER = eINSTANCE.getDcatResource_Publisher();
+
+		/**
+		 * The meta object literal for the '<em><b>Rights Holder</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference DCAT_RESOURCE__RIGHTS_HOLDER = eINSTANCE.getDcatResource_RightsHolder();
 
 		/**
 		 * The meta object literal for the '<em><b>Issued</b></em>' containment reference feature.

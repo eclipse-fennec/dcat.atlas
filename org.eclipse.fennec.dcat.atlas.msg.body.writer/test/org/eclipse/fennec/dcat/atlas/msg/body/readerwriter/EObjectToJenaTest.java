@@ -65,6 +65,7 @@ class EObjectToJenaTest {
 	private static final String DATASET = BASE + "datasets/d1";
 	private static final String DISTRIBUTION = BASE + "datasets/d1/distributions/x1";
 	private static final String PUBLISHER = BASE + "organizations/uba";
+	private static final String RIGHTS_HOLDER = "https://stadt.example";
 	private static final String LICENSE = "http://dcat-ap.de/def/licenses/dl-by-de/2.0";
 	private static final String CONTRIBUTOR = "http://dcat-ap.de/def/contributors/uba";
 	private static final String THEME = "http://publications.europa.eu/resource/authority/data-theme/ENVI";
@@ -251,6 +252,25 @@ class EObjectToJenaTest {
 		assertObjectIri(model, DATASET, DCT + "publisher", PUBLISHER, "dct:publisher");
 		assertTrue(model.contains(model.createResource(PUBLISHER), model.createProperty(FOAF + "name")),
 				() -> "the publisher's own triples must hang off its IRI\n" + dump(model));
+	}
+
+	@Test
+	void theRightsHolderIsAnAgentOfItsOwn() {
+		Dataset dataset = dataset();
+		Agent publisher = FoafFactory.eINSTANCE.createAgent();
+		publisher.setAbout(PUBLISHER);
+		dataset.setPublisher(publisher);
+		Agent rightsHolder = FoafFactory.eINSTANCE.createOrganization();
+		rightsHolder.setAbout(RIGHTS_HOLDER);
+		rightsHolder.getName().add(literal("Stadt X", "de"));
+		dataset.setRightsHolder(rightsHolder);
+
+		Model model = EObjectToJena.toModel(dataset);
+
+		assertObjectIri(model, DATASET, DCT + "rightsHolder", RIGHTS_HOLDER, "dct:rightsHolder");
+		assertObjectIri(model, DATASET, DCT + "publisher", PUBLISHER, "dct:publisher");
+		assertTrue(model.contains(model.createResource(RIGHTS_HOLDER), model.createProperty(FOAF + "name")),
+				() -> "the rights holder's own triples must hang off its IRI\n" + dump(model));
 	}
 
 	@Test

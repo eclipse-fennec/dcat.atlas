@@ -873,7 +873,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Issued() {
+	public EReference getDcatResource_RightsHolder() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(9);
 	}
 
@@ -882,7 +882,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Modified() {
+	public EReference getDcatResource_Issued() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(10);
 	}
 
@@ -891,7 +891,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_LandingPage() {
+	public EReference getDcatResource_Modified() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(11);
 	}
 
@@ -900,8 +900,17 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EReference getDcatResource_LandingPage() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(12);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EAttribute getDcatResource_AccessRights() {
-		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(12);
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(13);
 	}
 
 	/**
@@ -910,15 +919,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_ConformsTo() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(13);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EReference getDcatResource_License() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(14);
 	}
 
@@ -927,7 +927,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Rights() {
+	public EReference getDcatResource_License() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(15);
 	}
 
@@ -936,8 +936,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getDcatResource_HasPolicy() {
-		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(16);
+	public EReference getDcatResource_Rights() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(16);
 	}
 
 	/**
@@ -945,7 +945,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getDcatResource_QualifiedAttribution() {
+	public EAttribute getDcatResource_HasPolicy() {
 		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(17);
 	}
 
@@ -954,8 +954,17 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EAttribute getDcatResource_QualifiedAttribution() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(18);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EReference getDcatResource_QualifiedRelation() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(18);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(19);
 	}
 
 	/**
@@ -964,15 +973,6 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EAttribute getDcatResource_Relation() {
-		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(19);
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public EAttribute getDcatResource_IsReferencedBy() {
 		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(20);
 	}
 
@@ -981,7 +981,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getDcatResource_Language() {
+	public EAttribute getDcatResource_IsReferencedBy() {
 		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(21);
 	}
 
@@ -990,7 +990,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getDcatResource_ContributorID() {
+	public EAttribute getDcatResource_Language() {
 		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(22);
 	}
 
@@ -999,7 +999,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getDcatResource_ApplicableLegislation() {
+	public EAttribute getDcatResource_ContributorID() {
 		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(23);
 	}
 
@@ -1008,8 +1008,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Originator() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(24);
+	public EAttribute getDcatResource_ApplicableLegislation() {
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(24);
 	}
 
 	/**
@@ -1017,7 +1017,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDcatResource_Custodian() {
+	public EReference getDcatResource_Originator() {
 		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(25);
 	}
 
@@ -1026,8 +1026,17 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EReference getDcatResource_Custodian() {
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(26);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EAttribute getDcatResource_PoliticalGeocodingLevelURI() {
-		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(26);
+		return (EAttribute)dcatResourceEClass.getEStructuralFeatures().get(27);
 	}
 
 	/**
@@ -1036,7 +1045,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_AdmsIdentifier() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(27);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(28);
 	}
 
 	/**
@@ -1045,7 +1054,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getDcatResource_Provenance() {
-		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(28);
+		return (EReference)dcatResourceEClass.getEStructuralFeatures().get(29);
 	}
 
 	/**
@@ -1163,6 +1172,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__CONTACT_POINT);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__CREATOR);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__PUBLISHER);
+		createEReference(dcatResourceEClass, DCAT_RESOURCE__RIGHTS_HOLDER);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__ISSUED);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__MODIFIED);
 		createEReference(dcatResourceEClass, DCAT_RESOURCE__LANDING_PAGE);
@@ -1312,6 +1322,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		initEReference(getDcatResource_ContactPoint(), theVcardPackage.getOrganization(), null, "contactPoint", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Creator(), theFoafPackage.getAgent(), null, "creator", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Publisher(), theFoafPackage.getAgent(), null, "publisher", null, 1, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEReference(getDcatResource_RightsHolder(), theFoafPackage.getAgent(), null, "rightsHolder", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Issued(), theRdfPackage.getDateOrDateTimeLiteral(), null, "issued", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_Modified(), theRdfPackage.getDateOrDateTimeLiteral(), null, "modified", null, 0, 1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDcatResource_LandingPage(), theFoafPackage.getDocument(), null, "landingPage", null, 0, -1, DcatResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -2048,6 +2059,14 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		   new String[] {
 			   "kind", "element",
 			   "name", "publisher",
+			   "namespace", "http://purl.org/dc/terms/"
+		   });
+		addAnnotation
+		  (getDcatResource_RightsHolder(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "rightsHolder",
 			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation

@@ -336,6 +336,9 @@ final class SchemaOrgJsonLd {
 		Map<String, String> properties = new LinkedHashMap<>();
 		properties.put(DCTERMS + "publisher", "publisher");
 		properties.put(DCTERMS + "creator", "creator");
+		// schema.org has no general "rights holder"; copyrightHolder is the closest term and
+		// is what the open-data case means by it.
+		properties.put(DCTERMS + "rightsHolder", "copyrightHolder");
 		return Collections.unmodifiableMap(properties);
 	}
 }

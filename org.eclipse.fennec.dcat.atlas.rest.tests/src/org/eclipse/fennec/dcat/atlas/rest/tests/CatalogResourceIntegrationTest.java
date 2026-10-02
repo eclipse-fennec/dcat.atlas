@@ -240,6 +240,43 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 				"xsi:type should have selected the narrower type");
 	}
 
+	/**
+	 * "Published by A, rights held by B": {@code dct:rightsHolder} is an agent of its own,
+	 * written like {@code publisher} and served next to it rather than merged into it.
+	 */
+	@Test
+	void theRightsHolderCanDifferFromThePublisher() throws Exception {
+		track("rights-held");
+		String body = """
+				<?xml version="1.0" encoding="UTF-8"?>
+				<dcat:Catalog xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+				              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+				              xmlns:foaf="http://xmlns.com/foaf/0.1/"
+				              xmi:version="2.0" about="%s/rights-held">
+				  <title lang="en" value="Rights held elsewhere"/>
+				  <description lang="en" value="Publisher and rights holder differ"/>
+				  <publisher about="https://stadtwerke.example">
+				    <name lang="de" value="Stadtwerke X"/>
+				  </publisher>
+				  <rightsHolder xsi:type="foaf:Organization" about="https://stadt.example">
+				    <name lang="de" value="Stadt X"/>
+				  </rightsHolder>
+				</dcat:Catalog>""".formatted(reads());
+
+		HttpResponse<String> created = postXmi(writes(), body);
+
+		assertEquals(201, created.statusCode(), created.body());
+		Catalog stored = service.getCatalog("rights-held").orElseThrow();
+		assertEquals("https://stadtwerke.example", stored.getPublisher().getAbout());
+		assertEquals("https://stadt.example", stored.getRightsHolder().getAbout());
+		assertTrue(stored.getRightsHolder() instanceof Organization, "xsi:type should apply to the rights holder too");
+
+		HttpResponse<String> turtle = get(reads() + "/rights-held", TURTLE);
+		assertEquals(200, turtle.statusCode(), turtle.body());
+		assertTrue(turtle.body().contains("rightsHolder"), turtle.body());
+		assertTrue(turtle.body().contains("https://stadt.example"), turtle.body());
+	}
+
 	/** Keeps the published guide honest: its example must still be one the API accepts. */
 	@Test
 	void theUserGuidesCreateExampleIsAccepted() throws Exception {

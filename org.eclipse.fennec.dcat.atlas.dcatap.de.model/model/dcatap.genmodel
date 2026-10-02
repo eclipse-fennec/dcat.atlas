@@ -91,6 +91,7 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/contactPoint"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/creator"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/publisher"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/rightsHolder"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/issued"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/modified"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//DcatResource/landingPage"/>

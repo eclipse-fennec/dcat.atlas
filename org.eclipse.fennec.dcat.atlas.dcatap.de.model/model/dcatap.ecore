@@ -659,6 +659,17 @@
         <details key="namespace" value="http://purl.org/dc/terms/"/>
       </eAnnotations>
     </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EReference" name="rightsHolder" eType="ecore:EClass foaf.ecore#//Agent"
+        containment="true" resolveProxies="false">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="&#xA;          dct:rightsHolder — the person or organisation owning or managing rights over&#xA;          the resource. Optional; set it where that is somebody other than the&#xA;          publisher, e.g. a utility publishes data whose rights the city holds.&#xA;        "/>
+      </eAnnotations>
+      <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
+        <details key="kind" value="element"/>
+        <details key="name" value="rightsHolder"/>
+        <details key="namespace" value="http://purl.org/dc/terms/"/>
+      </eAnnotations>
+    </eStructuralFeatures>
     <eStructuralFeatures xsi:type="ecore:EReference" name="issued" eType="ecore:EClass rdf.ecore#//DateOrDateTimeLiteral"
         containment="true" resolveProxies="false">
       <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">

@@ -209,6 +209,23 @@ public class HtmlMessageBodyWriterTest {
 	}
 
 	@Test
+	void theRightsHolderBecomesTheSchemaOrgCopyrightHolder() {
+		Dataset dataset = fullDataset();
+		Agent rightsHolder = FoafFactory.eINSTANCE.createAgent();
+		rightsHolder.setAbout("https://stadt.example");
+		rightsHolder.getName().add(literal("Stadt X", "de"));
+		dataset.setRightsHolder(rightsHolder);
+
+		String html = render(dataset);
+
+		assertTrue(html.contains("<th>dcterms:rightsHolder</th>"), html);
+		assertTrue(html.contains("\"copyrightHolder\""), html);
+		assertTrue(html.contains("\"@id\": \"https://stadt.example\""), html);
+		assertTrue(html.contains("Umweltbundesamt"), "the publisher must stay next to it\n" + html);
+		assertFalse(render(fullDataset()).contains("copyrightHolder"), "no rights holder, no copyrightHolder");
+	}
+
+	@Test
 	void eachDcatTypeGetsItsSchemaOrgCounterpart() {
 		assertTrue(render(fullDataset()).contains("\"@type\": \"Dataset\""));
 

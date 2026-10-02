@@ -68,6 +68,7 @@ import vcard.Organization;
  *   <li>{@link dcat.DcatResource#getContactPoint <em>Contact Point</em>}</li>
  *   <li>{@link dcat.DcatResource#getCreator <em>Creator</em>}</li>
  *   <li>{@link dcat.DcatResource#getPublisher <em>Publisher</em>}</li>
+ *   <li>{@link dcat.DcatResource#getRightsHolder <em>Rights Holder</em>}</li>
  *   <li>{@link dcat.DcatResource#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.DcatResource#getModified <em>Modified</em>}</li>
  *   <li>{@link dcat.DcatResource#getLandingPage <em>Landing Page</em>}</li>
@@ -235,6 +236,36 @@ public interface DcatResource extends IdentifiedResource {
 	 * @generated
 	 */
 	void setPublisher(Agent value);
+
+	/**
+	 * Returns the value of the '<em><b>Rights Holder</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * 
+	 *           dct:rightsHolder — the person or organisation owning or managing rights over
+	 *           the resource. Optional; set it where that is somebody other than the
+	 *           publisher, e.g. a utility publishes data whose rights the city holds.
+	 *         
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Rights Holder</em>' containment reference.
+	 * @see #setRightsHolder(Agent)
+	 * @see dcat.DcatPackage#getDcatResource_RightsHolder()
+	 * @model containment="true"
+	 *        extendedMetaData="kind='element' name='rightsHolder' namespace='http://purl.org/dc/terms/'"
+	 * @generated
+	 */
+	Agent getRightsHolder();
+
+	/**
+	 * Sets the value of the '{@link dcat.DcatResource#getRightsHolder <em>Rights Holder</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Rights Holder</em>' containment reference.
+	 * @see #getRightsHolder()
+	 * @generated
+	 */
+	void setRightsHolder(Agent value);
 
 	/**
 	 * Returns the value of the '<em><b>Issued</b></em>' containment reference.

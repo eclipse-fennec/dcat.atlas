@@ -201,7 +201,7 @@ everything:
   for a property that takes several. Where the model allows only one — `homepage`,
   `accrualPeriodicity` — it may also be written as a plain attribute on the element, as
   `homepage` is above.
-- **A nested object** (`publisher` and `creator`, which are agents; `license`;
+- **A nested object** (`publisher`, `creator` and `rightsHolder`, which are agents; `license`;
   `contactPoint`) → an element named after the property, carrying that object's own
   `about` and properties. There is no wrapper and no type name, because the model
   already says what the property holds:
@@ -215,6 +215,11 @@ everything:
   A publisher is a `foaf:Agent`, which is what you get by default. Add
   `xsi:type="foaf:Organization"` (declaring `xmlns:xsi` and `xmlns:foaf`) only when you
   want the narrower type.
+
+  `rightsHolder` (`dct:rightsHolder`) is optional and written the same way. Set it when
+  the rights are held by somebody other than the publisher — a utility publishes the
+  data, the city holds the rights. It is served as its own `dct:rightsHolder` node and,
+  in the HTML page's schema.org block, as `copyrightHolder`.
 
 A **date** is a literal like the text ones, but with a single `value`:
 `<issued value="2026-07-14T10:00:00.000+02:00"/>`.

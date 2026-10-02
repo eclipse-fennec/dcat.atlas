@@ -67,6 +67,7 @@ import vcard.Organization;
  *   <li>{@link dcat.impl.DcatResourceImpl#getContactPoint <em>Contact Point</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getCreator <em>Creator</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getPublisher <em>Publisher</em>}</li>
+ *   <li>{@link dcat.impl.DcatResourceImpl#getRightsHolder <em>Rights Holder</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getIssued <em>Issued</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getModified <em>Modified</em>}</li>
  *   <li>{@link dcat.impl.DcatResourceImpl#getLandingPage <em>Landing Page</em>}</li>
@@ -181,6 +182,16 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 	 * @ordered
 	 */
 	protected Agent publisher;
+
+	/**
+	 * The cached value of the '{@link #getRightsHolder() <em>Rights Holder</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRightsHolder()
+	 * @generated
+	 * @ordered
+	 */
+	protected Agent rightsHolder;
 
 	/**
 	 * The cached value of the '{@link #getIssued() <em>Issued</em>}' containment reference.
@@ -596,6 +607,49 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public Agent getRightsHolder() {
+		return rightsHolder;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetRightsHolder(Agent newRightsHolder, NotificationChain msgs) {
+		Agent oldRightsHolder = rightsHolder;
+		rightsHolder = newRightsHolder;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER, oldRightsHolder, newRightsHolder);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setRightsHolder(Agent newRightsHolder) {
+		if (newRightsHolder != rightsHolder) {
+			NotificationChain msgs = null;
+			if (rightsHolder != null)
+				msgs = ((InternalEObject)rightsHolder).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER, null, msgs);
+			if (newRightsHolder != null)
+				msgs = ((InternalEObject)newRightsHolder).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER, null, msgs);
+			msgs = basicSetRightsHolder(newRightsHolder, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER, newRightsHolder, newRightsHolder));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public DateOrDateTimeLiteral getIssued() {
 		return issued;
 	}
@@ -964,6 +1018,8 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 				return basicSetCreator(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				return basicSetPublisher(null, msgs);
+			case DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER:
+				return basicSetRightsHolder(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				return basicSetIssued(null, msgs);
 			case DcatPackage.DCAT_RESOURCE__MODIFIED:
@@ -1016,6 +1072,8 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 				return getCreator();
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				return getPublisher();
+			case DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER:
+				return getRightsHolder();
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				return getIssued();
 			case DcatPackage.DCAT_RESOURCE__MODIFIED:
@@ -1102,6 +1160,9 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 				return;
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				setPublisher((Agent)newValue);
+				return;
+			case DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER:
+				setRightsHolder((Agent)newValue);
 				return;
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				setIssued((DateOrDateTimeLiteral)newValue);
@@ -1217,6 +1278,9 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				setPublisher((Agent)null);
 				return;
+			case DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER:
+				setRightsHolder((Agent)null);
+				return;
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				setIssued((DateOrDateTimeLiteral)null);
 				return;
@@ -1307,6 +1371,8 @@ public abstract class DcatResourceImpl extends IdentifiedResourceImpl implements
 				return creator != null;
 			case DcatPackage.DCAT_RESOURCE__PUBLISHER:
 				return publisher != null;
+			case DcatPackage.DCAT_RESOURCE__RIGHTS_HOLDER:
+				return rightsHolder != null;
 			case DcatPackage.DCAT_RESOURCE__ISSUED:
 				return issued != null;
 			case DcatPackage.DCAT_RESOURCE__MODIFIED:

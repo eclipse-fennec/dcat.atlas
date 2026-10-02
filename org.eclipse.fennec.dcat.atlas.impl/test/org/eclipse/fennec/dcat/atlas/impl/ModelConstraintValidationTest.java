@@ -16,7 +16,8 @@ package org.eclipse.fennec.dcat.atlas.impl;
 import java.nio.file.Path;
 
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
-import org.eclipse.fennec.m2x.ocl.engine.OclEngineImpl;
+import org.eclipse.fennec.m2x.ocl.api.OclEngine;
+import org.eclipse.fennec.m2x.ocl.engine.OclEngines;
 import org.eclipse.fennec.m2x.ocl.parser.OclParserSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -60,7 +61,7 @@ public class ModelConstraintValidationTest {
 	 * Installing them is {@link TestResourceSets}'s job — an {@code @AfterAll} uninstall here
 	 * would leave every later test class in the run without them.
 	 */
-	private static final OclEngineImpl ENGINE = new OclEngineImpl(new OclParserSupport());
+	private static final OclEngine ENGINE = OclEngines.create(new OclParserSupport());
 
 	@TempDir
 	Path storage;

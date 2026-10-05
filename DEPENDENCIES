@@ -193,9 +193,6 @@ maven/mavencentral/org.eclipse.fennec.m2x/org.eclipse.fennec.m2x.qvto.api/0.1.0-
 maven/mavencentral/org.eclipse.fennec.m2x/org.eclipse.fennec.m2x.qvto.engine/0.1.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
 maven/mavencentral/org.eclipse.fennec.m2x/org.eclipse.fennec.m2x.qvto.model/0.1.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
 maven/mavencentral/org.eclipse.fennec.m2x/org.eclipse.fennec.m2x.qvto.parser/0.1.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
-maven/mavencentral/org.eclipse.fennec.metadata/org.eclipse.fennec.model.metadata.api/1.0.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
-maven/mavencentral/org.eclipse.fennec.metadata/org.eclipse.fennec.model.metadata.library.workspace/1.0.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
-maven/mavencentral/org.eclipse.fennec.metadata/org.eclipse.fennec.model.metadata/1.0.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
 maven/mavencentral/org.eclipse.fennec.models/de.adv-online.aaa.model/6.0.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec
 maven/mavencentral/org.eclipse.fennec.models/de.dwd.cdc.common.model/1.0.1-SNAPSHOT, EPL-2.0, approved, modeling.fennec
 maven/mavencentral/org.eclipse.fennec.models/de.dwd.cdc.forecast.model/1.0.0-SNAPSHOT, EPL-2.0, approved, modeling.fennec

@@ -55,9 +55,20 @@ jobs:
         org.eclipse.fennec.dcat.atlas.api/generated/org.eclipse.fennec.dcat.atlas.api.jar
     secrets: inherit
 
+  # The image is built from the release-jars artifact of the release job above,
+  # so the jar it embeds is the jar published to Maven in that same Gradle
+  # invocation. prepareDocker stages docker/dcatatlas/content itself, which the
+  # central workflow supports as prepare-command (eclipse-fennec/.github,
+  # docs/ci-cd-reusable-workflows.md §5.7).
   container:
     needs: release
-    uses: ./.github/workflows/reusable-container.yml
+    uses: eclipse-fennec/.github/.github/workflows/reusable-container.yml@074409595cdb7f4afc3c3ab521fe720b05f913b3 # eclipse-fennec/.github#43
     with:
+      image-name: dcat.atlas
       docker-label: snapshot
+      docker-context: docker/dcatatlas
+      prepare-command: ./gradlew --no-daemon :docker:dcatatlas:prepareDocker
+      # docker.jar is what the image runs; the api jar travels along only so its
+      # Bundle-Version can become the immutable image tag.
+      version-jar: org.eclipse.fennec.dcat.atlas.api.jar
     secrets: inherit

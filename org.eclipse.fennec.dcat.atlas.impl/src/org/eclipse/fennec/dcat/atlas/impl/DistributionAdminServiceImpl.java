@@ -27,6 +27,7 @@ import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
@@ -123,6 +124,9 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		find(dataset, datasetId, distributionId).ifPresent(dataset.getDistribution()::remove);
 		dataset.getDistribution().add(distribution);
 		store.save(dataset);
+		// A distribution lives in its dataset's blob, so this changed what a catalogue entry
+		// says about that dataset (#56).
+		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(StoreLayout.DATASETS, datasetId));
 		store.commit("Store distribution %s of dataset %s".formatted(distributionId, datasetId));
 		reproject(datasetId, distributionId);
 		return distribution;
@@ -135,6 +139,7 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 			if (find(dataset, datasetId, distributionId).map(dataset.getDistribution()::remove).orElse(false)) {
 				// A removal: never refused by what it is removing. See Store.saveRemoval.
 				store.saveRemoval(dataset);
+				CatalogRecords.memberWritten(store, StoreLayout.logicalIri(StoreLayout.DATASETS, datasetId));
 				store.commit("Delete distribution %s of dataset %s".formatted(distributionId, datasetId));
 				reproject(datasetId, distributionId);
 			}

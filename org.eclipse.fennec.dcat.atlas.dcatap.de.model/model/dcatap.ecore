@@ -441,10 +441,11 @@
   </eClassifiers>
   <eClassifiers xsi:type="ecore:EClass" name="CatalogRecord" eSuperTypes="rdf.ecore#//IdentifiedResource">
     <eAnnotations source="http://www.eclipse.org/emf/2002/Ecore">
-      <details key="constraints" value="LanguageIsIri"/>
+      <details key="constraints" value="LanguageIsIri SourceIsIri"/>
     </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/fennec/m2x/ocl/1.0">
       <details key="LanguageIsIri" value="self.language->forAll(v | v.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*'))"/>
+      <details key="SourceIsIri" value="self.source = null or self.source.matches('[A-Za-z][A-Za-z0-9+.\\-]*:\\S*')"/>
     </eAnnotations>
     <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
       <details key="documentation" value="&#xA;        dcat:CatalogRecord represents a metadata item in the catalog, primarily concerning the registration information,&#xA;        such as who added the item and when.&#xA;&#xA;        https://www.w3.org/TR/vocab-dcat-2/#Class:Catalog_Record&#xA;      "/>
@@ -508,6 +509,16 @@
         <details key="kind" value="element"/>
         <details key="name" value="primaryTopic"/>
         <details key="namespace" value="http://xmlns.com/foaf/0.1/"/>
+      </eAnnotations>
+    </eStructuralFeatures>
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="source" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//AnyURI">
+      <eAnnotations source="http://www.eclipse.org/emf/2002/GenModel">
+        <details key="documentation" value="dcterms:source — the catalogue record this one was derived from, in the catalogue it was harvested from. DCAT-AP.de 3.0 §4.13, Optional [0..1]. An IRI we do not resolve: the record it names belongs to the source portal, not to this store."/>
+      </eAnnotations>
+      <eAnnotations source="http:///org/eclipse/emf/ecore/util/ExtendedMetaData">
+        <details key="kind" value="element"/>
+        <details key="name" value="source"/>
+        <details key="namespace" value="http://purl.org/dc/terms/"/>
       </eAnnotations>
     </eStructuralFeatures>
   </eClassifiers>

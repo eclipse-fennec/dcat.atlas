@@ -738,6 +738,15 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EAttribute getCatalogRecord_Source() {
+		return (EAttribute)catalogRecordEClass.getEStructuralFeatures().get(7);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EClass getDataService() {
 		return dataServiceEClass;
 	}
@@ -1155,6 +1164,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEReference(catalogRecordEClass, CATALOG_RECORD__CONFORMS_TO);
 		createEAttribute(catalogRecordEClass, CATALOG_RECORD__LANGUAGE);
 		createEReference(catalogRecordEClass, CATALOG_RECORD__PRIMARY_TOPIC);
+		createEAttribute(catalogRecordEClass, CATALOG_RECORD__SOURCE);
 
 		dataServiceEClass = createEClass(DATA_SERVICE);
 		createEAttribute(dataServiceEClass, DATA_SERVICE__ENDPOINT_DESCRIPTION);
@@ -1305,6 +1315,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		initEReference(getCatalogRecord_ConformsTo(), theTermsPackage.getStandard(), null, "conformsTo", null, 0, -1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getCatalogRecord_Language(), theXMLTypePackage.getAnyURI(), "language", null, 0, -1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getCatalogRecord_PrimaryTopic(), this.getDcatResource(), null, "primaryTopic", null, 1, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getCatalogRecord_Source(), theXMLTypePackage.getAnyURI(), "source", null, 0, 1, CatalogRecord.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(dataServiceEClass, DataService.class, "DataService", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getDataService_EndpointDescription(), theXMLTypePackage.getAnyURI(), "endpointDescription", null, 0, -1, DataService.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1394,7 +1405,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		  (catalogRecordEClass,
 		   source,
 		   new String[] {
-			   "constraints", "LanguageIsIri"
+			   "constraints", "LanguageIsIri SourceIsIri"
 		   });
 		addAnnotation
 		  (dataServiceEClass,
@@ -1455,7 +1466,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		  (catalogRecordEClass,
 		   source,
 		   new String[] {
-			   "LanguageIsIri", "self.language->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))"
+			   "LanguageIsIri", "self.language->forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))",
+			   "SourceIsIri", "self.source = null or self.source.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')"
 		   });
 		addAnnotation
 		  (dataServiceEClass,
@@ -1942,6 +1954,14 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 			   "kind", "element",
 			   "name", "primaryTopic",
 			   "namespace", "http://xmlns.com/foaf/0.1/"
+		   });
+		addAnnotation
+		  (getCatalogRecord_Source(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "source",
+			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
 		  (dataServiceEClass,

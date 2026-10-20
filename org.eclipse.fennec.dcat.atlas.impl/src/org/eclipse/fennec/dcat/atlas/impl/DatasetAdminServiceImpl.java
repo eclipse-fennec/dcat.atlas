@@ -20,7 +20,9 @@ import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
+import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
@@ -95,6 +97,8 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 		String id = idOrMint(dataset);
 		Store store = store();
 		store.put(collection, id, dataset);
+		// The entry's metadata changed, so its catalogue records move with it (#56).
+		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store dataset " + id);
 		reproject(id);
 		return dataset;
@@ -103,6 +107,10 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 	@Override
 	public List<String> deleteDataset(String id, boolean cascade) {
 		Store store = store();
+		if (cascade) {
+			// See CatalogRecords.memberDeleted: detach would otherwise leave records without a topic.
+			CatalogRecords.memberDeleted(store, StoreLayout.logicalIri(collection, id));
+		}
 		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
 		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.

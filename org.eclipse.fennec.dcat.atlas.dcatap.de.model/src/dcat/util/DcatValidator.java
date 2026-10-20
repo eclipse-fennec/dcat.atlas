@@ -789,6 +789,7 @@ public class DcatValidator extends EObjectValidator {
 		if (result || diagnostics != null) result &= validate_EveryMapEntryUnique(catalogRecord, diagnostics, context);
 		if (result || diagnostics != null) result &= rdfValidator.validateIdentifiedResource_AboutIsIri(catalogRecord, diagnostics, context);
 		if (result || diagnostics != null) result &= validateCatalogRecord_LanguageIsIri(catalogRecord, diagnostics, context);
+		if (result || diagnostics != null) result &= validateCatalogRecord_SourceIsIri(catalogRecord, diagnostics, context);
 		return result;
 	}
 
@@ -816,6 +817,35 @@ public class DcatValidator extends EObjectValidator {
 				 "http://www.eclipse.org/fennec/m2x/ocl/1.0",
 				 "LanguageIsIri",
 				 CATALOG_RECORD__LANGUAGE_IS_IRI__EEXPRESSION,
+				 Diagnostic.ERROR,
+				 DIAGNOSTIC_SOURCE,
+				 0);
+	}
+
+	/**
+	 * The cached validation expression for the SourceIsIri constraint of '<em>Catalog Record</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	protected static final String CATALOG_RECORD__SOURCE_IS_IRI__EEXPRESSION = "self.source = null or self.source.matches('[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*')";
+
+	/**
+	 * Validates the SourceIsIri constraint of '<em>Catalog Record</em>'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public boolean validateCatalogRecord_SourceIsIri(CatalogRecord catalogRecord, DiagnosticChain diagnostics, Map<Object, Object> context) {
+		return
+			validate
+				(DcatPackage.Literals.CATALOG_RECORD,
+				 catalogRecord,
+				 diagnostics,
+				 context,
+				 "http://www.eclipse.org/fennec/m2x/ocl/1.0",
+				 "SourceIsIri",
+				 CATALOG_RECORD__SOURCE_IS_IRI__EEXPRESSION,
 				 Diagnostic.ERROR,
 				 DIAGNOSTIC_SOURCE,
 				 0);

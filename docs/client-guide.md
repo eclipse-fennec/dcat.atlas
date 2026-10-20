@@ -400,6 +400,14 @@ Linking to a container that does not exist, or naming a member that does not, is
 `linkDatasetToSeries` hides an asymmetry: `inSeries` lives on the **dataset**, so the
 call edits the dataset and it is the *dataset's* ETag that moves, not the series'.
 
+**Catalogue records are the portal's, not yours.** A catalog carries one
+`dcat:CatalogRecord` per member, saying when that entry's metadata last changed. The portal
+creates, re-stamps and removes them; records in a body you send are discarded and the set is
+rebuilt from the membership, so a read-modify-write of a catalog cannot erase them — and
+cannot forge one either. Two consequences for a client: registering a dataset moves the
+`ETag` of every catalog that lists it, so a cached catalog goes stale on a write that never
+mentioned it; and there is nothing to send, so `registerCatalog` bodies stay as they are.
+
 ### Conditional registration
 
 Pass the validator from the previous `Registration` to make the next write conditional:

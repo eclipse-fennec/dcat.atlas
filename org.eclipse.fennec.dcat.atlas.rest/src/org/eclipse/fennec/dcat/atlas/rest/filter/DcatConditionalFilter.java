@@ -13,8 +13,10 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.filter;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.TimeZone;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsExtension;
@@ -27,6 +29,10 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+
+import dcat.DcatResource;
+import dcat.Distribution;
+import rdf.DateOrDateTimeLiteral;
 
 /**
  * Centralises the read side of HTTP conditional requests / caching (F-16).
@@ -47,6 +53,9 @@ import jakarta.ws.rs.core.Response;
  * {@link ConditionalRequests}: it must run <em>before</em> the mutation and the
  * membership endpoints lock on a resource that is not the path resource, so it
  * cannot be centralised here.
+ * <p>
+ * It also stamps {@code Last-Modified} from the entity itself — see
+ * {@link #stampLastModified(ContainerResponseContext)}.
  */
 @Component
 @JakartarsExtension
@@ -69,6 +78,10 @@ public class DcatConditionalFilter implements ContainerResponseFilter {
 
 	@Override
 	public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
+		// Before the ETag block, because it reads the entity and the 304 branch below
+		// discards it - and a 304 is allowed, and expected, to carry its validators.
+		stampLastModified(responseContext);
+
 		if (!(requestContext.getProperty(PROP_ETAG) instanceof String etagValue)) {
 			return;
 		}
@@ -83,6 +96,57 @@ public class DcatConditionalFilter implements ContainerResponseFilter {
 			responseContext.setStatus(Response.Status.NOT_MODIFIED.getStatusCode());
 			responseContext.setEntity(null);
 		}
+	}
+
+	/**
+	 * Stamps {@code Last-Modified} from the entity's own {@code dcterms:modified}.
+	 *
+	 * <h2>Why from the entity, and why only there</h2>
+	 *
+	 * There is no cheaper honest source. The store's timestamps are per <em>commit</em> and
+	 * a commit covers the whole repository, so the tip's time would move for every resource
+	 * whenever any one of them was written - the same reason the ETag is the blob id rather
+	 * than the commit id ({@code DcatHelper#etag}). A per-resource commit time would mean a
+	 * path-filtered log, which {@code GitService} does not offer.
+	 *
+	 * <h2>Why it is not used as a validator</h2>
+	 *
+	 * {@code dcterms:modified} is content: whoever wrote the entity chose it, and an edit
+	 * that forgets to move it leaves the date behind while the representation changes. So
+	 * the header is reported and {@code If-Modified-Since} is deliberately <em>not</em>
+	 * honoured - answering {@code 304} on a date that can lie would turn a stale cache into
+	 * a silent one, where {@code If-None-Match} against the blob id cannot. A resource with
+	 * no {@code dcterms:modified} gets no header rather than a guess.
+	 */
+	private static void stampLastModified(ContainerResponseContext responseContext) {
+		if (responseContext.getHeaders().containsKey(HttpHeaders.LAST_MODIFIED)) {
+			return;
+		}
+		Date modified = modifiedOf(responseContext.getEntity());
+		if (modified != null) {
+			responseContext.getHeaders().putSingle(HttpHeaders.LAST_MODIFIED, modified);
+		}
+	}
+
+	/**
+	 * The entity's {@code dcterms:modified} as an instant, or {@code null} when it has none
+	 * - which includes every collection response, whose entity is a list.
+	 * <p>
+	 * Two branches because {@code Distribution} is an {@code IdentifiedResource} rather than
+	 * a {@code DcatResource}: it carries its own {@code modified} and shares no supertype
+	 * that declares one.
+	 * <p>
+	 * The default time zone is UTC, not the server's: a date-only value ({@code 2026-10-19},
+	 * which the datatype allows) has no zone of its own, and reading it as local midnight
+	 * would make the same stored resource report different instants in two deployments.
+	 */
+	private static Date modifiedOf(Object entity) {
+		DateOrDateTimeLiteral modified = entity instanceof DcatResource resource ? resource.getModified()
+				: entity instanceof Distribution distribution ? distribution.getModified() : null;
+		if (modified == null || modified.getValue() == null) {
+			return null;
+		}
+		return modified.getValue().toGregorianCalendar(TimeZone.getTimeZone("UTC"), null, null).getTime();
 	}
 
 	private static boolean isSafe(ContainerRequestContext requestContext) {

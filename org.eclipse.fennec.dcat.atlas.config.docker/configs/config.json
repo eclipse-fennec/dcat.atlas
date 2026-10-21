@@ -113,6 +113,15 @@
 		"additionalOwnedBases": "$[env:ADDITIONAL_OWNED_BASES;default=]"
 	},
 
+	// The same URL again, for the runtime snapshot's "endpoints". The same variable on
+	// purpose: the address clients reach and the address the portal reports itself at are
+	// the same fact, and two of them would drift. Without it the snapshot falls back to
+	// what the HTTP service is bound to, which inside a container is the container's own
+	// interfaces - true and useless.
+	"DcatAtlasRuntime": {
+		"dcat.atlas.endpoint": "$[env:PUBLIC_BASE_URL]"
+	},
+
 	// The SPARQL endpoint and the in-memory RDF projection behind it (WP-DCAT-5).
 	// The projection is a disposable view of the store, so nothing here is persistent
 	// state: switching it off costs only the endpoint, and the graph is rebuilt from

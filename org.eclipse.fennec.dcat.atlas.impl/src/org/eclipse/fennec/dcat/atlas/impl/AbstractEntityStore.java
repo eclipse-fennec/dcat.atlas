@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.jena.shacl.ValidationReport;
 import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
@@ -25,11 +26,15 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
+import org.eclipse.fennec.dcat.atlas.api.runtime.FailureReasons;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
+import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.store.IntegrityFinding;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreHealth;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -48,7 +53,7 @@ import rdf.IdentifiedResource;
  *
  * @param <T> the entity type this store holds
  */
-abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
+abstract class AbstractEntityStore<T extends EObject> implements HealthCheck, StoreIntrospection {
 
 	protected final ResourceSetFactory resourceSetFactory;
 	protected final GitService gitService;
@@ -76,6 +81,104 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	}
 
 	/** A store session; everything read through one resolves against everything else. */
+	@Override
+	public String collection() {
+		return collection;
+	}
+
+	@Override
+	public boolean validateOnWrite() {
+		return validateOnWrite;
+	}
+
+	/**
+	 * The ids this store holds, for the runtime snapshot.
+	 * <p>
+	 * A listing and nothing more — no entity is loaded. An unreadable store answers empty
+	 * rather than throwing, because a snapshot reports what it could see and the store's own
+	 * failure is reported beside it.
+	 */
+	@Override
+	public List<String> ids() {
+		try {
+			return store().ids(collection);
+		} catch (RuntimeException unreadable) {
+			return List.of();
+		}
+	}
+
+	/**
+	 * Reads everything in this collection and reports what is wrong with it.
+	 *
+	 * <p>
+	 * Three kinds of wrong, in the order they can be found: a resource that cannot be read
+	 * back at all, one whose references point at something that is no longer there, and one
+	 * that no longer satisfies the shapes. The last is skipped when no validation service is
+	 * bound, because "no shapes" is a deployment fact reported by the snapshot and not a
+	 * defect in the content.
+	 * </p>
+	 *
+	 * <p>
+	 * One session for the whole scan: it is a read, nothing is staged, and opening one per
+	 * resource would multiply the cost of the one operation already documented as expensive.
+	 * </p>
+	 */
+	@Override
+	public List<IntegrityFinding> scan() {
+		List<IntegrityFinding> findings = new ArrayList<>();
+		Store store;
+		List<String> ids;
+		try {
+			store = store();
+			ids = store.ids(collection);
+		} catch (RuntimeException unreadable) {
+			findings.add(new IntegrityFinding(collection, null, FailureReasons.STORE_UNREADABLE,
+					"the collection could not be listed: " + unreadable));
+			return findings;
+		}
+		for (String id : ids) {
+			scanOne(store, id, findings);
+		}
+		return findings;
+	}
+
+	private void scanOne(Store store, String id, List<IntegrityFinding> findings) {
+		EObject entity;
+		try {
+			entity = store.<EObject>get(collection, id).orElse(null);
+		} catch (RuntimeException unparseable) {
+			findings.add(new IntegrityFinding(collection, id, FailureReasons.UNPARSEABLE_RESOURCE,
+					"the stored resource could not be read back: " + unparseable));
+			return;
+		}
+		if (entity == null) {
+			// Listed and then gone, or listed and empty. Either way the listing and the
+			// content disagree, which is the kind of thing this scan exists to notice.
+			findings.add(new IntegrityFinding(collection, id, FailureReasons.UNPARSEABLE_RESOURCE,
+					"the resource is listed but holds nothing"));
+			return;
+		}
+		try {
+			References.requireResolvable(store, entity);
+		} catch (RuntimeException dangling) {
+			findings.add(new IntegrityFinding(collection, id, FailureReasons.DANGLING_REFERENCE, dangling.getMessage()));
+		}
+		DcatValidationService shapes = writeValidation();
+		if (shapes == null) {
+			return;
+		}
+		try {
+			ValidationReport report = shapes.validate(entity);
+			if (report != null && !report.conforms()) {
+				findings.add(new IntegrityFinding(collection, id, FailureReasons.NON_CONFORMANT_RESOURCE,
+						report.getEntries().size() + " shape violation(s) in stored content"));
+			}
+		} catch (RuntimeException failed) {
+			findings.add(new IntegrityFinding(collection, id, FailureReasons.NON_CONFORMANT_RESOURCE,
+					"the resource could not be validated: " + failed));
+		}
+	}
+
 	protected Store store() {
 		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation());
 	}

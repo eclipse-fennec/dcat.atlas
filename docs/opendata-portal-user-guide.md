@@ -918,6 +918,16 @@ vocabularies they reference are loaded from operator-configured directories (set
 `secrets.bndrun` for local runs, as `SHACL_SHAPES_DIR` and `SHACL_VOCAB_DIR`); with no
 shapes configured, validation is a no-op that reports conformance.
 
+> **The vocabulary directory must include the DCAT ontology** —
+> [`https://www.w3.org/ns/dcat.ttl`](https://www.w3.org/ns/dcat.ttl) — alongside the authority
+> tables. The authority tables make *coded values* resolvable; the ontology makes *classes*
+> resolvable, and some shapes constrain a reference against a supertype. `foaf:primaryTopic` on a
+> catalogue record must point at a `dcat:Resource`, and a graph that knows the target is a
+> `dcat:Dataset` but not that `dcat:Dataset rdfs:subClassOf dcat:Resource` cannot satisfy that.
+> Without the file, **adding any member to a catalog is refused with `422`** while enforcement is
+> on. Drop it in the directory; nothing else is needed, and the loader picks up every RDF file
+> there.
+
 Enforcement happens where the entity is stored, so it covers every writer — an importer or
 a migration tool calling the OSGi services directly is checked exactly as an HTTP request
 is. Only the *rendering* of a refusal belongs to the REST layer, which is why a rejected

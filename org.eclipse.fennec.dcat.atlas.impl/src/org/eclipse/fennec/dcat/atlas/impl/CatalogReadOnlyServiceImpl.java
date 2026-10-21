@@ -21,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -38,7 +39,7 @@ import dcat.Catalog;
  * operations and add the write operations, so the two services share one
  * implementation of {@code getCatalog}/{@code listCatalogs}.
  */
-@Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, HealthCheck.class }, property = {
+@Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, HealthCheck.class, StoreIntrospection.class }, property = {
 		HealthCheck.NAME + "=store:catalogs", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = StoreConfig.class)
 public class CatalogReadOnlyServiceImpl extends AbstractEntityStore<Catalog> implements CatalogReadOnlyService {

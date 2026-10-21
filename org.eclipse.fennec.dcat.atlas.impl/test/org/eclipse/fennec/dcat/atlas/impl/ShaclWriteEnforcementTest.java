@@ -159,5 +159,26 @@ public class ShaclWriteEnforcementTest {
 		public boolean isWriteEnforced() {
 			return enforced;
 		}
+
+		/** Not what these tests are about; the runtime snapshot reads them, nothing here does. */
+		@Override
+		public String shapesDirectory() {
+			return null;
+		}
+
+		@Override
+		public int shapeFileCount() {
+			return 0;
+		}
+
+		@Override
+		public String vocabularyDirectory() {
+			return null;
+		}
+
+		@Override
+		public int vocabularyFileCount() {
+			return 0;
+		}
 	}
 }

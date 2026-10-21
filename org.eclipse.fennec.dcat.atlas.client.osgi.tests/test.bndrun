@@ -123,6 +123,7 @@
 	org.eclipse.fennec.dcat.atlas.client.osgi.tests;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.impl;version=snapshot,\
+	org.eclipse.fennec.services.runtime;version='[0.1.0,0.1.1)',\
 	org.eclipse.fennec.dcat.atlas.msg.body.writer;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.rest;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.sparql;version=snapshot,\

@@ -18,6 +18,7 @@
 | `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
 | `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed), controlled-vocabulary checks, and the Felix health checks behind `/health/*`. |
 | `org.eclipse.fennec.dcat.atlas.sparql/` | The in-memory RDF projection of the file store and the SPARQL endpoint over it (WP-DCAT-5 Phase 1). Nothing exported — Jena query types stay inside. |
+| `org.eclipse.fennec.dcat.atlas.telemetry/` | OpenTelemetry gauges over the runtime snapshot. Optional in both directions: nothing in the serving path requires it, and it requires no part of the portal beyond `…api.runtime`. Only in `local.bndrun`; adding it to a deployment is that deployment's decision. |
 | `org.eclipse.fennec.shacl.model/` | EMF model bundle for the SHACL vocabulary (used by the validation-report representation). |
 | `org.eclipse.fennec.dcat.atlas.runtime/` | bnd run descriptors: `base.bndrun` (framework + all bundles), `local.bndrun`, `docker.bndrun`, `secrets.bndrun`. Exports the executable jars. |
 | `org.eclipse.fennec.dcat.atlas.config.local/` | OSGi configuration for local development (HTTP on `8085`, store under `/tmp/rdf`). |
@@ -85,6 +86,77 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 ---
 
 ## Change log
+
+### 2026-10-21 — A runtime service, and the telemetry bundle it was built for (#58)
+
+One OSGi service that hands back a read-only snapshot of what this instance is configured to do
+and what it holds — and every configured thing that is not live, with the reason. The pattern is
+the house one: `BrokerRuntime`/`ClientRuntime` in `emf.services`, whose `ChangeCountPublisher` this
+reuses rather than copies.
+
+**Plain `org.osgi.dto.DTO`, no EMF.** `DcatAtlasRuntime.snapshot()` returns
+`DcatAtlasRuntimeDTO`; `checkIntegrity()` is the full content scan, separate because it reads every
+stored resource. The consumer this exists for is a telemetry bundle, and requiring it to carry EMF,
+the codec and the DCAT-AP profile to read an integer would be the whole cost of the feature. A test
+asserts nothing in `…api.runtime` imports the model.
+
+**The component registers itself, and `service = {}` is load-bearing.**
+`Constants.SERVICE_CHANGECOUNT` can only be moved through `ServiceRegistration.setProperties`, and a
+DS-declared service hands out no registration to call it on. So the component activates, registers
+through `ChangeCountPublisher` and keeps the handle. Without `service = {}` DS would register a
+second copy beside it — one whose change count moves and one whose properties never do, with a
+consumer binding whichever it found first.
+
+**Reading happens on change; assembly happens per call — and the order matters more than it
+looks.** The first version refreshed inside `DcatHelper.Store.commit`, on the thread still
+completing the write, and re-entering the store from there made six write tests answer `500`
+*after* their commit was already written. So `StoreChanges.committed()` now sets a flag and raises
+the counter, and the reading happens on the next snapshot that needs it. The cost rule still holds:
+`RuntimeTelemetry` gives every gauge its own `() -> snapshot()`, so one export interval takes eight
+or nine snapshots, and a burst of them with nothing in between reads nothing.
+
+**Counts come from the store's listing; entities are never loaded.** Each store registers an
+internal `StoreIntrospection` (collection, `validateOnWrite`, ids, scan). Both the read-only and the
+admin component answer for a collection, so the snapshot lists each collection once while the
+`validateOnWrite` disagreement check still sees all ten — that disagreement is the thing nothing
+else makes visible. Catalogs are the one kind of resource read rather than counted: there are tens
+of them, and their members are counted from the catalog already in hand.
+
+**The store section names no backend.** Git is this deployment's answer and a database is an equally
+good one, so there is no branch, no base path and no commit id — and no credential of any backend,
+which a test asserts over the serialised form. The change count is the version a consumer compares.
+
+**`endpoints` is configuration first.** `dcat.atlas.endpoint` is a *configuration* property, not a
+service property: `ChangeCountPublisher` copies its extra properties into an unmodifiable map at
+construction, so emf.services#188 made it possible to publish one beside the change count but not to
+change one afterwards — and the effective endpoint is not known at activation, since with nothing
+configured it comes from the Jakarta RS whiteboard, which may register later. Waiting for it before
+registering would be worse: this service exists to answer when things have *not* come up. Both
+shipped configs now set it from `PUBLIC_BASE_URL`, the same variable `publicBaseUrl` uses, because
+the address clients reach and the address the portal reports are one fact. Unset, the fallback is
+every interface the HTTP service is bound to — on a developer machine, each Docker bridge gateway
+and not `localhost`.
+
+**Two traps worth carrying over.** `osgi.cmpn` on a test path shadows `org.osgi.util.converter`, and
+the shadowing copy emits `$ref` back-references for repeated object instances — and `List.of()` is a
+singleton, so every empty field of a DTO was the *same* list and a converter round-trip to `Map`
+threw. Empty lists in a snapshot are now distinct instances, and the test asserts over
+`DTO.toString()` rather than a converter. Second: the watcher callback is `updated<Name>`, not
+`modified<Name>`.
+
+**`…atlas.telemetry`** turns each snapshot into gauges and computes nothing of its own. Every
+failure reason reports a value, zero included: a series that stops being published is not the same
+as a series reporting zero, and an alert on `> 0` cannot tell a fixed problem from a dead exporter.
+It is in `local.bndrun` only, with the logging sender, so looking at the output needs no collector.
+
+**Running locally needed two fixes that had nothing to do with this.** `/tmp/dcat-store.git` must
+exist before the first run — the config says so, and without it every store stays unsatisfied and
+the read resources answer `404`. And `gradlew run.local` exited `117` headless, because Gogo reads
+EOF on a non-interactive stdin and takes the framework down with it; `local.bndrun` now sets
+`gosh.args=--noshutdown`.
+
+Tests: `impl` 146 → 171, `rest.tests` 228 → 236, plus 6 in `…telemetry` and 2 in `…api`.
+
 
 ### 2026-10-20 — Catalogue records are maintained by the server (#56), and reads carry `Last-Modified`
 

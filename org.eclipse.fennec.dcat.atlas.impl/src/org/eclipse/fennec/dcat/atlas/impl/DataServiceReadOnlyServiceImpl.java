@@ -21,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -33,7 +34,7 @@ import dcat.DataService;
 
 /** File-backed, read-only view of the data-service store. */
 @Component(name = "DataServiceReadOnlyService", service = { DataServiceReadOnlyService.class,
-		HealthCheck.class }, property = { HealthCheck.NAME + "=store:data-services", HealthCheck.TAGS + "=ready" })
+		HealthCheck.class , StoreIntrospection.class}, property = { HealthCheck.NAME + "=store:data-services", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = StoreConfig.class)
 public class DataServiceReadOnlyServiceImpl extends AbstractEntityStore<DataService>
 		implements DataServiceReadOnlyService {

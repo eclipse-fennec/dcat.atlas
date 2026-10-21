@@ -21,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -33,7 +34,7 @@ import dcat.DatasetSeries;
 
 /** File-backed, read-only view of the dataset-series store. */
 @Component(name = "DatasetSeriesReadOnlyService", service = { DatasetSeriesReadOnlyService.class,
-		HealthCheck.class }, property = { HealthCheck.NAME + "=store:dataset-series", HealthCheck.TAGS + "=ready" })
+		HealthCheck.class , StoreIntrospection.class}, property = { HealthCheck.NAME + "=store:dataset-series", HealthCheck.TAGS + "=ready" })
 @Designate(ocd = StoreConfig.class)
 public class DatasetSeriesReadOnlyServiceImpl extends AbstractEntityStore<DatasetSeries>
 		implements DatasetSeriesReadOnlyService {

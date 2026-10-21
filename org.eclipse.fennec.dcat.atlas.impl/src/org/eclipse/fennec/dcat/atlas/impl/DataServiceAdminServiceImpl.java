@@ -15,7 +15,6 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
@@ -24,10 +23,10 @@ import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
+import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
-import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
@@ -96,6 +95,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		String id = idOrMint(service);
 		Store store = store();
 		store.put(collection, id, service);
+		// The entry's metadata changed, so its catalogue records move with it (#56).
+		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store data service " + id);
 		reproject(id);
 		return service;
@@ -104,6 +105,10 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	@Override
 	public List<String> deleteDataService(String id, boolean cascade) {
 		Store store = store();
+		if (cascade) {
+			// See CatalogRecords.memberDeleted: detach would otherwise leave records without a topic.
+			CatalogRecords.memberDeleted(store, StoreLayout.logicalIri(collection, id));
+		}
 		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
 		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.

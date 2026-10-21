@@ -29,6 +29,7 @@ import org.eclipse.fennec.dcat.atlas.api.store.StoreConflictException;
 import org.eclipse.fennec.dcat.atlas.api.store.StoreUnavailableException;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
+import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.PendingChanges.State;
 import org.eclipse.fennec.dcat.atlas.impl.validation.ModelValidation;
 import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
@@ -38,6 +39,7 @@ import org.eclipse.fennec.jgit.api.TreeResult;
 import org.eclipse.fennec.jgit.exceptions.GitConflictException;
 import org.eclipse.fennec.jgit.exceptions.GitPushException;
 
+import dcat.Catalog;
 import rdf.IdentifiedResource;
 
 /**
@@ -193,6 +195,11 @@ public final class DcatHelper {
 			if (object instanceof IdentifiedResource identified) {
 				identified.setAbout(StoreLayout.logicalIri(collection, id));
 			}
+			// Records are the server's, whatever the body says, and they are rebuilt before
+			// validation so what is checked is what will be stored (#56).
+			if (object instanceof Catalog catalog) {
+				CatalogRecords.preserveRecords(this, collection, id, catalog);
+			}
 			// After the identity is stamped — "a stored entity has an about" is one of the
 			// constraints, and a SHACL report has to name the node that will actually be
 			// stored — and before anything is staged, because the point is that an invalid
@@ -252,6 +259,29 @@ public final class DcatHelper {
 		 * Use it only where the change is a removal. Everything else uses {@link #save}.
 		 */
 		public void saveRemoval(EObject object) {
+			stage(object);
+		}
+
+		/**
+		 * Re-stages a resource the server itself changed as a side effect of writing another
+		 * one, without validating it — today, a catalog whose catalogue records were
+		 * re-stamped because one of its members was written
+		 * ({@code CatalogRecords#memberWritten}).
+		 *
+		 * <h2>Why it is not validated</h2>
+		 *
+		 * The caller wrote a dataset. Refusing that write because some <em>catalog</em> that
+		 * happens to list it is missing a publisher would fail an operation over content the
+		 * caller did not send and may not be able to fix — the same data jail
+		 * {@link #saveRemoval} avoids, reached from the other side. What this method stages is
+		 * in any case not the caller's content but a timestamp on a record the server built
+		 * complete; the records' own shape is pinned by tests rather than re-checked on every
+		 * write.
+		 * <p>
+		 * Use it only for a change the server makes on its own behalf. Everything a caller
+		 * sent goes through {@link #save}.
+		 */
+		public void saveBookkeeping(EObject object) {
 			stage(object);
 		}
 

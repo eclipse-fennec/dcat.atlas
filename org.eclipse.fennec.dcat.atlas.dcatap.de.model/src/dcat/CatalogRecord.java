@@ -47,11 +47,12 @@ import terms.Standard;
  *   <li>{@link dcat.CatalogRecord#getConformsTo <em>Conforms To</em>}</li>
  *   <li>{@link dcat.CatalogRecord#getLanguage <em>Language</em>}</li>
  *   <li>{@link dcat.CatalogRecord#getPrimaryTopic <em>Primary Topic</em>}</li>
+ *   <li>{@link dcat.CatalogRecord#getSource <em>Source</em>}</li>
  * </ul>
  *
  * @see dcat.DcatPackage#getCatalogRecord()
- * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='LanguageIsIri'"
- *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 LanguageIsIri='self.language-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))'"
+ * @model annotation="http://www.eclipse.org/emf/2002/Ecore constraints='LanguageIsIri SourceIsIri'"
+ *        annotation="http://www.eclipse.org/fennec/m2x/ocl/1.0 LanguageIsIri='self.language-&gt;forAll(v | v.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\'))' SourceIsIri='self.source = null or self.source.matches(\'[A-Za-z][A-Za-z0-9+.\\\\-]*:\\\\S*\')'"
  *        extendedMetaData="name='CatalogRecord' kind='elementOnly'"
  * @generated
  */
@@ -177,5 +178,31 @@ public interface CatalogRecord extends IdentifiedResource {
 	 * @generated
 	 */
 	void setPrimaryTopic(DcatResource value);
+
+	/**
+	 * Returns the value of the '<em><b>Source</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * dcterms:source — the catalogue record this one was derived from, in the catalogue it was harvested from. DCAT-AP.de 3.0 §4.13, Optional [0..1]. An IRI we do not resolve: the record it names belongs to the source portal, not to this store.
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Source</em>' attribute.
+	 * @see #setSource(String)
+	 * @see dcat.DcatPackage#getCatalogRecord_Source()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
+	 *        extendedMetaData="kind='element' name='source' namespace='http://purl.org/dc/terms/'"
+	 * @generated
+	 */
+	String getSource();
+
+	/**
+	 * Sets the value of the '{@link dcat.CatalogRecord#getSource <em>Source</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Source</em>' attribute.
+	 * @see #getSource()
+	 * @generated
+	 */
+	void setSource(String value);
 
 } // CatalogRecord

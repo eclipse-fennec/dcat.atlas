@@ -74,6 +74,7 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//CatalogRecord/conformsTo"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EAttribute dcatap.ecore#//CatalogRecord/language"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//CatalogRecord/primaryTopic"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//CatalogRecord/source"/>
     </genClasses>
     <genClasses ecoreClass="dcatap.ecore#//DataService">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//DataService/endpointDescription"/>

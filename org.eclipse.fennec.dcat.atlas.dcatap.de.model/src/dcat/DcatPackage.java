@@ -44,7 +44,7 @@ import rdf.RdfPackage;
  * @generated
  */
 @ProviderType
-@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:8072c4bd375f45e8ac9395789114c259184bb9f1438cb8114e339646edd2537c", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
+@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:a0249091231f3a6de4db9071b4c0169c98a15ac4d3d491e1f1afb4c85fb7e811", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
 public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -1651,13 +1651,22 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int CATALOG_RECORD__PRIMARY_TOPIC = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 6;
 
 	/**
+	 * The feature id for the '<em><b>Source</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CATALOG_RECORD__SOURCE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 7;
+
+	/**
 	 * The number of structural features of the '<em>Catalog Record</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int CATALOG_RECORD_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 7;
+	int CATALOG_RECORD_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 8;
 
 	/**
 	 * The number of operations of the '<em>Catalog Record</em>' class.
@@ -3032,6 +3041,17 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EReference getCatalogRecord_PrimaryTopic();
 
 	/**
+	 * Returns the meta object for the attribute '{@link dcat.CatalogRecord#getSource <em>Source</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Source</em>'.
+	 * @see dcat.CatalogRecord#getSource()
+	 * @see #getCatalogRecord()
+	 * @generated
+	 */
+	EAttribute getCatalogRecord_Source();
+
+	/**
 	 * Returns the meta object for class '{@link dcat.DataService <em>Data Service</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -3923,6 +3943,14 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		 * @generated
 		 */
 		EReference CATALOG_RECORD__PRIMARY_TOPIC = eINSTANCE.getCatalogRecord_PrimaryTopic();
+
+		/**
+		 * The meta object literal for the '<em><b>Source</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute CATALOG_RECORD__SOURCE = eINSTANCE.getCatalogRecord_Source();
 
 		/**
 		 * The meta object literal for the '{@link dcat.impl.DataServiceImpl <em>Data Service</em>}' class.

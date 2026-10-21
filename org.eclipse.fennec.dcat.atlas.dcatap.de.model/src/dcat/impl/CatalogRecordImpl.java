@@ -54,6 +54,7 @@ import terms.Standard;
  *   <li>{@link dcat.impl.CatalogRecordImpl#getConformsTo <em>Conforms To</em>}</li>
  *   <li>{@link dcat.impl.CatalogRecordImpl#getLanguage <em>Language</em>}</li>
  *   <li>{@link dcat.impl.CatalogRecordImpl#getPrimaryTopic <em>Primary Topic</em>}</li>
+ *   <li>{@link dcat.impl.CatalogRecordImpl#getSource <em>Source</em>}</li>
  * </ul>
  *
  * @generated
@@ -128,6 +129,26 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 	 * @ordered
 	 */
 	protected DcatResource primaryTopic;
+
+	/**
+	 * The default value of the '{@link #getSource() <em>Source</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSource()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String SOURCE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getSource() <em>Source</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getSource()
+	 * @generated
+	 * @ordered
+	 */
+	protected String source = SOURCE_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -325,6 +346,27 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public String getSource() {
+		return source;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setSource(String newSource) {
+		String oldSource = source;
+		source = newSource;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.CATALOG_RECORD__SOURCE, oldSource, source));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
@@ -365,6 +407,8 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
 				if (resolve) return getPrimaryTopic();
 				return basicGetPrimaryTopic();
+			case DcatPackage.CATALOG_RECORD__SOURCE:
+				return getSource();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -403,6 +447,9 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
 				setPrimaryTopic((DcatResource)newValue);
 				return;
+			case DcatPackage.CATALOG_RECORD__SOURCE:
+				setSource((String)newValue);
+				return;
 		}
 		super.eSet(featureID, newValue);
 	}
@@ -436,6 +483,9 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
 				setPrimaryTopic((DcatResource)null);
 				return;
+			case DcatPackage.CATALOG_RECORD__SOURCE:
+				setSource(SOURCE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -462,6 +512,8 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 				return language != null && !language.isEmpty();
 			case DcatPackage.CATALOG_RECORD__PRIMARY_TOPIC:
 				return primaryTopic != null;
+			case DcatPackage.CATALOG_RECORD__SOURCE:
+				return SOURCE_EDEFAULT == null ? source != null : !SOURCE_EDEFAULT.equals(source);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -478,6 +530,8 @@ public class CatalogRecordImpl extends IdentifiedResourceImpl implements Catalog
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (language: ");
 		result.append(language);
+		result.append(", source: ");
+		result.append(source);
 		result.append(')');
 		return result.toString();
 	}

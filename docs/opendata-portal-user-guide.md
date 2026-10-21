@@ -461,6 +461,44 @@ Practical consequences:
   which object in the target document is meant. That is why it is there, and why a
   non-EMF client is usually better served by asking for RDF.
 
+### Catalogue records
+
+Alongside its members, a catalog carries one `dcat:CatalogRecord` per member. A record
+describes **the entry**, not the member: `dcterms:modified` on a dataset says when the data
+changed, on its record it says when the catalogue entry's metadata changed. That is the date a
+harvester reads to ask what has moved since it last looked.
+
+```xml
+<!-- XMI, inside the catalog, beside the membership it describes -->
+<record>
+  <issued value="2026-10-20T20:37:23.978Z" datatype="http://www.w3.org/2001/XMLSchema#dateTime"/>
+  <modified value="2026-10-20T20:37:23.985Z" datatype="http://www.w3.org/2001/XMLSchema#dateTime"/>
+  <primaryTopic xsi:type="dcat:Dataset"
+                href="http://localhost:8085/dcat/rest/datasets/luftqualitaet-2026#/"/>
+</record>
+<dataset href="http://localhost:8085/dcat/rest/datasets/luftqualitaet-2026#/"/>
+```
+
+In RDF the same thing is a `dcat:record` whose `dcat:CatalogRecord` carries
+`foaf:primaryTopic`, `dcterms:issued` and `dcterms:modified`. The record has no IRI of its own
+— it is a blank node, which is what the profile asks for.
+
+**The portal maintains them; you do not.** A record appears when a member is added or linked,
+goes when the member is removed or deleted, and is re-stamped whenever the member itself is
+written — a plain `PUT /admin/datasets/{id}` moves the dates of its entries in every catalog
+that holds it, and so does writing one of its distributions.
+
+Records in a request body are **discarded**. A catalog's body carries them, so a client that
+reads a catalog and writes it back sends them along, and one that composes a body by hand sends
+none; believing either would let a caller backdate an entry or erase the bookkeeping by
+omission. The set is rebuilt from the membership on every catalog write, exactly as `rdf:about`
+is re-stamped rather than believed. Entries that are still members keep their dates.
+
+> **This moves catalog `ETag`s.** Writing a dataset rewrites every catalog that lists it, so a
+> cached catalog representation becomes stale on a write that never mentioned the catalog. That
+> is honest — the catalog's representation really did change — but a client that caches
+> catalogs should expect it.
+
 ### Other entities
 
 `Dataset`, `DatasetSeries` and `DataService` are created, replaced and deleted exactly as
@@ -776,6 +814,19 @@ curl -i http://localhost:8085/dcat/rest/catalogs/3f2b1c8e-… \
   -H 'If-None-Match: "9a1c4d…e7"'
 #   -> HTTP/1.1 304 Not Modified
 ```
+
+A read also carries **`Last-Modified`** when the entity says when it was modified — the
+`dcterms:modified` of the resource itself, formatted as an HTTP date in GMT. A value written
+with an offset (`2026-10-19T10:30:00+02:00`) is **converted** to GMT, and a date without a time
+(`2026-10-19`, which the profile allows) is read as midnight **UTC**, so the same stored
+resource reports the same instant wherever it is served from. A resource that does not say when
+it changed carries no header rather than a guessed one.
+
+**Use the `ETag`, not the date, to make a read conditional.** `If-Modified-Since` is
+deliberately not honoured: `dcterms:modified` is content, chosen by whoever wrote the entity,
+and an edit that forgets to move it would leave the portal answering `304` for a
+representation that had in fact changed. The `ETag` is derived from what is stored, so it
+cannot say that.
 
 ### Catalog browser UI
 

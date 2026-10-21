@@ -28,7 +28,6 @@ import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.emf.ecore.util.EObjectValidator;
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
-import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 
 import dcat.Dataset;
 import dcat.Distribution;

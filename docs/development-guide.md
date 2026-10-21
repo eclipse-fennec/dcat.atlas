@@ -86,6 +86,73 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 
 ## Change log
 
+### 2026-10-20 — Catalogue records are maintained by the server (#56), and reads carry `Last-Modified`
+
+`dcat:CatalogRecord` had been in the model since the 3.0 update and used by nothing. It is
+**not** metadata about a catalog: it describes **one entry in** one, so a catalog holding 40
+datasets holds 40 records (§4.13). Its whole reason to exist is one distinction —
+`dcterms:modified` on a Dataset is when the data changed, on its record it is when the
+**catalogue entry's metadata** changed, which is what a harvester asking "what moved since
+Tuesday" reads.
+
+**The model gained `dcterms:source`**, the last genuine gap against §4.13 (the harvesting
+provenance pointer, Optional `[0..1]`). Modelled as an **`AnyURI` attribute**, not an
+`EReference`: the convention in this model is that a pointer we resolve is a reference
+(`primaryTopic`, `inSeries`) and one we never resolve is an IRI attribute (`hasVersion`,
+`isReferencedBy`), and a source record belongs to the portal we harvested from. It carries a
+`SourceIsIri` OCL invariant like every other IRI attribute. Known, pre-existing caveat: the
+official shape puts `sh:class dcat:CatalogRecord` on `dc:source`, so a bare IRI with no type
+triple in the graph can be flagged — `dcat:hasVersion` has lived with exactly that since the
+3.0 update.
+
+**Records are server-maintained and never accepted from a request**, the same rule `about`
+follows. `impl/records/CatalogRecords` creates one when a member enters a catalog, removes it
+when the member leaves or is deleted, and re-stamps it whenever **the member itself is
+written** — including through a distribution write, since a distribution lives in its
+dataset's blob. `Store.put` rebuilds a catalog's record set from its membership and discards
+whatever the body carried, so a read-modify-write client cannot erase the bookkeeping by
+omission or backdate an entry by forging one.
+
+**Measured before it was built, because the cost lands on the hottest write path.** Finding
+the catalogs that hold a member turned out to be flat in the number of *catalogs* (~5–7 ms for
+20) rather than the full-store scan the issue assumed (~583 ms at 1000 datasets): only the
+catalogs collection is scanned. The member write goes from 3–4 ms to 17–39 ms end to end.
+**The trap is proxy resolution** — iterating `catalog.getDataset()` normally resolves every
+member and loads its blob, which is 315 ms at the same size and was the first measurement
+taken. Everything here reads references the way `References` does: `eGet(feature, false)` and
+`basicIterator`.
+
+Two mechanisms were added underneath. **`Store.saveBookkeeping`** stages a resource the server
+changed on its own behalf without validating it — refusing a dataset write because some
+*catalog* listing it is missing a publisher would fail an operation over content the caller
+never sent, the data jail `saveRemoval` already avoids, reached from the other side. And
+**`CatalogRecords.memberDeleted` must run before `References.detach`**, which would otherwise
+null the records' `primaryTopic` along with every other link to the member and leave records
+that are both meaningless and invalid.
+
+Records carry no `about`, so they serialise as blank nodes; the spec asks for no IRI and a
+minted one would not dereference. If a harvester ever needs to point at one of ours, a fragment
+IRI under the catalog (`…/catalogs/gov#record-air`) is the upgrade, and it does dereference.
+
+**One client-visible consequence:** writing a dataset now rewrites every catalog that holds it,
+so those catalogs' `ETag`s move on a member write. That is correct — their representation
+genuinely changed — but a client caching catalogs will see it.
+
+**`Last-Modified`, the cheap side-finding of the same investigation.** The REST layer set the
+header nowhere. It now comes from the entity's own `dcterms:modified`, stamped centrally in
+`DcatConditionalFilter`, which already sees the EMF entity on the way out — no read resource
+changed. A value carrying an offset is converted from it, and a date-only one is read as **UTC**
+midnight rather than in the server's zone, so the same stored resource reports the same instant
+in every deployment: `toGregorianCalendar(value.getTimeZone(0), …)` is both of those at once,
+where passing a fixed UTC zone would silently reinterpret `10:30+02:00` as `10:30Z`. `If-Modified-Since` is
+deliberately **not** honoured: that date is content a writer can forget to bump, and answering
+`304` on it would turn detectable staleness into silent staleness, which `If-None-Match` over
+the blob id cannot. A resource with no `dcterms:modified` gets no header rather than a guess.
+
+Tests: `impl/CatalogRecordMaintenanceTest` (12) and three cases in
+`ModelConstraintValidationTest` for the new invariant; `impl` 131 → 146, `rest.tests` 227 → 228
+with four new `Last-Modified` cases in `DatasetResourceIntegrationTest`.
+
 ### 2026-08-18 — The test fixtures were not valid DCAT-AP.de, so validation is on by default
 
 Every fixture in the suite built an entity carrying a title and nothing else. §4.2/§4.3/§4.5
@@ -530,8 +597,10 @@ under `/admin/data-services/{id}/datasets`. The reference is declared on the Dat
 DataService is what is edited, what If-Match keys on and what comes back; the Dataset is
 untouched. It is **not** the inverse of `dcat:accessService` — that one says which service gives
 access to a Distribution, this one which datasets a service serves. (The seventh,
-`CatalogRecord.primaryTopic`, is single-valued and CatalogRecord has no admin service at all;
-out of scope.)
+`CatalogRecord.primaryTopic`, is single-valued and CatalogRecord still has no admin service —
+not because it is out of scope, but because a record a client could write would say nothing.
+Records are maintained by the server; see the 2026-10-20 change-log entry, and note that
+`primaryTopic` is the one of the seven a cascade must not simply unlink.)
 
 **FR-1 needed no change**, and that is the payoff of the reflective design: `References` walks
 `eClass().getEAllReferences()` and filters non-containment, so a Dataset served by a DataService

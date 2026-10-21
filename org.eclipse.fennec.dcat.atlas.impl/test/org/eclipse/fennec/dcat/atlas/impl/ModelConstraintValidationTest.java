@@ -15,6 +15,10 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.nio.file.Path;
 
+import javax.xml.datatype.DatatypeFactory;
+
+import org.eclipse.emf.common.util.Diagnostic;
+import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
 import org.eclipse.fennec.m2x.ocl.api.OclEngine;
 import org.eclipse.fennec.m2x.ocl.engine.OclEngines;
@@ -22,12 +26,14 @@ import org.eclipse.fennec.m2x.ocl.parser.OclParserSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import dcat.CatalogRecord;
 import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
 import dcat.Distribution;
 import foaf.Agent;
 import foaf.FoafFactory;
+import rdf.DateOrDateTimeLiteral;
 import rdf.PlainLiteral;
 import rdf.RdfFactory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -241,6 +247,59 @@ public class ModelConstraintValidationTest {
 	// --- fixtures -----------------------------------------------------------
 
 	/** A Dataset carrying exactly what DCAT-AP.de makes Pflicht: title, description, publisher. */
+	// --- dcterms:source on a CatalogRecord (#56) ----------------------------
+
+	/**
+	 * {@code dcterms:source} names the record this one was harvested from, in the catalogue
+	 * it came from. It is an {@code AnyURI} attribute, so without an invariant a value that
+	 * is not an absolute IRI would degrade silently to an RDF literal rather than fail
+	 * ({@code EObjectToJena} only throws for the subject and for link targets).
+	 *
+	 * <h2>Why the record is validated directly</h2>
+	 *
+	 * A record is only ever written as part of its Catalog, and {@code primaryTopic} is a
+	 * non-containment reference the store would have to resolve first. Going through a store
+	 * write would exercise the store; the invariant is local to the record, and
+	 * {@code Diagnostician} is what the persistence boundary calls anyway.
+	 */
+	@Test
+	void aCatalogRecordSourceThatIsNotAnIriIsRefused() {
+		CatalogRecord record = catalogRecord();
+		record.setSource("record-42");
+
+		Diagnostic diagnostic = Diagnostician.INSTANCE.validate(record);
+
+		assertEquals(Diagnostic.ERROR, diagnostic.getSeverity(), diagnostic.toString());
+		assertTrue(diagnostic.getChildren().stream().anyMatch(child -> child.getMessage().contains("SourceIsIri")),
+				"expected the SourceIsIri invariant, but was: " + diagnostic);
+	}
+
+	@Test
+	void aCatalogRecordSourceThatIsAnIriIsAccepted() {
+		CatalogRecord record = catalogRecord();
+		record.setSource("https://govdata.de/ckan/catalog/records/42");
+
+		assertEquals(Diagnostic.OK, Diagnostician.INSTANCE.validate(record).getSeverity());
+	}
+
+	/** The property is Optional [0..1]: saying nothing about provenance is conformant. */
+	@Test
+	void aCatalogRecordWithoutASourceIsAccepted() {
+		assertEquals(Diagnostic.OK, Diagnostician.INSTANCE.validate(catalogRecord()).getSeverity());
+	}
+
+	/** A record with the two features DCAT-AP.de makes mandatory, and nothing else. */
+	private static CatalogRecord catalogRecord() {
+		CatalogRecord record = DcatFactory.eINSTANCE.createCatalogRecord();
+		DateOrDateTimeLiteral modified = RdfFactory.eINSTANCE.createDateOrDateTimeLiteral();
+		modified.setValue(DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar("2026-10-20"));
+		record.setModified(modified);
+		Dataset topic = DcatFactory.eINSTANCE.createDataset();
+		topic.setAbout(DATASETS + "air");
+		record.setPrimaryTopic(topic);
+		return record;
+	}
+
 	private static Dataset dataset(String title) {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DATASETS + "air");

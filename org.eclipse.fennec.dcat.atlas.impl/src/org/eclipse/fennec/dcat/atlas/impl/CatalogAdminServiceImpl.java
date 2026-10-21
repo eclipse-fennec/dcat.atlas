@@ -26,10 +26,10 @@ import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
+import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
-import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
@@ -124,6 +124,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		String id = idOrMint(catalog);
 		Store store = store();
 		store.put(collection, id, catalog);
+		// A catalog is also a member - of its parent, when it is a sub-catalog (#56).
+		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store catalog " + id);
 		reproject(id);
 		return catalog;
@@ -132,6 +134,11 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	@Override
 	public List<String> deleteCatalog(String id, boolean cascade) {
 		Store store = store();
+		if (cascade) {
+			// Before detach, which would otherwise strip the records' primaryTopic and leave
+			// them meaningless and invalid - see CatalogRecords.memberDeleted.
+			CatalogRecords.memberDeleted(store, StoreLayout.logicalIri(collection, id));
+		}
 		List<String> unlinked = References.detach(store, collection, id, cascade);
 		store.delete(collection, id);
 		// One commit for the delete and every unlink it caused: a cascade that committed
@@ -230,8 +237,11 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		Catalog catalog = requireCatalog(store, catalogId);
 		EList<EObject> members = (EList<EObject>) membership.apply(catalog);
 		if (!Members.contains(members, memberCollection, memberId)) {
-			members.add(store.<EObject>get(memberCollection, memberId).orElseThrow(
-					() -> new NoSuchElementException("Unknown " + memberCollection + ": " + memberId)));
+			EObject member = store.<EObject>get(memberCollection, memberId).orElseThrow(
+					() -> new NoSuchElementException("Unknown " + memberCollection + ": " + memberId));
+			members.add(member);
+			// The entry is new, so it gets its catalogue record in the same write (#56).
+			CatalogRecords.memberLinked(catalog, member);
 			store.save(catalog);
 		}
 		// Commits whatever the operation staged, as one commit: for addX the member and the
@@ -247,6 +257,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		Store store = store();
 		Catalog catalog = requireCatalog(store, catalogId);
 		if (Members.remove(membership.apply(catalog), memberCollection, memberId)) {
+			// The entry is gone, and a record describes an entry (#56).
+			CatalogRecords.memberUnlinked(catalog, StoreLayout.logicalIri(memberCollection, memberId));
 			// A removal. See Store.saveRemoval.
 			store.saveRemoval(catalog);
 			store.commit("Unlink %s %s from catalog %s".formatted(memberCollection, memberId, catalogId));

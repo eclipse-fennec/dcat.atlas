@@ -16,7 +16,6 @@ package org.eclipse.fennec.dcat.atlas.impl.store;
 import java.util.List;
 
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
-import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 
 /**
  * Where a stored resource lives in the git repository.

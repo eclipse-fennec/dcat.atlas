@@ -113,7 +113,6 @@ public final class Members {
 		return -1;
 	}
 
-	@SuppressWarnings("unchecked")
 	private static Iterator<? extends EObject> basicIterator(EList<? extends EObject> members) {
 		if (members instanceof InternalEList) {
 			return ((InternalEList<? extends EObject>) members).basicIterator();

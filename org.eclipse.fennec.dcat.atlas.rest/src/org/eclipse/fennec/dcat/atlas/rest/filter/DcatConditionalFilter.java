@@ -16,7 +16,8 @@ package org.eclipse.fennec.dcat.atlas.rest.filter;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
+
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsExtension;
@@ -136,9 +137,11 @@ public class DcatConditionalFilter implements ContainerResponseFilter {
 	 * a {@code DcatResource}: it carries its own {@code modified} and shares no supertype
 	 * that declares one.
 	 * <p>
-	 * The default time zone is UTC, not the server's: a date-only value ({@code 2026-10-19},
-	 * which the datatype allows) has no zone of its own, and reading it as local midnight
-	 * would make the same stored resource report different instants in two deployments.
+	 * A value that carries an offset is converted from it; one that carries none - a
+	 * date-only {@code 2026-10-19}, which the datatype allows - is read as UTC rather than
+	 * as the server's zone, so the same stored resource does not report two different
+	 * instants in two deployments. {@code getTimeZone(0)} is both of those: the value's own
+	 * zone when it has one, UTC when the field is undefined.
 	 */
 	private static Date modifiedOf(Object entity) {
 		DateOrDateTimeLiteral modified = entity instanceof DcatResource resource ? resource.getModified()
@@ -146,7 +149,8 @@ public class DcatConditionalFilter implements ContainerResponseFilter {
 		if (modified == null || modified.getValue() == null) {
 			return null;
 		}
-		return modified.getValue().toGregorianCalendar(TimeZone.getTimeZone("UTC"), null, null).getTime();
+		XMLGregorianCalendar value = modified.getValue();
+		return value.toGregorianCalendar(value.getTimeZone(0), null, null).getTime();
 	}
 
 	private static boolean isSafe(ContainerRequestContext requestContext) {

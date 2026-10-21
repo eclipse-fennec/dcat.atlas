@@ -94,6 +94,21 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 				() -> new AssertionError("a dataset with dcterms:modified must carry Last-Modified")));
 	}
 
+	/**
+	 * A {@code dcterms:modified} carrying an offset is <em>converted</em> to GMT, not read as
+	 * though its local fields were already GMT. The lexical form here is the same instant as
+	 * the one above, so it must produce the same header - and a German portal writes
+	 * {@code +01:00}/{@code +02:00}, so this is the common case rather than an edge one.
+	 */
+	@Test
+	void aModifiedDateWithAnOffsetIsConvertedToGmt() throws Exception {
+		track("lm4");
+		seedModified("lm4", "2026-10-19T10:30:00+02:00");
+
+		HttpResponse<String> read = get(reads() + "/lm4", TURTLE);
+		assertEquals("Mon, 19 Oct 2026 08:30:00 GMT", read.headers().firstValue("Last-Modified").orElseThrow());
+	}
+
 	/** A date-only {@code dcterms:modified} is read as midnight UTC, not midnight local time. */
 	@Test
 	void aDateOnlyModifiedIsReadAsMidnightUtc() throws Exception {

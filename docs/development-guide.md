@@ -141,15 +141,17 @@ genuinely changed — but a client caching catalogs will see it.
 **`Last-Modified`, the cheap side-finding of the same investigation.** The REST layer set the
 header nowhere. It now comes from the entity's own `dcterms:modified`, stamped centrally in
 `DcatConditionalFilter`, which already sees the EMF entity on the way out — no read resource
-changed. Date-only values are read as **UTC** midnight rather than the server's zone, so the
-same stored resource reports the same instant in every deployment. `If-Modified-Since` is
+changed. A value carrying an offset is converted from it, and a date-only one is read as **UTC**
+midnight rather than in the server's zone, so the same stored resource reports the same instant
+in every deployment: `toGregorianCalendar(value.getTimeZone(0), …)` is both of those at once,
+where passing a fixed UTC zone would silently reinterpret `10:30+02:00` as `10:30Z`. `If-Modified-Since` is
 deliberately **not** honoured: that date is content a writer can forget to bump, and answering
 `304` on it would turn detectable staleness into silent staleness, which `If-None-Match` over
 the blob id cannot. A resource with no `dcterms:modified` gets no header rather than a guess.
 
 Tests: `impl/CatalogRecordMaintenanceTest` (12) and three cases in
-`ModelConstraintValidationTest` for the new invariant; `impl` 131 → 146, `rest.tests` 227 with
-three new `Last-Modified` cases in `DatasetResourceIntegrationTest`.
+`ModelConstraintValidationTest` for the new invariant; `impl` 131 → 146, `rest.tests` 227 → 228
+with four new `Last-Modified` cases in `DatasetResourceIntegrationTest`.
 
 ### 2026-08-18 — The test fixtures were not valid DCAT-AP.de, so validation is on by default
 

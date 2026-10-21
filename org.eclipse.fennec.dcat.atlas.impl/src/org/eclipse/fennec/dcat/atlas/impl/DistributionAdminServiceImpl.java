@@ -14,8 +14,6 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
 
 import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
@@ -24,12 +22,11 @@ import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
-import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
-import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
-import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
+import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
-import org.eclipse.fennec.dcat.atlas.impl.validation.ShaclValidation;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;

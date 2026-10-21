@@ -816,8 +816,9 @@ curl -i http://localhost:8085/dcat/rest/catalogs/3f2b1c8e-… \
 ```
 
 A read also carries **`Last-Modified`** when the entity says when it was modified — the
-`dcterms:modified` of the resource itself, formatted as an HTTP date in GMT. A date without a
-time (`2026-10-19`, which the profile allows) is read as midnight **UTC**, so the same stored
+`dcterms:modified` of the resource itself, formatted as an HTTP date in GMT. A value written
+with an offset (`2026-10-19T10:30:00+02:00`) is **converted** to GMT, and a date without a time
+(`2026-10-19`, which the profile allows) is read as midnight **UTC**, so the same stored
 resource reports the same instant wherever it is served from. A resource that does not say when
 it changed carries no header rather than a guessed one.
 

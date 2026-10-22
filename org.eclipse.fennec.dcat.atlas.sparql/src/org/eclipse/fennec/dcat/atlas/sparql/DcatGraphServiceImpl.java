@@ -236,6 +236,15 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 		return ready;
 	}
 
+	/**
+	 * Declared by {@code SparqlEngine} and by {@code DcatGraphService}, which the runtime
+	 * snapshot reads: one implementation answers both.
+	 */
+	@Override
+	public long queryTimeoutMillis() {
+		return queryTimeoutMillis;
+	}
+
 	// --- SparqlEngine ------------------------------------------------------
 
 	@Override

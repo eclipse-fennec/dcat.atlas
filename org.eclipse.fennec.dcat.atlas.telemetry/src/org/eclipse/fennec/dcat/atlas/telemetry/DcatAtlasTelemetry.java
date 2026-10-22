@@ -1,0 +1,285 @@
+/**
+ * Copyright (c) 2012 - 2026 Data In Motion and others.
+ * All rights reserved.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Data In Motion - initial API and implementation
+ */
+package org.eclipse.fennec.dcat.atlas.telemetry;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.ToLongFunction;
+import java.util.logging.Logger;
+
+import org.eclipse.fennec.dcat.atlas.api.runtime.CatalogSnapshotDTO;
+import org.eclipse.fennec.dcat.atlas.api.runtime.CollectionDTO;
+import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime;
+import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntimeDTO;
+import org.eclipse.fennec.dcat.atlas.api.runtime.FailureDTO;
+import org.eclipse.fennec.dcat.atlas.api.runtime.FailureReasons;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.MeterProvider;
+import io.opentelemetry.api.metrics.ObservableLongGauge;
+
+/**
+ * What this portal holds, as metrics.
+ *
+ * <p>
+ * This is the bundle the runtime service was built for. It binds whatever DCAT.Atlas runtime
+ * service is in the framework and turns it into a handful of gauges. It reaches into nothing:
+ * every number here comes from a DTO the portal itself decided to hand out, which is why the
+ * snapshot had to be cheap enough to take once per gauge.
+ * </p>
+ *
+ * <p>
+ * <strong>Gauges are observed, not pushed.</strong> An instrument asks for a snapshot when
+ * the exporter collects, which is the OpenTelemetry idiom and the honest one: a number
+ * recorded when it changed stops being true between changes, and a portal that goes quiet
+ * would export a stale reading forever.
+ * </p>
+ *
+ * <p>
+ * The change count is still worth exporting, and it is not a cache key here: it says
+ * <em>how often</em> the portal changed, which no gauge over the current state can answer — a
+ * dataset that is added and removed between two collections looks like nothing happened to
+ * both of them.
+ * </p>
+ */
+@Component(configurationPid = "org.eclipse.fennec.dcat.atlas.telemetry", immediate = true)
+public class DcatAtlasTelemetry {
+
+	private static final Logger LOG = Logger.getLogger(DcatAtlasTelemetry.class.getName());
+
+	private static final AttributeKey<String> COLLECTION = AttributeKey.stringKey("fennec.collection");
+	private static final AttributeKey<String> CATALOG = AttributeKey.stringKey("fennec.catalog");
+	private static final AttributeKey<String> REASON = AttributeKey.stringKey("fennec.reason");
+
+	/**
+	 * Where the instruments come from, taken in the constructor.
+	 *
+	 * <p>
+	 * Not a field reference, and that is the lesson this class inherits from its sibling in
+	 * {@code emf.services}: DS binds the dynamic reference below while it is building the
+	 * component, and a field reference may not be injected yet at that moment. A constructor
+	 * parameter is the one thing that is certainly there before any bind method runs.
+	 * </p>
+	 */
+	private final MeterProvider meters;
+
+	private final Map<DcatAtlasRuntime, Watched> watched = new ConcurrentHashMap<>();
+
+	/**
+	 * Defaulted rather than left null, because DS binds a reference before it activates the
+	 * component: the first runtime can arrive before {@link #configure} has run.
+	 */
+	private volatile String scope = "org.eclipse.fennec.dcat.atlas";
+
+	private volatile boolean catalogSeries = false;
+
+	@Activate
+	public DcatAtlasTelemetry(@Reference MeterProvider meters) {
+		this.meters = meters;
+	}
+
+	@Activate
+	@Modified
+	void configure(TelemetryConfig config) {
+		if (config.scope().equals(scope) && config.catalogSeries() == catalogSeries) {
+			return;
+		}
+		this.scope = config.scope();
+		this.catalogSeries = config.catalogSeries();
+		// A new scope is a new meter, and the switch decides which instruments exist, so
+		// either way they are built again.
+		for (Watched entry : watched.values()) {
+			entry.rebuild();
+		}
+	}
+
+	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
+	void setRuntime(DcatAtlasRuntime runtime, Map<String, Object> properties) {
+		watched.put(runtime, new Watched(() -> gauges(runtime)));
+		// From the snapshot, not from a service property: the endpoint is not published as
+		// one, because the publisher's properties are fixed at construction and the
+		// effective endpoint can arrive after it.
+		LOG.info("[DCAT.Atlas] watching the runtime service at " + runtime.snapshot().endpoints);
+	}
+
+	/**
+	 * The portal said something changed.
+	 *
+	 * <p>
+	 * Nothing to re-register: the gauges read the current snapshot when the exporter
+	 * collects. What this is for is the record that a change happened at all.
+	 * </p>
+	 *
+	 * <p>
+	 * Named {@code updated}, not {@code modified}: DS calls the first when a <em>bound
+	 * service's</em> properties change and the second when the <em>component's own
+	 * configuration</em> does. A watcher that writes {@code modified} here compiles, binds,
+	 * and is never told anything.
+	 * </p>
+	 */
+	void updatedRuntime(DcatAtlasRuntime runtime, Map<String, Object> properties) {
+		LOG.fine(() -> "[DCAT.Atlas] the runtime changed, now at " + properties.get("service.changecount"));
+	}
+
+	void unsetRuntime(DcatAtlasRuntime runtime) {
+		Watched entry = watched.remove(runtime);
+		if (entry != null) {
+			entry.close();
+		}
+	}
+
+	@Deactivate
+	void deactivate() {
+		for (DcatAtlasRuntime runtime : List.copyOf(watched.keySet())) {
+			unsetRuntime(runtime);
+		}
+	}
+
+	/**
+	 * The instruments over one runtime.
+	 *
+	 * <p>
+	 * Every one of them is a function of the snapshot, so the set can be rebuilt from
+	 * configuration without the portal knowing anything about it.
+	 * </p>
+	 */
+	private List<ObservableLongGauge> gauges(DcatAtlasRuntime runtime) {
+		Meter meter = meters.get(scope);
+		List<ObservableLongGauge> instruments = new ArrayList<>();
+
+		instruments.add(gauge(meter, runtime, "dcat.atlas.changes", "How often the portal has changed since it started",
+				snapshot -> snapshot.changeCount));
+		instruments.add(gauge(meter, runtime, "dcat.atlas.failures", "Configured things that are not live",
+				snapshot -> snapshot.failures == null ? 0 : snapshot.failures.size()));
+		instruments.add(gauge(meter, runtime, "dcat.atlas.shapes.loaded", "SHACL shape files parsed",
+				snapshot -> snapshot.validation == null ? 0 : snapshot.validation.shapeFiles));
+		instruments.add(gauge(meter, runtime, "dcat.atlas.enforcing",
+				"1 when a non-conformant write would actually be refused",
+				snapshot -> snapshot.validation != null && snapshot.validation.effectivelyEnforcing ? 1 : 0));
+		instruments.add(gauge(meter, runtime, "dcat.atlas.graph.ready", "1 when the SPARQL projection can answer",
+				snapshot -> snapshot.graph != null && snapshot.graph.ready ? 1 : 0));
+
+		// One series per collection rather than one instrument per kind: the collections are
+		// a closed set the portal already names, and an attribute is what a backend groups by.
+		instruments.add(multiPoint(meter, "dcat.atlas.resources", "Resources held, per collection",
+				() -> resourcesPerCollection(runtime.snapshot())));
+		instruments.add(multiPoint(meter, "dcat.atlas.failures.by_reason", "Failures, by reason",
+				() -> failuresPerReason(runtime.snapshot())));
+
+		if (catalogSeries) {
+			instruments.add(multiPoint(meter, "dcat.atlas.catalog.datasets", "Datasets listed, per catalog",
+					() -> datasetsPerCatalog(runtime.snapshot())));
+		}
+
+		return instruments;
+	}
+
+	/** How much each collection holds. */
+	static Map<Attributes, Long> resourcesPerCollection(DcatAtlasRuntimeDTO snapshot) {
+		Map<Attributes, Long> points = new LinkedHashMap<>();
+		if (snapshot.collections != null) {
+			for (CollectionDTO collection : snapshot.collections) {
+				points.put(Attributes.of(COLLECTION, collection.name), (long) collection.count);
+			}
+		}
+		return points;
+	}
+
+	/**
+	 * How many failures of each reason — <strong>including the reasons nothing hit</strong>.
+	 *
+	 * <p>
+	 * A zero and a missing series are different things to every metrics backend. If a reason
+	 * were published only while it occurred, fixing it would make the series stop rather
+	 * than fall to zero, and an alert on {@code > 0} could not tell that from the exporter
+	 * having died. So every reason reports, every collection.
+	 * </p>
+	 */
+	static Map<Attributes, Long> failuresPerReason(DcatAtlasRuntimeDTO snapshot) {
+		Map<Attributes, Long> points = new LinkedHashMap<>();
+		for (String reason : FailureReasons.ALL) {
+			points.put(Attributes.of(REASON, reason), 0L);
+		}
+		if (snapshot.failures != null) {
+			for (FailureDTO failure : snapshot.failures) {
+				points.merge(Attributes.of(REASON, failure.reason), 1L, Long::sum);
+			}
+		}
+		return points;
+	}
+
+	/** What each catalog lists, when the per-catalog series are switched on. */
+	static Map<Attributes, Long> datasetsPerCatalog(DcatAtlasRuntimeDTO snapshot) {
+		Map<Attributes, Long> points = new LinkedHashMap<>();
+		if (snapshot.catalogs != null) {
+			for (CatalogSnapshotDTO catalog : snapshot.catalogs) {
+				points.put(Attributes.of(CATALOG, catalog.id), (long) catalog.datasets);
+			}
+		}
+		return points;
+	}
+
+	private static ObservableLongGauge multiPoint(Meter meter, String name, String description,
+			java.util.function.Supplier<Map<Attributes, Long>> points) {
+		return meter.gaugeBuilder(name).setDescription(description).ofLongs()
+				.buildWithCallback(measurement -> points.get()
+						.forEach((attributes, value) -> measurement.record(value, attributes)));
+	}
+
+	private static ObservableLongGauge gauge(Meter meter, DcatAtlasRuntime runtime, String name, String description,
+			ToLongFunction<DcatAtlasRuntimeDTO> reading) {
+		return meter.gaugeBuilder(name).setDescription(description).ofLongs()
+				.buildWithCallback(measurement -> measurement.record(reading.applyAsLong(runtime.snapshot())));
+	}
+
+	/** One runtime's instruments, so a configuration change can replace them as a set. */
+	private final class Watched implements AutoCloseable {
+
+		private final java.util.function.Supplier<List<ObservableLongGauge>> build;
+
+		private volatile List<ObservableLongGauge> instruments;
+
+		Watched(java.util.function.Supplier<List<ObservableLongGauge>> build) {
+			this.build = build;
+			this.instruments = build.get();
+		}
+
+		void rebuild() {
+			close();
+			instruments = build.get();
+		}
+
+		@Override
+		public void close() {
+			List<ObservableLongGauge> current = instruments;
+			if (current == null) {
+				return;
+			}
+			current.forEach(ObservableLongGauge::close);
+			instruments = List.of();
+		}
+	}
+}

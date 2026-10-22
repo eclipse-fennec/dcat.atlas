@@ -23,6 +23,7 @@ import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -42,7 +43,7 @@ import dcat.Dataset;
  * A Dataset's Distributions are contained, so storing a Dataset stores them with
  * it — there is no separate distribution write to keep in step (FR-10).
  */
-@Component(name = "DatasetAdminService", service = DatasetAdminService.class)
+@Component(name = "DatasetAdminService", service = { DatasetAdminService.class, StoreIntrospection.class })
 @Designate(ocd = StoreConfig.class)
 public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implements DatasetAdminService {
 

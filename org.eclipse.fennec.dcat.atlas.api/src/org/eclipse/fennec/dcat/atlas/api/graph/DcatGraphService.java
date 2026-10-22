@@ -13,8 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.api.graph;
 
-import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
-
 /**
  * Maintains the in-memory RDF graph that backs the SPARQL endpoint (WP-DCAT-5,
  * Phase 1 of the persistence plan).
@@ -84,4 +82,29 @@ public interface DcatGraphService {
 	 * unvalidated data because no SHACL shapes were mounted.
 	 */
 	boolean isReady();
+
+	/**
+	 * Whether the projection is configured at all.
+	 * <p>
+	 * Distinct from {@link #isReady()}, and the distinction is the point: disabled is a
+	 * deployment's choice, while enabled-but-not-ready answers queries successfully with too
+	 * few rows, which no caller can tell from an empty portal.
+	 *
+	 * @return {@code true} when the graph and its endpoint are switched on
+	 */
+	boolean isEnabled();
+
+	/**
+	 * The configured ceiling on rows a query may return.
+	 *
+	 * @return the maximum, or {@code 0} when unlimited
+	 */
+	long maxResultRows();
+
+	/**
+	 * The configured wall-clock budget for one query.
+	 *
+	 * @return the timeout in milliseconds, or {@code 0} when there is none
+	 */
+	long queryTimeoutMillis();
 }

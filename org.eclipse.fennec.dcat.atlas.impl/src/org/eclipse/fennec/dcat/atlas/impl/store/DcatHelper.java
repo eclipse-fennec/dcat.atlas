@@ -375,6 +375,9 @@ public final class DcatHelper {
 			// log; wrapping it in a mapped exception would render a tidy message and lose the
 			// diagnosis, and there is nothing a client could do with the detail anyway.
 			pending.clear();
+			// After the commit, never before: a listener is told about writes that happened,
+			// and one that throws cannot fail an operation that is already durable.
+			StoreChanges.committed();
 			return Optional.ofNullable(commitId);
 		}
 

@@ -29,6 +29,7 @@ import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
+import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
@@ -61,7 +62,7 @@ import rdf.IdentifiedResource;
  * Both are idempotent on the membership itself, so a repeat leaves the catalog —
  * and its ETag — untouched.
  */
-@Component(name = "CatalogAdminService", service = CatalogAdminService.class)
+@Component(name = "CatalogAdminService", service = { CatalogAdminService.class, StoreIntrospection.class })
 @Designate(ocd = StoreConfig.class)
 public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implements CatalogAdminService {
 

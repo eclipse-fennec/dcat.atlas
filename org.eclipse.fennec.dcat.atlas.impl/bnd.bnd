@@ -4,13 +4,16 @@
 	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.apache.felix.healthcheck.api;version=latest,\
+	osgi.cmpn,\
+	org.osgi.util.tracker,\
 	org.osgi.service.component.annotations;version=latest,\
 	org.osgi.service.metatype.annotations;version=latest,\
 	org.eclipse.fennec.m2x.ocl.api;version=latest,\
 	org.apache.jena.shacl;version=latest,\
 	org.apache.jena.core;version=latest,\
 	org.apache.jena.base;version=latest,\
-	org.eclipse.fennec.jgit;version=latest
+	org.eclipse.fennec.jgit;version=latest,\
+	org.eclipse.fennec.services.runtime;version=latest
 
 # The OCL engine, needed only to *run*: the model's constraints are annotations, so the
 # impl compiles against nothing but org.eclipse.fennec.m2x.ocl.api (for @RequireOCL).
@@ -18,6 +21,7 @@
 # ValidationDelegate registry — so the plain JUnit tests have to put it on the classpath
 # and install the delegates themselves (see ModelConstraintValidationTest).
 -testpath: \
+	osgi.core,\
 	org.eclipse.jgit;version=latest,\
 	org.eclipse.fennec.m2x.ocl.engine;version=latest,\
 	org.eclipse.fennec.m2x.ocl.parser;version=latest,\

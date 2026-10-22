@@ -22,6 +22,7 @@ import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
@@ -46,6 +47,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
@@ -72,6 +74,10 @@ public class DatasetAdminResource {
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
 	private static final String READ_COLLECTION = "datasets";
 
+	/** The gateway's header, read per request and handed to the service with every write. */
+	@Reference
+	CallerHeader callerHeader;
+
 	/**
 	 * The configured public base, used here to build the {@code Location} of a create
 	 * and of the {@code 409} that refuses one, so those headers carry the same URL as
@@ -87,7 +93,7 @@ public class DatasetAdminResource {
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createDataset(Dataset dataset) {
+	public Response createDataset(Dataset dataset, @Context HttpHeaders headers) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second dataset; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
@@ -100,7 +106,7 @@ public class DatasetAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(id);
-		datasetAdminService.upsertDataset(dataset);
+		datasetAdminService.upsertDataset(dataset, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(dataset);
 		datasetAdminService.etag(id).ifPresent(created::tag);
 		return created.build();
@@ -111,7 +117,7 @@ public class DatasetAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDataset(@PathParam("id") String id, Dataset dataset,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
 		if (precondition != null) {
@@ -124,7 +130,7 @@ public class DatasetAdminResource {
 			return mismatch.build();
 		}
 		boolean existed = datasetAdminService.getDataset(id).isPresent();
-		datasetAdminService.upsertDataset(dataset);
+		datasetAdminService.upsertDataset(dataset, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(dataset);
 		datasetAdminService.etag(id).ifPresent(response::tag);
 		return response.build();
@@ -133,7 +139,8 @@ public class DatasetAdminResource {
 	@DELETE
 	@Path("/{id}")
 	public Response deleteDataset(@PathParam("id") String id,
-			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request) {
+			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request,
+					@Context HttpHeaders headers) {
 		if (datasetAdminService.getDataset(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -144,7 +151,7 @@ public class DatasetAdminResource {
 		// If-Match was evaluated against this dataset's ETag only. A cascade also rewrites
 		// the referrers, whose ETags the caller never saw — see the service javadoc for why
 		// that narrowing of F-16 is deliberate.
-		List<String> unlinked = datasetAdminService.deleteDataset(id, cascade);
+		List<String> unlinked = datasetAdminService.deleteDataset(id, cascade, callerHeader.of(headers));
 		return CascadeReport.respond(unlinked, identityRendering);
 	}
 

@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -78,7 +79,7 @@ public class SparqlEndpointIntegrationTest {
 	@AfterEach
 	void cleanUp() {
 		if (id != null) {
-			datasetService.deleteDataset(id, false);
+			datasetService.deleteDataset(id, false, Caller.ANONYMOUS);
 		}
 	}
 
@@ -122,7 +123,7 @@ public class SparqlEndpointIntegrationTest {
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		RestEntities.mandatoryDataset(dataset, title);
 
-		datasetService.upsertDataset(dataset);
+		datasetService.upsertDataset(dataset, Caller.ANONYMOUS);
 
 		assertTrue(sparqlAsksForTitle(title));
 		// Turns a silent leak into a failure: if the write lands under any other id,

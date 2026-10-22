@@ -22,6 +22,7 @@ import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
@@ -44,6 +45,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
@@ -55,7 +57,8 @@ import jakarta.ws.rs.core.Response.Status;
 @RequireHttpWhiteboard
 @JakartarsResource
 @JakartarsName("DistributionAdminResource")
-@Component(name = "DistributionAdminResource", service = DistributionAdminResource.class, scope = ServiceScope.PROTOTYPE)
+@Component(name = "DistributionAdminResource", service = DistributionAdminResource.class,
+		scope = ServiceScope.PROTOTYPE)
 @Path("/admin/datasets/{datasetId}/distributions")
 public class DistributionAdminResource {
 
@@ -70,6 +73,10 @@ public class DistributionAdminResource {
 	/** Public read collection segments the dereferenceable {@code about} URI points at. */
 	private static final String READ_DATASETS = "datasets";
 	private static final String READ_DISTRIBUTIONS = "distributions";
+
+	/** The gateway's header, read per request and handed to the service with every write. */
+	@Reference
+	CallerHeader callerHeader;
 
 	/**
 	 * The configured public base, used here to build the {@code Location} of a create
@@ -98,7 +105,8 @@ public class DistributionAdminResource {
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution) {
+	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution,
+			@Context HttpHeaders headers) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -114,7 +122,7 @@ public class DistributionAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(datasetId, id);
-		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);
+		distributionAdminService.upsertDistributionToDataset(datasetId, distribution, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(distribution);
 		distributionAdminService.etag(datasetId, id).ifPresent(created::tag);
 		return created.build();
@@ -125,12 +133,13 @@ public class DistributionAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
-			Distribution distribution, @Context Request request) {
+			Distribution distribution, @Context Request request, @Context HttpHeaders headers) {
 		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+				id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -142,7 +151,7 @@ public class DistributionAdminResource {
 			return mismatch.build();
 		}
 		boolean existed = distributionAdminService.getDistributionForDataset(datasetId, id).isPresent();
-		distributionAdminService.upsertDistributionToDataset(datasetId, distribution);
+		distributionAdminService.upsertDistributionToDataset(datasetId, distribution, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(distribution);
 		distributionAdminService.etag(datasetId, id).ifPresent(response::tag);
 		return response.build();
@@ -151,15 +160,16 @@ public class DistributionAdminResource {
 	@DELETE
 	@Path("/{id}")
 	public Response deleteDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+				id));
 		if (precondition != null) {
 			return precondition.build();
 		}
-		distributionAdminService.deleteDistributionFromDataset(datasetId, id);
+		distributionAdminService.deleteDistributionFromDataset(datasetId, id, callerHeader.of(headers));
 		return Response.noContent().build();
 	}
 
@@ -175,7 +185,7 @@ public class DistributionAdminResource {
 	@Path("/{id}/access-service/{serviceId}")
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
-			@PathParam("serviceId") String serviceId, @Context Request request) {
+			@PathParam("serviceId") String serviceId, @Context Request request, @Context HttpHeaders headers) {
 		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -185,7 +195,8 @@ public class DistributionAdminResource {
 		if (dataService.isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+				id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -193,7 +204,8 @@ public class DistributionAdminResource {
 		// nothing to write. The add* variant takes the entity and store.put()s it, which
 		// here would mean reading the service only to write it straight back.
 		ResponseBuilder ok = Response
-				.ok(distributionAdminService.linkAccessServiceToDistribution(datasetId, id, serviceId));
+				.ok(distributionAdminService.linkAccessServiceToDistribution(datasetId, id, serviceId,
+						callerHeader.of(headers)));
 		distributionAdminService.etag(datasetId, id).ifPresent(ok::tag);
 		return ok.build();
 	}
@@ -201,17 +213,19 @@ public class DistributionAdminResource {
 	@DELETE
 	@Path("/{id}/access-service/{serviceId}")
 	public Response removeAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
-			@PathParam("serviceId") String serviceId, @Context Request request) {
+			@PathParam("serviceId") String serviceId, @Context Request request, @Context HttpHeaders headers) {
 		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId, id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+				id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		// Idempotent: unlinking a service that is not referenced is a no-op, not a 404 —
 		// consistent with the FR-11 series membership removal.
-		distributionAdminService.deleteAccessServiceFromDistribution(datasetId, id, serviceId);
+		distributionAdminService.deleteAccessServiceFromDistribution(datasetId, id, serviceId,
+				callerHeader.of(headers));
 		return Response.noContent().build();
 	}
 

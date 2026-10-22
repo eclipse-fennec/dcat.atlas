@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,7 +62,7 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// Seeded the way the store mints identities: logical, not the request URL.
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		RestEntities.mandatoryDataset(dataset, title);
-		service.upsertDataset(dataset);
+		service.upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 
 	@Override
@@ -76,7 +77,7 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteDataset(id, false);
+		service.deleteDataset(id, false, Caller.ANONYMOUS);
 	}
 
 	/**
@@ -141,6 +142,6 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 		DateOrDateTimeLiteral modified = RdfFactory.eINSTANCE.createDateOrDateTimeLiteral();
 		modified.setValue(DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(lexical));
 		dataset.setModified(modified);
-		service.upsertDataset(dataset);
+		service.upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

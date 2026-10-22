@@ -24,6 +24,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
@@ -40,10 +41,8 @@ import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
 
 import dcat.DataService;
-import dcat.DcatFactory;
 import dcat.Dataset;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
+import dcat.DcatFactory;
 
 /**
  * End-to-end HTTP test for the FR-10 Distribution composition endpoints. Unlike
@@ -100,13 +99,14 @@ public class DistributionResourceIntegrationTest {
 		// URL here is not an identity the store owns, so DcatIds.idOf refuses to carve an id
 		// out of it and upsert files the dataset under a fresh UUID instead — leaving every
 		// /datasets/{DATASET_ID}/... path below a 404.
-		datasetService.upsertDataset(dataset(DcatIds.logicalIri(DcatIds.DATASETS, DATASET_ID), "Air quality"));
+		datasetService.upsertDataset(dataset(DcatIds.logicalIri(DcatIds.DATASETS, DATASET_ID), "Air quality"),
+				Caller.ANONYMOUS);
 	}
 
 	@AfterEach
 	void cleanup() {
-		datasetService.deleteDataset(DATASET_ID, false);
-		dataServiceService.deleteDataService(SERVICE_ID, false);
+		datasetService.deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
+		dataServiceService.deleteDataService(SERVICE_ID, false, Caller.ANONYMOUS);
 	}
 
 	private String distributions() {
@@ -423,7 +423,7 @@ public class DistributionResourceIntegrationTest {
 		// Logical, for the same reason as the dataset seed above.
 		service.setAbout(DcatIds.logicalIri(DcatIds.DATA_SERVICES, SERVICE_ID));
 		RestEntities.mandatoryDataService(service, "Air quality WFS");
-		dataServiceService.upsertDataService(service);
+		dataServiceService.upsertDataService(service, Caller.ANONYMOUS);
 	}
 
 	/**

@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,7 +65,7 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		// Seeded the way the store mints identities: logical, not the request URL.
 		dataService.setAbout(DcatIds.logicalIri(DcatIds.DATA_SERVICES, id));
 		RestEntities.mandatoryDataService(dataService, title);
-		service.upsertDataService(dataService);
+		service.upsertDataService(dataService, Caller.ANONYMOUS);
 	}
 
 	@Override
@@ -79,7 +80,7 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteDataService(id, false);
+		service.deleteDataService(id, false, Caller.ANONYMOUS);
 	}
 
 	// --- dcat:servesDataset membership --------------------------------------
@@ -92,8 +93,8 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		// exactly the guarantee these endpoints rely on. Runs before the base class's
 		// cleanup (JUnit works up the hierarchy for @AfterEach), so svc1 is still there.
 		service.getDataService("svc1")
-				.ifPresent(unused -> service.deleteDatasetFromDataService("svc1", SERVED_DATASET_ID));
-		datasetService.deleteDataset(SERVED_DATASET_ID, false);
+				.ifPresent(unused -> service.deleteDatasetFromDataService("svc1", SERVED_DATASET_ID, Caller.ANONYMOUS));
+		datasetService.deleteDataset(SERVED_DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	@Test
@@ -179,6 +180,6 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, SERVED_DATASET_ID));
 		RestEntities.mandatoryDataset(dataset, title);
-		datasetService.upsertDataset(dataset);
+		datasetService.upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

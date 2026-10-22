@@ -31,6 +31,7 @@ import rdf.RdfPackage;
  * </p>
  * <ul>
  *   <li>{@link rdf.impl.IdentifiedResourceImpl#getAbout <em>About</em>}</li>
+ *   <li>{@link rdf.impl.IdentifiedResourceImpl#getManagedBy <em>Managed By</em>}</li>
  * </ul>
  *
  * @generated
@@ -55,6 +56,26 @@ public abstract class IdentifiedResourceImpl extends MinimalEObjectImpl.Containe
 	 * @ordered
 	 */
 	protected String about = ABOUT_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getManagedBy() <em>Managed By</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getManagedBy()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String MANAGED_BY_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getManagedBy() <em>Managed By</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getManagedBy()
+	 * @generated
+	 * @ordered
+	 */
+	protected String managedBy = MANAGED_BY_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -101,11 +122,34 @@ public abstract class IdentifiedResourceImpl extends MinimalEObjectImpl.Containe
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public String getManagedBy() {
+		return managedBy;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public void setManagedBy(String newManagedBy) {
+		String oldManagedBy = managedBy;
+		managedBy = newManagedBy;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY, oldManagedBy, managedBy));
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
 			case RdfPackage.IDENTIFIED_RESOURCE__ABOUT:
 				return getAbout();
+			case RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY:
+				return getManagedBy();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -120,6 +164,9 @@ public abstract class IdentifiedResourceImpl extends MinimalEObjectImpl.Containe
 		switch (featureID) {
 			case RdfPackage.IDENTIFIED_RESOURCE__ABOUT:
 				setAbout((String)newValue);
+				return;
+			case RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY:
+				setManagedBy((String)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -136,6 +183,9 @@ public abstract class IdentifiedResourceImpl extends MinimalEObjectImpl.Containe
 			case RdfPackage.IDENTIFIED_RESOURCE__ABOUT:
 				setAbout(ABOUT_EDEFAULT);
 				return;
+			case RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY:
+				setManagedBy(MANAGED_BY_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -150,6 +200,8 @@ public abstract class IdentifiedResourceImpl extends MinimalEObjectImpl.Containe
 		switch (featureID) {
 			case RdfPackage.IDENTIFIED_RESOURCE__ABOUT:
 				return ABOUT_EDEFAULT == null ? about != null : !ABOUT_EDEFAULT.equals(about);
+			case RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY:
+				return MANAGED_BY_EDEFAULT == null ? managedBy != null : !MANAGED_BY_EDEFAULT.equals(managedBy);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -166,6 +218,8 @@ public abstract class IdentifiedResourceImpl extends MinimalEObjectImpl.Containe
 		StringBuilder result = new StringBuilder(super.toString());
 		result.append(" (about: ");
 		result.append(about);
+		result.append(", managedBy: ");
+		result.append(managedBy);
 		result.append(')');
 		return result.toString();
 	}

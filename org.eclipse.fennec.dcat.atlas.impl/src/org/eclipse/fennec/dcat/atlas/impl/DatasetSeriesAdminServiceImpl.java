@@ -16,6 +16,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetSeriesAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
@@ -100,9 +101,9 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	}
 
 	@Override
-	public DatasetSeries upsertDatasetSeries(DatasetSeries series) {
+	public DatasetSeries upsertDatasetSeries(DatasetSeries series, Caller caller) {
 		String id = idOrMint(series);
-		Store store = store();
+		Store store = store(caller);
 		store.put(collection, id, series);
 		// The entry's metadata changed, so its catalogue records move with it (#56).
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
@@ -112,8 +113,8 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	}
 
 	@Override
-	public List<String> deleteDatasetSeries(String id, boolean cascade) {
-		Store store = store();
+	public List<String> deleteDatasetSeries(String id, boolean cascade, Caller caller) {
+		Store store = store(caller);
 		if (cascade) {
 			// See CatalogRecords.memberDeleted: detach would otherwise leave records without a topic.
 			CatalogRecords.memberDeleted(store, StoreLayout.logicalIri(collection, id));
@@ -128,11 +129,11 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	}
 
 	@Override
-	public DatasetSeries addDatasetToDatasetSeries(String datasetSeriesId, Dataset dataset) {
+	public DatasetSeries addDatasetToDatasetSeries(String datasetSeriesId, Dataset dataset, Caller caller) {
 		if (dataset == null) {
 			throw new IllegalArgumentException("Cannot add nothing to dataset series " + datasetSeriesId);
 		}
-		Store store = store();
+		Store store = store(caller);
 		requireSeries(store, datasetSeriesId);
 		String datasetId = DcatIds.idForWrite(StoreLayout.DATASETS, dataset.getAbout());
 		store.put(StoreLayout.DATASETS, datasetId, dataset);
@@ -141,8 +142,8 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	}
 
 	@Override
-	public DatasetSeries linkDatasetToDatasetSeries(String datasetSeriesId, String datasetId) {
-		Store store = store();
+	public DatasetSeries linkDatasetToDatasetSeries(String datasetSeriesId, String datasetId, Caller caller) {
+		Store store = store(caller);
 		requireSeries(store, datasetSeriesId);
 		if (store.get(StoreLayout.DATASETS, datasetId).isEmpty()) {
 			throw new NoSuchElementException("Unknown dataset: " + datasetId);
@@ -152,8 +153,8 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	}
 
 	@Override
-	public void deleteDatasetFromDatasetSeries(String datasetSeriesId, String datasetId) {
-		Store store = store();
+	public void deleteDatasetFromDatasetSeries(String datasetSeriesId, String datasetId, Caller caller) {
+		Store store = store(caller);
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> {
 			if (Members.remove(dataset.getInSeries(), collection, datasetSeriesId)) {
 				// A removal. See Store.saveRemoval.

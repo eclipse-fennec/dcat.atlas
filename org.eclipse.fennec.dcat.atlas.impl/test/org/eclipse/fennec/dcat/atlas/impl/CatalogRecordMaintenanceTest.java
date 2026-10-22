@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,11 +60,13 @@ public class CatalogRecordMaintenanceTest {
 	}
 
 	private CatalogAdminServiceImpl catalogs() {
-		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH);
 	}
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH);
 	}
 
 	private DataServiceAdminServiceImpl dataServices() {
@@ -75,9 +78,9 @@ public class CatalogRecordMaintenanceTest {
 
 	@Test
 	void addingADatasetToACatalogCreatesItsRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
 		CatalogRecord record = onlyRecord("gov");
 		assertEquals(DATASETS + "air", topicIri(record), "the record describes the member");
@@ -87,20 +90,20 @@ public class CatalogRecordMaintenanceTest {
 
 	@Test
 	void linkingAnExistingDataServiceCreatesItsRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		dataServices().upsertDataService(dataService("sparql", "SPARQL"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		dataServices().upsertDataService(dataService("sparql", "SPARQL"), Caller.ANONYMOUS);
 
-		catalogs().linkDataServiceToCatalog("gov", "sparql");
+		catalogs().linkDataServiceToCatalog("gov", "sparql", Caller.ANONYMOUS);
 
 		assertEquals(SERVICES + "sparql", topicIri(onlyRecord("gov")));
 	}
 
 	@Test
 	void aRepeatedLinkDoesNotAddASecondRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
-		catalogs().linkDatasetToCatalog("gov", "air");
+		catalogs().linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
 
 		assertEquals(1, records("gov").size(), "one entry, one record");
 	}
@@ -109,22 +112,22 @@ public class CatalogRecordMaintenanceTest {
 
 	@Test
 	void unlinkingAMemberRemovesItsRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
-		catalogs().deleteDatasetFromCatalog("gov", "air");
+		catalogs().deleteDatasetFromCatalog("gov", "air", Caller.ANONYMOUS);
 
 		assertTrue(records("gov").isEmpty(), "a record describes an entry that no longer exists");
 	}
 
 	@Test
 	void deletingTheMemberRemovesItsRecordFromEveryCatalog() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().upsertCatalog(catalog("eu", "EU Portal"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
-		catalogs().linkDatasetToCatalog("eu", "air");
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().upsertCatalog(catalog("eu", "EU Portal"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
+		catalogs().linkDatasetToCatalog("eu", "air", Caller.ANONYMOUS);
 
-		datasets().deleteDataset("air", true);
+		datasets().deleteDataset("air", true, Caller.ANONYMOUS);
 
 		assertTrue(records("gov").isEmpty(), "gov still holds a record for a dataset that is gone");
 		assertTrue(records("eu").isEmpty(), "eu still holds a record for a dataset that is gone");
@@ -139,11 +142,11 @@ public class CatalogRecordMaintenanceTest {
 	 */
 	@Test
 	void writingTheMemberRestampsItsRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 		String before = modified(onlyRecord("gov"));
 
-		datasets().upsertDataset(dataset("air", "Air quality (revised)"));
+		datasets().upsertDataset(dataset("air", "Air quality (revised)"), Caller.ANONYMOUS);
 
 		assertNotEquals(before, modified(onlyRecord("gov")), "the entry's metadata changed");
 		assertEquals(DATASETS + "air", topicIri(onlyRecord("gov")), "and it still describes the member");
@@ -151,14 +154,14 @@ public class CatalogRecordMaintenanceTest {
 
 	@Test
 	void writingAMemberOfTwoCatalogsRestampsBoth() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().upsertCatalog(catalog("eu", "EU Portal"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
-		catalogs().linkDatasetToCatalog("eu", "air");
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().upsertCatalog(catalog("eu", "EU Portal"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
+		catalogs().linkDatasetToCatalog("eu", "air", Caller.ANONYMOUS);
 		String gov = modified(onlyRecord("gov"));
 		String eu = modified(onlyRecord("eu"));
 
-		datasets().upsertDataset(dataset("air", "Air quality (revised)"));
+		datasets().upsertDataset(dataset("air", "Air quality (revised)"), Caller.ANONYMOUS);
 
 		assertNotEquals(gov, modified(onlyRecord("gov")));
 		assertNotEquals(eu, modified(onlyRecord("eu")));
@@ -170,20 +173,20 @@ public class CatalogRecordMaintenanceTest {
 	 */
 	@Test
 	void writingADistributionRestampsItsDatasetsRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 		String before = modified(onlyRecord("gov"));
 
-		distributions().upsertDistributionToDataset("air", distribution("csv"));
+		distributions().upsertDistributionToDataset("air", distribution("csv"), Caller.ANONYMOUS);
 
 		assertNotEquals(before, modified(onlyRecord("gov")));
 	}
 
 	@Test
 	void writingADatasetThatIsInNoCatalogChangesNothing() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 
-		datasets().upsertDataset(dataset("loose", "Not catalogued"));
+		datasets().upsertDataset(dataset("loose", "Not catalogued"), Caller.ANONYMOUS);
 
 		assertTrue(records("gov").isEmpty());
 	}
@@ -197,14 +200,14 @@ public class CatalogRecordMaintenanceTest {
 	 */
 	@Test
 	void aPlainCatalogWriteKeepsTheRecordsTheEntriesHad() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 		String before = modified(onlyRecord("gov"));
 
 		// What a read-modify-write client sends back: the membership, no records.
 		Catalog edited = catalog("gov", "GovData (renamed)");
 		edited.getDataset().add(datasets().getDataset("air").orElseThrow());
-		catalogs().upsertCatalog(edited);
+		catalogs().upsertCatalog(edited, Caller.ANONYMOUS);
 
 		assertEquals(DATASETS + "air", topicIri(onlyRecord("gov")), "the entry still has its record");
 		assertEquals(before, modified(onlyRecord("gov")),
@@ -213,8 +216,8 @@ public class CatalogRecordMaintenanceTest {
 
 	@Test
 	void aClientSuppliedRecordIsDropped() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
 		Catalog edited = catalog("gov", "GovData");
 		edited.getDataset().add(datasets().getDataset("air").orElseThrow());
@@ -222,7 +225,7 @@ public class CatalogRecordMaintenanceTest {
 		forged.setPrimaryTopic(datasets().getDataset("air").orElseThrow());
 		forged.setModified(dateTime("1999-01-01T00:00:00Z"));
 		edited.getRecord().add(forged);
-		catalogs().upsertCatalog(edited);
+		catalogs().upsertCatalog(edited, Caller.ANONYMOUS);
 
 		assertEquals(1, records("gov").size(), "one entry, one record");
 		assertNotEquals("1999-01-01T00:00:00Z", modified(onlyRecord("gov")),
@@ -231,11 +234,11 @@ public class CatalogRecordMaintenanceTest {
 
 	@Test
 	void aMemberDroppedFromACatalogWriteLosesItsRecord() {
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
 		// The same body without the membership: the entry is gone, so its record is too.
-		catalogs().upsertCatalog(catalog("gov", "GovData"));
+		catalogs().upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 
 		assertTrue(records("gov").isEmpty());
 	}

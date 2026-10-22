@@ -101,6 +101,15 @@ public interface SpdxPackage extends org.eclipse.emf.ecore.EPackage {
 	int CHECKSUM__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CHECKSUM__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Checksum Value</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

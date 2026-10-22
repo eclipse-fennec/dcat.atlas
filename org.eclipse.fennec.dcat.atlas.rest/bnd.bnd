@@ -9,7 +9,6 @@
 	jakarta.ws.rs-api;version=latest,\
 	org.osgi.util.promise;version=latest,\
 	org.osgi.service.servlet;version=latest,\
-	jakarta.persistence-api;version=latest,\
 	org.osgi.service.cdi;version=latest,\
 	org.osgi.service.component;version=latest,\
 	org.eclipse.fennec.codec.rest;version=latest,\

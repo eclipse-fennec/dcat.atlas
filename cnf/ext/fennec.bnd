@@ -21,7 +21,6 @@
 	fennecJacoco,\
 	fennecEMF,\
 	fennecM2X,\
-	fennecJPA,\
 	fennecEMFModels,\
 	fennecCodec,\
 	fennecUtil

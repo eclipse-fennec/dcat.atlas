@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.util.List;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
@@ -92,9 +93,9 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 	}
 
 	@Override
-	public Dataset upsertDataset(Dataset dataset) {
+	public Dataset upsertDataset(Dataset dataset, Caller caller) {
 		String id = idOrMint(dataset);
-		Store store = store();
+		Store store = store(caller);
 		store.put(collection, id, dataset);
 		// The entry's metadata changed, so its catalogue records move with it (#56).
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
@@ -104,8 +105,8 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 	}
 
 	@Override
-	public List<String> deleteDataset(String id, boolean cascade) {
-		Store store = store();
+	public List<String> deleteDataset(String id, boolean cascade, Caller caller) {
+		Store store = store(caller);
 		if (cascade) {
 			// See CatalogRecords.memberDeleted: detach would otherwise leave records without a topic.
 			CatalogRecords.memberDeleted(store, StoreLayout.logicalIri(collection, id));

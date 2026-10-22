@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 
 import javax.xml.datatype.DatatypeFactory;
@@ -73,11 +74,13 @@ public class ModelConstraintValidationTest {
 	Path storage;
 
 	private DatasetAdminServiceImpl datasets(boolean validateOnWrite) {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, validateOnWrite);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
+				validateOnWrite);
 	}
 
 	private DataServiceAdminServiceImpl dataServices(boolean validateOnWrite) {
-		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, validateOnWrite);
+		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH, validateOnWrite);
 	}
 
 	// --- what a conformant entity looks like --------------------------------
@@ -85,7 +88,7 @@ public class ModelConstraintValidationTest {
 	@Test
 	void aConformantDatasetIsStored() {
 		Dataset dataset = dataset("Air quality");
-		datasets(true).upsertDataset(dataset);
+		datasets(true).upsertDataset(dataset, Caller.ANONYMOUS);
 
 		assertTrue(datasets(true).getDataset("air").isPresent());
 	}
@@ -98,7 +101,7 @@ public class ModelConstraintValidationTest {
 		dataset.setPublisher(null);
 
 		ModelConstraintException refused = assertThrows(ModelConstraintException.class,
-				() -> datasets(true).upsertDataset(dataset));
+				() -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 		assertTrue(refused.getViolations().stream().anyMatch(v -> v.contains("publisher")),
 				"the violation should name the missing feature, but was: " + refused.getViolations());
 	}
@@ -108,7 +111,7 @@ public class ModelConstraintValidationTest {
 		Dataset dataset = dataset("Air quality");
 		dataset.getTitle().clear();
 
-		assertThrows(ModelConstraintException.class, () -> datasets(true).upsertDataset(dataset));
+		assertThrows(ModelConstraintException.class, () -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 		assertTrue(datasets(false).getDataset("air").isEmpty(),
 				"a rejected entity must not reach the store; validation runs before the file is written");
 	}
@@ -121,7 +124,7 @@ public class ModelConstraintValidationTest {
 		dataset.getDescription().clear();
 
 		ModelConstraintException refused = assertThrows(ModelConstraintException.class,
-				() -> datasets(true).upsertDataset(dataset));
+				() -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 		assertTrue(refused.getViolations().stream().anyMatch(v -> v.contains("HasDescription")),
 				"expected the HasDescription invariant, but was: " + refused.getViolations());
 	}
@@ -141,7 +144,7 @@ public class ModelConstraintValidationTest {
 		service.setPublisher(publisher());
 		service.getEndpointURL().add("https://example.de/sparql");
 
-		dataServices(true).upsertDataService(service);
+		dataServices(true).upsertDataService(service, Caller.ANONYMOUS);
 
 		assertTrue(dataServices(true).getDataService("sparql").isPresent());
 	}
@@ -152,7 +155,7 @@ public class ModelConstraintValidationTest {
 		dataset.getTheme().add("ENVI");
 
 		ModelConstraintException refused = assertThrows(ModelConstraintException.class,
-				() -> datasets(true).upsertDataset(dataset));
+				() -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 		assertTrue(refused.getViolations().stream().anyMatch(v -> v.contains("ThemeIsIri")),
 				"expected the ThemeIsIri invariant, but was: " + refused.getViolations());
 	}
@@ -162,7 +165,7 @@ public class ModelConstraintValidationTest {
 		Dataset dataset = dataset("Air quality");
 		dataset.getTheme().add("https://govdata.de/themes#environment");
 
-		datasets(true).upsertDataset(dataset);
+		datasets(true).upsertDataset(dataset, Caller.ANONYMOUS);
 
 		assertTrue(datasets(true).getDataset("air").isPresent());
 	}
@@ -172,7 +175,7 @@ public class ModelConstraintValidationTest {
 		Dataset dataset = dataset("Air quality");
 		dataset.getTheme().add("https://example.de/data theme");
 
-		assertThrows(ModelConstraintException.class, () -> datasets(true).upsertDataset(dataset));
+		assertThrows(ModelConstraintException.class, () -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 	}
 
 	/**
@@ -188,7 +191,7 @@ public class ModelConstraintValidationTest {
 		dataset.getDistribution().add(distribution);
 
 		ModelConstraintException refused = assertThrows(ModelConstraintException.class,
-				() -> datasets(true).upsertDataset(dataset));
+				() -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 		assertTrue(refused.getViolations().stream().anyMatch(v -> v.contains("accessURL") || v.contains("license")),
 				"expected the Distribution's own mandatory features, but was: " + refused.getViolations());
 	}
@@ -200,7 +203,7 @@ public class ModelConstraintValidationTest {
 		Dataset bare = DcatFactory.eINSTANCE.createDataset();
 		bare.setAbout(DATASETS + "air");
 
-		datasets(false).upsertDataset(bare);
+		datasets(false).upsertDataset(bare, Caller.ANONYMOUS);
 
 		assertTrue(datasets(false).getDataset("air").isPresent(),
 				"validateOnWrite=false must leave the store's behaviour exactly as it was");
@@ -222,7 +225,7 @@ public class ModelConstraintValidationTest {
 		ENGINE.uninstallDelegates();
 		try {
 			ModelConstraintException refused = assertThrows(ModelConstraintException.class,
-					() -> datasets(true).upsertDataset(conformant));
+					() -> datasets(true).upsertDataset(conformant, Caller.ANONYMOUS));
 			assertTrue(refused.getViolations().stream().anyMatch(v -> v.contains("delegate")),
 					"expected a delegate-not-found diagnostic, but was: " + refused.getViolations());
 			assertFalse(refused.getViolations().isEmpty());
@@ -238,7 +241,7 @@ public class ModelConstraintValidationTest {
 		dataset.setPublisher(null);
 
 		ModelConstraintException refused = assertThrows(ModelConstraintException.class,
-				() -> datasets(true).upsertDataset(dataset));
+				() -> datasets(true).upsertDataset(dataset, Caller.ANONYMOUS));
 		assertEquals(2, refused.getViolations().size(),
 				"both the missing publisher and the missing description should be reported: "
 						+ refused.getViolations());

@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 
 import java.util.NoSuchElementException;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
@@ -60,7 +61,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 
 	@Activate
 	public DistributionAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
-			@Reference(name = "gitService") GitService gitService, @Reference DatasetReadOnlyService datasetService, StoreConfig config) {
+			@Reference(name = "gitService") GitService gitService, @Reference DatasetReadOnlyService datasetService,
+					StoreConfig config) {
 		super(resourceSetFactory, gitService, datasetService, config);
 	}
 
@@ -99,17 +101,18 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
 	volatile DcatValidationService validationService;
 
-	/** Not an override: a Distribution has no store of its own, so this class does not extend {@code AbstractEntityStore}. */
+	/** Not an override: a Distribution has no store of its own,
+			so this class does not extend {@code AbstractEntityStore}. */
 	private DcatValidationService writeValidation() {
 		return validationService;
 	}
 
 	@Override
-	public Distribution upsertDistributionToDataset(String datasetId, Distribution distribution) {
+	public Distribution upsertDistributionToDataset(String datasetId, Distribution distribution, Caller caller) {
 		if (distribution == null) {
 			throw new IllegalArgumentException("Cannot store nothing in dataset " + datasetId);
 		}
-		Store store = store();
+		Store store = store(caller);
 		Dataset dataset = requireDataset(store, datasetId);
 
 		// Mint only when the caller supplied no identity at all (D2/FR-3); one that is
@@ -130,8 +133,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	}
 
 	@Override
-	public void deleteDistributionFromDataset(String datasetId, String distributionId) {
-		Store store = store();
+	public void deleteDistributionFromDataset(String datasetId, String distributionId, Caller caller) {
+		Store store = store(caller);
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> {
 			if (find(dataset, datasetId, distributionId).map(dataset.getDistribution()::remove).orElse(false)) {
 				// A removal: never refused by what it is removing. See Store.saveRemoval.
@@ -147,11 +150,11 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 
 	@Override
 	public Distribution addAccessServiceToDistribution(String datasetId, String distributionId,
-			DataService dataService) {
+			DataService dataService, Caller caller) {
 		if (dataService == null) {
 			throw new IllegalArgumentException("Cannot link nothing as an access service");
 		}
-		Store store = store();
+		Store store = store(caller);
 		requireDistribution(store, datasetId, distributionId);
 		String serviceId = DcatIds.idForWrite(StoreLayout.DATA_SERVICES, dataService.getAbout());
 		store.put(StoreLayout.DATA_SERVICES, serviceId, dataService);
@@ -162,8 +165,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 
 	@Override
 	public Distribution linkAccessServiceToDistribution(String datasetId, String distributionId,
-			String dataServiceId) {
-		Store store = store();
+			String dataServiceId, Caller caller) {
+		Store store = store(caller);
 		requireDistribution(store, datasetId, distributionId);
 		if (store.get(StoreLayout.DATA_SERVICES, dataServiceId).isEmpty()) {
 			throw new NoSuchElementException("Unknown data service: " + dataServiceId);
@@ -174,8 +177,9 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	}
 
 	@Override
-	public void deleteAccessServiceFromDistribution(String datasetId, String distributionId, String dataServiceId) {
-		Store store = store();
+	public void deleteAccessServiceFromDistribution(String datasetId, String distributionId, String dataServiceId,
+			Caller caller) {
+		Store store = store(caller);
 		store.<Dataset>get(StoreLayout.DATASETS, datasetId).ifPresent(dataset -> find(dataset, datasetId,
 				distributionId).ifPresent(distribution -> {
 					if (Members.remove(distribution.getAccessService(), StoreLayout.DATA_SERVICES, dataServiceId)) {
@@ -206,8 +210,8 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		return distribution;
 	}
 
-	private Store store() {
-		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation());
+	private Store store(Caller caller) {
+		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation(), caller);
 	}
 
 	private static Dataset requireDataset(Store store, String datasetId) {

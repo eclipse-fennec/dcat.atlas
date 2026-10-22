@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -50,11 +51,13 @@ public class CatalogAdminServiceImplTest {
 	Path storage;
 
 	private CatalogAdminServiceImpl service() {
-		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH);
 	}
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH);
 	}
 
 	// --- storage round trip -------------------------------------------------
@@ -62,7 +65,7 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void upsertThenGetReturnsEquivalentCatalog() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
 		Optional<Catalog> loaded = service.getCatalog("gov");
 		assertTrue(loaded.isPresent());
@@ -73,8 +76,8 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void listReturnsEveryStoredCatalog() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.upsertCatalog(catalog(CATALOGS + "eu", "EU Portal"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.upsertCatalog(catalog(CATALOGS + "eu", "EU Portal"), Caller.ANONYMOUS);
 
 		assertEquals(2, service.listCatalogs().size());
 	}
@@ -87,8 +90,8 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void deleteRemovesTheCatalog() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.deleteCatalog("gov", false);
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.deleteCatalog("gov", false, Caller.ANONYMOUS);
 		assertTrue(service.getCatalog("gov").isEmpty());
 	}
 
@@ -97,7 +100,7 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void theStoreMintsAnIdWhenNoneIsSupplied() {
 		CatalogAdminServiceImpl service = service();
-		Catalog stored = service.upsertCatalog(catalog(null, "Untitled about"));
+		Catalog stored = service.upsertCatalog(catalog(null, "Untitled about"), Caller.ANONYMOUS);
 
 		assertEquals(1, service.listCatalogs().size());
 		assertTrue(stored.getAbout().startsWith(CATALOGS), stored.getAbout());
@@ -120,7 +123,8 @@ public class CatalogAdminServiceImplTest {
 		CatalogAdminServiceImpl service = service();
 
 		ForeignIdentityException thrown = assertThrows(ForeignIdentityException.class,
-				() -> service.upsertCatalog(catalog("https://someone-else.example/datasets/air", "Foreign")));
+				() -> service.upsertCatalog(catalog("https://someone-else.example/datasets/air", "Foreign"),
+						Caller.ANONYMOUS));
 
 		assertTrue(thrown.getMessage().contains("https://someone-else.example/datasets/air"), thrown.getMessage());
 		assertTrue(service.getCatalog("air").isEmpty(), "must not be filed under a foreign URL's last segment");
@@ -138,7 +142,8 @@ public class CatalogAdminServiceImplTest {
 		CatalogAdminServiceImpl service = service();
 
 		assertThrows(ForeignIdentityException.class,
-				() -> service.upsertCatalog(catalog("http://localhost:8085/dcat/rest/catalogs/gov", "GovData")));
+				() -> service.upsertCatalog(catalog("http://localhost:8085/dcat/rest/catalogs/gov", "GovData"),
+						Caller.ANONYMOUS));
 
 		assertTrue(service.listCatalogs().isEmpty());
 	}
@@ -146,7 +151,7 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void theStoredIdentityIsLogicalNotTheRequestHost() throws Exception {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
 		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		assertTrue(stored.contains("about=\"" + CATALOGS + "gov\""), stored);
@@ -157,15 +162,15 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void addAndRemoveDatasetMembership() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
-		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
 		Catalog stored = service.getCatalog("gov").get();
 		assertEquals(1, stored.getDataset().size());
 		assertEquals(DATASETS + "air", stored.getDataset().get(0).getAbout());
 
-		service.deleteDatasetFromCatalog("gov", "air");
+		service.deleteDatasetFromCatalog("gov", "air", Caller.ANONYMOUS);
 		assertTrue(service.getCatalog("gov").get().getDataset().isEmpty());
 	}
 
@@ -174,8 +179,8 @@ public class CatalogAdminServiceImplTest {
 		// The whole reason membership is a cross-resource reference: one description of
 		// the dataset, in its own file, however many catalogs list it.
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
 		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		assertTrue(stored.contains("href=\"" + DATASETS + "air#/\""), stored);
@@ -185,8 +190,8 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void addStoresTheDatasetInItsOwnCollection() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
 		assertTrue(datasets().getDataset("air").isPresent());
 	}
@@ -194,24 +199,24 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void linkRequiresTheDatasetToExistAlready() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
-		assertThrows(NoSuchElementException.class, () -> service.linkDatasetToCatalog("gov", "air"));
+		assertThrows(NoSuchElementException.class, () -> service.linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS));
 
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		Catalog stored = service.linkDatasetToCatalog("gov", "air");
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		Catalog stored = service.linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
 		assertEquals(1, stored.getDataset().size());
 	}
 
 	@Test
 	void linkIsIdempotentAndLeavesTheEtagAlone() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
-		service.linkDatasetToCatalog("gov", "air");
+		service.linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
 		String first = service.etag("gov").orElseThrow();
-		service.linkDatasetToCatalog("gov", "air");
+		service.linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
 
 		assertEquals(1, service.getCatalog("gov").get().getDataset().size());
 		assertEquals(first, service.etag("gov").orElseThrow());
@@ -220,12 +225,12 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void oneDatasetCanBeListedByTwoCatalogs() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.upsertCatalog(catalog(CATALOGS + "eu", "EU Portal"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.upsertCatalog(catalog(CATALOGS + "eu", "EU Portal"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
-		service.linkDatasetToCatalog("gov", "air");
-		service.linkDatasetToCatalog("eu", "air");
+		service.linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
+		service.linkDatasetToCatalog("eu", "air", Caller.ANONYMOUS);
 
 		assertEquals(DATASETS + "air", service.getCatalog("gov").get().getDataset().get(0).getAbout());
 		assertEquals(DATASETS + "air", service.getCatalog("eu").get().getDataset().get(0).getAbout());
@@ -234,30 +239,30 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void addAndRemoveServiceMembership() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
-		service.addDataServiceToCatalog("gov", dataService(SERVICES + "sparql"));
+		service.addDataServiceToCatalog("gov", dataService(SERVICES + "sparql"), Caller.ANONYMOUS);
 
 		Catalog stored = service.getCatalog("gov").get();
 		assertEquals(1, stored.getService().size());
 		assertEquals(SERVICES + "sparql", stored.getService().get(0).getAbout());
 
-		service.deleteDataServiceFromCatalog("gov", "sparql");
+		service.deleteDataServiceFromCatalog("gov", "sparql", Caller.ANONYMOUS);
 		assertTrue(service.getCatalog("gov").get().getService().isEmpty());
 	}
 
 	@Test
 	void addAndRemoveSubCatalogMembership() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
-		service.addSubCatalogToCatalog("gov", catalog(CATALOGS + "eu", "EU Portal"));
+		service.addSubCatalogToCatalog("gov", catalog(CATALOGS + "eu", "EU Portal"), Caller.ANONYMOUS);
 
 		Catalog stored = service.getCatalog("gov").get();
 		assertEquals(1, stored.getCatalog().size());
 		assertEquals(CATALOGS + "eu", stored.getCatalog().get(0).getAbout());
 
-		service.deleteSubCatalogFromCatalog("gov", "eu");
+		service.deleteSubCatalogFromCatalog("gov", "eu", Caller.ANONYMOUS);
 		assertTrue(service.getCatalog("gov").get().getCatalog().isEmpty());
 	}
 
@@ -265,7 +270,8 @@ public class CatalogAdminServiceImplTest {
 	void membershipOnUnknownCatalogThrows() {
 		CatalogAdminServiceImpl service = service();
 		assertThrows(NoSuchElementException.class,
-				() -> service.addDatasetToCatalog("missing", dataset(DATASETS + "air", "Air quality")));
+				() -> service.addDatasetToCatalog("missing", dataset(DATASETS + "air", "Air quality"),
+						Caller.ANONYMOUS));
 	}
 
 	// --- FR-1 delete blocking ----------------------------------------------
@@ -275,11 +281,11 @@ public class CatalogAdminServiceImplTest {
 		// Deleting anyway would leave the catalog pointing at nothing, which EMF
 		// tolerates silently — and then serializing the *catalog* to RDF fails.
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
 		ResourceInUseException thrown = assertThrows(ResourceInUseException.class,
-				() -> datasets().deleteDataset("air", false));
+				() -> datasets().deleteDataset("air", false, Caller.ANONYMOUS));
 
 		assertEquals(List.of(CATALOGS + "gov"), thrown.getReferencedBy());
 		assertTrue(datasets().getDataset("air").isPresent(), "the refused delete must not have removed it");
@@ -288,10 +294,10 @@ public class CatalogAdminServiceImplTest {
 	@Test
 	void cascadeUnlinksThenDeletes() {
 		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		service.addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
-		datasets().deleteDataset("air", true);
+		datasets().deleteDataset("air", true, Caller.ANONYMOUS);
 
 		assertTrue(datasets().getDataset("air").isEmpty());
 		assertTrue(service.getCatalog("gov").get().getDataset().isEmpty(),
@@ -300,8 +306,8 @@ public class CatalogAdminServiceImplTest {
 
 	@Test
 	void anUnreferencedDatasetDeletesWithoutCascade() {
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		datasets().deleteDataset("air", false);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		datasets().deleteDataset("air", false, Caller.ANONYMOUS);
 		assertTrue(datasets().getDataset("air").isEmpty());
 	}
 
@@ -319,18 +325,18 @@ public class CatalogAdminServiceImplTest {
 		// on the delete side; this is the same rule on the write side.
 		catalog.getDataset().add(proxyTo(DATASETS + "air"));
 
-		assertThrows(DanglingReferenceException.class, () -> service.upsertCatalog(catalog));
+		assertThrows(DanglingReferenceException.class, () -> service.upsertCatalog(catalog, Caller.ANONYMOUS));
 		assertTrue(service.getCatalog("gov").isEmpty(), "nothing should have been stored");
 	}
 
 	@Test
 	void upsertAcceptsAReferenceToAnIdentityOfOursThatExists() {
 		CatalogAdminServiceImpl service = service();
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 		Catalog catalog = catalog(CATALOGS + "gov", "GovData");
 		catalog.getDataset().add(proxyTo(DATASETS + "air"));
 
-		service.upsertCatalog(catalog);
+		service.upsertCatalog(catalog, Caller.ANONYMOUS);
 
 		assertEquals(1, service.getCatalog("gov").orElseThrow().getDataset().size());
 		assertEquals(DATASETS + "air", service.getCatalog("gov").orElseThrow().getDataset().get(0).getAbout());
@@ -344,7 +350,7 @@ public class CatalogAdminServiceImplTest {
 		// to refuse. Themes, publishers and licences are all like this.
 		catalog.getDataset().add(proxyTo("https://someone-else.example/datasets/air"));
 
-		service.upsertCatalog(catalog);
+		service.upsertCatalog(catalog, Caller.ANONYMOUS);
 
 		assertTrue(service.getCatalog("gov").isPresent());
 	}

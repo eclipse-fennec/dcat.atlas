@@ -22,6 +22,7 @@ import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
@@ -75,9 +76,25 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 		// existing when its first blob is committed and needs no creating before that.
 	}
 
-	/** A store session; everything read through one resolves against everything else. */
+	/**
+	 * A read-only store session; everything read through one resolves against everything
+	 * else.
+	 * <p>
+	 * Reads are not restricted by who is asking, so this session is anonymous. A write
+	 * opens its own with the caller that asked for it: {@link #store(Caller)}.
+	 */
 	protected Store store() {
-		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation());
+		return store(Caller.ANONYMOUS);
+	}
+
+	/**
+	 * A store session for a write, on behalf of {@code caller}.
+	 *
+	 * @param caller who the gateway authenticated the request as; it decides what this
+	 *               session may change, and what a resource it creates is stamped with
+	 */
+	protected Store store(Caller caller) {
+		return DcatHelper.open(resourceSetFactory, gitService, basePath, validateOnWrite, writeValidation(), caller);
 	}
 
 	/**

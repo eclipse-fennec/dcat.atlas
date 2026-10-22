@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.api.admin;
 
 import java.util.List;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.validation.ModelConstraintException;
@@ -53,7 +54,7 @@ import dcat.Dataset;
  */
 public interface CatalogAdminService extends CatalogReadOnlyService{
 
-    Catalog upsertCatalog(Catalog catalog);        
+    Catalog upsertCatalog(Catalog catalog, Caller caller);
     
     /**
      * Deletes the catalog under {@code id}.
@@ -84,40 +85,40 @@ public interface CatalogAdminService extends CatalogReadOnlyService{
      * @throws ResourceInUseException if something still references it and {@code cascade}
      *                                is {@code false}
      */
-    List<String> deleteCatalog(String id, boolean cascade);
+    List<String> deleteCatalog(String id, boolean cascade, Caller caller);
     //Relationships and Composition Methods
     //**FR-9 (Catalog membership):** Dataset, DataService and sub-catalog can be 
     //assigned to / removed from a catalog **without** re-sending the target resource in full.
-    Catalog addDatasetToCatalog(String catalogId, Dataset dataset);
+    Catalog addDatasetToCatalog(String catalogId, Dataset dataset, Caller caller);
     
     /**
      *If a Dataset was already created, a client can use this method to simply link
      *the existing Dataset to the existing Catalog. Must fail if either the Catalog or
      *the Dataset does not exist
      */
-    Catalog linkDatasetToCatalog(String catalogId, String datasetId);
+    Catalog linkDatasetToCatalog(String catalogId, String datasetId, Caller caller);
     
-    void deleteDatasetFromCatalog(String catalogId, String datasetId);
+    void deleteDatasetFromCatalog(String catalogId, String datasetId, Caller caller);
     
-    Catalog addDataServiceToCatalog(String catalogId, DataService dataService);
+    Catalog addDataServiceToCatalog(String catalogId, DataService dataService, Caller caller);
     
     /**
      *If a DataService was already created, a client can use this method to simply link
      *the existing DataService to the existing Catalog. Must fail if either the Catalog or
      *the DataService does not exist
      */
-    Catalog linkDataServiceToCatalog(String catalogId, String dataServiceId);
+    Catalog linkDataServiceToCatalog(String catalogId, String dataServiceId, Caller caller);
     
-    void deleteDataServiceFromCatalog(String catalogId, String dataServiceId);
+    void deleteDataServiceFromCatalog(String catalogId, String dataServiceId, Caller caller);
     
-    Catalog addSubCatalogToCatalog(String catalogId, Catalog subCatalog);
+    Catalog addSubCatalogToCatalog(String catalogId, Catalog subCatalog, Caller caller);
     
     /**
      *If a Catalog was already created, a client can use this method to simply link
      *the existing Catalog to the another existing Catalog, as sub catalog. 
      *Must fail if either the parent Catalog or the sub catalog does not exist.
      */
-    Catalog linkSubCatalogToCatalog(String catalogId, String subCatalogId);
+    Catalog linkSubCatalogToCatalog(String catalogId, String subCatalogId, Caller caller);
     
-    void deleteSubCatalogFromCatalog(String catalogId, String subCatalogId);
+    void deleteSubCatalogFromCatalog(String catalogId, String subCatalogId, Caller caller);
 }

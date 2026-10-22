@@ -98,6 +98,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DCAT_RESOURCE__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DCAT_RESOURCE__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Identifier</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -403,6 +412,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int DATASET__ABOUT = DCAT_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATASET__MANAGED_BY = DCAT_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Identifier</b></em>' containment reference list.
@@ -800,6 +818,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int CATALOG__ABOUT = DATASET__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CATALOG__MANAGED_BY = DATASET__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Identifier</b></em>' containment reference list.
@@ -1262,6 +1289,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DISTRIBUTION__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Title</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1524,6 +1560,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int RELATIONSHIP__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int RELATIONSHIP__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Had Role</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1586,6 +1631,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int CATALOG_RECORD__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int CATALOG_RECORD__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Title</b></em>' containment reference list.
@@ -1695,6 +1749,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int DATA_SERVICE__ABOUT = DCAT_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATA_SERVICE__MANAGED_BY = DCAT_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Identifier</b></em>' containment reference list.
@@ -2038,6 +2101,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int DATASET_SERIES__ABOUT = DATASET__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DATASET_SERIES__MANAGED_BY = DATASET__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Identifier</b></em>' containment reference list.

@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.api.admin;
 
 import java.util.List;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 
@@ -27,7 +28,7 @@ import dcat.Dataset;
  */
 public interface DatasetAdminService extends DatasetReadOnlyService {
 	
-    Dataset upsertDataset(Dataset dataset);
+    Dataset upsertDataset(Dataset dataset, Caller caller);
     
     /**
      * Deletes the dataset under {@code id}.
@@ -58,5 +59,5 @@ public interface DatasetAdminService extends DatasetReadOnlyService {
      * @throws ResourceInUseException if something still references it and {@code cascade}
      *                                is {@code false}
      */
-    List<String> deleteDataset(String id, boolean cascade);
+    List<String> deleteDataset(String id, boolean cascade, Caller caller);
 }

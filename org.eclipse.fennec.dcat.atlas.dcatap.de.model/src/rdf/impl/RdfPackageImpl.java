@@ -310,6 +310,15 @@ public class RdfPackageImpl extends EPackageImpl implements RdfPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EAttribute getIdentifiedResource_ManagedBy() {
+		return (EAttribute)identifiedResourceEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EEnum getDatatype() {
 		return datatypeEEnum;
 	}
@@ -365,6 +374,7 @@ public class RdfPackageImpl extends EPackageImpl implements RdfPackage {
 
 		identifiedResourceEClass = createEClass(IDENTIFIED_RESOURCE);
 		createEAttribute(identifiedResourceEClass, IDENTIFIED_RESOURCE__ABOUT);
+		createEAttribute(identifiedResourceEClass, IDENTIFIED_RESOURCE__MANAGED_BY);
 
 		// Create enums
 		datatypeEEnum = createEEnum(DATATYPE);
@@ -420,6 +430,7 @@ public class RdfPackageImpl extends EPackageImpl implements RdfPackage {
 
 		initEClass(identifiedResourceEClass, IdentifiedResource.class, "IdentifiedResource", IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getIdentifiedResource_About(), theXMLTypePackage.getAnyURI(), "about", null, 0, 1, IdentifiedResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getIdentifiedResource_ManagedBy(), theXMLTypePackage.getString(), "managedBy", null, 0, 1, IdentifiedResource.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		// Initialize enums and add enum literals
 		initEEnum(datatypeEEnum, Datatype.class, "Datatype");
@@ -563,6 +574,14 @@ public class RdfPackageImpl extends EPackageImpl implements RdfPackage {
 			   "kind", "attribute",
 			   "name", "about",
 			   "namespace", "##targetNamespace"
+		   });
+		addAnnotation
+		  (getIdentifiedResource_ManagedBy(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "managedBy",
+			   "namespace", "http://www.eclipse.org/fennec/dcat/atlas#"
 		   });
 	}
 

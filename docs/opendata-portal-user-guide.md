@@ -499,6 +499,64 @@ is re-stamped rather than believed. Entries that are still members keep their da
 > is honest — the catalog's representation really did change — but a client that caches
 > catalogs should expect it.
 
+### Resources a system manages
+
+A resource that a generating system — Model-Atlas, Data-Atlas — put into the portal
+belongs to that system. Nobody else may change or delete it, through the API or through
+the UI, and there is no administrator override.
+
+The reason is that a hand edit of a generated resource is not reliably repaired. Model-Atlas
+only rewrites a dataset whose fingerprint has moved, so an edit that leaves the fingerprint
+alone survives indefinitely, one that moves it is wiped on the next sync without warning,
+and a hand delete is not recreated at all. Whichever way it falls, the portal and its source
+disagree and nothing notices.
+
+**How the portal knows who is calling.** It does not authenticate anybody itself — the
+policy enforcement point is the gateway in front of it (APISix/Keycloak), which is why the
+write endpoints live under `/admin`. The gateway puts the authenticated client into a
+request header, `X-Atlas-Client` by default:
+
+```
+PUT /rest/admin/datasets/air-quality
+Content-Type: application/xmi
+X-Atlas-Client: model.atlas
+```
+
+> **The gateway must also strip that header from what the client sent.** The portal believes
+> it, so a client allowed to set it can name itself any system it likes and edit that
+> system's resources. The header name is configurable (`caller.header` on the
+> `DcatCallerHeader` component) because it is the gateway's choice; the two have to agree,
+> and a name that does not match makes every request anonymous.
+
+**What the rule is.** The first write stamps the caller onto the resource as `managedBy`,
+and from then on only that same client may replace or delete it. Anything else is answered
+`403 Forbidden`, with a body naming the system to go to:
+
+```
+403 Forbidden
+Cannot change http://localhost:8185/rest/datasets/air-quality: it is managed by model.atlas
+```
+
+- A request with no such header is **anonymous** — a person working through the UI, or a
+  direct call. Anonymous may do anything to a resource no system has claimed, and nothing
+  to one that is managed.
+- `managedBy` is read from what is **stored**, never from the body you send. Clearing it in
+  a `PUT` changes nothing; setting it does not claim a resource.
+- A system that replaces an unmanaged resource **takes it over**. That is deliberate:
+  whatever a system last wrote in full is its content, and it is also what marks the
+  resources that predate this rule, with no migration step.
+- It protects writes, not reads. Everything stays readable by everyone.
+- **Membership counts as an edit of the container.** Adding a dataset to a catalog that
+  Model-Atlas manages is a change to that catalog, so it is refused — including when it
+  happens indirectly, as the `?cascade=true` unlink of a managed catalog that still lists
+  the resource you are deleting.
+- The catalogue records the server maintains are exempt: they follow a member you were
+  allowed to change, and are the server's own bookkeeping rather than your write.
+
+**If a generating system is retired.** The refusal is absolute through the API on purpose,
+but it is not a dead end: the store is a git repository, so an operator can remove what a
+decommissioned system left behind directly, deliberately, and out of reach of a UI button.
+
 ### Other entities
 
 `Dataset`, `DatasetSeries` and `DataService` are created, replaced and deleted exactly as
@@ -1002,7 +1060,8 @@ protect (F-6/F-12). Paths are relative to the base described in
 **Writes** — `Content-Type: application/xmi` only. `POST` creates (`201`, `Location`,
 `ETag`; `409` on a taken identity, `400` on a foreign `about`), `PUT` creates-or-replaces
 (`201`/`200`), `DELETE` returns `204` (`404` if unknown, `409` if still referenced). All
-honour `If-Match` and `If-None-Match: *`.
+honour `If-Match` and `If-None-Match: *`, and all answer `403` on a resource another system
+manages — see [Resources a system manages](#resources-a-system-manages).
 
 The four collection `DELETE`s also take **`?cascade=true`**, which unlinks every referrer
 first and answers `200` with the identities it changed — see

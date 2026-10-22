@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,7 +65,7 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		// Seeded the way the store mints identities: logical, not the request URL.
 		series.setAbout(DcatIds.logicalIri(DcatIds.DATASET_SERIES, id));
 		RestEntities.mandatoryDataset(series, title);
-		service.upsertDatasetSeries(series);
+		service.upsertDatasetSeries(series, Caller.ANONYMOUS);
 	}
 
 	@Override
@@ -79,7 +80,7 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteDatasetSeries(id, false);
+		service.deleteDatasetSeries(id, false, Caller.ANONYMOUS);
 	}
 
 	// --- FR-11 series membership -------------------------------------------
@@ -88,7 +89,7 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 
 	@AfterEach
 	void removeMemberDataset() {
-		datasetService.deleteDataset(MEMBER_DATASET_ID, false);
+		datasetService.deleteDataset(MEMBER_DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	@Test
@@ -187,6 +188,6 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, MEMBER_DATASET_ID));
 		RestEntities.mandatoryDataset(dataset, title);
-		datasetService.upsertDataset(dataset);
+		datasetService.upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

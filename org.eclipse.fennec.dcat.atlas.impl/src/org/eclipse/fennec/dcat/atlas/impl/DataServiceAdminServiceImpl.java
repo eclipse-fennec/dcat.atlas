@@ -16,6 +16,7 @@ package org.eclipse.fennec.dcat.atlas.impl;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
@@ -91,9 +92,9 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	}
 
 	@Override
-	public DataService upsertDataService(DataService service) {
+	public DataService upsertDataService(DataService service, Caller caller) {
 		String id = idOrMint(service);
-		Store store = store();
+		Store store = store(caller);
 		store.put(collection, id, service);
 		// The entry's metadata changed, so its catalogue records move with it (#56).
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
@@ -103,8 +104,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	}
 
 	@Override
-	public List<String> deleteDataService(String id, boolean cascade) {
-		Store store = store();
+	public List<String> deleteDataService(String id, boolean cascade, Caller caller) {
+		Store store = store(caller);
 		if (cascade) {
 			// See CatalogRecords.memberDeleted: detach would otherwise leave records without a topic.
 			CatalogRecords.memberDeleted(store, StoreLayout.logicalIri(collection, id));
@@ -125,11 +126,11 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	// shapes (add stores then links, link requires the target to exist, both idempotent).
 
 	@Override
-	public DataService addDatasetToDataService(String dataServiceId, Dataset dataset) {
+	public DataService addDatasetToDataService(String dataServiceId, Dataset dataset, Caller caller) {
 		if (dataset == null) {
 			throw new IllegalArgumentException("Cannot add nothing to data service " + dataServiceId);
 		}
-		Store store = store();
+		Store store = store(caller);
 		requireDataService(store, dataServiceId);
 		// Written first: a link to something that is not there yet is exactly the dangling
 		// reference this design refuses to create.
@@ -140,8 +141,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	}
 
 	@Override
-	public DataService linkDatasetToDataService(String dataServiceId, String datasetId) {
-		Store store = store();
+	public DataService linkDatasetToDataService(String dataServiceId, String datasetId, Caller caller) {
+		Store store = store(caller);
 		requireDataService(store, dataServiceId);
 		if (store.get(StoreLayout.DATASETS, datasetId).isEmpty()) {
 			throw new NoSuchElementException("Unknown dataset: " + datasetId);
@@ -151,8 +152,8 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	}
 
 	@Override
-	public void deleteDatasetFromDataService(String dataServiceId, String datasetId) {
-		Store store = store();
+	public void deleteDatasetFromDataService(String dataServiceId, String datasetId, Caller caller) {
+		Store store = store(caller);
 		DataService dataService = requireDataService(store, dataServiceId);
 		if (Members.remove(dataService.getServesDataset(), StoreLayout.DATASETS, datasetId)) {
 			// A removal. See Store.saveRemoval.

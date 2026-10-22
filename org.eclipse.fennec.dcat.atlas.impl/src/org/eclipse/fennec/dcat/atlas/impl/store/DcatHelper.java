@@ -25,6 +25,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.store.StoreConflictException;
 import org.eclipse.fennec.dcat.atlas.api.store.StoreUnavailableException;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
@@ -67,35 +68,25 @@ public final class DcatHelper {
 	private DcatHelper() {
 	}
 
-	/** Opens a store session, without model validation on write. */
-	public static Store open(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
-		return open(resourceSetFactory, gitService, basePath, false);
-	}
-
 	/**
 	 * Opens a store session.
-	 *
-	 * @param validateOnWrite whether {@link Store#put} checks the entity against the
-	 *                        model's constraints first — see {@link ModelValidation}
-	 */
-	public static Store open(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
-			boolean validateOnWrite) {
-		return open(resourceSetFactory, gitService, basePath, validateOnWrite, null);
-	}
-
-	/**
-	 * Opens a store session.
+	 * <p>
+	 * There is deliberately no overload without a caller: one that defaulted to
+	 * {@link Caller#ANONYMOUS} would make forgetting it produce an unmanaged resource and
+	 * let a stranger's write through, silently.
 	 *
 	 * @param validateOnWrite whether {@link Store#put} checks the entity against the
 	 *                        model's constraints first — see {@link ModelValidation}
 	 * @param validation      the SHACL validation service, or {@code null} for none; see
 	 *                        {@link ShaclValidation} for why absence means no enforcement
+	 * @param caller          who the write is from; {@link Caller#ANONYMOUS} for a
+	 *                        read-only session, where it is never consulted
 	 */
 	public static Store open(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath,
-			boolean validateOnWrite, DcatValidationService validation) {
+			boolean validateOnWrite, DcatValidationService validation, Caller caller) {
 		PendingChanges pending = new PendingChanges();
 		ResourceSet resourceSet = StoreResourceSets.create(resourceSetFactory, gitService, basePath, pending);
-		return new Store(resourceSet, gitService, basePath, pending, validateOnWrite, validation);
+		return new Store(resourceSet, gitService, basePath, pending, validateOnWrite, validation, caller);
 	}
 
 	/** One operation's view of the store, and the one commit it will become. */
@@ -108,15 +99,18 @@ public final class DcatHelper {
 		private final boolean validateOnWrite;
 		/** SHACL enforcement, or {@code null} when no validation service is bound. */
 		private final DcatValidationService validation;
+		/** Who this operation is from, and therefore what it may change. */
+		private final Caller caller;
 
 		private Store(ResourceSet resourceSet, GitService gitService, String basePath, PendingChanges pending,
-				boolean validateOnWrite, DcatValidationService validation) {
+				boolean validateOnWrite, DcatValidationService validation, Caller caller) {
 			this.resourceSet = resourceSet;
 			this.gitService = gitService;
 			this.basePath = basePath;
 			this.pending = pending;
 			this.validateOnWrite = validateOnWrite;
 			this.validation = validation;
+			this.caller = caller;
 		}
 
 		/** The object stored under {@code id}, or empty if there is no such resource. */
@@ -189,11 +183,20 @@ public final class DcatHelper {
 		 * the store that decides what a resource is called. Accepting an {@code about}
 		 * from the request is how the writer's hostname used to end up frozen into the
 		 * file.
+		 * <p>
+		 * {@code managedBy} is likewise read from what is <em>stored</em> and written back,
+		 * never taken from {@code object}: believing the body would let a stranger clear the
+		 * flag and then delete, or stamp a system's name on a resource to fence it off. A
+		 * resource nobody manages yet is stamped with the caller — see {@link Caller#stamp()}.
 		 */
 		public <T extends EObject> T put(String collection, String id, T object) {
 			StoreLayout.requireSafeId(id);
+			String iri = StoreLayout.logicalIri(collection, id);
+			String managedBy = storedManagedBy(collection, id);
+			caller.requireMayWrite(managedBy, iri);
 			if (object instanceof IdentifiedResource identified) {
-				identified.setAbout(StoreLayout.logicalIri(collection, id));
+				identified.setAbout(iri);
+				identified.setManagedBy(managedBy != null ? managedBy : caller.stamp());
 			}
 			// Records are the server's, whatever the body says, and they are rebuilt before
 			// validation so what is checked is what will be stored (#56).
@@ -235,6 +238,7 @@ public final class DcatHelper {
 		 * That way round, forgetting produces a refused write rather than a silent one.
 		 */
 		public void save(EObject object) {
+			requireMayWrite(object);
 			validate(object);
 			stage(object);
 		}
@@ -257,8 +261,14 @@ public final class DcatHelper {
 		 * to discover one.
 		 * <p>
 		 * Use it only where the change is a removal. Everything else uses {@link #save}.
+		 * <p>
+		 * Skipping validation is not skipping the access check. This is how a cascade
+		 * unlinks referrers, and a referrer may be a catalog some system manages: without
+		 * the check, deleting one's own dataset would rewrite that catalog's membership
+		 * without ever naming it.
 		 */
 		public void saveRemoval(EObject object) {
+			requireMayWrite(object);
 			stage(object);
 		}
 
@@ -280,6 +290,10 @@ public final class DcatHelper {
 		 * <p>
 		 * Use it only for a change the server makes on its own behalf. Everything a caller
 		 * sent goes through {@link #save}.
+		 * <p>
+		 * It does not ask who is writing either, for the same reason: a record's timestamp
+		 * mirrors a change to a member the caller was allowed to make. Refusing it would
+		 * stop someone editing their own dataset merely because a managed catalog lists it.
 		 */
 		public void saveBookkeeping(EObject object) {
 			stage(object);
@@ -316,6 +330,27 @@ public final class DcatHelper {
 			ShaclValidation.check(validation, object, References.referenced(this, object));
 		}
 
+		/**
+		 * Refuses a re-staged object this caller does not manage.
+		 * <p>
+		 * Reading the management off the object is sound here and not in {@link #put}:
+		 * what is re-staged came out of {@link #get} and was mutated, so its
+		 * {@code managedBy} is the stored one.
+		 */
+		private void requireMayWrite(EObject object) {
+			if (object instanceof IdentifiedResource identified) {
+				caller.requireMayWrite(identified.getManagedBy(), identified.getAbout());
+			}
+		}
+
+		/** The {@code managedBy} of what is stored under {@code id}, or {@code null}. */
+		private String storedManagedBy(String collection, String id) {
+			return this.<EObject>get(collection, id) //
+					.filter(IdentifiedResource.class::isInstance) //
+					.map(stored -> ((IdentifiedResource) stored).getManagedBy()) //
+					.orElse(null);
+		}
+
 		private void stage(EObject object) {
 			Resource resource = object.eResource();
 			if (resource == null) {
@@ -325,10 +360,20 @@ public final class DcatHelper {
 			save(resource);
 		}
 
-		/** Stages the removal of the object stored under {@code id}; returns whether it existed. */
+		/**
+		 * Stages the removal of the object stored under {@code id}; returns whether it
+		 * existed.
+		 * <p>
+		 * Refused when the resource belongs to another system, checked only when there is
+		 * something to delete — so deleting what is not there stays the plain {@code false}
+		 * callers rely on, rather than becoming a way to probe for managed resources.
+		 */
 		public boolean delete(String collection, String id) {
 			URI uri = StoreResourceSets.resourceUri(collection, id);
 			boolean existed = resourceSet.getURIConverter().exists(uri, null);
+			if (existed) {
+				caller.requireMayWrite(storedManagedBy(collection, id), StoreLayout.logicalIri(collection, id));
+			}
 			Resource loaded = resourceSet.getResource(uri, false);
 			if (loaded != null) {
 				resourceSet.getResources().remove(loaded);

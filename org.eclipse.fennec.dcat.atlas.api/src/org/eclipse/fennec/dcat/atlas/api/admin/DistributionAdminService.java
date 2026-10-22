@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.api.admin;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
 
 import dcat.DataService;
@@ -27,9 +28,9 @@ public interface DistributionAdminService extends DistributionReadOnlyService {
 
 	//**FR-10 (Distribution composition):** Distributions are created/deleted in the context of
 	//their Dataset; a Distribution without a Dataset is not allowed.
-    Distribution upsertDistributionToDataset(String datasetId, Distribution distribution);
+    Distribution upsertDistributionToDataset(String datasetId, Distribution distribution, Caller caller);
 
-    void deleteDistributionFromDataset(String datasetId, String distributionId);
+    void deleteDistributionFromDataset(String datasetId, String distributionId, Caller caller);
 
     /**
      * FR-10: records {@code dcat:accessService} on the distribution, referencing an
@@ -48,13 +49,15 @@ public interface DistributionAdminService extends DistributionReadOnlyService {
      * @param dataService    the service to reference; must carry an {@code rdf:about}
      * @return the distribution as stored
      */
-    Distribution addAccessServiceToDistribution(String datasetId, String distributionId, DataService dataService);
+    Distribution addAccessServiceToDistribution(String datasetId, String distributionId, DataService dataService,
+            Caller caller);
 
     
     /**
      * If the DataService to link to the Distribution already exists, use this endpoint to link it.
      */
-    Distribution linkAccessServiceToDistribution(String datasetId, String distributionId, String dataServiceId);
+    Distribution linkAccessServiceToDistribution(String datasetId, String distributionId, String dataServiceId,
+            Caller caller);
     
     /**
      * Removes the {@code dcat:accessService} reference to {@code dataServiceId} from the
@@ -62,6 +65,7 @@ public interface DistributionAdminService extends DistributionReadOnlyService {
      * DataService itself is never deleted — it belongs to the catalog, not to the
      * distribution.
      */
-    void deleteAccessServiceFromDistribution(String datasetId, String distributionId, String dataServiceId);
+    void deleteAccessServiceFromDistribution(String datasetId, String distributionId, String dataServiceId,
+            Caller caller);
 
 }

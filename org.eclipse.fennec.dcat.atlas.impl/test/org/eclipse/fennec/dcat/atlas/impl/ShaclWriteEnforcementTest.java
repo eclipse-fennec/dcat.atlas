@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 
 import org.apache.jena.graph.NodeFactory;
@@ -62,7 +63,7 @@ public class ShaclWriteEnforcementTest {
 		DatasetAdminServiceImpl service = service(enforcing(report(Severity.Violation)));
 
 		ShaclViolationException refused = assertThrows(ShaclViolationException.class,
-				() -> service.upsertDataset(dataset()));
+				() -> service.upsertDataset(dataset(), Caller.ANONYMOUS));
 
 		assertNotNull(refused.getReport(), "the native report must survive the throw — it is the whole diagnostic");
 		assertTrue(refused.getMessage().contains(BASE + "air"),
@@ -73,7 +74,7 @@ public class ShaclWriteEnforcementTest {
 	void aRefusedWriteLeavesNothingOnDisk() {
 		DatasetAdminServiceImpl service = service(enforcing(report(Severity.Violation)));
 
-		assertThrows(ShaclViolationException.class, () -> service.upsertDataset(dataset()));
+		assertThrows(ShaclViolationException.class, () -> service.upsertDataset(dataset(), Caller.ANONYMOUS));
 
 		assertTrue(service(null).getDataset("air").isEmpty(),
 				"validation runs before the file is written, so a refused entity must not exist");
@@ -88,7 +89,7 @@ public class ShaclWriteEnforcementTest {
 	void aWarningDoesNotBlock() {
 		DatasetAdminServiceImpl service = service(enforcing(report(Severity.Warning)));
 
-		service.upsertDataset(dataset());
+		service.upsertDataset(dataset(), Caller.ANONYMOUS);
 
 		assertTrue(service(null).getDataset("air").isPresent());
 	}
@@ -97,7 +98,7 @@ public class ShaclWriteEnforcementTest {
 	void enforcementOffStoresTheEntityAnyway() {
 		DatasetAdminServiceImpl service = service(new FakeValidation(report(Severity.Violation), false));
 
-		service.upsertDataset(dataset());
+		service.upsertDataset(dataset(), Caller.ANONYMOUS);
 
 		assertTrue(service(null).getDataset("air").isPresent(),
 				"isWriteEnforced() is operator policy; a violating entity is reported, not refused");
@@ -105,7 +106,7 @@ public class ShaclWriteEnforcementTest {
 
 	@Test
 	void noValidationServiceMeansNoEnforcement() {
-		service(null).upsertDataset(dataset());
+		service(null).upsertDataset(dataset(), Caller.ANONYMOUS);
 
 		assertTrue(service(null).getDataset("air").isPresent(),
 				"absence fails open by design — the strict reading is validationService.cardinality.minimum=1, "
@@ -115,7 +116,8 @@ public class ShaclWriteEnforcementTest {
 	// --- fixtures -----------------------------------------------------------
 
 	private DatasetAdminServiceImpl service(DcatValidationService validation) {
-		DatasetAdminServiceImpl service = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		DatasetAdminServiceImpl service = new DatasetAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH);
 		service.validationService = validation;
 		return service;
 	}

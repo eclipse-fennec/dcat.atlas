@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -237,7 +238,7 @@ public class WriteValidationIntegrationTest {
 		keywordless.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
 
 		ShaclViolationException refused = assertThrows(ShaclViolationException.class,
-				() -> datasetAdminService.upsertDataset(keywordless));
+				() -> datasetAdminService.upsertDataset(keywordless, Caller.ANONYMOUS));
 
 		assertNotNull(refused.getReport(), "the caller needs the report, not just a failure");
 		assertFalse(refused.getReport().conforms(), "a conforming report would not have been thrown");
@@ -252,7 +253,7 @@ public class WriteValidationIntegrationTest {
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
 		dataset.getKeyword().add(RestEntities.literal("air"));
 
-		datasetAdminService.upsertDataset(dataset);
+		datasetAdminService.upsertDataset(dataset, Caller.ANONYMOUS);
 
 		assertTrue(datasetAdminService.getDataset(DIRECT_ID).isPresent());
 	}

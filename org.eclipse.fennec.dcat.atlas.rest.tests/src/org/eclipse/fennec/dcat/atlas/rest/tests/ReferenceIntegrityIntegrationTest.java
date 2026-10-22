@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -73,9 +74,10 @@ public class ReferenceIntegrityIntegrationTest {
 	@AfterEach
 	void cleanup() {
 		// Unlink before deleting: FR-1 refuses to delete a still-referenced dataset.
-		catalogs.getCatalog(CATALOG_ID).ifPresent(unused -> catalogs.deleteDatasetFromCatalog(CATALOG_ID, DATASET_ID));
-		catalogs.deleteCatalog(CATALOG_ID, false);
-		datasets.deleteDataset(DATASET_ID, false);
+		catalogs.getCatalog(CATALOG_ID).ifPresent(unused -> catalogs.deleteDatasetFromCatalog(CATALOG_ID, DATASET_ID,
+				Caller.ANONYMOUS));
+		catalogs.deleteCatalog(CATALOG_ID, false, Caller.ANONYMOUS);
+		datasets.deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	@Test

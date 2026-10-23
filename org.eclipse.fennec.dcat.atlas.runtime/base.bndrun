@@ -111,7 +111,7 @@
 	org.eclipse.fennec.emf.osgi.component.minimal;version='[1.1.0,1.1.1)',\
 	org.eclipse.fennec.emf.osgi.metadata;version='[1.1.0,1.1.1)',\
 	org.osgi.service.event;version='[1.4.1,1.4.2)',\
-	org.eclipse.fennec.model;version='[0.0.1,0.0.2)',\
+	org.eclipse.fennec.model;version='[0.1.0,0.1.1)',\
 	org.osgi.util.pushstream;version='[1.1.0,1.1.1)',\
 	bcprov;version='[1.84.0,1.84.1)',\
 	com.googlecode.javaewah.JavaEWAH;version='[1.2.3,1.2.4)',\

@@ -18,26 +18,15 @@ import java.util.List;
 import org.osgi.dto.DTO;
 
 /**
- * One stored collection: how much is in it, and what it is called.
+ * One stored collection: how much is in it, and what each entry is called.
  *
  * @since 1.0
  */
 public class CollectionDTO extends DTO {
 
-	/** The collection's path segment, e.g. {@code datasets}. */
-	public String name;
-
-	/** How many resources it holds. Counted from the store's listing; nothing is loaded. */
+	/** How many resources it holds. */
 	public int count;
 
-	/** The ids it holds, in the store's order. */
-	public List<String> ids;
-
-	/**
-	 * What this collection's store was configured to do on a write.
-	 * <p>
-	 * Reported per collection because it is configured per collection — ten times over — and
-	 * two of them disagreeing is a state nothing else makes visible.
-	 */
-	public boolean validateOnWrite;
+	/** What it holds, in the store's id order. */
+	public List<ResourceDTO> resources;
 }

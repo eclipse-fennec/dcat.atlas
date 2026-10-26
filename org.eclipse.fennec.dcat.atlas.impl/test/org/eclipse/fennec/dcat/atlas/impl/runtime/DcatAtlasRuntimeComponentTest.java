@@ -18,15 +18,31 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
+import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
+import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.Page;
+import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntimeDTO;
-import org.eclipse.fennec.dcat.atlas.impl.store.IntegrityFinding;
-import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
+import org.eclipse.fennec.dcat.atlas.api.runtime.ResourceDTO;
 import org.junit.jupiter.api.Test;
 
+import dcat.Catalog;
+import dcat.DataService;
+import dcat.Dataset;
+import dcat.DatasetSeries;
+import dcat.DcatFactory;
+import rdf.RdfFactory;
+
 /**
- * The cost rule and the change count, which are the design (D3, D4) rather than details.
+ * What the component does beyond mapping: when it reads, how it names what it found, and
+ * when it tells a consumer that something moved.
  */
 class DcatAtlasRuntimeComponentTest {
 
@@ -34,41 +50,41 @@ class DcatAtlasRuntimeComponentTest {
 	 * Taking a snapshot reads nothing.
 	 *
 	 * <p>
-	 * This is the rule the whole shape rests on: {@code RuntimeTelemetry} gives every gauge
-	 * its own {@code () -> snapshot()}, so one export interval takes eight or nine snapshots.
-	 * A snapshot that listed the store would list it eight or nine times a collection.
+	 * This is the rule the whole shape rests on: the telemetry bundle gives every gauge its
+	 * own {@code () -> snapshot()}, so one export interval takes a handful of snapshots. A
+	 * snapshot that listed the store would list it once per gauge per collection.
 	 * </p>
 	 */
 	@Test
-	void repeatedSnapshotsWithNoChangeReadNothingFromTheStore() {
-		CountingStore store = new CountingStore("datasets", true, List.of("air", "traffic"));
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		component.addStore(store);
+	void repeatedSnapshotsWithNoChangeReadNothing() {
+		CountingDatasets datasets = new CountingDatasets(List.of("air", "traffic"));
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(datasets);
 
 		component.snapshot();
-		int afterFirst = store.listings.get();
+		int afterFirst = datasets.listings.get();
 		component.snapshot();
 		component.snapshot();
 		component.snapshot();
 
-		assertEquals(1, afterFirst, "the first snapshot after a change reads the store once");
-		assertEquals(afterFirst, store.listings.get(),
-				"and the rest assemble from what it read: one export interval must not list the store per gauge");
+		assertEquals(1, afterFirst, "the first snapshot after a change reads once");
+		assertEquals(afterFirst, datasets.listings.get(),
+				"and the rest assemble from what it read: one export interval must not list per gauge");
 	}
 
 	/** A change makes the next snapshot read again, and only the next one. */
 	@Test
 	void aChangeMakesExactlyTheNextSnapshotReadAgain() {
-		CountingStore store = new CountingStore("datasets", true, List.of("air"));
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		component.addStore(store);
+		CountingDatasets datasets = new CountingDatasets(List.of("air"));
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(datasets);
 		component.snapshot();
 
 		component.changed();
 		component.snapshot();
 		component.snapshot();
 
-		assertEquals(2, store.listings.get());
+		assertEquals(2, datasets.listings.get());
 	}
 
 	/**
@@ -80,110 +96,238 @@ class DcatAtlasRuntimeComponentTest {
 	 */
 	@Test
 	void beingToldAboutAChangeReadsNothing() {
-		CountingStore store = new CountingStore("datasets", true, List.of("air"));
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		component.addStore(store);
+		CountingDatasets datasets = new CountingDatasets(List.of("air"));
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(datasets);
 		component.snapshot();
-		int beforeNotification = store.listings.get();
+		int beforeNotification = datasets.listings.get();
 
 		component.changed();
 
-		assertEquals(beforeNotification, store.listings.get(),
+		assertEquals(beforeNotification, datasets.listings.get(),
 				"the notification runs inside the write; it may not touch the store");
+	}
+
+	/**
+	 * Counting datasets lists their ids and loads none of them.
+	 *
+	 * <p>
+	 * The reason the snapshot carries no dataset titles: a title has to be read out of the
+	 * entity, and a portal with a few thousand datasets would read all of them after every
+	 * write. Catalogues are read because there are tens of them and nothing else answers
+	 * what the portal holds.
+	 * </p>
+	 */
+	@Test
+	void enumeratingDatasetsLoadsNoEntity() {
+		CountingDatasets datasets = new CountingDatasets(List.of("air", "traffic"));
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(datasets);
+
+		DcatAtlasRuntimeDTO dto = component.snapshot();
+
+		assertEquals(2, dto.datasets.count);
+		assertEquals(0, datasets.loads.get(), "the ids come from the listing; nothing is materialised");
 	}
 
 	/** Each caller gets its own DTO: the fields are public and a shared one is shared state. */
 	@Test
 	void everySnapshotIsAFreshObject() {
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		component.addStore(new CountingStore("datasets", true, List.of("air")));
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(new CountingDatasets(List.of("air")));
 
 		assertNotSame(component.snapshot(), component.snapshot());
 	}
 
-	@Test
-	void aStoreArrivingAndLeavingMovesTheChangeCount() {
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		CountingStore store = new CountingStore("datasets", true, List.of("air"));
-
-		long before = component.snapshot().changeCount;
-		component.addStore(store);
-		long afterAdd = component.snapshot().changeCount;
-		component.removeStore(store);
-		long afterRemove = component.snapshot().changeCount;
-
-		assertTrue(afterAdd > before, "a store coming up changes what the portal holds");
-		assertTrue(afterRemove > afterAdd, "and so does one going away");
-	}
-
-	@Test
-	void aWriteMovesTheChangeCountWithoutAnythingElseChanging() {
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		component.addStore(new CountingStore("datasets", true, List.of("air")));
-
-		long before = component.snapshot().changeCount;
-		component.changed();
-
-		assertTrue(component.snapshot().changeCount > before);
-	}
-
-	@Test
-	void theCountedIdsComeFromTheStoreListing() {
-		DcatAtlasRuntimeComponent component = new DcatAtlasRuntimeComponent();
-		component.addStore(new CountingStore("datasets", true, List.of("air", "traffic", "noise")));
-
-		DcatAtlasRuntimeDTO snapshot = component.snapshot();
-
-		assertEquals(1, snapshot.collections.size());
-		assertEquals(3, snapshot.collections.get(0).count);
-		assertEquals(List.of("air", "traffic", "noise"), snapshot.collections.get(0).ids);
-	}
-
 	/**
-	 * The whiteboard may announce its endpoint as a string, an array or a collection, and
-	 * two runtimes may announce the same one.
+	 * A service arriving or leaving moves the change count.
+	 *
+	 * <p>
+	 * Which is why every reference is bound by method. A field-injected one is set without
+	 * telling anybody, so a collection service that came up late left the snapshot reporting
+	 * an empty portal and no consumer was told it had stopped being true.
+	 * </p>
 	 */
 	@Test
-	void endpointsAreReadWhateverShapeTheWhiteboardUsed() {
-		assertEquals(List.of("http://localhost:8085/dcat/rest"),
-				DcatAtlasRuntimeComponent.endpointsOf(List.of("http://localhost:8085/dcat/rest")));
+	void aCollectionServiceComingAndGoingMovesTheChangeCount() {
+		DcatAtlasRuntimeComponent component = component();
+		CountingDatasets datasets = new CountingDatasets(List.of("air"));
 
-		assertEquals(List.of("http://a/rest", "http://b/rest"), DcatAtlasRuntimeComponent
-				.endpointsOf(List.of(new String[] { "http://a/rest", "http://b/rest" })));
+		long before = component.snapshot().changeCount;
+		component.setDatasets(datasets);
+		long afterBind = component.snapshot().changeCount;
+		component.unsetDatasets(datasets);
+		long afterUnbind = component.snapshot().changeCount;
 
-		assertEquals(List.of("http://a/rest"),
-				DcatAtlasRuntimeComponent.endpointsOf(List.of(List.of("http://a/rest"))));
-
-		assertEquals(List.of("http://a/rest"),
-				DcatAtlasRuntimeComponent.endpointsOf(List.of("http://a/rest", "http://a/rest")),
-				"two runtimes announcing the same endpoint is one endpoint");
-
-		assertEquals(List.of(), DcatAtlasRuntimeComponent.endpointsOf(List.of("", "   ")),
-				"a blank announcement is not an endpoint");
+		assertTrue(afterBind > before, "a collection coming up changes what the portal holds");
+		assertTrue(afterUnbind > afterBind, "and so does one going away");
 	}
 
-	/** Counts how often it was listed, which is the whole point of it. */
-	private static final class CountingStore implements StoreIntrospection {
+	/** Nothing bound is an empty portal, not a broken one. */
+	@Test
+	void aPortalWithNoCollectionServicesStillAnswers() {
+		DcatAtlasRuntimeDTO dto = component().snapshot();
 
-		private final String collection;
-		private final boolean validateOnWrite;
-		private final List<String> ids;
+		assertEquals(0, dto.catalogs.count);
+		assertEquals(0, dto.datasets.count);
+		assertEquals(0, dto.dataServices.count);
+		assertEquals(0, dto.datasetSeries.count);
+	}
+
+	/** An unbind only clears the service that actually left. */
+	@Test
+	void unbindingAServiceThatIsNotTheBoundOneChangesNothing() {
+		DcatAtlasRuntimeComponent component = component();
+		CountingDatasets bound = new CountingDatasets(List.of("air"));
+		component.setDatasets(bound);
+
+		component.unsetDatasets(new CountingDatasets(List.of("traffic")));
+
+		assertEquals(1, component.snapshot().datasets.count, "the bound service is still the bound service");
+	}
+
+	/** Every resource is named by the identity a client can dereference, the way refusals are. */
+	@Test
+	void resourcesAreNamedByTheirPublicIri() {
+		DcatAtlasRuntimeComponent component = component();
+		component.setPublicIris(new FixedPublicIris("https://daten.example.de/dcat/rest/"));
+		component.setDatasets(new CountingDatasets(List.of("air")));
+
+		ResourceDTO dataset = component.snapshot().datasets.resources.get(0);
+
+		assertEquals("air", dataset.id);
+		assertEquals("https://daten.example.de/dcat/rest/datasets/air", dataset.iri);
+	}
+
+	/** With no public base known, the logical identity is what there is to report. */
+	@Test
+	void withoutAPublicBaseTheLogicalIriIsReported() {
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(new CountingDatasets(List.of("air")));
+
+		assertEquals("http://dcat.atlas/datasets/air", component.snapshot().datasets.resources.get(0).iri);
+	}
+
+	/** A catalogue's members are counted from the catalogue; nothing it points at is resolved. */
+	@Test
+	void aCatalogsMembersAreCountedFromTheCatalogItself() {
+		DcatAtlasRuntimeComponent component = component();
+		component.setPublicIris(new FixedPublicIris("https://daten.example.de/dcat/rest/"));
+		component.setCatalogs(new FakeCatalogs(List.of(catalog("gov", "Offene Daten", 2, 1))));
+
+		DcatAtlasRuntimeDTO dto = component.snapshot();
+
+		assertEquals(1, dto.catalogs.count);
+		assertEquals("gov", dto.catalogs.resources.get(0).id);
+		assertEquals("https://daten.example.de/dcat/rest/catalogs/gov", dto.catalogs.resources.get(0).iri);
+		assertEquals("Offene Daten", dto.catalogs.resources.get(0).title);
+		assertEquals(2, dto.catalogs.resources.get(0).datasets);
+		assertEquals(1, dto.catalogs.resources.get(0).dataServices);
+	}
+
+	/** A collection that cannot be listed is reported as empty, not as a thrown snapshot. */
+	@Test
+	void aCollectionThatThrowsLeavesTheRestOfTheSnapshotStanding() {
+		DcatAtlasRuntimeComponent component = component();
+		component.setDatasets(new BrokenDatasets());
+		component.setDataServices(new FakeDataServices(List.of("api")));
+
+		DcatAtlasRuntimeDTO dto = component.snapshot();
+
+		assertEquals(0, dto.datasets.count, "what could not be listed holds nothing as far as we know");
+		assertEquals(1, dto.dataServices.count, "and the rest of the inventory is still reported");
+	}
+
+	/** The four collections are read independently and reported in their own fields. */
+	@Test
+	void allFourCollectionsAreReported() {
+		DcatAtlasRuntimeComponent component = component();
+		component.setCatalogs(new FakeCatalogs(List.of(catalog("gov", "Offene Daten", 0, 0))));
+		component.setDatasets(new CountingDatasets(List.of("air", "traffic")));
+		component.setDataServices(new FakeDataServices(List.of("api")));
+		component.setDatasetSeries(new FakeDatasetSeries(List.of("air-2024", "air-2025", "air-2026")));
+
+		DcatAtlasRuntimeDTO dto = component.snapshot();
+
+		assertEquals(1, dto.catalogs.count);
+		assertEquals(2, dto.datasets.count);
+		assertEquals(1, dto.dataServices.count);
+		assertEquals(3, dto.datasetSeries.count);
+		assertEquals(List.of("air", "traffic"),
+				dto.datasets.resources.stream().map(r -> r.id).collect(Collectors.toList()));
+	}
+
+	// --- fixtures -----------------------------------------------------------
+
+	private static DcatAtlasRuntimeComponent component() {
+		return new DcatAtlasRuntimeComponent();
+	}
+
+	private static Catalog catalog(String id, String title, int datasets, int services) {
+		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
+		catalog.setAbout("http://dcat.atlas/catalogs/" + id);
+		catalog.getTitle().add(literal(title));
+		for (int i = 0; i < datasets; i++) {
+			Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+			dataset.setAbout("http://dcat.atlas/datasets/" + id + "-" + i);
+			catalog.getDataset().add(dataset);
+		}
+		for (int i = 0; i < services; i++) {
+			DataService service = DcatFactory.eINSTANCE.createDataService();
+			service.setAbout("http://dcat.atlas/data-services/" + id + "-" + i);
+			catalog.getService().add(service);
+		}
+		return catalog;
+	}
+
+	private static rdf.PlainLiteral literal(String value) {
+		rdf.PlainLiteral literal = RdfFactory.eINSTANCE.createPlainLiteral();
+		literal.setLang("de");
+		literal.setValue(value);
+		return literal;
+	}
+
+	/** Translates under one base and passes everything else through, as the real one does. */
+	private static final class FixedPublicIris implements PublicIris {
+
+		private final String publicBase;
+
+		FixedPublicIris(String publicBase) {
+			this.publicBase = publicBase;
+		}
+
+		@Override
+		public String toPublic(String iri) {
+			return iri != null && iri.startsWith("http://dcat.atlas/")
+					? publicBase + iri.substring("http://dcat.atlas/".length())
+					: iri;
+		}
+
+		@Override
+		public String toLogical(String iri) {
+			return iri;
+		}
+
+		@Override
+		public boolean isOwned(String iri) {
+			return iri != null && iri.startsWith("http://dcat.atlas/");
+		}
+
+		@Override
+		public String publicBase() {
+			return publicBase;
+		}
+	}
+
+	/** Counts what the component asked of it: listings taken, entities materialised. */
+	private static final class CountingDatasets implements DatasetReadOnlyService {
+
 		final AtomicInteger listings = new AtomicInteger();
+		final AtomicInteger loads = new AtomicInteger();
+		private final List<String> ids;
 
-		CountingStore(String collection, boolean validateOnWrite, List<String> ids) {
-			this.collection = collection;
-			this.validateOnWrite = validateOnWrite;
+		CountingDatasets(List<String> ids) {
 			this.ids = ids;
-		}
-
-		@Override
-		public String collection() {
-			return collection;
-		}
-
-		@Override
-		public boolean validateOnWrite() {
-			return validateOnWrite;
 		}
 
 		@Override
@@ -192,10 +336,159 @@ class DcatAtlasRuntimeComponentTest {
 			return ids;
 		}
 
-		/** The expensive one, and no snapshot may reach it: calling it here is a failure. */
 		@Override
-		public List<IntegrityFinding> scan() {
-			throw new AssertionError("scan() is the full read; nothing on the snapshot path may call it");
+		public Optional<Dataset> getDataset(String id) {
+			loads.incrementAndGet();
+			return Optional.empty();
+		}
+
+		@Override
+		public List<Dataset> listDatasets() {
+			loads.incrementAndGet();
+			return List.of();
+		}
+
+		@Override
+		public Page<Dataset> listDatasets(PageRequest page) {
+			loads.incrementAndGet();
+			return Page.empty();
+		}
+
+		@Override
+		public Optional<String> etag(String id) {
+			return Optional.empty();
+		}
+	}
+
+	/** A collection whose listing fails, the way an unreachable store makes it fail. */
+	private static final class BrokenDatasets implements DatasetReadOnlyService {
+
+		@Override
+		public List<String> ids() {
+			throw new IllegalStateException("the repository is not reachable");
+		}
+
+		@Override
+		public Optional<Dataset> getDataset(String id) {
+			return Optional.empty();
+		}
+
+		@Override
+		public List<Dataset> listDatasets() {
+			return List.of();
+		}
+
+		@Override
+		public Page<Dataset> listDatasets(PageRequest page) {
+			return Page.empty();
+		}
+
+		@Override
+		public Optional<String> etag(String id) {
+			return Optional.empty();
+		}
+	}
+
+	private static final class FakeCatalogs implements CatalogReadOnlyService {
+
+		private final List<Catalog> catalogs;
+
+		FakeCatalogs(List<Catalog> catalogs) {
+			this.catalogs = catalogs;
+		}
+
+		@Override
+		public List<Catalog> listCatalogs() {
+			return catalogs;
+		}
+
+		@Override
+		public List<String> ids() {
+			return catalogs.stream().map(c -> c.getAbout().substring(c.getAbout().lastIndexOf('/') + 1))
+					.collect(Collectors.toList());
+		}
+
+		@Override
+		public Optional<Catalog> getCatalog(String id) {
+			return Optional.empty();
+		}
+
+		@Override
+		public Page<Catalog> listCatalogs(PageRequest page) {
+			return Page.empty();
+		}
+
+		@Override
+		public Optional<String> etag(String id) {
+			return Optional.empty();
+		}
+	}
+
+	private static final class FakeDataServices implements DataServiceReadOnlyService {
+
+		private final List<String> ids;
+
+		FakeDataServices(List<String> ids) {
+			this.ids = ids;
+		}
+
+		@Override
+		public List<String> ids() {
+			return ids;
+		}
+
+		@Override
+		public Optional<DataService> getDataService(String id) {
+			return Optional.empty();
+		}
+
+		@Override
+		public List<DataService> listDataServices() {
+			return List.of();
+		}
+
+		@Override
+		public Page<DataService> listDataServices(PageRequest page) {
+			return Page.empty();
+		}
+
+		@Override
+		public Optional<String> etag(String id) {
+			return Optional.empty();
+		}
+	}
+
+	private static final class FakeDatasetSeries implements DatasetSeriesReadOnlyService {
+
+		private final List<String> ids;
+
+		FakeDatasetSeries(List<String> ids) {
+			this.ids = ids;
+		}
+
+		@Override
+		public List<String> ids() {
+			return ids;
+		}
+
+		@Override
+		public Optional<DatasetSeries> getDatasetSeries(String id) {
+			return Optional.empty();
+		}
+
+		@Override
+		public List<DatasetSeries> listDatasetSeries() {
+			return List.of();
+		}
+
+		@Override
+		public Page<DatasetSeries> listDatasetSeries(PageRequest page) {
+			return Page.empty();
+		}
+
+		@Override
+		public Optional<String> etag(String id) {
+			return Optional.empty();
 		}
 	}
 }

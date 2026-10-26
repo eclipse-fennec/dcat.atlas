@@ -13,17 +13,21 @@
  */
 package org.eclipse.fennec.dcat.atlas.api.runtime;
 
-import java.util.List;
-
 import org.osgi.dto.DTO;
 
 /**
- * What this portal is and what it holds, at one moment.
+ * What this portal holds, at one moment.
  *
  * <p>
  * A DTO and not the model, for the reason the OSGi DTOs exist: a reader gets a snapshot it
  * cannot reach through, and does not have to carry EMF to read a number. Everything here is a
  * copy of state that went on living the moment it was built.
+ * </p>
+ *
+ * <p>
+ * One field per stored DCAT collection, and no field for anything that is not stored content.
+ * {@code dcat:Distribution} has none of its own because it is contained: a Distribution lives
+ * inside its Dataset rather than in a collection of its own.
  * </p>
  *
  * <p>
@@ -44,43 +48,15 @@ public class DcatAtlasRuntimeDTO extends DTO {
 	/** When this snapshot was built, in epoch milliseconds. */
 	public long takenAt;
 
-	/** What this portal calls things, and what it tells the world to call them. */
-	public IdentityDTO identity;
+	/** The catalogues, each with what it lists. */
+	public CatalogCollectionDTO catalogs;
 
-	/**
-	 * Where this portal is reachable.
-	 *
-	 * <p>
-	 * What a deployment configured, when it configured anything. Otherwise what the Jakarta
-	 * RS whiteboard says it is bound to — and since the HTTP service binds every interface
-	 * by default, that is <em>every address of the host</em>: on a developer machine, each
-	 * Docker bridge gateway and the LAN address, and typically not {@code localhost}. True,
-	 * but operational rather than public.
-	 * </p>
-	 *
-	 * <p>
-	 * <strong>The address clients should use is {@link IdentityDTO#publicBase}</strong>, not
-	 * this. A deployment that wants the two to agree sets {@code dcat.atlas.endpoint}; one
-	 * behind a proxy has to, because the framework cannot see the address it is reached at.
-	 * </p>
-	 */
-	public List<String> endpoints;
+	/** The datasets. */
+	public CollectionDTO datasets;
 
-	/** Where what it holds is kept, described without naming a backend. */
-	public StoreDTO store;
+	/** The data services. */
+	public CollectionDTO dataServices;
 
-	/** What validation is configured to do, and what it will actually do. */
-	public ValidationDTO validation;
-
-	/** The SPARQL projection. */
-	public GraphDTO graph;
-
-	/** One per collection: how much is in it, and what it is called. */
-	public List<CollectionDTO> collections;
-
-	/** Every catalog, with what it holds. */
-	public List<CatalogSnapshotDTO> catalogs;
-
-	/** Everything configured that is not live, with the reason. Empty is the good case. */
-	public List<FailureDTO> failures;
+	/** The dataset series. */
+	public CollectionDTO datasetSeries;
 }

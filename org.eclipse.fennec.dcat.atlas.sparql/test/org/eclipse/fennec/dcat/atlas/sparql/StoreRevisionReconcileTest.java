@@ -63,11 +63,9 @@ class StoreRevisionReconcileTest {
 
 		private String value;
 		private RuntimeException failure;
-		int calls;
 
 		@Override
 		public Optional<String> current() {
-			calls++;
 			if (failure != null) {
 				throw failure;
 			}
@@ -88,7 +86,7 @@ class StoreRevisionReconcileTest {
 		DcatGraphServiceImpl graph = new DcatGraphServiceImpl(IDENTITY_IRIS, stores.catalogService(),
 				stores.datasetService(), stores.seriesService(), stores.dataServiceService(),
 				stores.distributionService(), true, 0L, 0L);
-		graph.storeRevision = revision;
+		graph.setStoreRevision(revision);
 		return graph;
 	}
 
@@ -126,7 +124,7 @@ class StoreRevisionReconcileTest {
 	@Test
 	void withoutARevisionServiceEveryTickReconciles() {
 		DcatGraphServiceImpl graph = graph();
-		graph.storeRevision = null;
+		graph.unsetStoreRevision(revision);
 		graph.reconcileQuietly();
 		int readsAfterFirstTick = stores.catalogReads;
 

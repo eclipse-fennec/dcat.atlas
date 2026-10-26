@@ -94,7 +94,7 @@ public final class StoreHealth {
 	 * disk — decided by the same rule the git service itself uses, that a repository named
 	 * by a URL <em>is</em> its remote.
 	 */
-	public static boolean heldInMemory(String repo) {
+	private static boolean heldInMemory(String repo) {
 		return repo != null && (repo.startsWith("git://") || repo.startsWith("git@") || repo.startsWith("ssh://")
 				|| repo.startsWith("http://") || repo.startsWith("https://"));
 	}

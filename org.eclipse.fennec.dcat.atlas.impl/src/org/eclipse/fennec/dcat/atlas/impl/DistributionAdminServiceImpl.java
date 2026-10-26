@@ -31,10 +31,10 @@ import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 import dcat.DataService;
@@ -54,7 +54,8 @@ import dcat.Distribution;
  * {@code dcat:accessService} is the exception: it points at a DataService, which is
  * a catalog entity in its own right, so that stays a cross-resource reference.
  */
-@Component(name = "DistributionAdminService", service = DistributionAdminService.class)
+@Component(name = "DistributionAdminService", service = DistributionAdminService.class,
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImpl implements DistributionAdminService {
 
@@ -82,8 +83,18 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	 * of its callers (persistence plan constraint G2). Optional and dynamic — absent
 	 * simply means no SPARQL.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatGraphService graphService;
+	@Reference(name = "graphService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setGraphService(DcatGraphService graphService) {
+		this.graphService = graphService;
+	}
+
+	void unsetGraphService(DcatGraphService graphService) {
+		if (this.graphService == graphService) {
+			this.graphService = null;
+		}
+	}
+
+	private volatile DcatGraphService graphService;
 
 	/**
 	 * On-write SHACL enforcement (FR-4), maintained here rather than in the REST layer:
@@ -96,8 +107,20 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	 * component unsatisfiable without a validation service instead of letting writes
 	 * through unchecked.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
+	// Name pinned: DS derives it from the bind method, and the strict reading above is
+	// configured as validationService.cardinality.minimum.
+	@Reference(name = "validationService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setValidationService(DcatValidationService validationService) {
+		this.validationService = validationService;
+	}
+
+	void unsetValidationService(DcatValidationService validationService) {
+		if (this.validationService == validationService) {
+			this.validationService = null;
+		}
+	}
+
+	private volatile DcatValidationService validationService;
 
 	/** Not an override: a Distribution has no store of its own, so this class does not extend {@code AbstractEntityStore}. */
 	private DcatValidationService writeValidation() {

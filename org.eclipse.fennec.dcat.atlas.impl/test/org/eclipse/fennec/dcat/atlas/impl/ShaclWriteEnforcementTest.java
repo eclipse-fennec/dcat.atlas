@@ -116,7 +116,9 @@ public class ShaclWriteEnforcementTest {
 
 	private DatasetAdminServiceImpl service(DcatValidationService validation) {
 		DatasetAdminServiceImpl service = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		service.validationService = validation;
+		if (validation != null) {
+			service.setValidationService(validation);
+		}
 		return service;
 	}
 
@@ -158,27 +160,6 @@ public class ShaclWriteEnforcementTest {
 		@Override
 		public boolean isWriteEnforced() {
 			return enforced;
-		}
-
-		/** Not what these tests are about; the runtime snapshot reads them, nothing here does. */
-		@Override
-		public String shapesDirectory() {
-			return null;
-		}
-
-		@Override
-		public int shapeFileCount() {
-			return 0;
-		}
-
-		@Override
-		public String vocabularyDirectory() {
-			return null;
-		}
-
-		@Override
-		public int vocabularyFileCount() {
-			return 0;
 		}
 	}
 }

@@ -18,21 +18,21 @@ import java.util.List;
 import org.osgi.dto.DTO;
 
 /**
- * What a full scan of the stored content found.
+ * The catalogues, which carry more than an id.
+ *
+ * <p>
+ * Its own type rather than a {@link CollectionDTO} of {@link CatalogDTO}, because a reader
+ * that had to cast every entry to reach a catalogue's title would be reading an inventory
+ * that does not quite know what it holds.
+ * </p>
  *
  * @since 1.0
  */
-public class IntegrityDTO extends DTO {
+public class CatalogCollectionDTO extends DTO {
 
-	/** When the scan ran, in epoch milliseconds. */
-	public long takenAt;
+	/** How many catalogues there are. */
+	public int count;
 
-	/** How long it took, in milliseconds — the number that says why it is not in the snapshot. */
-	public long durationMillis;
-
-	/** How many resources were read. */
-	public int resourcesScanned;
-
-	/** What is wrong, with {@link FailureReasons} from the content half of the list. */
-	public List<FailureDTO> failures;
+	/** The catalogues, in the store's id order. */
+	public List<CatalogDTO> resources;
 }

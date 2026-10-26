@@ -21,7 +21,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * Explains a portal that cannot render identities (F-25).
@@ -56,8 +55,18 @@ import org.osgi.service.component.annotations.ReferencePolicyOption;
 		HealthCheck.NAME + "=public-iris", HealthCheck.TAGS + "=ready" })
 public class PublicIrisHealthCheck implements HealthCheck {
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile PublicIris publicIris;
+	@Reference(name = "publicIris", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setPublicIris(PublicIris publicIris) {
+		this.publicIris = publicIris;
+	}
+
+	void unsetPublicIris(PublicIris publicIris) {
+		if (this.publicIris == publicIris) {
+			this.publicIris = null;
+		}
+	}
+
+	private volatile PublicIris publicIris;
 
 	@Override
 	public Result execute() {

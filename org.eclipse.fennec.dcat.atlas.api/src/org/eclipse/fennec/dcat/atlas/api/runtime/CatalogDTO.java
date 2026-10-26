@@ -16,17 +16,17 @@ package org.eclipse.fennec.dcat.atlas.api.runtime;
 import org.osgi.dto.DTO;
 
 /**
- * One catalog, with what it holds.
+ * One catalogue, with what it lists.
  *
  * <p>
- * Catalogs are the one kind of resource this snapshot reads rather than counts, because there
- * are tens of them and the question "what is in this portal" is unanswerable without them.
- * Their members are counted from the catalog itself and never loaded.
+ * Catalogues are the one kind of resource this snapshot reads rather than only counts,
+ * because there are tens of them and the question "what is in this portal" is unanswerable
+ * without them. Their members are counted from the catalogue itself and never resolved.
  * </p>
  *
  * @since 1.0
  */
-public class CatalogSnapshotDTO extends DTO {
+public class CatalogDTO extends DTO {
 
 	/** The id it is stored under. */
 	public String id;
@@ -43,7 +43,7 @@ public class CatalogSnapshotDTO extends DTO {
 	/** How many data services it lists. */
 	public int dataServices;
 
-	/** How many sub-catalogs it lists. */
+	/** How many sub-catalogues it lists. */
 	public int catalogs;
 
 	/** How many catalogue records it carries — one per member entry the portal maintains. */

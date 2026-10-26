@@ -48,12 +48,14 @@ class RuntimeDTOConventionsTest {
 		DcatAtlasRuntimeDTO copy = Converters.standardConverter().convert(asMap).to(DcatAtlasRuntimeDTO.class);
 
 		assertEquals(original.changeCount, copy.changeCount);
-		assertEquals(original.identity.publicBase, copy.identity.publicBase);
-		assertEquals(original.store.kind, copy.store.kind);
-		assertEquals(original.validation.effectivelyEnforcing, copy.validation.effectivelyEnforcing);
-		assertEquals(original.collections.get(0).ids, copy.collections.get(0).ids);
-		assertEquals(original.catalogs.get(0).datasets, copy.catalogs.get(0).datasets);
-		assertEquals(original.failures.get(0).reason, copy.failures.get(0).reason);
+		assertEquals(original.takenAt, copy.takenAt);
+		assertEquals(original.catalogs.count, copy.catalogs.count);
+		assertEquals(original.catalogs.resources.get(0).title, copy.catalogs.resources.get(0).title);
+		assertEquals(original.catalogs.resources.get(0).datasets, copy.catalogs.resources.get(0).datasets);
+		assertEquals(original.datasets.count, copy.datasets.count);
+		assertEquals(original.datasets.resources.get(0).id, copy.datasets.resources.get(0).id);
+		assertEquals(original.datasets.resources.get(0).iri, copy.datasets.resources.get(0).iri);
+		assertEquals(original.datasetSeries.count, copy.datasetSeries.count);
 	}
 
 	/**
@@ -92,58 +94,40 @@ class RuntimeDTOConventionsTest {
 				.anyMatch(allowed -> importLine.startsWith("import " + allowed));
 	}
 
+	private static ResourceDTO resource(String collection, String id) {
+		ResourceDTO resource = new ResourceDTO();
+		resource.id = id;
+		resource.iri = "http://localhost:8085/dcat/rest/" + collection + "/" + id;
+		return resource;
+	}
+
+	private static CollectionDTO collection(ResourceDTO... resources) {
+		CollectionDTO collection = new CollectionDTO();
+		collection.resources = List.of(resources);
+		collection.count = collection.resources.size();
+		return collection;
+	}
+
 	private static DcatAtlasRuntimeDTO populated() {
 		DcatAtlasRuntimeDTO dto = new DcatAtlasRuntimeDTO();
 		dto.changeCount = 7;
 		dto.takenAt = 1_760_000_000_000L;
-		dto.endpoints = List.of("http://localhost:8085/dcat/rest");
 
-		dto.identity = new IdentityDTO();
-		dto.identity.logicalBase = "http://dcat.atlas/";
-		dto.identity.publicBase = "http://localhost:8085/dcat/rest/";
-
-		dto.store = new StoreDTO();
-		dto.store.kind = "git";
-		dto.store.location = "https://example.org/store.git";
-		dto.store.persistent = true;
-		dto.store.readable = true;
-
-		dto.validation = new ValidationDTO();
-		dto.validation.shapesDirectory = "/opt/dcat/shapes";
-		dto.validation.shapeFiles = 12;
-		dto.validation.vocabularyDirectory = "/opt/dcat/vocabularies";
-		dto.validation.vocabularyFiles = 5;
-		dto.validation.enforceOnWrite = true;
-		dto.validation.effectivelyEnforcing = true;
-
-		dto.graph = new GraphDTO();
-		dto.graph.enabled = true;
-		dto.graph.ready = true;
-		dto.graph.maxResults = 1000;
-		dto.graph.timeoutMillis = 30_000;
-
-		CollectionDTO datasets = new CollectionDTO();
-		datasets.name = "datasets";
-		datasets.count = 2;
-		datasets.ids = List.of("air-quality", "traffic");
-		datasets.validateOnWrite = true;
-		dto.collections = List.of(datasets);
-
-		CatalogSnapshotDTO catalog = new CatalogSnapshotDTO();
-		catalog.id = "example";
-		catalog.iri = "http://localhost:8085/dcat/rest/catalogs/example";
-		catalog.title = "Example Catalog";
+		CatalogDTO catalog = new CatalogDTO();
+		catalog.id = "gov";
+		catalog.iri = "http://localhost:8085/dcat/rest/catalogs/gov";
+		catalog.title = "Offene Daten";
 		catalog.datasets = 2;
-		catalog.dataServices = 0;
+		catalog.dataServices = 1;
 		catalog.catalogs = 0;
 		catalog.records = 2;
-		dto.catalogs = List.of(catalog);
+		dto.catalogs = new CatalogCollectionDTO();
+		dto.catalogs.resources = List.of(catalog);
+		dto.catalogs.count = 1;
 
-		FailureDTO failure = new FailureDTO();
-		failure.reason = FailureReasons.VOCABULARY_MISSING;
-		failure.subject = "/opt/dcat/vocabularies";
-		failure.message = "CV shapes are loaded with no vocabulary data behind them";
-		dto.failures = List.of(failure);
+		dto.datasets = collection(resource("datasets", "luftqualitaet-2026"), resource("datasets", "verkehr"));
+		dto.dataServices = collection(resource("data-services", "luftqualitaet-api"));
+		dto.datasetSeries = collection();
 
 		return dto;
 	}

@@ -21,12 +21,12 @@ import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
-import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
@@ -37,8 +37,9 @@ import dcat.Dataset;
  * contained in its own file (FR-10), so they come back with it and need no store
  * of their own.
  */
-@Component(name = "DatasetReadOnlyService", service = { DatasetReadOnlyService.class, HealthCheck.class, StoreIntrospection.class }, property = {
-		HealthCheck.NAME + "=store:datasets", HealthCheck.TAGS + "=ready" })
+@Component(name = "DatasetReadOnlyService", service = { DatasetReadOnlyService.class, HealthCheck.class }, property = {
+		HealthCheck.NAME + "=store:datasets", HealthCheck.TAGS + "=ready" },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DatasetReadOnlyServiceImpl extends AbstractEntityStore<Dataset> implements DatasetReadOnlyService {
 

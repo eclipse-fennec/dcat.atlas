@@ -2,9 +2,10 @@
 
 
 -buildpath: \
-	osgi.core,\
-	org.osgi.annotation.versioning,\
-	org.osgi.annotation.bundle,\
+	org.osgi.annotation.versioning;version=latest,\
+	org.osgi.annotation.bundle;version=latest,\
+	org.osgi.dto;version=latest,\
+	org.osgi.framework;version=latest,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.apache.jena.shacl;version=latest,\
 	org.apache.jena.core;version=latest,\

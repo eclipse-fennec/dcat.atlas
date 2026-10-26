@@ -27,8 +27,10 @@ public @interface GraphConfig {
 	 * Turning the endpoint off also stops the graph being built, so a deployment
 	 * that does not want SPARQL pays neither the memory nor the startup cost.
 	 */
-	@AttributeDefinition(name = "Enabled", description = "Whether to build the graph and serve SPARQL at all")
-	boolean enabled() default true;
+	@AttributeDefinition(name = "Enabled", description = "Whether to build the graph and serve SPARQL at all. "
+			+ "Off unless a deployment asks for it: the projection holds the whole store in memory and the "
+			+ "endpoint is a second way in, so neither should arrive by omission.")
+	boolean enabled() default false;
 
 	/**
 	 * Wall-clock budget for a single query. Guiding constraint G4 (queries are

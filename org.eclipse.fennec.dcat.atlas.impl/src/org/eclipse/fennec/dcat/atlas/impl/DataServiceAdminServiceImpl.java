@@ -26,23 +26,23 @@ import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
-import org.eclipse.fennec.dcat.atlas.impl.store.StoreIntrospection;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 import dcat.DataService;
 import dcat.Dataset;
 
 /** File-backed {@link DataServiceAdminService} (write side). */
-@Component(name = "DataServiceAdminService", service = { DataServiceAdminService.class, StoreIntrospection.class })
+@Component(name = "DataServiceAdminService", service = { DataServiceAdminService.class },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl implements DataServiceAdminService {
 
@@ -69,8 +69,18 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	 * of its callers (persistence plan constraint G2). Optional and dynamic — absent
 	 * simply means no SPARQL.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatGraphService graphService;
+	@Reference(name = "graphService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setGraphService(DcatGraphService graphService) {
+		this.graphService = graphService;
+	}
+
+	void unsetGraphService(DcatGraphService graphService) {
+		if (this.graphService == graphService) {
+			this.graphService = null;
+		}
+	}
+
+	private volatile DcatGraphService graphService;
 
 	/**
 	 * On-write SHACL enforcement (FR-4), maintained here rather than in the REST layer:
@@ -83,8 +93,20 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 	 * component unsatisfiable without a validation service instead of letting writes
 	 * through unchecked.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
+	// Name pinned: DS derives it from the bind method, and the strict reading above is
+	// configured as validationService.cardinality.minimum.
+	@Reference(name = "validationService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setValidationService(DcatValidationService validationService) {
+		this.validationService = validationService;
+	}
+
+	void unsetValidationService(DcatValidationService validationService) {
+		if (this.validationService == validationService) {
+			this.validationService = null;
+		}
+	}
+
+	private volatile DcatValidationService validationService;
 
 	@Override
 	protected DcatValidationService writeValidation() {

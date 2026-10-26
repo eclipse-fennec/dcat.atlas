@@ -70,39 +70,4 @@ public interface DcatValidationService {
 	 * service.
 	 */
 	boolean isWriteEnforced();
-
-	/**
-	 * Where the SHACL shapes were read from, or {@code null} when none were configured.
-	 * <p>
-	 * Reported rather than inferred, because "enforcement is on" and "there is anything to
-	 * enforce" are separate facts that can disagree in silence: with no shapes, every write is
-	 * checked against an empty shapes graph and every write conforms.
-	 *
-	 * @return the configured shapes directory, or {@code null}
-	 */
-	String shapesDirectory();
-
-	/**
-	 * How many shape files were parsed. Zero with {@link #isWriteEnforced()} true is the state
-	 * this pair exists to make visible.
-	 *
-	 * @return the number of shape files loaded, never negative
-	 */
-	int shapeFileCount();
-
-	/**
-	 * Where the controlled-vocabulary data was read from, or {@code null} when none was
-	 * configured.
-	 *
-	 * @return the configured vocabulary directory, or {@code null}
-	 */
-	String vocabularyDirectory();
-
-	/**
-	 * How many vocabulary files were parsed. Zero while the CV shapes are loaded is what makes
-	 * every vocabulary-constrained value report a false violation (F-22).
-	 *
-	 * @return the number of vocabulary files loaded, never negative
-	 */
-	int vocabularyFileCount();
 }

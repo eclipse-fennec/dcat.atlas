@@ -54,11 +54,11 @@ import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -79,7 +79,8 @@ import org.osgi.service.metatype.annotations.Designate;
  * the REST layer would serialize.
  */
 @Component(name = "DcatGraphService", service = { DcatGraphService.class, SparqlEngine.class,
-		HealthCheck.class }, property = { HealthCheck.NAME + "=sparql", HealthCheck.TAGS + "=ready" })
+		HealthCheck.class }, property = { HealthCheck.NAME + "=sparql", HealthCheck.TAGS + "=ready" },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = GraphConfig.class)
 public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, HealthCheck {
 
@@ -137,8 +138,18 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	 * {@link StoreRevision} rather than anything storage-specific, so the projection stays
 	 * unaware of what the store actually is.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile StoreRevision storeRevision;
+	@Reference(name = "storeRevision", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setStoreRevision(StoreRevision storeRevision) {
+		this.storeRevision = storeRevision;
+	}
+
+	void unsetStoreRevision(StoreRevision storeRevision) {
+		if (this.storeRevision == storeRevision) {
+			this.storeRevision = null;
+		}
+	}
+
+	private volatile StoreRevision storeRevision;
 
 	@Activate
 	public DcatGraphServiceImpl( //
@@ -234,15 +245,6 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	@Override
 	public boolean isReady() {
 		return ready;
-	}
-
-	/**
-	 * Declared by {@code SparqlEngine} and by {@code DcatGraphService}, which the runtime
-	 * snapshot reads: one implementation answers both.
-	 */
-	@Override
-	public long queryTimeoutMillis() {
-		return queryTimeoutMillis;
 	}
 
 	// --- SparqlEngine ------------------------------------------------------

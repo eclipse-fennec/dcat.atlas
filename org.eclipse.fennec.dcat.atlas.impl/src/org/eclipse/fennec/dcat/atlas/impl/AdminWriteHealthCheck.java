@@ -29,7 +29,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 
 /**
  * Explains a write path that has disappeared (F-25).
@@ -61,23 +60,83 @@ import org.osgi.service.component.annotations.ReferencePolicyOption;
 		HealthCheck.NAME + "=admin-write", HealthCheck.TAGS + "=ready" })
 public class AdminWriteHealthCheck implements HealthCheck {
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile CatalogAdminService catalogs;
+	@Reference(name = "catalogs", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setCatalogs(CatalogAdminService catalogs) {
+		this.catalogs = catalogs;
+	}
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DatasetAdminService datasets;
+	void unsetCatalogs(CatalogAdminService catalogs) {
+		if (this.catalogs == catalogs) {
+			this.catalogs = null;
+		}
+	}
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DatasetSeriesAdminService datasetSeries;
+	private volatile CatalogAdminService catalogs;
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DataServiceAdminService dataServices;
+	@Reference(name = "datasets", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setDatasets(DatasetAdminService datasets) {
+		this.datasets = datasets;
+	}
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DistributionAdminService distributions;
+	void unsetDatasets(DatasetAdminService datasets) {
+		if (this.datasets == datasets) {
+			this.datasets = null;
+		}
+	}
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validation;
+	private volatile DatasetAdminService datasets;
+
+	@Reference(name = "datasetSeries", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setDatasetSeries(DatasetSeriesAdminService datasetSeries) {
+		this.datasetSeries = datasetSeries;
+	}
+
+	void unsetDatasetSeries(DatasetSeriesAdminService datasetSeries) {
+		if (this.datasetSeries == datasetSeries) {
+			this.datasetSeries = null;
+		}
+	}
+
+	private volatile DatasetSeriesAdminService datasetSeries;
+
+	@Reference(name = "dataServices", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setDataServices(DataServiceAdminService dataServices) {
+		this.dataServices = dataServices;
+	}
+
+	void unsetDataServices(DataServiceAdminService dataServices) {
+		if (this.dataServices == dataServices) {
+			this.dataServices = null;
+		}
+	}
+
+	private volatile DataServiceAdminService dataServices;
+
+	@Reference(name = "distributions", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setDistributions(DistributionAdminService distributions) {
+		this.distributions = distributions;
+	}
+
+	void unsetDistributions(DistributionAdminService distributions) {
+		if (this.distributions == distributions) {
+			this.distributions = null;
+		}
+	}
+
+	private volatile DistributionAdminService distributions;
+
+	@Reference(name = "validation", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setValidation(DcatValidationService validation) {
+		this.validation = validation;
+	}
+
+	void unsetValidation(DcatValidationService validation) {
+		if (this.validation == validation) {
+			this.validation = null;
+		}
+	}
+
+	private volatile DcatValidationService validation;
 
 	@Override
 	public Result execute() {

@@ -44,6 +44,7 @@ import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -64,7 +65,8 @@ import org.osgi.service.metatype.annotations.Designate;
  * {@link #onlyEntityResults}.
  */
 @Component(name = "DcatValidationService", service = { DcatValidationService.class, HealthCheck.class }, property = {
-		HealthCheck.NAME + "=shacl", HealthCheck.TAGS + "=ready" })
+		HealthCheck.NAME + "=shacl", HealthCheck.TAGS + "=ready" },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = ShapesConfig.class)
 public class DcatValidationServiceImpl implements DcatValidationService, HealthCheck {
 
@@ -80,10 +82,6 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 	private final Path shapesDirectory;
 	/** Number of {@code *.ttl} shape files actually parsed; 0 means nothing is enforced (F-25). */
 	private final int shapeFileCount;
-	/** Configured vocabulary directory, {@code null} when the operator configured none. */
-	private final Path vocabularyDirectory;
-	/** How many vocabulary files were parsed; zero with CV shapes loaded is F-22. */
-	private final int vocabularyFileCount;
 
 	@Activate
 	public DcatValidationServiceImpl(ShapesConfig config) {
@@ -112,31 +110,8 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 		this.shapes = load.shapes();
 		this.shapeFileCount = load.fileCount();
 		this.shapesDirectory = shapesDirectory;
-		VocabularyLoad vocabularyLoad = loadVocabulary(vocabularyDirectory);
-		this.vocabulary = vocabularyLoad.vocabulary();
-		this.vocabularyFileCount = vocabularyLoad.fileCount();
-		this.vocabularyDirectory = vocabularyDirectory;
+		this.vocabulary = loadVocabulary(vocabularyDirectory);
 		this.enforceOnWrite = enforceOnWrite;
-	}
-
-	@Override
-	public String shapesDirectory() {
-		return shapesDirectory == null ? null : shapesDirectory.toString();
-	}
-
-	@Override
-	public int shapeFileCount() {
-		return shapeFileCount;
-	}
-
-	@Override
-	public String vocabularyDirectory() {
-		return vocabularyDirectory == null ? null : vocabularyDirectory.toString();
-	}
-
-	@Override
-	public int vocabularyFileCount() {
-		return vocabularyFileCount;
 	}
 
 	@Override
@@ -317,15 +292,15 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 	 * when no directory is configured; a configured-but-missing directory is logged
 	 * (the CV shapes would then report false violations) but is not fatal.
 	 */
-	private static VocabularyLoad loadVocabulary(Path directory) {
+	private static Model loadVocabulary(Path directory) {
 		Model vocabulary = ModelFactory.createDefaultModel();
 		if (directory == null) {
-			return new VocabularyLoad(vocabulary, 0);
+			return vocabulary;
 		}
 		if (!Files.isDirectory(directory)) {
 			LOGGER.log(Level.WARNING, "Vocabulary directory not found: {0}. Controlled-vocabulary checks will report "
 					+ "false violations if the CV shapes are loaded.", directory);
-			return new VocabularyLoad(vocabulary, 0);
+			return vocabulary;
 		}
 		int count = 0;
 		try (Stream<Path> files = Files.list(directory)) {
@@ -342,14 +317,7 @@ public class DcatValidationServiceImpl implements DcatValidationService, HealthC
 		}
 		LOGGER.log(Level.INFO, "Loaded {0} controlled-vocabulary file(s) ({1} triples) from {2}.", count,
 				vocabulary.size(), directory);
-		return new VocabularyLoad(vocabulary, count);
-	}
-
-	/**
-	 * What {@link #loadVocabulary} found, so the count survives the load instead of only
-	 * reaching the log — the runtime service reports it, and zero is a diagnosis.
-	 */
-	private record VocabularyLoad(Model vocabulary, int fileCount) {
+		return vocabulary;
 	}
 
 	// --- F-25 readiness -----------------------------------------------------

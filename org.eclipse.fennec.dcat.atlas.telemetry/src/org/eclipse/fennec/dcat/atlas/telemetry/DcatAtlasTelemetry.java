@@ -21,14 +21,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ToLongFunction;
 import java.util.logging.Logger;
 
-import org.eclipse.fennec.dcat.atlas.api.runtime.CatalogSnapshotDTO;
+import org.eclipse.fennec.dcat.atlas.api.runtime.CatalogDTO;
 import org.eclipse.fennec.dcat.atlas.api.runtime.CollectionDTO;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntimeDTO;
-import org.eclipse.fennec.dcat.atlas.api.runtime.FailureDTO;
-import org.eclipse.fennec.dcat.atlas.api.runtime.FailureReasons;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Modified;
 import org.osgi.service.component.annotations.Reference;
@@ -65,14 +64,14 @@ import io.opentelemetry.api.metrics.ObservableLongGauge;
  * both of them.
  * </p>
  */
-@Component(configurationPid = "org.eclipse.fennec.dcat.atlas.telemetry", immediate = true)
+@Component(configurationPid = "org.eclipse.fennec.dcat.atlas.telemetry", immediate = true,
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 public class DcatAtlasTelemetry {
 
 	private static final Logger LOG = Logger.getLogger(DcatAtlasTelemetry.class.getName());
 
 	private static final AttributeKey<String> COLLECTION = AttributeKey.stringKey("fennec.collection");
 	private static final AttributeKey<String> CATALOG = AttributeKey.stringKey("fennec.catalog");
-	private static final AttributeKey<String> REASON = AttributeKey.stringKey("fennec.reason");
 
 	/**
 	 * Where the instruments come from, taken in the constructor.
@@ -119,10 +118,8 @@ public class DcatAtlasTelemetry {
 	@Reference(cardinality = ReferenceCardinality.MULTIPLE, policy = ReferencePolicy.DYNAMIC)
 	void setRuntime(DcatAtlasRuntime runtime, Map<String, Object> properties) {
 		watched.put(runtime, new Watched(() -> gauges(runtime)));
-		// From the snapshot, not from a service property: the endpoint is not published as
-		// one, because the publisher's properties are fixed at construction and the
-		// effective endpoint can arrive after it.
-		LOG.info("[DCAT.Atlas] watching the runtime service at " + runtime.snapshot().endpoints);
+		LOG.info("[DCAT.Atlas] watching the runtime service, which holds "
+				+ runtime.snapshot().catalogs.count + " catalog(s)");
 	}
 
 	/**
@@ -172,22 +169,11 @@ public class DcatAtlasTelemetry {
 
 		instruments.add(gauge(meter, runtime, "dcat.atlas.changes", "How often the portal has changed since it started",
 				snapshot -> snapshot.changeCount));
-		instruments.add(gauge(meter, runtime, "dcat.atlas.failures", "Configured things that are not live",
-				snapshot -> snapshot.failures == null ? 0 : snapshot.failures.size()));
-		instruments.add(gauge(meter, runtime, "dcat.atlas.shapes.loaded", "SHACL shape files parsed",
-				snapshot -> snapshot.validation == null ? 0 : snapshot.validation.shapeFiles));
-		instruments.add(gauge(meter, runtime, "dcat.atlas.enforcing",
-				"1 when a non-conformant write would actually be refused",
-				snapshot -> snapshot.validation != null && snapshot.validation.effectivelyEnforcing ? 1 : 0));
-		instruments.add(gauge(meter, runtime, "dcat.atlas.graph.ready", "1 when the SPARQL projection can answer",
-				snapshot -> snapshot.graph != null && snapshot.graph.ready ? 1 : 0));
 
 		// One series per collection rather than one instrument per kind: the collections are
 		// a closed set the portal already names, and an attribute is what a backend groups by.
 		instruments.add(multiPoint(meter, "dcat.atlas.resources", "Resources held, per collection",
 				() -> resourcesPerCollection(runtime.snapshot())));
-		instruments.add(multiPoint(meter, "dcat.atlas.failures.by_reason", "Failures, by reason",
-				() -> failuresPerReason(runtime.snapshot())));
 
 		if (catalogSeries) {
 			instruments.add(multiPoint(meter, "dcat.atlas.catalog.datasets", "Datasets listed, per catalog",
@@ -197,45 +183,34 @@ public class DcatAtlasTelemetry {
 		return instruments;
 	}
 
-	/** How much each collection holds. */
+	/**
+	 * How much each collection holds — <strong>all four of them, every time</strong>.
+	 *
+	 * <p>
+	 * A zero and a missing series are different things to every metrics backend. A portal
+	 * that published {@code datasets} only once it had one would make "no datasets" and "the
+	 * exporter died" the same observation, so an empty collection reports its zero and a
+	 * collection whose service is not there reports zero too.
+	 * </p>
+	 */
 	static Map<Attributes, Long> resourcesPerCollection(DcatAtlasRuntimeDTO snapshot) {
 		Map<Attributes, Long> points = new LinkedHashMap<>();
-		if (snapshot.collections != null) {
-			for (CollectionDTO collection : snapshot.collections) {
-				points.put(Attributes.of(COLLECTION, collection.name), (long) collection.count);
-			}
-		}
+		points.put(Attributes.of(COLLECTION, "catalogs"), snapshot.catalogs == null ? 0L : snapshot.catalogs.count);
+		points.put(Attributes.of(COLLECTION, "datasets"), count(snapshot.datasets));
+		points.put(Attributes.of(COLLECTION, "data-services"), count(snapshot.dataServices));
+		points.put(Attributes.of(COLLECTION, "dataset-series"), count(snapshot.datasetSeries));
 		return points;
 	}
 
-	/**
-	 * How many failures of each reason — <strong>including the reasons nothing hit</strong>.
-	 *
-	 * <p>
-	 * A zero and a missing series are different things to every metrics backend. If a reason
-	 * were published only while it occurred, fixing it would make the series stop rather
-	 * than fall to zero, and an alert on {@code > 0} could not tell that from the exporter
-	 * having died. So every reason reports, every collection.
-	 * </p>
-	 */
-	static Map<Attributes, Long> failuresPerReason(DcatAtlasRuntimeDTO snapshot) {
-		Map<Attributes, Long> points = new LinkedHashMap<>();
-		for (String reason : FailureReasons.ALL) {
-			points.put(Attributes.of(REASON, reason), 0L);
-		}
-		if (snapshot.failures != null) {
-			for (FailureDTO failure : snapshot.failures) {
-				points.merge(Attributes.of(REASON, failure.reason), 1L, Long::sum);
-			}
-		}
-		return points;
+	private static long count(CollectionDTO collection) {
+		return collection == null ? 0L : collection.count;
 	}
 
 	/** What each catalog lists, when the per-catalog series are switched on. */
 	static Map<Attributes, Long> datasetsPerCatalog(DcatAtlasRuntimeDTO snapshot) {
 		Map<Attributes, Long> points = new LinkedHashMap<>();
-		if (snapshot.catalogs != null) {
-			for (CatalogSnapshotDTO catalog : snapshot.catalogs) {
+		if (snapshot.catalogs != null && snapshot.catalogs.resources != null) {
+			for (CatalogDTO catalog : snapshot.catalogs.resources) {
 				points.put(Attributes.of(CATALOG, catalog.id), (long) catalog.datasets);
 			}
 		}

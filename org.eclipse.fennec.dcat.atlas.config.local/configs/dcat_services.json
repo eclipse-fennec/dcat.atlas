@@ -81,6 +81,11 @@
 	"PublicIris": {
 		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]"
 	},
+	// Required by DcatCallerHeader: no block, no admin resources. Local runs have no
+	// gateway, so nothing sets it and every write is anonymous.
+	"DcatCallerHeader": {
+		"caller.header": "$[env:CALLER_HEADER;default=X-Atlas-Client]"
+	},
 	"DcatValidationService": {
 		"shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=$[prop:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]]",
 		"vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=$[prop:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]]",

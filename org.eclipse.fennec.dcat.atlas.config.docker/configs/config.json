@@ -125,6 +125,12 @@
 		"reconcileIntervalSeconds": "$[env:SPARQL_RECONCILE_INTERVAL_S;default=300]"
 	},
 
+	// The header APISix writes the authenticated client into. Required: the name is the
+	// gateway's choice and the two have to agree, so the deployment states it.
+	"DcatCallerHeader": {
+		"caller.header": "$[env:CALLER_HEADER;default=X-Atlas-Client]"
+	},
+
 	// The DCAT-AP.de shapes are AGPL-3.0 and are NOT in the image (see NOTICE.md):
 	// the operator mounts them. The default points at the canonical mount path, so an
 	// image started without that mount reports CRITICAL on /health/ready and never

@@ -13,7 +13,11 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.nio.file.Files;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -30,10 +34,6 @@ import dcat.Catalog;
 import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Round-trips the file-backed catalog store, and pins the two things the storage

@@ -56,5 +56,8 @@
   "DistributionReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "DistributionAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "PublicIris": { "publicBaseUrl": "http://localhost:8186/rest/" },
+  // Explicit: DcatGraphService is REQUIRE and `enabled` defaults to false, so without this
+  // block the SPARQL resources never register and PortalReady never settles.
+  "DcatGraphService": { "enabled": true },
   "DcatValidationService":        { "shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]", "vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]", "enforceOnWrite": "$[env:SHACL_ENFORCE;default=false]" }
 }

@@ -13,9 +13,12 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.eclipse.emf.common.util.URI;
@@ -36,9 +39,6 @@ import dcat.DcatFactory;
 import dcat.Distribution;
 import rdf.PlainLiteral;
 import rdf.RdfFactory;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * What a client receives is the stored document with our identities rendered

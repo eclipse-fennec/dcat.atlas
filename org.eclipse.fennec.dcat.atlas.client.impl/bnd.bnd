@@ -15,8 +15,8 @@ Bundle-Description: Plain-Java implementation of the DCAT.Atlas client API: \
 # implementation can change without an API consequence.
 
 -buildpath: \
-	org.osgi.annotation.versioning,\
-	org.osgi.annotation.bundle,\
+	org.osgi.annotation.versioning;version=latest,\
+	org.osgi.annotation.bundle;version=latest,\
 	biz.aQute.bnd.annotation;version=latest,\
 	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\

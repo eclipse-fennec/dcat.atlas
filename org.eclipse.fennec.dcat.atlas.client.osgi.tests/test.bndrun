@@ -134,7 +134,7 @@
 	org.eclipse.fennec.m2x.ocl.engine;version='[0.1.1,0.1.2)',\
 	org.eclipse.fennec.m2x.ocl.model;version='[0.1.1,0.1.2)',\
 	org.eclipse.fennec.m2x.ocl.parser;version='[0.1.1,0.1.2)',\
-	org.eclipse.fennec.model;version='[0.0.1,0.0.2)',\
+	org.eclipse.fennec.model;version='[0.1.0,0.1.1)',\
 	org.eclipse.jgit;version='[7.7.1,7.7.2)',\
 	org.eclipse.osgitech.rest;version='[1.2.3,1.2.4)',\
 	org.eclipse.osgitech.rest.servlet.whiteboard;version='[1.2.3,1.2.4)',\

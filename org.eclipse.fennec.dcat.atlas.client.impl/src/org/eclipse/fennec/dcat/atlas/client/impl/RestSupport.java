@@ -21,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.client.api.ConflictException;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatAtlasClientException;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatModelConstraintException;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatShaclException;
+import org.eclipse.fennec.dcat.atlas.client.api.ForbiddenException;
 import org.eclipse.fennec.dcat.atlas.client.api.NotFoundException;
 import org.eclipse.fennec.dcat.atlas.client.api.PreconditionFailedException;
 import org.eclipse.fennec.dcat.atlas.client.api.RetryableException;
@@ -42,6 +43,7 @@ import jakarta.ws.rs.core.Response.Status.Family;
  * <tr><th>422 + {@code X-SHACL-Conforms}<td>{@link DcatShaclException}
  * <tr><th>422 without it<td>{@link DcatModelConstraintException}
  * <tr><th>400<td>{@link BadRequestException}
+ * <tr><th>403<td>{@link ForbiddenException}
  * <tr><th>404<td>{@link NotFoundException}
  * <tr><th>409<td>{@link ConflictException}
  * <tr><th>412<td>{@link PreconditionFailedException}
@@ -117,6 +119,8 @@ final class RestSupport {
 		}
 		return switch (status) {
 		case 400 -> new BadRequestException(detail);
+		case 403 -> new ForbiddenException(detail
+				+ " (the resource is managed by another system; the same caller will be refused again)");
 		case 404 -> new NotFoundException(detail);
 		case 409 -> new ConflictException(detail);
 		case 412 -> new PreconditionFailedException(detail);

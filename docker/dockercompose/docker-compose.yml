@@ -32,6 +32,11 @@ services:
       # at read time, so it must be the URL clients actually reach — behind a
       # reverse proxy that is not the address the container sees.
       PUBLIC_BASE_URL: "http://localhost:${DCAT_PORT:-8080}/rest/"
+      # Uncomment, with the mount below, to have the portal store a folder of .xmi
+      # resources on startup - typically the shared catalog the generating systems
+      # publish into. They are seeded unmanaged, so all of them may add members and
+      # none may claim it, and only what the portal does not already hold is written.
+      # INITIAL_RESOURCES_DIR: /opt/dcat/initial
     volumes:
       # A *named* volume, because Docker seeds a new one from the image content at
       # the mount point — that is how the bare repository the image ships with
@@ -41,6 +46,7 @@ services:
       - dcat-store:/opt/dcat/store.git
       - ${DCAT_SHAPES_DIR:-./shapes}:/opt/dcat/shapes:ro
       - ${DCAT_VOCAB_DIR:-./vocabularies}:/opt/dcat/vocabularies:ro
+      # - ${DCAT_INITIAL_DIR:-./initial}:/opt/dcat/initial:ro
     restart: unless-stopped
     # No `healthcheck:` here on purpose. The image is distroless — no shell, no
     # curl, no wget — so an in-container probe has nothing to run. Use the HTTP

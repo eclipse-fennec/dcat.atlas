@@ -86,6 +86,14 @@
 	"DcatCallerHeader": {
 		"caller.header": "$[env:CALLER_HEADER;default=X-Atlas-Client]"
 	},
+	// A folder of .xmi resources stored on startup, unmanaged, so the generating systems
+	// have a catalog to publish into. Empty here: a local run seeds nothing until
+	// INITIAL_RESOURCES_DIR names a folder. halt.on.error is off, so a bad seed fails the
+	// loader and leaves the rest of the runtime up - this is a workbench, not a container.
+	"InitialDcatResources": {
+		"folder": "$[env:INITIAL_RESOURCES_DIR;default=$[prop:INITIAL_RESOURCES_DIR;default=]]",
+		"halt.on.error": false
+	},
 	"DcatValidationService": {
 		"shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=$[prop:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]]",
 		"vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=$[prop:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]]",

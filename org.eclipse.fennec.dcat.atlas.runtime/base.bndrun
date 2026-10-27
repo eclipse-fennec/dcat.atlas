@@ -143,6 +143,7 @@
 	bnd.identity;id='org.eclipse.jgit.ssh.apache',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
+	bnd.identity;id='org.eclipse.fennec.dcat.atlas.bootstrap',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.msg.body.writer',\
 	bnd.identity;id='org.apache.felix.healthcheck.api',\
 	bnd.identity;id='org.apache.felix.healthcheck.core',\

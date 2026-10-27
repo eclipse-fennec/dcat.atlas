@@ -91,6 +91,8 @@ interpolation plugin. The configuration itself lives in
 | `SHACL_SHAPES_DIR` | `/opt/dcat/shapes` | Directory of `*.ttl` SHACL shapes |
 | `SHACL_VOCAB_DIR` | `/opt/dcat/vocabularies` | Directory of controlled-vocabulary files |
 | `SHACL_ENFORCE` | `true` | Reject writes that do not conform |
+| `INITIAL_RESOURCES_DIR` | *(empty)* | Folder of `*.xmi` resources to store on startup, unmanaged — see [Initial resources](#initial-resources). Empty seeds nothing |
+| `INITIAL_RESOURCES_HALT` | `true` | Stop the container when that folder cannot be seeded, instead of serving a portal without it |
 
 ## Endpoints
 
@@ -141,6 +143,67 @@ docker run --rm -v dcat-store:/repo alpine/git -C /repo log --stat main
 operator mounts them read-only. Start the container without that mount and the readiness
 check reports CRITICAL, `/health/ready` returns 503, and the container never becomes ready —
 deliberately. A portal that silently validates nothing must not be routed traffic.
+
+## Initial resources
+
+A catalog that several generating systems publish into has to exist before any of them can,
+and it must belong to none of them. Mount a folder of XMI resources and name it, and the
+portal stores them once on startup:
+
+```bash
+docker run -d --name dcat-atlas -p 8080:8080 \
+  -v dcat-store:/opt/dcat/store.git \
+  -v /path/to/shapes:/opt/dcat/shapes:ro \
+  -v /path/to/vocabularies:/opt/dcat/vocabularies:ro \
+  -v /path/to/initial:/opt/dcat/initial:ro \
+  -e INITIAL_RESOURCES_DIR=/opt/dcat/initial \
+  -e PUBLIC_BASE_URL=https://data.example.de/dcat/rest \
+  eclipse-fennec/dcat.atlas:latest
+```
+
+A seed file is exactly the XMI a client would `PUT` to the admin API — copy what the portal
+served you, or start from the example in
+[`../docs/opendata-portal-user-guide.md`](../docs/opendata-portal-user-guide.md):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dcat:Catalog xmlns:xmi="http://www.omg.org/XMI" xmlns:dcat="http://www.w3.org/ns/dcat#"
+         xmi:version="2.0" about="http://dcat.atlas/catalogs/example">
+  <title lang="de" value="Beispielkatalog"/>
+  <description lang="de" value="Der Katalog, in den die erzeugenden Systeme veroeffentlichen"/>
+  <publisher about="https://example.de/organisation/uba">
+    <name lang="de" value="Umweltbundesamt"/>
+  </publisher>
+</dcat:Catalog>
+```
+
+What the folder does, and what it deliberately does not:
+
+- **Seeded resources are managed by nobody.** The write is made as an anonymous caller, so
+  nothing is stamped into `managedBy` and every generating system may add its own datasets
+  and services to the catalog, while none of them can claim it (#57). A system that seeded
+  the catalog itself would own it, and the others could not write to it at all.
+- **Only what is missing is written.** A write replaces the stored resource, so re-seeding
+  on every start would drop every membership the systems had published since — the catalog
+  would come back empty. A seed says what the portal should *start out* holding; after that
+  the portal is the truth and the file is history.
+- **The whole folder is read before anything is stored**, so one unusable file seeds nothing
+  rather than half of itself. There is no rollback behind that, and none is wanted: the
+  create-if-absent rule means a corrected folder on the next start seeds exactly what the
+  failed run did not.
+- **Order is by kind, not by file name**: datasets, then dataset series, then data services,
+  then catalogs, because a write naming a member that is not stored yet is refused. Within
+  one kind the file names order it, which is what puts a sub-catalog before its parent.
+- **`about` is required** and has to be an identity of this portal — either the stored form
+  (`http://dcat.atlas/catalogs/example`) or the public one `PUBLIC_BASE_URL` serves. Without
+  it a fresh id is minted, which would differ per deployment and name nothing the generating
+  systems could address.
+- **A named folder that is not there stops the container.** Being told to seed and silently
+  not doing it is how a generating system ends up publishing against a catalog that was never
+  created. Set `INITIAL_RESOURCES_HALT=false` to fail only the component instead.
+
+Everything else about a seeded resource is ordinary: it is validated like any other write,
+it is one commit in the store, and it can be edited or deleted through the API afterwards.
 
 ## Remote repositories
 

@@ -27,6 +27,7 @@ import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
@@ -65,6 +66,10 @@ import rdf.IdentifiedResource;
 		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implements CatalogAdminService {
+
+	/** How this service says it changed the portal; see DcatChangeNotifier. */
+	@Reference
+	DcatChangeNotifier changeNotifier;
 
 	/** Which membership list on a Catalog a given collection is linked through. */
 	private static final Function<Catalog, EList<? extends EObject>> DATASETS = Catalog::getDataset;
@@ -151,6 +156,7 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store catalog " + id);
 		reproject(id);
+		changeNotifier.entityChanged(collection, id);
 		return catalog;
 	}
 
@@ -169,6 +175,7 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 		// still points at it, and the SPARQL projection reads the same store.
 		store.commit(cascade ? "Delete catalog " + id + " and unlink its referrers" : "Delete catalog " + id);
 		reproject(id);
+		changeNotifier.entityDeleted(collection, id);
 		return unlinked;
 	}
 
@@ -259,6 +266,7 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 			Function<Catalog, EList<? extends EObject>> membership, String message) {
 		Catalog catalog = requireCatalog(store, catalogId);
 		EList<EObject> members = (EList<EObject>) membership.apply(catalog);
+		boolean linked = false;
 		if (!Members.contains(members, memberCollection, memberId)) {
 			EObject member = store.<EObject>get(memberCollection, memberId).orElseThrow(
 					() -> new NoSuchElementException("Unknown " + memberCollection + ": " + memberId));
@@ -266,12 +274,18 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 			// The entry is new, so it gets its catalogue record in the same write (#56).
 			CatalogRecords.memberLinked(catalog, member);
 			store.save(catalog);
+			linked = true;
 		}
 		// Commits whatever the operation staged, as one commit: for addX the member and the
 		// catalog together, for a repeat of an existing membership the member alone, and for
 		// a repeated link nothing at all - which commits nothing and leaves the ETag alone.
 		store.commit(message);
 		reproject(catalogId);
+		// After the commit, and only for a link that happened: delivery is asynchronous, so a
+		// consumer can read the portal before the operation that announced the change finished.
+		if (linked) {
+			changeNotifier.entityLinked(memberCollection, memberId);
+		}
 		return catalog;
 	}
 
@@ -286,6 +300,7 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 			store.saveRemoval(catalog);
 			store.commit("Unlink %s %s from catalog %s".formatted(memberCollection, memberId, catalogId));
 			reproject(catalogId);
+			changeNotifier.entityUnlinked(memberCollection, memberId);
 		}
 	}
 

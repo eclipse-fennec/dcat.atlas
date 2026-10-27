@@ -14,10 +14,11 @@
 package org.eclipse.fennec.dcat.atlas.telemetry;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.function.ToLongFunction;
 import java.util.logging.Logger;
 
@@ -218,7 +219,7 @@ public class DcatAtlasTelemetry {
 	}
 
 	private static ObservableLongGauge multiPoint(Meter meter, String name, String description,
-			java.util.function.Supplier<Map<Attributes, Long>> points) {
+			Supplier<Map<Attributes, Long>> points) {
 		return meter.gaugeBuilder(name).setDescription(description).ofLongs()
 				.buildWithCallback(measurement -> points.get()
 						.forEach((attributes, value) -> measurement.record(value, attributes)));
@@ -233,11 +234,11 @@ public class DcatAtlasTelemetry {
 	/** One runtime's instruments, so a configuration change can replace them as a set. */
 	private final class Watched implements AutoCloseable {
 
-		private final java.util.function.Supplier<List<ObservableLongGauge>> build;
+		private final Supplier<List<ObservableLongGauge>> build;
 
 		private volatile List<ObservableLongGauge> instruments;
 
-		Watched(java.util.function.Supplier<List<ObservableLongGauge>> build) {
+		Watched(Supplier<List<ObservableLongGauge>> build) {
 			this.build = build;
 			this.instruments = build.get();
 		}

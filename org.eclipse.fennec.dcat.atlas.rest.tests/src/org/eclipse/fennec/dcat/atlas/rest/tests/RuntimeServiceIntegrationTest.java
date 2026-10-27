@@ -18,9 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime;
@@ -36,6 +39,7 @@ import org.osgi.test.common.annotation.InjectService;
 import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
 
+import dcat.Catalog;
 import dcat.Dataset;
 import dcat.DcatFactory;
 
@@ -43,10 +47,18 @@ import dcat.DcatFactory;
  * The runtime service in a real framework.
  *
  * <p>
- * Everything here is something the unit tests cannot see: that the component registers at
- * all despite declaring {@code service = {}}, that the change count travels as a service
- * property and moves, and that what the inventory reports matches what the portal actually
- * holds.
+ * Everything here is something a plain unit test cannot see: that the component registers
+ * {@code DcatAtlasRuntime} at all, when the only service DS declares for it is an
+ * {@code EventHandler}; that the change count travels as a service property and moves; and
+ * that what the inventory reports matches what the portal actually holds.
+ * </p>
+ *
+ * <p>
+ * <strong>It also has to wait, and that is the design showing through.</strong> A write
+ * announces itself by posting to EventAdmin, which delivers on its own thread — that hop is
+ * what keeps the inventory from re-entering the store it is reading. So a write returns
+ * before the component has been told about it, and a test that asked for the snapshot on the
+ * next line would be reading a portal that is correct but not yet caught up.
  * </p>
  */
 @ExtendWith(BundleContextExtension.class)
@@ -59,10 +71,25 @@ public class RuntimeServiceIntegrationTest {
 	@InjectService
 	DatasetAdminService datasets;
 
+	@InjectService
+	CatalogAdminService catalogs;
+
+	/** Long enough for a posted event to be delivered on an unloaded machine, short enough to fail. */
+	private static final Duration DELIVERY = Duration.ofSeconds(5);
+
 	private String written;
+	private String catalogWritten;
 
 	@AfterEach
 	void removeWhatThisTestWrote() {
+		if (catalogWritten != null) {
+			try {
+				catalogs.deleteCatalog(catalogWritten, true);
+			} catch (RuntimeException alreadyGone) {
+				// The store is shared with the live runtime; cleaning up is best effort.
+			}
+			catalogWritten = null;
+		}
 		if (written != null) {
 			try {
 				datasets.deleteDataset(written, true);
@@ -70,6 +97,63 @@ public class RuntimeServiceIntegrationTest {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
 			written = null;
+		}
+	}
+
+	/**
+	 * Waits for something that only becomes true once a posted event has been delivered.
+	 *
+	 * <p>
+	 * Polling rather than listening: what is being waited for is the <em>effect</em> of the
+	 * delivery on the runtime service, and that is the thing under test. A latch on the event
+	 * itself would pass while the component was still none the wiser.
+	 * </p>
+	 */
+	private static void awaitDelivery(BooleanSupplier caughtUp, String what) {
+		long deadline = System.nanoTime() + DELIVERY.toNanos();
+		while (System.nanoTime() < deadline) {
+			if (caughtUp.getAsBoolean()) {
+				return;
+			}
+			try {
+				Thread.sleep(20);
+			} catch (InterruptedException interrupted) {
+				Thread.currentThread().interrupt();
+				throw new AssertionError("interrupted while waiting for " + what, interrupted);
+			}
+		}
+		assertTrue(caughtUp.getAsBoolean(), () -> what + " within " + DELIVERY);
+	}
+
+	/**
+	 * Waits until the change count has stopped moving, and answers where it stopped.
+	 *
+	 * <p>
+	 * Needed before a test can assert that something did <em>not</em> move it: the writes
+	 * that set the test up announce themselves too, and an announcement still in flight would
+	 * otherwise be read as the one the test is claiming never happened.
+	 * </p>
+	 */
+	private long awaitQuiet() {
+		long seen = runtime.snapshot().changeCount;
+		long deadline = System.nanoTime() + DELIVERY.toNanos();
+		while (System.nanoTime() < deadline) {
+			sleep(DELIVERY.toMillis() / 25);
+			long now = runtime.snapshot().changeCount;
+			if (now == seen) {
+				return now;
+			}
+			seen = now;
+		}
+		throw new AssertionError("the portal never stopped announcing within " + DELIVERY);
+	}
+
+	private static void sleep(long millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException interrupted) {
+			Thread.currentThread().interrupt();
+			throw new AssertionError("interrupted", interrupted);
 		}
 	}
 
@@ -125,11 +209,11 @@ public class RuntimeServiceIntegrationTest {
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, written));
 		RestEntities.mandatoryDataset(dataset, "Runtime service probe");
 		datasets.upsertDataset(dataset);
+		awaitDelivery(() -> runtime.snapshot().changeCount > before.changeCount,
+				"a commit has to reach the inventory");
 
 		DcatAtlasRuntimeDTO after = runtime.snapshot();
 
-		assertTrue(after.changeCount > before.changeCount,
-				"a commit has to reach the inventory: " + before.changeCount + " -> " + after.changeCount);
 		assertEquals(datasetsBefore + 1, after.datasets.count,
 				"the new dataset should be counted from the store listing");
 
@@ -139,5 +223,42 @@ public class RuntimeServiceIntegrationTest {
 		List<String> iris = after.datasets.resources.stream().map(r -> r.iri).toList();
 		assertTrue(iris.stream().anyMatch(iri -> iri != null && iri.endsWith("/datasets/" + written)),
 				"and by the identity a client can dereference, not only by its store id: " + iris);
+	}
+
+	/**
+	 * Re-linking what is already linked announces nothing, so the change count stays put.
+	 *
+	 * <p>
+	 * The same write that leaves the ETag alone has to leave the change count alone: a
+	 * consumer re-reads the whole portal on an announcement, and re-linking every member is
+	 * what a publisher does on every sync.
+	 * </p>
+	 */
+	@Test
+	void aRepeatedLinkMovesNothing() {
+		written = "runtime-" + UUID.randomUUID();
+		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, written));
+		RestEntities.mandatoryDataset(dataset, "Runtime service probe");
+		datasets.upsertDataset(dataset);
+
+		catalogWritten = "runtime-cat-" + UUID.randomUUID();
+		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
+		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, catalogWritten));
+		RestEntities.mandatoryDataset(catalog, "Runtime service probe");
+		catalogs.upsertCatalog(catalog);
+		long beforeTheLink = awaitQuiet();
+
+		catalogs.linkDatasetToCatalog(catalogWritten, written);
+		awaitDelivery(() -> runtime.snapshot().changeCount > beforeTheLink, "the link to be announced");
+		long settled = awaitQuiet();
+
+		catalogs.linkDatasetToCatalog(catalogWritten, written);
+
+		// Nothing to wait for: the assertion is that nothing is coming. Give delivery the
+		// window it would have had, so a regression fails here rather than racing past.
+		sleep(DELIVERY.toMillis() / 10);
+		assertEquals(settled, runtime.snapshot().changeCount,
+				"a link that changed nothing has nothing to announce");
 	}
 }

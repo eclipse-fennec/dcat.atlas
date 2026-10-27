@@ -21,6 +21,7 @@ import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
@@ -46,6 +47,10 @@ import dcat.Dataset;
 		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implements DatasetAdminService {
+
+	/** How this service says it changed the portal; see DcatChangeNotifier. */
+	@Reference
+	DcatChangeNotifier changeNotifier;
 
 	@Activate
 	public DatasetAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
@@ -123,6 +128,9 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store dataset " + id);
 		reproject(id);
+		// After the commit: delivery is asynchronous, so a consumer can read the portal
+		// before the operation that announced the change has finished it.
+		changeNotifier.entityChanged(collection, id);
 		return dataset;
 	}
 
@@ -138,6 +146,7 @@ public class DatasetAdminServiceImpl extends DatasetReadOnlyServiceImpl implemen
 		// One commit for the delete and every unlink it caused; see CatalogAdminServiceImpl.
 		store.commit(cascade ? "Delete dataset " + id + " and unlink its referrers" : "Delete dataset " + id);
 		reproject(id);
+		changeNotifier.entityDeleted(collection, id);
 		return unlinked;
 	}
 

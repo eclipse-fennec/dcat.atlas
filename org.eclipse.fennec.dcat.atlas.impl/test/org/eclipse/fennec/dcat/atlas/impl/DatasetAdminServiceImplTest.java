@@ -37,7 +37,7 @@ public class DatasetAdminServiceImplTest {
 	Path storage;
 
 	private DatasetAdminServiceImpl service() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	@Test

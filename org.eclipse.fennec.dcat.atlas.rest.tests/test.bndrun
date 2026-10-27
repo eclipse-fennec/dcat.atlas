@@ -8,6 +8,7 @@
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation',\
+	bnd.identity;id='org.apache.felix.eventadmin',\
 	bnd.identity;id='org.apache.felix.configadmin.plugin.interpolation',\
 	bnd.identity;id='org.eclipse.parsson.jakarta.json',\
 	bnd.identity;id='org.apache.felix.configadmin',\

@@ -106,13 +106,14 @@ public class AdminWriteHealthCheckTest {
 
 	private AdminWriteHealthCheck check(boolean withValidation) {
 		AdminWriteHealthCheck check = new AdminWriteHealthCheck();
-		boundDatasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		check.setCatalogs(new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		boundDatasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		check.setCatalogs(TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH)));
 		check.setDatasets(boundDatasets);
-		check.setDatasetSeries(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		check.setDataServices(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		check.setDistributions(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
-				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
+		check.setDatasetSeries(TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
+		check.setDataServices(TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
+		check.setDistributions(TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
+				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH))));
 		if (withValidation) {
 			check.setValidation(new AlwaysEnforcing());
 		}

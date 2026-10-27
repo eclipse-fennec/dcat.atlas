@@ -100,8 +100,14 @@ collection of its own and is always created inside its dataset, at
 on-disk format, so a stored entity can be sent straight back. Any other content type
 on a write is answered `415 Unsupported Media Type`. Reads are the other half of the
 story and are unaffected: you negotiate Turtle, JSON-LD, RDF/XML, N-Triples or N3 with
-`Accept`, as [Content negotiation](#content-negotiation) describes, and a write
-response honours the same `Accept`.
+`Accept`, as [Content negotiation](#content-negotiation) describes.
+
+> **A write's own response negotiates a narrower set:** `application/xmi`,
+> `application/json`, `application/xml` or `application/rdf+xml`. The RDF text syntaxes are
+> read-only — asking a `POST` or `PUT` for Turtle, JSON-LD, N-Triples or N3 is answered
+> `406 Not Acceptable` rather than a body in that syntax. When you want one, read the
+> resource back afterwards: a `201` hands you its URL in `Location`, and a `PUT` is already
+> addressed to it.
 
 > `application/xmi`, not `application/xml`. The codec selects by media type, and
 > `application/xml` picks a plain-XML codec that does not understand `xmi:version` or a

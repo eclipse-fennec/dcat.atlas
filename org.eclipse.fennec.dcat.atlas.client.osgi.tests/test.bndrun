@@ -13,6 +13,7 @@
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation',\
+	bnd.identity;id='org.apache.felix.eventadmin',\
 	bnd.identity;id='org.apache.felix.configadmin.plugin.interpolation',\
 	bnd.identity;id='org.eclipse.parsson.jakarta.json',\
 	bnd.identity;id='org.apache.felix.configadmin',\
@@ -162,6 +163,7 @@
 	org.opentest4j;version='[1.3.0,1.3.1)',\
 	org.osgi.service.component;version='[1.5.1,1.5.2)',\
 	org.osgi.service.event;version='[1.4.1,1.4.2)',\
+	org.apache.felix.eventadmin;version='[1.6.4,1.6.5)',\
 	org.osgi.service.jakartars;version='[2.0.0,2.0.1)',\
 	org.osgi.test.common;version='[1.3.0,1.3.1)',\
 	org.osgi.test.junit5;version='[1.3.0,1.3.1)',\

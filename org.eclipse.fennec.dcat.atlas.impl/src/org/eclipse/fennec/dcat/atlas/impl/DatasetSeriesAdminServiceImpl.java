@@ -24,6 +24,7 @@ import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
@@ -54,6 +55,10 @@ import dcat.DatasetSeries;
 @Designate(ocd = StoreConfig.class)
 public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceImpl
 		implements DatasetSeriesAdminService {
+
+	/** How this service says it changed the portal; see DcatChangeNotifier. */
+	@Reference
+	DcatChangeNotifier changeNotifier;
 
 	@Activate
 	public DatasetSeriesAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
@@ -131,6 +136,9 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
+		// After the commit: delivery is asynchronous, so a consumer can read the portal
+		// before the operation that announced the change has finished it.
+		changeNotifier.entityChanged(collection, id);
 		return series;
 	}
 
@@ -147,6 +155,7 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		store.commit(cascade ? "Delete dataset series " + id + " and unlink its referrers"
 				: "Delete dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
+		changeNotifier.entityDeleted(collection, id);
 		return unlinked;
 	}
 
@@ -183,6 +192,7 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 				store.saveRemoval(dataset);
 				store.commit("Unlink dataset %s from dataset series %s".formatted(datasetId, datasetSeriesId));
 				reproject(DcatEntity.DATASET, datasetId);
+				changeNotifier.entityUnlinked(StoreLayout.DATASETS, datasetId);
 			}
 		});
 	}
@@ -191,13 +201,20 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		DatasetSeries series = requireSeries(store, datasetSeriesId);
 		Dataset dataset = store.<Dataset>get(StoreLayout.DATASETS, datasetId)
 				.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId));
+		boolean linked = false;
 		if (!Members.contains(dataset.getInSeries(), collection, datasetSeriesId)) {
 			dataset.getInSeries().add(series);
 			store.save(dataset);
+			linked = true;
 		}
 		// Commits whatever the operation staged, as one commit; see CatalogAdminServiceImpl.
 		store.commit(message);
 		reproject(DcatEntity.DATASET, datasetId);
+		// Only for a link that happened, and only once it is committed; see
+		// CatalogAdminServiceImpl.connect.
+		if (linked) {
+			changeNotifier.entityLinked(StoreLayout.DATASETS, datasetId);
+		}
 		return series;
 	}
 

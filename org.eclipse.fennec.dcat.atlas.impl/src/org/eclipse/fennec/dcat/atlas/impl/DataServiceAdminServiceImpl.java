@@ -24,6 +24,7 @@ import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
@@ -45,6 +46,10 @@ import dcat.Dataset;
 		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl implements DataServiceAdminService {
+
+	/** How this service says it changed the portal; see DcatChangeNotifier. */
+	@Reference
+	DcatChangeNotifier changeNotifier;
 
 	@Activate
 	public DataServiceAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
@@ -122,6 +127,9 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store data service " + id);
 		reproject(id);
+		// After the commit: delivery is asynchronous, so a consumer can read the portal
+		// before the operation that announced the change has finished it.
+		changeNotifier.entityChanged(collection, id);
 		return service;
 	}
 
@@ -138,6 +146,7 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 		store.commit(cascade ? "Delete data service " + id + " and unlink its referrers"
 				: "Delete data service " + id);
 		reproject(id);
+		changeNotifier.entityDeleted(collection, id);
 		return unlinked;
 	}
 
@@ -182,19 +191,27 @@ public class DataServiceAdminServiceImpl extends DataServiceReadOnlyServiceImpl 
 			store.saveRemoval(dataService);
 			store.commit("Unlink dataset %s from data service %s".formatted(datasetId, dataServiceId));
 			reproject(dataServiceId);
+			changeNotifier.entityUnlinked(StoreLayout.DATASETS, datasetId);
 		}
 	}
 
 	private DataService connect(Store store, String dataServiceId, String datasetId, String message) {
 		DataService dataService = requireDataService(store, dataServiceId);
+		boolean linked = false;
 		if (!Members.contains(dataService.getServesDataset(), StoreLayout.DATASETS, datasetId)) {
 			dataService.getServesDataset().add(store.<Dataset>get(StoreLayout.DATASETS, datasetId)
 					.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId)));
 			store.save(dataService);
+			linked = true;
 		}
 		// Commits whatever the operation staged, as one commit; see CatalogAdminServiceImpl.
 		store.commit(message);
 		reproject(dataServiceId);
+		// Only for a link that happened, and only once it is committed; see
+		// CatalogAdminServiceImpl.connect.
+		if (linked) {
+			changeNotifier.entityLinked(StoreLayout.DATASETS, datasetId);
+		}
 		return dataService;
 	}
 

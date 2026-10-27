@@ -14,6 +14,7 @@
 package org.eclipse.fennec.dcat.atlas.impl.runtime;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -27,15 +28,18 @@ import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntimeDTO;
-import org.eclipse.fennec.dcat.atlas.impl.store.StoreChanges;
-import org.eclipse.fennec.services.runtime.ChangeCountPublisher;
+import org.eclipse.fennec.dcat.atlas.api.runtime.DcatChangeNotifierTopics;
+import org.osgi.annotation.bundle.Capability;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventConstants;
+import org.osgi.service.event.EventHandler;
 
 import dcat.Catalog;
 
@@ -45,56 +49,59 @@ import dcat.Catalog;
  * <p>
  * <strong>It registers the service itself rather than letting DS do it</strong>, and that is
  * the one thing here that is not a preference. {@code service.changecount} can only be moved
- * through {@code ServiceRegistration.setProperties}, and a DS-declared service hands out no
- * registration to call it on. So the component activates, registers through
- * {@link ChangeCountPublisher} — which already does this for the broker and client runtimes
- * and coalesces the updates onto a daemon thread — and keeps the handle. {@code service = {}}
- * on the annotation is load-bearing: without it DS would register a second copy of this
- * service beside the publisher's, one with a change count that moves and one with properties
- * that never do, and a consumer binding the wrong one would be told nothing for the lifetime
- * of the framework.
+ * through {@link ServiceRegistration#setProperties}, and a DS-declared service hands out no
+ * registration to call it on. So the component activates, registers
+ * {@link DcatAtlasRuntime} itself and keeps the handle. What DS does declare is the
+ * {@link EventHandler} — the service this component <em>is</em>, as far as DS is concerned —
+ * and the {@code @Capability} above is what tells a resolver about the other one, which no
+ * component description mentions.
  * </p>
  *
  * <p>
- * <strong>Everything it reports is optional, and bound by method.</strong> Optional because a
- * runtime service that needed a collection in order to start would be absent in exactly the
- * situation it exists to report. By method because binding is itself a change: a field is
- * injected without telling anybody, so a collection service arriving late left the snapshot
- * reporting an empty portal with nothing to say it had stopped being true. Each
- * {@code set}/{@code unset} pair raises the change count, so a consumer watching
- * {@code service.changecount} learns about it.
+ * <strong>It learns that something happened by being told, not by watching.</strong> An admin
+ * service that has finished a write announces it through {@code DcatChangeNotifier}, and this
+ * component handles every topic under {@link DcatChangeNotifierTopics#BASE_TOPIC} the same
+ * way: whatever it was, the inventory is out of date. The hop through EventAdmin is also what
+ * keeps the reading off the writing thread — see {@link #stale}.
  * </p>
  *
  * <p>
  * <strong>Reading happens on change; assembly happens per call.</strong>
- * {@link #currentReadings()} does the work that touches the store, and runs when a write
- * lands or a service comes and goes. {@link #snapshot()} assembles a fresh DTO from what was
+ * {@link #currentReadings()} does the work that touches the store, and runs on the first
+ * snapshot after a write landed. {@link #snapshot()} assembles a fresh DTO from what was
  * read, so it costs an allocation and nothing else — which is what makes the telemetry
  * consumer affordable, since it takes one snapshot per gauge per export interval. A fresh DTO
  * per call also means no reader holds the instance another reader could change: a DTO has
  * public fields.
  * </p>
  */
-@Component(name = "DcatAtlasRuntime", immediate = true, service = {})
-public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
+@Capability(namespace = "osgi.service",
+		attribute = { "objectClass:List<String>=\"org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime\"",
+				"uses:=org.eclipse.fennec.dcat.atlas.api.runtime" })
+@Component(name = "DcatAtlasRuntime", immediate = true, service = EventHandler.class,
+		property = EventConstants.EVENT_TOPIC + "=" + DcatChangeNotifierTopics.BASE_TOPIC + "*")
+public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime, EventHandler {
 
 	private static final Logger LOG = Logger.getLogger(DcatAtlasRuntimeComponent.class.getName());
 
 	private final AtomicLong changeCount = new AtomicLong();
 
-	private volatile PublicIris publicIris;
+	@Reference
+	private PublicIris publicIris;
 
-	private volatile CatalogReadOnlyService catalogs;
+	@Reference
+	private CatalogReadOnlyService catalogs;
 
-	private volatile DatasetReadOnlyService datasets;
+	@Reference
+	private DatasetReadOnlyService datasets;
 
-	private volatile DataServiceReadOnlyService dataServices;
+	@Reference
+	private DataServiceReadOnlyService dataServices;
 
-	private volatile DatasetSeriesReadOnlyService datasetSeries;
+	@Reference
+	private DatasetSeriesReadOnlyService datasetSeries;
 
-	private ChangeCountPublisher<DcatAtlasRuntime> publisher;
-
-	private AutoCloseable commitHook;
+	private ServiceRegistration<DcatAtlasRuntime> runtimeServiceRegistration;
 
 	/** What was last read. Replaced wholesale, never mutated in place. */
 	private volatile Readings readings = Readings.empty();
@@ -104,12 +111,13 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 	 *
 	 * <p>
 	 * <strong>Why the reading is deferred rather than done when the change arrives.</strong>
-	 * The notification fires inside {@code Store.commit}, on the thread that is still
-	 * completing the write. Reading the store from there re-enters it — a listing per
-	 * collection and a load per catalogue, through the same resource set the operation is
-	 * still using — and the operation fails with a {@code 500} after its commit has already
-	 * been written. Measured, not theorised: it broke six write tests the first time this
-	 * was built the other way round.
+	 * Reading the store from inside a write re-enters it — a listing per collection and a
+	 * load per catalogue, through the same resource set the operation is still using — and
+	 * the operation fails with a {@code 500} after its commit has already been written.
+	 * Measured, not theorised: it broke six write tests the first time this was built with
+	 * the reading hung directly off the commit. Posting the event covers half of that, by
+	 * taking the announcement off the writing thread; the flag covers the rest, by not
+	 * reading until somebody asks.
 	 * </p>
 	 *
 	 * <p>
@@ -123,88 +131,16 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 
 	@Activate
 	void activate(BundleContext context) {
-		// Every write in this portal ends in one commit, and that is where the inventory is
-		// told. Polling instead would re-read the tree once per gauge.
-		commitHook = StoreChanges.onCommit(this::changed);
-
-		publisher = new ChangeCountPublisher<>(context, DcatAtlasRuntime.class, this, changeCount::get,
-				"DCAT.Atlas runtime service");
-		publisher.open();
+		runtimeServiceRegistration = context.registerService(DcatAtlasRuntime.class, this,
+				withChangeCount(changeCount.get()));
 	}
 
 	@Deactivate
 	void deactivate() {
-		closeQuietly(commitHook);
-		if (publisher != null) {
-			publisher.close();
-		}
+		runtimeServiceRegistration.unregister();
 	}
 
-	@Reference(name = "publicIris", policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-	void setPublicIris(PublicIris publicIris) {
-		this.publicIris = publicIris;
-		changed();
-	}
-
-	void unsetPublicIris(PublicIris publicIris) {
-		if (this.publicIris == publicIris) {
-			this.publicIris = null;
-		}
-		changed();
-	}
-
-	@Reference(name = "catalogs", policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-	void setCatalogs(CatalogReadOnlyService catalogs) {
-		this.catalogs = catalogs;
-		changed();
-	}
-
-	void unsetCatalogs(CatalogReadOnlyService catalogs) {
-		if (this.catalogs == catalogs) {
-			this.catalogs = null;
-		}
-		changed();
-	}
-
-	@Reference(name = "datasets", policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-	void setDatasets(DatasetReadOnlyService datasets) {
-		this.datasets = datasets;
-		changed();
-	}
-
-	void unsetDatasets(DatasetReadOnlyService datasets) {
-		if (this.datasets == datasets) {
-			this.datasets = null;
-		}
-		changed();
-	}
-
-	@Reference(name = "dataServices", policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-	void setDataServices(DataServiceReadOnlyService dataServices) {
-		this.dataServices = dataServices;
-		changed();
-	}
-
-	void unsetDataServices(DataServiceReadOnlyService dataServices) {
-		if (this.dataServices == dataServices) {
-			this.dataServices = null;
-		}
-		changed();
-	}
-
-	@Reference(name = "datasetSeries", policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.OPTIONAL)
-	void setDatasetSeries(DatasetSeriesReadOnlyService datasetSeries) {
-		this.datasetSeries = datasetSeries;
-		changed();
-	}
-
-	void unsetDatasetSeries(DatasetSeriesReadOnlyService datasetSeries) {
-		if (this.datasetSeries == datasetSeries) {
-			this.datasetSeries = null;
-		}
-		changed();
-	}
-
+	
 	@Override
 	public DcatAtlasRuntimeDTO snapshot() {
 		Readings current = currentReadings();
@@ -220,9 +156,22 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 	 * all — see {@link #stale} for why that is not an optimisation.
 	 * </p>
 	 */
-	void changed() {
+	synchronized void changed() {
 		stale = true;
-		changeCount.incrementAndGet();
+		runtimeServiceRegistration.setProperties(withChangeCount(changeCount.incrementAndGet()));
+	}
+
+	/**
+	 * The registration's properties, which are the change count and nothing else.
+	 * <p>
+	 * Built fresh rather than read back from the reference and amended: everything else on a
+	 * registration is set by the framework, and {@code setProperties} ignores those keys
+	 * anyway, so carrying them along would only suggest they were being maintained here.
+	 */
+	private static Hashtable<String, Object> withChangeCount(long count) {
+		Hashtable<String, Object> properties = new Hashtable<>();
+		properties.put(Constants.SERVICE_CHANGECOUNT, count);
+		return properties;
 	}
 
 	/**
@@ -263,9 +212,6 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 	 * </p>
 	 */
 	private <S> List<ResourceReading> ids(S service, String collection, Function<S, List<String>> lister) {
-		if (service == null) {
-			return List.of();
-		}
 		List<String> ids;
 		try {
 			ids = lister.apply(service);
@@ -292,13 +238,9 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 	 * </p>
 	 */
 	private List<CatalogReading> catalogs() {
-		CatalogReadOnlyService service = catalogs;
-		if (service == null) {
-			return List.of();
-		}
 		List<Catalog> stored;
 		try {
-			stored = service.listCatalogs();
+			stored = catalogs.listCatalogs();
 		} catch (RuntimeException unreadable) {
 			LOG.warning("[DCAT.Atlas] the catalogs collection could not be read for the runtime inventory, "
 					+ "reporting it as empty: " + unreadable);
@@ -320,24 +262,13 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 	}
 
 	private String toPublic(String logical) {
-		PublicIris iris = publicIris;
-		return iris == null || logical == null ? logical : iris.toPublic(logical);
+		return logical == null ? null : publicIris.toPublic(logical);
 	}
 
 	private static String firstTitle(Catalog catalog) {
 		return catalog.getTitle().isEmpty() ? null : catalog.getTitle().get(0).getValue();
 	}
 
-	private static void closeQuietly(AutoCloseable closeable) {
-		if (closeable == null) {
-			return;
-		}
-		try {
-			closeable.close();
-		} catch (Exception ignored) {
-			// Deactivation is not a place to fail.
-		}
-	}
 
 	/** Everything the snapshot reports, as it was last read. */
 	record Readings(List<CatalogReading> catalogs, List<ResourceReading> datasets,
@@ -346,5 +277,16 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime {
 		static Readings empty() {
 			return new Readings(List.of(), List.of(), List.of(), List.of());
 		}
+	}
+
+	/**
+	 * Any announcement at all means the inventory is out of date.
+	 * <p>
+	 * The topic and the resource it names are deliberately not looked at: this component
+	 * re-reads the whole portal, so there is nothing a narrower reaction could save.
+	 */
+	@Override
+	public void handleEvent(Event event) {
+		changed();
 	}
 }

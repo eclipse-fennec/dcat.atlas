@@ -14,7 +14,7 @@
 package org.eclipse.fennec.dcat.atlas.impl;
 
 import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
-import org.eclipse.fennec.dcat.atlas.impl.runtime.RecordingEventAdmin;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DiscardingEventAdmin;
 
 /**
  * The collaborator DS would inject, for a test that builds an admin service by hand.
@@ -23,20 +23,26 @@ import org.eclipse.fennec.dcat.atlas.impl.runtime.RecordingEventAdmin;
  * The reference is mandatory, so a service DS built always has one and the write paths call
  * it without asking. A service a test built with one of the package-visible constructors has
  * nothing injected, so a write would fail on the announcement rather than on what the test is
- * about — hence {@link #announcing}, for the tests that need the service to work but have no
- * interest in what it announced.
+ * about — hence {@link #announcing}, which gives it one that announces into nothing.
  * </p>
  *
  * <p>
- * A test that <em>is</em> about the announcements builds its own {@link RecordingEventAdmin}
- * and keeps it, so it can read back what was posted.
+ * No test here asserts on an announcement. There is no framework in a plain JUnit run and so
+ * no EventAdmin to assert against; what the announcements do is tested against the real Felix
+ * one in {@code rest.tests} — see {@link DiscardingEventAdmin}.
+ * </p>
+ *
+ * <p>
+ * Two classes rather than one because the two fields being wired are package-visible in
+ * different packages: {@code changeNotifier} is set from here, {@code eventAdmin} only from
+ * the notifier's own package.
  * </p>
  */
 final class TestNotifiers {
 
-	/** A notifier posting into a recorder nobody reads. */
+	/** A notifier whose announcements go nowhere. */
 	static DcatChangeNotifier discarding() {
-		return new RecordingEventAdmin().notifier();
+		return DiscardingEventAdmin.notifier();
 	}
 
 	static CatalogAdminServiceImpl announcing(CatalogAdminServiceImpl service) {

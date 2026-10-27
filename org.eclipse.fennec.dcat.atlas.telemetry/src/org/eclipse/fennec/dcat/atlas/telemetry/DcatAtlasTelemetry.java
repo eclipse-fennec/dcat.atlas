@@ -89,28 +89,57 @@ public class DcatAtlasTelemetry {
 	private final Map<DcatAtlasRuntime, Watched> watched = new ConcurrentHashMap<>();
 
 	/**
-	 * Defaulted rather than left null, because DS binds a reference before it activates the
-	 * component: the first runtime can arrive before {@link #configure} has run.
+	 * Initialised rather than left null only so there is something to compare against;
+	 * {@link #apply} has set it from configuration before any runtime can be bound.
 	 */
 	private volatile String scope = "org.eclipse.fennec.dcat.atlas";
 
 	private volatile boolean catalogSeries = false;
 
+	/**
+	 * Takes the configuration here rather than in an activate method of its own.
+	 *
+	 * <p>
+	 * It is also the earlier of the two: SCR constructs the instance, <em>then</em> binds the
+	 * services, <em>then</em> calls an activate method (112.5.6). So configuring from the
+	 * constructor means every {@link Watched} is built with the configured scope to begin
+	 * with, where an activate method would have had to repair the ones bound before it ran.
+	 * </p>
+	 */
 	@Activate
-	public DcatAtlasTelemetry(@Reference MeterProvider meters) {
+	public DcatAtlasTelemetry(@Reference MeterProvider meters, TelemetryConfig config) {
 		this.meters = meters;
+		apply(config);
 	}
 
-	@Activate
+	/**
+	 * The component's own configuration changed while it was running.
+	 *
+	 * <p>
+	 * Having this means the change costs a rebuild of the instruments rather than a
+	 * deactivate and activate, which would unbind every runtime and lose nothing but time.
+	 * </p>
+	 */
 	@Modified
-	void configure(TelemetryConfig config) {
+	void modify(TelemetryConfig config) {
+		apply(config);
+	}
+
+	/**
+	 * Takes the configuration, and rebuilds the instruments if it says anything different.
+	 *
+	 * <p>
+	 * The loop does nothing when this runs from the constructor — no service is bound yet —
+	 * and everything when it runs from {@link #modify}: a new scope is a new meter, and the
+	 * switch decides which instruments exist, so either way they are built again.
+	 * </p>
+	 */
+	private void apply(TelemetryConfig config) {
 		if (config.scope().equals(scope) && config.catalogSeries() == catalogSeries) {
 			return;
 		}
 		this.scope = config.scope();
 		this.catalogSeries = config.catalogSeries();
-		// A new scope is a new meter, and the switch decides which instruments exist, so
-		// either way they are built again.
 		for (Watched entry : watched.values()) {
 			entry.rebuild();
 		}

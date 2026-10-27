@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -27,12 +26,9 @@ import java.util.Optional;
 import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
 import org.eclipse.fennec.dcat.atlas.api.integrity.DanglingReferenceException;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
-import org.eclipse.fennec.dcat.atlas.api.runtime.DcatChangeNotifierTopics;
-import org.eclipse.fennec.dcat.atlas.impl.runtime.RecordingEventAdmin;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.osgi.service.event.Event;
 
 import dcat.Catalog;
 import dcat.DataService;
@@ -53,14 +49,9 @@ public class CatalogAdminServiceImplTest {
 	@TempDir
 	Path storage;
 
-	/** What the services built here announced, shared so a test can count across them. */
-	private final RecordingEventAdmin events = new RecordingEventAdmin();
-
 	private CatalogAdminServiceImpl service() {
-		CatalogAdminServiceImpl service = new CatalogAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		service.changeNotifier = events.notifier();
-		return service;
+		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private DatasetAdminServiceImpl datasets() {
@@ -225,66 +216,6 @@ public class CatalogAdminServiceImplTest {
 
 		assertEquals(1, service.getCatalog("gov").get().getDataset().size());
 		assertEquals(first, service.etag("gov").orElseThrow());
-	}
-
-	@Test
-	void aLinkAnnouncesTheMemberItLinked() {
-		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-
-		service.linkDatasetToCatalog("gov", "air");
-
-		assertEquals(List.of(DcatChangeNotifierTopics.CHANGE_TOPIC, DcatChangeNotifierTopics.LINK_TOPIC),
-				events.topics());
-	}
-
-	/**
-	 * The repeat announces nothing, because it changed nothing.
-	 * <p>
-	 * The same write that leaves the ETag alone has to leave the change count alone: a
-	 * consumer re-reads the whole portal on an announcement, and re-linking is what a
-	 * publisher does on every sync.
-	 */
-	@Test
-	void aRepeatedLinkAnnouncesNothing() {
-		CatalogAdminServiceImpl service = service();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		service.linkDatasetToCatalog("gov", "air");
-		List<String> afterTheLink = events.topics();
-
-		service.linkDatasetToCatalog("gov", "air");
-
-		assertEquals(afterTheLink, events.topics());
-	}
-
-	/**
-	 * And not before the link is in the store.
-	 * <p>
-	 * Delivery is asynchronous, so a consumer can be reading the portal while the operation
-	 * that announced the change is still finishing it. Announcing first lets that read see the
-	 * old content and mark itself up to date, which loses the change until the next one.
-	 */
-	@Test
-	void aLinkIsAnnouncedOnlyOnceItIsCommitted() {
-		List<String> catalogWhenAnnounced = new ArrayList<>();
-		RecordingEventAdmin probing = new RecordingEventAdmin() {
-			@Override
-			public void postEvent(Event event) {
-				super.postEvent(event);
-				catalogWhenAnnounced.add(TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov"));
-			}
-		};
-		CatalogAdminServiceImpl service = service();
-		service.changeNotifier = probing.notifier();
-		service.upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-
-		service.linkDatasetToCatalog("gov", "air");
-
-		String whenTheLinkWasAnnounced = catalogWhenAnnounced.get(catalogWhenAnnounced.size() - 1);
-		assertTrue(whenTheLinkWasAnnounced.contains(DATASETS + "air"), whenTheLinkWasAnnounced);
 	}
 
 	@Test

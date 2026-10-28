@@ -111,11 +111,19 @@ public final class FormatDefaults {
 	/**
 	 * Completes every Distribution of a stored root. Catalog and DatasetSeries are
 	 * Datasets, so one check covers all three; any other root has no Distributions.
+	 *
+	 * @return how many Distributions received a {@code format}
 	 */
-	public static void apply(EObject object) {
+	public static int apply(EObject object) {
+		int completed = 0;
 		if (object instanceof Dataset dataset) {
-			dataset.getDistribution().forEach(FormatDefaults::apply);
+			for (Distribution distribution : dataset.getDistribution()) {
+				if (apply(distribution)) {
+					completed++;
+				}
+			}
 		}
+		return completed;
 	}
 
 	/**

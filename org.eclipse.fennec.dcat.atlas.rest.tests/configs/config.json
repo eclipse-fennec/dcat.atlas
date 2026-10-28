@@ -55,6 +55,7 @@
   "DatasetSeriesAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "DistributionReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "DistributionAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
+  "FormatBackfill": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "PublicIris": { "publicBaseUrl": "http://localhost:8185/rest/" },
   // DcatCallerHeader is REQUIRE: without this block the admin resources have no
   // CallerHeader to bind and never register.

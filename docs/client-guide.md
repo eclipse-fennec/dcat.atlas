@@ -347,7 +347,8 @@ dashboards actually query, so this is what makes a distribution findable there. 
 `format` you set is never changed, and a media type outside the table leaves it unset —
 set it yourself in that case. Give the `mediaType` as DCAT-AP's IANA IRI
 (`http://www.iana.org/assignments/media-types/text/csv`); the model's `MediaTypeIsIri`
-constraint rejects a bare `text/csv` anyway.
+constraint rejects a bare `text/csv` anyway. Entries stored before this existed are
+completed once at the portal's next start, so you need not rewrite them.
 
 `publisher` is a *containment* reference, so one shared `Agent` instance would be
 **moved** from entity to entity rather than copied into each. Build a fresh one per

@@ -48,6 +48,11 @@
 		"validateOnWrite": "$[env:MODEL_VALIDATE;default=true]",
 		"validationService.cardinality.minimum:int": 1
 	},
+	"FormatBackfill": {
+		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
+		"gitService.target": "(id=dcatStore)",
+		"enabled": "$[env:FORMAT_BACKFILL;default=true]"
+	},
 	"DataServiceReadOnlyService": {
 		"basePath": "$[env:STORE_BASE_PATH;default=dcat]",
 		"gitService.target": "(id=dcatStore)"

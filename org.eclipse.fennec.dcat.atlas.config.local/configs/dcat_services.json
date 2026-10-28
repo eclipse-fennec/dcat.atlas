@@ -94,6 +94,15 @@
 		"folder": "$[env:INITIAL_RESOURCES_DIR;default=$[prop:INITIAL_RESOURCES_DIR;default=]]",
 		"halt.on.error": false
 	},
+	
+	// SPARQL is off unless asked for, so the block has to be here even to keep it on:
+	// DcatGraphService takes ConfigurationPolicy.REQUIRE and `enabled` now defaults to false.
+	"DcatGraphService": {
+		"enabled": "$[env:SPARQL_ENABLED;default=true]",
+		"queryTimeoutMillis": "$[env:SPARQL_QUERY_TIMEOUT_MS;default=30000]",
+		"maxResultRows": "$[env:SPARQL_MAX_ROWS;default=10000]",
+		"reconcileIntervalSeconds": "$[env:SPARQL_RECONCILE_INTERVAL_S;default=300]"
+	},
 	"DcatValidationService": {
 		"shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=$[prop:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]]",
 		"vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=$[prop:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]]",

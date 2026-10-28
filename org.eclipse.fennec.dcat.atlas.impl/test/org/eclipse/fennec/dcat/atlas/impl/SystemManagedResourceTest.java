@@ -232,13 +232,13 @@ public class SystemManagedResourceTest {
 	// --- fixtures -----------------------------------------------------------
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private CatalogAdminServiceImpl catalogs() {
-		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private static Dataset dataset(String id, String title) {

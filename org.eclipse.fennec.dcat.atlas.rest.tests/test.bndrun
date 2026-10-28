@@ -8,6 +8,7 @@
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation',\
+	bnd.identity;id='org.apache.felix.eventadmin',\
 	bnd.identity;id='org.apache.felix.configadmin.plugin.interpolation',\
 	bnd.identity;id='org.eclipse.parsson.jakarta.json',\
 	bnd.identity;id='org.apache.felix.configadmin',\
@@ -101,6 +102,7 @@
 	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.impl;version=snapshot,\
+	org.eclipse.fennec.services.runtime;version='[0.1.0,0.1.1)',\
 	org.eclipse.fennec.dcat.atlas.msg.body.writer;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.rest;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.rest.tests;version=snapshot,\

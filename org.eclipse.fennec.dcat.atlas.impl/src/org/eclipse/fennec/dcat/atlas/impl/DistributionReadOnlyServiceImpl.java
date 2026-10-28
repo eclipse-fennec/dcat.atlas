@@ -25,6 +25,7 @@ import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
@@ -46,7 +47,8 @@ import dcat.Distribution;
  * about who owns what — a Distribution could outlive its Dataset, or be reachable
  * from two.
  */
-@Component(name = "DistributionReadOnlyService", service = DistributionReadOnlyService.class)
+@Component(name = "DistributionReadOnlyService", service = DistributionReadOnlyService.class,
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DistributionReadOnlyServiceImpl implements DistributionReadOnlyService {
 

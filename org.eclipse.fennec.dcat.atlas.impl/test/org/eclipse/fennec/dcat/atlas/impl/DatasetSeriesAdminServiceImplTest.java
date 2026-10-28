@@ -43,13 +43,11 @@ public class DatasetSeriesAdminServiceImplTest {
 	Path storage;
 
 	private DatasetAdminServiceImpl datasetService() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private DatasetSeriesAdminServiceImpl service() {
-		return new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	@Test
@@ -95,8 +93,8 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesRecordsInSeriesOnDataset() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH);
+
+		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
 
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"), Caller.ANONYMOUS);
@@ -110,8 +108,8 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesIsIdempotent() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH);
+
+		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
 
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"), Caller.ANONYMOUS);
@@ -132,8 +130,8 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void deleteDatasetFromSeriesRemovesInSeries() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH);
+
+		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
 		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"), Caller.ANONYMOUS);
 

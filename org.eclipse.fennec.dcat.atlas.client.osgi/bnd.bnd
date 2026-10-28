@@ -8,8 +8,6 @@ Bundle-Description: OSGi DS front-end for the DCAT.Atlas client: a ConfigAdmin \
 
 -library: enableEMF
 
-Export-Package: org.eclipse.fennec.dcat.atlas.client.osgi
-
 -buildpath: \
 	org.eclipse.fennec.dcat.atlas.client.api;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.client.impl;version=snapshot,\

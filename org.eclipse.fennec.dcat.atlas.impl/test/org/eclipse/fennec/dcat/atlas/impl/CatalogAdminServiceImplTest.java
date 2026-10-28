@@ -13,13 +13,17 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import org.eclipse.fennec.dcat.atlas.api.access.Caller;
-import java.nio.file.Files;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
 import org.eclipse.fennec.dcat.atlas.api.integrity.DanglingReferenceException;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
@@ -31,10 +35,6 @@ import dcat.Catalog;
 import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Round-trips the file-backed catalog store, and pins the two things the storage
@@ -51,13 +51,12 @@ public class CatalogAdminServiceImplTest {
 	Path storage;
 
 	private CatalogAdminServiceImpl service() {
-		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	// --- storage round trip -------------------------------------------------

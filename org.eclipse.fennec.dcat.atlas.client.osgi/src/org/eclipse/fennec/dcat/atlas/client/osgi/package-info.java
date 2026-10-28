@@ -19,4 +19,5 @@
  * configuration, which consumers reach through the service registry rather than by type.
  */
 @org.osgi.annotation.versioning.Version("1.0.0")
+@org.osgi.annotation.bundle.Export
 package org.eclipse.fennec.dcat.atlas.client.osgi;

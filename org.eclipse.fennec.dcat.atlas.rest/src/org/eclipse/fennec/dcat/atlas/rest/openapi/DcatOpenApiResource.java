@@ -22,7 +22,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -107,8 +106,18 @@ public class DcatOpenApiResource extends BaseOpenApiResource {
 	 * resource should not be the one endpoint that disappears when identity rendering
 	 * is unconfigured — the collection resources already answer that case with a 404.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile PublicIris publicIris;
+	@Reference(name = "publicIris", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setPublicIris(PublicIris publicIris) {
+		this.publicIris = publicIris;
+	}
+
+	void unsetPublicIris(PublicIris publicIris) {
+		if (this.publicIris == publicIris) {
+			this.publicIris = null;
+		}
+	}
+
+	private volatile PublicIris publicIris;
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON, YAML })

@@ -13,12 +13,16 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import org.eclipse.fennec.dcat.atlas.api.access.Caller;
-import java.nio.file.Files;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 import org.junit.jupiter.api.Test;
@@ -28,10 +32,6 @@ import dcat.DataService;
 import dcat.Dataset;
 import dcat.DcatFactory;
 import dcat.Distribution;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * FR-10: a Distribution exists only in the context of its Dataset.
@@ -53,10 +53,9 @@ public class DistributionAdminServiceImplTest {
 	private DatasetAdminServiceImpl datasetService;
 
 	private DistributionAdminServiceImpl service() {
-		datasetService = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
-		return new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH, datasetService);
+
+		datasetService = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		return TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasetService));
 	}
 
 	/** Seeds an (empty) owning dataset "air" and returns the ready distribution service. */
@@ -245,7 +244,7 @@ public class DistributionAdminServiceImplTest {
 		assertThrows(NoSuchElementException.class,
 				() -> service.linkAccessServiceToDistribution("air", "csv", "wfs", Caller.ANONYMOUS));
 
-		new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)
+		TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH))
 				.upsertDataService(dataService(SERVICES + "wfs", "Air WFS"), Caller.ANONYMOUS);
 		Distribution linked = service.linkAccessServiceToDistribution("air", "csv", "wfs", Caller.ANONYMOUS);
 		assertEquals(1, linked.getAccessService().size());
@@ -288,8 +287,8 @@ public class DistributionAdminServiceImplTest {
 		assertEquals(1, loaded.getAccessService().size());
 		assertEquals(SERVICES + "ogcapi", loaded.getAccessService().get(0).getAbout());
 		// The DataService itself survives — only the link went.
-		assertTrue(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH).getDataService("wfs")
+
+		assertTrue(TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)).getDataService("wfs")
 				.isPresent());
 	}
 

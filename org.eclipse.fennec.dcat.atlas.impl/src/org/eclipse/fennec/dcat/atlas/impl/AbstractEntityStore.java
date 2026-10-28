@@ -77,6 +77,25 @@ abstract class AbstractEntityStore<T extends EObject> implements HealthCheck {
 	}
 
 	/**
+	 * The ids this store holds, in the collection's own order.
+	 * <p>
+	 * A tree listing and nothing more: no entity is loaded, however many ids come back. That
+	 * is what lets the runtime service name every resource in a large collection — the one
+	 * thing it does that would otherwise be proportional to the size of the portal.
+	 * <p>
+	 * A store that cannot be read answers empty rather than throwing. The caller is taking an
+	 * inventory, and a collection it could not see is reported as holding nothing while the
+	 * health check reports why.
+	 */
+	public List<String> ids() {
+		try {
+			return store().ids(collection);
+		} catch (RuntimeException unreadable) {
+			return List.of();
+		}
+	}
+
+	/** 
 	 * A read-only store session; everything read through one resolves against everything
 	 * else.
 	 * <p>

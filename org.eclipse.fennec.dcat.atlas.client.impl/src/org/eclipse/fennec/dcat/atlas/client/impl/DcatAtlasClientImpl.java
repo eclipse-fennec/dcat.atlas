@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.function.UnaryOperator;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.client.api.ClientConfiguration;

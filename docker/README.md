@@ -89,10 +89,23 @@ interpolation plugin. The configuration itself lives in
 | `STORE_BASE_PATH` | `dcat` | Folder inside the repository the collections live under |
 | `PUBLIC_BASE_URL` | **none — required** | Base that stored, host-free identities are rendered under at read time. Must be the absolute URL clients actually reach the portal on (behind a proxy, *not* the address the container sees). There is deliberately no default: it becomes the host in every rendered `about`, so a wrong one silently advertises somebody else's IRIs. Unset, the container fails to start. |
 | `SHACL_SHAPES_DIR` | `/opt/dcat/shapes` | Directory of `*.ttl` SHACL shapes |
-| `SHACL_VOCAB_DIR` | `/opt/dcat/vocabularies` | Directory of controlled-vocabulary files |
+| `SHACL_VOCAB_DIR` | `/opt/dcat/vocabularies` | Directory of controlled-vocabulary files — **must also contain the DCAT ontology**, see below |
 | `SHACL_ENFORCE` | `true` | Reject writes that do not conform |
 | `INITIAL_RESOURCES_DIR` | *(empty)* | Folder of `*.xmi` resources to store on startup, unmanaged — see [Initial resources](#initial-resources). Empty seeds nothing |
 | `INITIAL_RESOURCES_HALT` | `true` | Stop the container when that folder cannot be seeded, instead of serving a portal without it |
+
+### The vocabulary directory needs the DCAT ontology
+
+Mount [`https://www.w3.org/ns/dcat.ttl`](https://www.w3.org/ns/dcat.ttl) into the vocabulary
+directory along with the authority tables. The tables make coded values resolvable; the ontology
+makes *classes* resolvable, and the catalogue-record shape constrains `foaf:primaryTopic` against
+`dcat:Resource` — a supertype. A graph that knows the target is a `dcat:Dataset`, but not that
+`dcat:Dataset rdfs:subClassOf dcat:Resource`, cannot satisfy it, and with `SHACL_ENFORCE=true`
+**every attempt to add a member to a catalog is refused with `422`**.
+
+Measured on the integration suite run with enforcement on: adding the file turned 15 failures into
+5, and the 10 it fixed were all catalog membership, cascade delete and referential integrity. It
+broke nothing. The remaining 5 are tests whose own premise is that SHACL is off.
 
 ## Endpoints
 

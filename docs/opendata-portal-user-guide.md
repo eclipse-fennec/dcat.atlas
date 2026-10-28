@@ -100,8 +100,14 @@ collection of its own and is always created inside its dataset, at
 on-disk format, so a stored entity can be sent straight back. Any other content type
 on a write is answered `415 Unsupported Media Type`. Reads are the other half of the
 story and are unaffected: you negotiate Turtle, JSON-LD, RDF/XML, N-Triples or N3 with
-`Accept`, as [Content negotiation](#content-negotiation) describes, and a write
-response honours the same `Accept`.
+`Accept`, as [Content negotiation](#content-negotiation) describes.
+
+> **A write's own response negotiates a narrower set:** `application/xmi`,
+> `application/json`, `application/xml` or `application/rdf+xml`. The RDF text syntaxes are
+> read-only — asking a `POST` or `PUT` for Turtle, JSON-LD, N-Triples or N3 is answered
+> `406 Not Acceptable` rather than a body in that syntax. When you want one, read the
+> resource back afterwards: a `201` hands you its URL in `Location`, and a `PUT` is already
+> addressed to it.
 
 > `application/xmi`, not `application/xml`. The codec selects by media type, and
 > `application/xml` picks a plain-XML codec that does not understand `xmi:version` or a
@@ -975,6 +981,16 @@ Metadata is also validated against the DCAT-AP.de SHACL shapes. Shapes and the c
 vocabularies they reference are loaded from operator-configured directories (set in
 `secrets.bndrun` for local runs, as `SHACL_SHAPES_DIR` and `SHACL_VOCAB_DIR`); with no
 shapes configured, validation is a no-op that reports conformance.
+
+> **The vocabulary directory must include the DCAT ontology** —
+> [`https://www.w3.org/ns/dcat.ttl`](https://www.w3.org/ns/dcat.ttl) — alongside the authority
+> tables. The authority tables make *coded values* resolvable; the ontology makes *classes*
+> resolvable, and some shapes constrain a reference against a supertype. `foaf:primaryTopic` on a
+> catalogue record must point at a `dcat:Resource`, and a graph that knows the target is a
+> `dcat:Dataset` but not that `dcat:Dataset rdfs:subClassOf dcat:Resource` cannot satisfy that.
+> Without the file, **adding any member to a catalog is refused with `422`** while enforcement is
+> on. Drop it in the directory; nothing else is needed, and the loader picks up every RDF file
+> there.
 
 Enforcement happens where the entity is stored, so it covers every writer — an importer or
 a migration tool calling the OSGi services directly is checked exactly as an HTTP request

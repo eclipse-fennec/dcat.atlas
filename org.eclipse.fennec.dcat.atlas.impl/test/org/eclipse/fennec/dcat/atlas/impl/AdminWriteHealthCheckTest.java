@@ -20,6 +20,7 @@ import org.apache.felix.hc.api.Result;
 import org.apache.felix.hc.api.ResultLog;
 import org.apache.jena.shacl.ValidationReport;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,7 +54,7 @@ public class AdminWriteHealthCheckTest {
 	@Test
 	void aMissingAdminServiceIsCriticalAndNamesTheCollection() {
 		AdminWriteHealthCheck check = check(true);
-		check.datasets = null;
+		withoutDatasets(check);
 
 		Result result = check.execute();
 
@@ -65,7 +66,7 @@ public class AdminWriteHealthCheckTest {
 	@Test
 	void theCriticalMessageExplainsThe404() {
 		AdminWriteHealthCheck check = check(true);
-		check.datasets = null;
+		withoutDatasets(check);
 
 		String messages = messages(check.execute());
 
@@ -75,7 +76,7 @@ public class AdminWriteHealthCheckTest {
 	@Test
 	void aMissingValidationServiceIsNamedAsTheLikelyCause() {
 		AdminWriteHealthCheck check = check(false);
-		check.datasets = null;
+		withoutDatasets(check);
 
 		String messages = messages(check.execute());
 
@@ -86,7 +87,7 @@ public class AdminWriteHealthCheckTest {
 	@Test
 	void withValidationPresentTheCauseIsNotBlamedOnIt() {
 		AdminWriteHealthCheck check = check(true);
-		check.datasets = null;
+		withoutDatasets(check);
 
 		String messages = messages(check.execute());
 
@@ -100,16 +101,28 @@ public class AdminWriteHealthCheckTest {
 
 	// --- fixtures -----------------------------------------------------------
 
+	/** The datasets service the fixture bound, so a test can unbind exactly that one. */
+	private DatasetAdminService boundDatasets;
+
 	private AdminWriteHealthCheck check(boolean withValidation) {
 		AdminWriteHealthCheck check = new AdminWriteHealthCheck();
-		check.catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		check.datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		check.datasetSeries = new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		check.dataServices = new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		check.distributions = new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
-				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		check.validation = withValidation ? new AlwaysEnforcing() : null;
+		boundDatasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		check.setCatalogs(TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH)));
+		check.setDatasets(boundDatasets);
+		check.setDatasetSeries(TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
+		check.setDataServices(TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
+		check.setDistributions(TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
+				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH))));
+		if (withValidation) {
+			check.setValidation(new AlwaysEnforcing());
+		}
 		return check;
+	}
+
+	/** Unbinds the datasets service the way DS would, rather than clearing the field. */
+	private void withoutDatasets(AdminWriteHealthCheck check) {
+		check.unsetDatasets(boundDatasets);
 	}
 
 	/** {@link Result} is {@code Iterable}, not streamable. */

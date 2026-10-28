@@ -55,23 +55,22 @@ public class CatalogRecordMaintenanceTest {
 	Path storage;
 
 	private DistributionAdminServiceImpl distributions() {
-		return new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH, datasets());
+		return TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH, datasets()));
 	}
 
 	private CatalogAdminServiceImpl catalogs() {
-		return new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private DatasetAdminServiceImpl datasets() {
-		return new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 	}
 
 	private DataServiceAdminServiceImpl dataServices() {
-		return new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH);
+		return TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
+				TestGitStore.BASE_PATH));
 	}
 
 	// --- a member entering the catalog --------------------------------------

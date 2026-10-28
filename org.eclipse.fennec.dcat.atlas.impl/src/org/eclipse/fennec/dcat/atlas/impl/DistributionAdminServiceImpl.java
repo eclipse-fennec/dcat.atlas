@@ -24,6 +24,7 @@ import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
@@ -32,10 +33,10 @@ import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 import dcat.DataService;
@@ -55,9 +56,14 @@ import dcat.Distribution;
  * {@code dcat:accessService} is the exception: it points at a DataService, which is
  * a catalog entity in its own right, so that stays a cross-resource reference.
  */
-@Component(name = "DistributionAdminService", service = DistributionAdminService.class)
+@Component(name = "DistributionAdminService", service = DistributionAdminService.class,
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImpl implements DistributionAdminService {
+
+	/** How this service says it changed the portal; see DcatChangeNotifier. */
+	@Reference
+	DcatChangeNotifier changeNotifier;
 
 	@Activate
 	public DistributionAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
@@ -84,8 +90,18 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	 * of its callers (persistence plan constraint G2). Optional and dynamic — absent
 	 * simply means no SPARQL.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatGraphService graphService;
+	@Reference(name = "graphService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setGraphService(DcatGraphService graphService) {
+		this.graphService = graphService;
+	}
+
+	void unsetGraphService(DcatGraphService graphService) {
+		if (this.graphService == graphService) {
+			this.graphService = null;
+		}
+	}
+
+	private volatile DcatGraphService graphService;
 
 	/**
 	 * On-write SHACL enforcement (FR-4), maintained here rather than in the REST layer:
@@ -98,8 +114,20 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 	 * component unsatisfiable without a validation service instead of letting writes
 	 * through unchecked.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
+	// Name pinned: DS derives it from the bind method, and the strict reading above is
+	// configured as validationService.cardinality.minimum.
+	@Reference(name = "validationService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setValidationService(DcatValidationService validationService) {
+		this.validationService = validationService;
+	}
+
+	void unsetValidationService(DcatValidationService validationService) {
+		if (this.validationService == validationService) {
+			this.validationService = null;
+		}
+	}
+
+	private volatile DcatValidationService validationService;
 
 	/** Not an override: a Distribution has no store of its own,
 			so this class does not extend {@code AbstractEntityStore}. */
@@ -129,6 +157,9 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(StoreLayout.DATASETS, datasetId));
 		store.commit("Store distribution %s of dataset %s".formatted(distributionId, datasetId));
 		reproject(datasetId, distributionId);
+		// A distribution has no collection of its own: it lives in its dataset's blob, so
+		// what changed, as far as anyone outside this service can see, is the dataset.
+		changeNotifier.entityChanged(StoreLayout.DATASETS, datasetId);
 		return distribution;
 	}
 
@@ -142,6 +173,7 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 				CatalogRecords.memberWritten(store, StoreLayout.logicalIri(StoreLayout.DATASETS, datasetId));
 				store.commit("Delete distribution %s of dataset %s".formatted(distributionId, datasetId));
 				reproject(datasetId, distributionId);
+				changeNotifier.entityChanged(StoreLayout.DATASETS, datasetId);
 			}
 		});
 	}
@@ -188,6 +220,7 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 						store.commit("Unlink access service %s from distribution %s of dataset %s"
 								.formatted(dataServiceId, distributionId, datasetId));
 						reproject(datasetId, distributionId);
+						changeNotifier.entityUnlinked(StoreLayout.DATA_SERVICES, dataServiceId);
 					}
 				}));
 	}
@@ -198,15 +231,22 @@ public class DistributionAdminServiceImpl extends DistributionReadOnlyServiceImp
 			String message) {
 		Dataset dataset = requireDataset(store, datasetId);
 		Distribution distribution = requireDistribution(store, datasetId, distributionId);
+		boolean linked = false;
 		if (!Members.contains(distribution.getAccessService(), StoreLayout.DATA_SERVICES, dataServiceId)) {
 			distribution.getAccessService().add(store.<DataService>get(StoreLayout.DATA_SERVICES, dataServiceId)
 					.orElseThrow(() -> new NoSuchElementException("Unknown data service: " + dataServiceId)));
 			store.save(dataset);
+			linked = true;
 		}
 		// Commits whatever the operation staged, as one commit; a repeat stages nothing and
 		// so leaves the dataset - and its ETag - untouched. See CatalogAdminServiceImpl.
 		store.commit(message);
 		reproject(datasetId, distributionId);
+		// Only for a link that happened, and only once it is committed; see
+		// CatalogAdminServiceImpl.connect.
+		if (linked) {
+			changeNotifier.entityLinked(StoreLayout.DATA_SERVICES, dataServiceId);
+		}
 		return distribution;
 	}
 

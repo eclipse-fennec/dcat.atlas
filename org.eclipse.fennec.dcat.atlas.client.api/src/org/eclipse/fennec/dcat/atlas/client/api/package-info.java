@@ -21,4 +21,5 @@
  * OSGi artefacts here are the compile-time versioning annotations.
  */
 @org.osgi.annotation.versioning.Version("1.0.0")
+@org.osgi.annotation.bundle.Export
 package org.eclipse.fennec.dcat.atlas.client.api;

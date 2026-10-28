@@ -207,6 +207,7 @@ public final class DcatHelper {
 			// constraints, and a SHACL report has to name the node that will actually be
 			// stored — and before anything is staged, because the point is that an invalid
 			// entity never reaches a commit.
+			FormatDefaults.apply(object);
 			validate(object);
 			URI uri = StoreResourceSets.resourceUri(collection, id);
 			Resource resource = resourceSet.getResource(uri, false);
@@ -239,6 +240,7 @@ public final class DcatHelper {
 		 */
 		public void save(EObject object) {
 			requireMayWrite(object);
+			FormatDefaults.apply(object);
 			validate(object);
 			stage(object);
 		}

@@ -156,6 +156,21 @@ public class SparqlEndpointIntegrationTest {
 	}
 
 	@Test
+	void aQueryWithoutGraphClauseFindsTheResource() throws Exception {
+		// Issue #67: a Fuseki-style client sends plain SPARQL, no GRAPH and no FROM,
+		// and must see the catalog as if the default graph were the union of all
+		// resource graphs.
+		createDatasetOverRest(id, "Air quality " + id);
+
+		HttpResponse<String> response = get(
+				"?query=" + encode("SELECT ?s WHERE { ?s <" + TITLE + "> \"Air quality " + id + "\"@en }"),
+				"application/sparql-results+json");
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.body().contains(BASE + "/datasets/" + id), response.body());
+	}
+
+	@Test
 	void constructReturnsRdfInTheNegotiatedSyntax() throws Exception {
 		createDatasetOverRest(id, "Air quality " + id);
 

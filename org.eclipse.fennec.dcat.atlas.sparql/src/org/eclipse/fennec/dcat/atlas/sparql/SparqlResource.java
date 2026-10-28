@@ -70,6 +70,13 @@ public class SparqlResource {
 	static final String FORM = MediaType.APPLICATION_FORM_URLENCODED;
 
 	static final String RESULTS_JSON = "application/sparql-results+json";
+	/**
+	 * Plain {@code application/json}, which generic clients (the daanse dashboard,
+	 * Fuseki's own UI) send instead of the SPARQL-specific types. Served as the
+	 * result-set JSON for SELECT/ASK and as JSON-LD for CONSTRUCT/DESCRIBE, echoing
+	 * the requested type as Fuseki does.
+	 */
+	static final String JSON = MediaType.APPLICATION_JSON;
 	static final String RESULTS_XML = "application/sparql-results+xml";
 	static final String CSV = "text/csv";
 	static final String TSV = "text/tab-separated-values";
@@ -84,7 +91,7 @@ public class SparqlResource {
 	SparqlEngine engine;
 
 	@GET
-	@Produces({ RESULTS_JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
+	@Produces({ RESULTS_JSON, JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
 	public Response query(@QueryParam("query") String query, @Context HttpHeaders headers) {
 		return run(query, headers);
 	}
@@ -110,7 +117,7 @@ public class SparqlResource {
 	/** The SPARQL 1.1 protocol's direct POST: the body <em>is</em> the query. */
 	@POST
 	@Consumes(SPARQL_QUERY)
-	@Produces({ RESULTS_JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
+	@Produces({ RESULTS_JSON, JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
 	public Response queryByPost(String query, @Context HttpHeaders headers) {
 		return run(query, headers);
 	}
@@ -118,7 +125,7 @@ public class SparqlResource {
 	/** The SPARQL 1.1 protocol's form-encoded POST, for long queries from browsers. */
 	@POST
 	@Consumes(FORM)
-	@Produces({ RESULTS_JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
+	@Produces({ RESULTS_JSON, JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
 	public Response queryByForm(@FormParam("query") String query, @Context HttpHeaders headers) {
 		return run(query, headers);
 	}
@@ -174,7 +181,7 @@ public class SparqlResource {
 	}
 
 	private Response resultSet(Query query, HttpHeaders headers) {
-		String type = negotiate(headers, List.of(RESULTS_JSON, RESULTS_XML, CSV, TSV), RESULTS_JSON);
+		String type = negotiate(headers, List.of(RESULTS_JSON, JSON, RESULTS_XML, CSV, TSV), RESULTS_JSON);
 		byte[] body = engine.execute(query, execution -> {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			if (query.isAskType()) {
@@ -199,7 +206,7 @@ public class SparqlResource {
 	}
 
 	private Response graph(Query query, HttpHeaders headers) {
-		String type = negotiate(headers, List.of(TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3), TURTLE);
+		String type = negotiate(headers, List.of(TURTLE, RDF_XML, JSON_LD, JSON, N_TRIPLES, N3), TURTLE);
 		Model model = engine.execute(query,
 				execution -> query.isDescribeType() ? execution.execDescribe() : execution.execConstruct());
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -226,7 +233,7 @@ public class SparqlResource {
 	private static Lang langFor(String mediaType) {
 		return switch (mediaType) {
 		case RDF_XML -> Lang.RDFXML;
-		case JSON_LD -> Lang.JSONLD;
+		case JSON_LD, JSON -> Lang.JSONLD;
 		case N_TRIPLES -> Lang.NTRIPLES;
 		case N3 -> Lang.N3;
 		default -> Lang.TURTLE;

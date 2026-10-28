@@ -34,6 +34,7 @@ import org.osgi.service.servlet.whiteboard.annotations.RequireHttpWhiteboard;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -86,6 +87,24 @@ public class SparqlResource {
 	@Produces({ RESULTS_JSON, RESULTS_XML, CSV, TSV, TURTLE, RDF_XML, JSON_LD, N_TRIPLES, N3 })
 	public Response query(@QueryParam("query") String query, @Context HttpHeaders headers) {
 		return run(query, headers);
+	}
+
+	/**
+	 * Endpoint discovery: SPARQL clients (the daanse dashboard among them) probe with a
+	 * bare {@code HEAD} to find out whether a service is here at all. Without this
+	 * method JAX-RS would route a HEAD to {@link #query} with no query and answer
+	 * 400, which such a probe reads as 'no endpoint'. Headless by construction: it
+	 * reports availability, never a result.
+	 */
+	@HEAD
+	public Response probe() {
+		if (!engine.isEnabled()) {
+			return Response.status(Status.NOT_FOUND).build();
+		}
+		if (!engine.isReady()) {
+			return Response.status(Status.SERVICE_UNAVAILABLE).build();
+		}
+		return Response.ok().type(RESULTS_JSON).build();
 	}
 
 	/** The SPARQL 1.1 protocol's direct POST: the body <em>is</em> the query. */

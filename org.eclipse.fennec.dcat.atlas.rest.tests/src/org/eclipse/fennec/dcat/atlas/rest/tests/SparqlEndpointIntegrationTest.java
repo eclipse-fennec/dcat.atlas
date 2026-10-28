@@ -169,6 +169,38 @@ public class SparqlEndpointIntegrationTest {
 	}
 
 	@Test
+	void plainJsonIsAcceptedForSelect() throws Exception {
+		// Issue #66: generic clients send Accept: application/json, as Fuseki allows.
+		createDatasetOverRest(id, "Air quality " + id);
+
+		HttpResponse<String> response = get(
+				"?query=" + encode("SELECT ?t WHERE { GRAPH <" + BASE + "/datasets/" + id + "> { ?s <" + TITLE + "> ?t } }"),
+				"application/json");
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"),
+				response.headers().toString());
+		assertTrue(response.body().contains("\"bindings\""), response.body());
+		assertTrue(response.body().contains("Air quality " + id), response.body());
+	}
+
+	@Test
+	void plainJsonIsAcceptedForConstructAsJsonLd() throws Exception {
+		createDatasetOverRest(id, "Air quality " + id);
+
+		HttpResponse<String> response = get(
+				"?query=" + encode("CONSTRUCT { ?s ?p ?o } WHERE { GRAPH <" + BASE + "/datasets/" + id
+						+ "> { ?s ?p ?o } }"),
+				"application/json");
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"),
+				response.headers().toString());
+		assertTrue(response.body().contains("\"@id\""), response.body());
+		assertTrue(response.body().contains("Air quality " + id), response.body());
+	}
+
+	@Test
 	void theQueryMayBePostedAsSparqlQuery() throws Exception {
 		createDatasetOverRest(id, "Air quality " + id);
 

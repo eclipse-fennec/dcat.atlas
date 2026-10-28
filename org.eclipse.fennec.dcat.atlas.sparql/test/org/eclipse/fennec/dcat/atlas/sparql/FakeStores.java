@@ -90,6 +90,13 @@ final class FakeStores {
 			public Optional<String> etag(String id) {
 				return Optional.empty();
 			}
+
+			@Override
+			public List<String> ids() {
+				// Deliberately not counted: the projection reads whole collections, so a
+				// listing here would not be one of the passes catalogReads counts.
+				return new ArrayList<>(catalogs.keySet());
+			}
 		};
 	}
 
@@ -114,6 +121,13 @@ final class FakeStores {
 			@Override
 			public Optional<String> etag(String id) {
 				return Optional.empty();
+			}
+
+			@Override
+			public List<String> ids() {
+				// Deliberately not counted: the projection reads whole collections, so a
+				// listing here would not be one of the passes the read counters counts.
+				return new ArrayList<>(datasets.keySet());
 			}
 		};
 	}
@@ -140,6 +154,13 @@ final class FakeStores {
 			public Optional<String> etag(String id) {
 				return Optional.empty();
 			}
+
+			@Override
+			public List<String> ids() {
+				// Deliberately not counted: the projection reads whole collections, so a
+				// listing here would not be one of the passes the read counters counts.
+				return new ArrayList<>(series.keySet());
+			}
 		};
 	}
 
@@ -164,6 +185,13 @@ final class FakeStores {
 			@Override
 			public Optional<String> etag(String id) {
 				return Optional.empty();
+			}
+
+			@Override
+			public List<String> ids() {
+				// Deliberately not counted: the projection reads whole collections, so a
+				// listing here would not be one of the passes the read counters counts.
+				return new ArrayList<>(dataServices.keySet());
 			}
 		};
 	}

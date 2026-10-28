@@ -3,3 +3,25 @@
 	secrets.bndrun
 	
 -runbundles.local: org.eclipse.fennec.dcat.atlas.config.local
+
+# Without this the Gogo shell reads EOF on a non-interactive stdin, says "stopping shell and
+# framework" and takes the runtime down with it — so `gradlew run.local` from a script or a
+# CI job exits 117 before anything serves. Interactive runs are unaffected.
+-runproperties.local: gosh.args=--noshutdown
+
+# Metrics from the runtime service, local only. The chain is: the logging sender publishes an
+# OpenTelemetry, core.commons turns that into the MeterProvider the telemetry component binds.
+# The sender takes ConfigurationPolicy.REQUIRE, so without configs/telemetry.json it publishes
+# nothing and the gauges are never built.
+#
+# The logging sender rather than OTLP on purpose: looking at what comes out should not need a
+# collector, and which sender a deployment runs is its own decision. Swap in
+# core.sender.http when there is somewhere to send to.
+#
+# Here and not in base.bndrun: nothing in the serving path requires any of this, and putting
+# OpenTelemetry into the production runtime is a deployment's decision, not the portal's.
+-runbundles.telemetry: \
+	org.eclipse.fennec.dcat.atlas.telemetry,\
+	org.eclipse.osgi-technology.opentelemetry.repack,\
+	org.eclipse.osgi-technology.opentelemetry.core.commons,\
+	org.eclipse.osgi-technology.opentelemetry.core.sender.logging

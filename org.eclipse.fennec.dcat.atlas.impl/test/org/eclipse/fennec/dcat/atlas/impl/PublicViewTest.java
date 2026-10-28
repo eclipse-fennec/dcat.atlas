@@ -13,9 +13,12 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.eclipse.emf.common.util.URI;
@@ -36,9 +39,6 @@ import dcat.DcatFactory;
 import dcat.Distribution;
 import rdf.PlainLiteral;
 import rdf.RdfFactory;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * What a client receives is the stored document with our identities rendered
@@ -55,9 +55,14 @@ class PublicViewTest {
 	@TempDir
 	Path storage;
 
+	private CatalogAdminServiceImpl catalogs() {
+		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
+				TestGitStore.at(storage), TestGitStore.BASE_PATH));
+	}
+
 	@Test
 	void theRenderedDocumentIsTheStoredOneWithOnlyTheBaseChanged() throws Exception {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		CatalogAdminServiceImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
 
@@ -70,7 +75,7 @@ class PublicViewTest {
 
 	@Test
 	void noFileUriAppearsInEitherForm() throws Exception {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		CatalogAdminServiceImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
 
@@ -86,7 +91,7 @@ class PublicViewTest {
 
 	@Test
 	void identitiesAndLinksAreBothPublic() {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		CatalogAdminServiceImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
 
@@ -102,8 +107,8 @@ class PublicViewTest {
 
 	@Test
 	void containedObjectsAreRebasedToo() {
-		DatasetAdminServiceImpl datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
-		DistributionAdminServiceImpl distributions = new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasets);
+		DatasetAdminServiceImpl datasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		DistributionAdminServiceImpl distributions = TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasets));
 		datasets.upsertDataset(dataset("air", "Air quality"));
 		distributions.upsertDistributionToDataset("air", distribution("csv"));
 
@@ -114,7 +119,7 @@ class PublicViewTest {
 
 	@Test
 	void aForeignIriSurvivesRendering() {
-		DatasetAdminServiceImpl datasets = new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		DatasetAdminServiceImpl datasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		Dataset air = dataset("air", "Air quality");
 		air.getTheme().add("http://publications.europa.eu/resource/authority/data-theme/ENVI");
 		datasets.upsertDataset(air);
@@ -127,7 +132,7 @@ class PublicViewTest {
 
 	@Test
 	void renderingDoesNotDisturbTheStoredEntity() {
-		CatalogAdminServiceImpl catalogs = new CatalogAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH);
+		CatalogAdminServiceImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"));
 
 		Catalog stored = catalogs.getCatalog("gov").orElseThrow();

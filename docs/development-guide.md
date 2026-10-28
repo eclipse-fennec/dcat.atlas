@@ -18,6 +18,7 @@
 | `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
 | `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed), controlled-vocabulary checks, and the Felix health checks behind `/health/*`. |
 | `org.eclipse.fennec.dcat.atlas.sparql/` | The in-memory RDF projection of the file store and the SPARQL endpoint over it (WP-DCAT-5 Phase 1). Nothing exported — Jena query types stay inside. |
+| `org.eclipse.fennec.dcat.atlas.telemetry/` | OpenTelemetry gauges over the runtime snapshot. Optional in both directions: nothing in the serving path requires it, and it requires no part of the portal beyond `…api.runtime`. Only in `local.bndrun`; adding it to a deployment is that deployment's decision. |
 | `org.eclipse.fennec.shacl.model/` | EMF model bundle for the SHACL vocabulary (used by the validation-report representation). |
 | `org.eclipse.fennec.dcat.atlas.runtime/` | bnd run descriptors: `base.bndrun` (framework + all bundles), `local.bndrun`, `docker.bndrun`, `secrets.bndrun`. Exports the executable jars. |
 | `org.eclipse.fennec.dcat.atlas.config.local/` | OSGi configuration for local development (HTTP on `8085`, store under `/tmp/rdf`). |
@@ -85,6 +86,122 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 ---
 
 ## Change log
+
+### 2026-10-21 — A runtime service, and the telemetry bundle it was built for (#58)
+
+One OSGi service that hands back a read-only inventory of the DCAT content this instance holds.
+The pattern is the house one: `BrokerRuntime`/`ClientRuntime` in `emf.services`, whose
+`ChangeCountPublisher` this reuses rather than copies.
+
+**Plain `org.osgi.dto.DTO`, no EMF.** `DcatAtlasRuntime.snapshot()` returns
+`DcatAtlasRuntimeDTO` and is the only method on the interface. The consumer this exists for is a
+telemetry bundle, and requiring it to carry EMF, the codec and the DCAT-AP profile to read an
+integer would be the whole cost of the feature. A test asserts nothing in `…api.runtime` imports
+the model.
+
+**The component registers itself, and `service = {}` is load-bearing.**
+`Constants.SERVICE_CHANGECOUNT` can only be moved through `ServiceRegistration.setProperties`, and a
+DS-declared service hands out no registration to call it on. So the component activates, registers
+through `ChangeCountPublisher` and keeps the handle. Without `service = {}` DS would register a
+second copy beside it — one whose change count moves and one whose properties never do, with a
+consumer binding whichever it found first.
+
+**Reading happens on change; assembly happens per call — and the order matters more than it
+looks.** The first version refreshed inside `DcatHelper.Store.commit`, on the thread still
+completing the write, and re-entering the store from there made six write tests answer `500`
+*after* their commit was already written. So `StoreChanges.committed()` now sets a flag and raises
+the counter, and the reading happens on the next snapshot that needs it. The cost rule still holds:
+the telemetry bundle gives every gauge its own `() -> snapshot()`, so one export interval takes a
+handful of snapshots, and a burst of them with nothing in between reads nothing.
+
+**`…atlas.telemetry`** turns each snapshot into gauges and computes nothing of its own. It is in
+`local.bndrun` only, with the logging sender, so looking at the output needs no collector.
+
+### 2026-10-22 — Review of #60: an inventory of content, and nothing else
+
+The service was built as a portal health page and is now a content inventory. Gone: the store
+section (and with it the direct `GitService` reference that had the runtime naming its backend,
+which contradicted the issue's own ruling that git plays no role here), the endpoints and their
+whiteboard tracker, the `ServiceComponentRuntime` source for unsatisfied components, SHACL and
+SPARQL introspection, the identity bases, the `failures[]` list with its reason codes, and
+`checkIntegrity()` with the per-resource scan behind it. Each of those is already answered better
+by something else — SCR and the Jakarta RS whiteboard publish their own runtime services, and the
+health checks answer "route traffic here?" in prose — and a second opinion from here would only be
+a staler one.
+
+What is left is one question answered well: **what DCAT resources does this portal hold.** Four
+fields, one per stored collection, each with a count and its resources; `dcat:Distribution` has no
+field because it is contained in its Dataset rather than stored in a collection of its own. Every
+resource is named twice, by the id a store operation takes and by the IRI a caller can
+dereference, because neither alone is enough and recomputing one from the other needs the public
+base a consumer has no business reassembling. Catalogues carry more: a title and what they list,
+counted from the catalogue already in hand.
+
+**Ids come from the collection listing; entities are never loaded.** The four read-only services
+gained `ids()` for it — one git tree object however many ids come back, where `listDatasets()`
+materialises every entity and a page materialises its own. That is also why only catalogues carry
+a title: a title has to be read out of the resource, which is affordable for tens of catalogues
+and not for thousands of datasets. With `ids()` on the API, the internal `StoreIntrospection`
+service the first version had is gone entirely, and with it the question of why its reference was
+`MULTIPLE`.
+
+**References are bound by method rather than by field, and no longer greedy.** That is not only
+style: binding a service is itself a change, and a field injection happens without telling anybody,
+so a collection service arriving late used to leave the snapshot reporting an empty portal with
+nothing to say it had stopped being true. Each `set`/`unset` pair raises the change count. The
+component has no configuration at all now, so `configurationPid` and `configurationPolicy` went
+with it and both shipped config files lost their `DcatAtlasRuntime` block.
+
+**The same two patterns were then swept out of the whole workspace.**
+
+*Greedy, 20 references in 10 files.* Checked against the spec rather than assumed: §112.3.8's
+Table 112.1 says "better" means the reference is **not bound** *or* a higher-ranked service
+appeared, and for `0..1 dynamic reluctant` the action is "if no service is bound, bind to the new
+target service". So reluctant already binds a late arrival — greedy only adds rebinding to a
+better-ranked service. `DcatValidationService`, `DcatGraphService`, `PublicIris` and
+`StoreRevision` have one implementation each and nothing in the workspace sets `service.ranking`,
+so greedy asked for a preference that cannot exist. All 20 now use the default.
+
+*Field injection, the same 20.* Each is now a `set`/`unset` pair with a private `volatile` field.
+⚠️ **Pin `name` when converting.** With a field the reference name is the field name; with a bind
+method §112.5.1 strips the `set` prefix, so `setValidationService` would be named
+`ValidationService` — and the shipped configs raise the strict reading with
+`validationService.cardinality.minimum:int=1`. Every converted reference therefore declares
+`name = "<the old field name>"`. `unset` compares identity before clearing, because a dynamic
+reference can be rebound before the old one is unbound.
+
+The ten REST resources were left alone: a bare `@Reference` on a non-volatile field is `1..1`
+**static**, where DS reactivates the component rather than calling a bind method, so a setter
+would add nothing.
+
+**Every configurable component is `ConfigurationPolicy.REQUIRE` now**, which was the third pattern
+in the same review. On the default, `OPTIONAL`, an unconfigured store still activated and bound
+*whichever* `GitService` it found — its config is what carries `gitService.target` — and
+`DcatValidationService` published a service that loaded zero shapes and conformed everything,
+which is the silent failure this issue was written about. Safe because all eleven PIDs are
+configured in all three runtimes (docker, local, `rest.tests`). SPARQL went further and became
+opt-in: `GraphConfig.enabled()` defaults to **false**, so the projection and its endpoint cannot
+arrive by omission, and the local and `rest.tests` configs gained the explicit block they had been
+getting from the default.
+
+**Two traps worth carrying over.** `List.of()` is a singleton, so every empty collection of a DTO
+was the *same* list, and the rendering emitted `$ref` back-references between unrelated fields
+while a converter round-trip to `Map` threw outright; empty lists in a snapshot are distinct
+instances, and a test pins it. Second: the watcher callback is `updated<Name>`, not
+`modified<Name>` — the latter compiles, binds, and is never called.
+
+**No `osgi.core` or `osgi.cmpn` on a buildpath.** `api`, `impl` and `telemetry` now name the jars
+they use — `org.osgi.dto`, `org.osgi.framework`, `org.osgi.service.component.annotations` — each
+`;version=latest`. The aggregate on a test path was also what shadowed `org.osgi.util.converter`.
+
+**Running locally needed two fixes that had nothing to do with this.** `/tmp/dcat-store.git` must
+exist before the first run — the config says so, and without it every store stays unsatisfied and
+the read resources answer `404`. And `gradlew run.local` exited `117` headless, because Gogo reads
+EOF on a non-interactive stdin and takes the framework down with it; `local.bndrun` now sets
+`gosh.args=--noshutdown`.
+
+Tests: `impl` 146 → 169, plus 4 in `…telemetry` and 2 in `…api`.
+
 
 ### 2026-10-20 — Catalogue records are maintained by the server (#56), and reads carry `Last-Modified`
 

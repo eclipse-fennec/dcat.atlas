@@ -1,23 +1,16 @@
--buildpath: \
-	org.osgi.service.component.annotations,\
-	osgi.core,\
-
--testpath: \
-	${junit}
-
 # The bndrun files here assemble the application from workspace bundles that are not
 # on the -buildpath. bnd derives the build order (and the Gradle task graph for
 # resolve.*/export.*) from -buildpath/-testpath only, so declare them explicitly or
 # a Gradle build can resolve before those bundles are in the Workspace repo.
 -dependson: \
-	org.eclipse.fennec.dcat.atlas.api,\
-	org.eclipse.fennec.dcat.atlas.dcatap.de.model,\
-	org.eclipse.fennec.dcat.atlas.impl,\
-	org.eclipse.fennec.dcat.atlas.msg.body.writer,\
-	org.eclipse.fennec.dcat.atlas.rest,\
-	org.eclipse.fennec.dcat.atlas.sparql,\
-	org.eclipse.fennec.dcat.atlas.validation,\
-	org.eclipse.fennec.dcat.atlas.config.local,\
-	org.eclipse.fennec.dcat.atlas.config.docker
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.impl;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.msg.body.writer;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.rest;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.sparql;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.validation;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.config.local;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.config.docker;version=snapshot
 
 

@@ -13,8 +13,6 @@
  */
 package org.eclipse.fennec.dcat.atlas.api.graph;
 
-import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
-
 /**
  * Maintains the in-memory RDF graph that backs the SPARQL endpoint (WP-DCAT-5,
  * Phase 1 of the persistence plan).

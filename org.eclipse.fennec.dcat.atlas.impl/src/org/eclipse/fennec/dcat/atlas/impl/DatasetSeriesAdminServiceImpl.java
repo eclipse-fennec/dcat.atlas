@@ -24,6 +24,7 @@ import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.References;
 import org.eclipse.fennec.dcat.atlas.impl.records.CatalogRecords;
+import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
 import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
@@ -31,10 +32,10 @@ import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.metatype.annotations.Designate;
 
 import dcat.Dataset;
@@ -49,10 +50,15 @@ import dcat.DatasetSeries;
  * at the series — so joining a series changes the dataset's file, not the series'.
  * That is why these operations re-project the dataset.
  */
-@Component(name = "DatasetSeriesAdminService", service = DatasetSeriesAdminService.class)
+@Component(name = "DatasetSeriesAdminService", service = { DatasetSeriesAdminService.class },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceImpl
 		implements DatasetSeriesAdminService {
+
+	/** How this service says it changed the portal; see DcatChangeNotifier. */
+	@Reference
+	DcatChangeNotifier changeNotifier;
 
 	@Activate
 	public DatasetSeriesAdminServiceImpl(@Reference ResourceSetFactory resourceSetFactory,
@@ -77,8 +83,18 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	 * of its callers (persistence plan constraint G2). Optional and dynamic — absent
 	 * simply means no SPARQL.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatGraphService graphService;
+	@Reference(name = "graphService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setGraphService(DcatGraphService graphService) {
+		this.graphService = graphService;
+	}
+
+	void unsetGraphService(DcatGraphService graphService) {
+		if (this.graphService == graphService) {
+			this.graphService = null;
+		}
+	}
+
+	private volatile DcatGraphService graphService;
 
 	/**
 	 * On-write SHACL enforcement (FR-4), maintained here rather than in the REST layer:
@@ -91,8 +107,20 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 	 * component unsatisfiable without a validation service instead of letting writes
 	 * through unchecked.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
+	// Name pinned: DS derives it from the bind method, and the strict reading above is
+	// configured as validationService.cardinality.minimum.
+	@Reference(name = "validationService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setValidationService(DcatValidationService validationService) {
+		this.validationService = validationService;
+	}
+
+	void unsetValidationService(DcatValidationService validationService) {
+		if (this.validationService == validationService) {
+			this.validationService = null;
+		}
+	}
+
+	private volatile DcatValidationService validationService;
 
 	@Override
 	protected DcatValidationService writeValidation() {
@@ -108,6 +136,9 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
 		store.commit("Store dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
+		// After the commit: delivery is asynchronous, so a consumer can read the portal
+		// before the operation that announced the change has finished it.
+		changeNotifier.entityChanged(collection, id);
 		return series;
 	}
 
@@ -124,6 +155,7 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		store.commit(cascade ? "Delete dataset series " + id + " and unlink its referrers"
 				: "Delete dataset series " + id);
 		reproject(DcatEntity.DATASET_SERIES, id);
+		changeNotifier.entityDeleted(collection, id);
 		return unlinked;
 	}
 
@@ -160,6 +192,7 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 				store.saveRemoval(dataset);
 				store.commit("Unlink dataset %s from dataset series %s".formatted(datasetId, datasetSeriesId));
 				reproject(DcatEntity.DATASET, datasetId);
+				changeNotifier.entityUnlinked(StoreLayout.DATASETS, datasetId);
 			}
 		});
 	}
@@ -168,13 +201,20 @@ public class DatasetSeriesAdminServiceImpl extends DatasetSeriesReadOnlyServiceI
 		DatasetSeries series = requireSeries(store, datasetSeriesId);
 		Dataset dataset = store.<Dataset>get(StoreLayout.DATASETS, datasetId)
 				.orElseThrow(() -> new NoSuchElementException("Unknown dataset: " + datasetId));
+		boolean linked = false;
 		if (!Members.contains(dataset.getInSeries(), collection, datasetSeriesId)) {
 			dataset.getInSeries().add(series);
 			store.save(dataset);
+			linked = true;
 		}
 		// Commits whatever the operation staged, as one commit; see CatalogAdminServiceImpl.
 		store.commit(message);
 		reproject(DcatEntity.DATASET, datasetId);
+		// Only for a link that happened, and only once it is committed; see
+		// CatalogAdminServiceImpl.connect.
+		if (linked) {
+			changeNotifier.entityLinked(StoreLayout.DATASETS, datasetId);
+		}
 		return series;
 	}
 

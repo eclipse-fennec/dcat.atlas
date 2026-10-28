@@ -7,13 +7,11 @@ Bundle-Description: DCAT.Atlas client — public API. \
 
 -library: enableEMF
 
-Export-Package: org.eclipse.fennec.dcat.atlas.client.api
-
 # The model bundle is the point of the whole client: callers hand over Catalog and
 # Dataset instances rather than composing requests. The client must NOT reach for
 # ...atlas.impl or ...atlas.rest — those are the portal's insides.
 -buildpath: \
-	org.osgi.annotation.versioning,\
-	org.osgi.annotation.bundle,\
+	org.osgi.annotation.versioning;version=latest,\
+	org.osgi.annotation.bundle;version=latest,\
 	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
 	jakarta.ws.rs-api;version=latest

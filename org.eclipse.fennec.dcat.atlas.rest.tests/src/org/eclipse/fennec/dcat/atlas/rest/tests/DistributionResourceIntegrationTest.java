@@ -40,10 +40,8 @@ import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
 
 import dcat.DataService;
-import dcat.DcatFactory;
 import dcat.Dataset;
-import rdf.PlainLiteral;
-import rdf.RdfFactory;
+import dcat.DcatFactory;
 
 /**
  * End-to-end HTTP test for the FR-10 Distribution composition endpoints. Unlike

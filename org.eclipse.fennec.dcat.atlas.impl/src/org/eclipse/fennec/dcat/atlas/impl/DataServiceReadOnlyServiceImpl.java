@@ -26,6 +26,7 @@ import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
@@ -33,7 +34,8 @@ import dcat.DataService;
 
 /** File-backed, read-only view of the data-service store. */
 @Component(name = "DataServiceReadOnlyService", service = { DataServiceReadOnlyService.class,
-		HealthCheck.class }, property = { HealthCheck.NAME + "=store:data-services", HealthCheck.TAGS + "=ready" })
+		HealthCheck.class}, property = { HealthCheck.NAME + "=store:data-services", HealthCheck.TAGS + "=ready" },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class DataServiceReadOnlyServiceImpl extends AbstractEntityStore<DataService>
 		implements DataServiceReadOnlyService {

@@ -26,6 +26,7 @@ import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
 import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.metatype.annotations.Designate;
 
@@ -39,7 +40,8 @@ import dcat.Catalog;
  * implementation of {@code getCatalog}/{@code listCatalogs}.
  */
 @Component(name = "CatalogReadOnlyService", service = { CatalogReadOnlyService.class, HealthCheck.class }, property = {
-		HealthCheck.NAME + "=store:catalogs", HealthCheck.TAGS + "=ready" })
+		HealthCheck.NAME + "=store:catalogs", HealthCheck.TAGS + "=ready" },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = StoreConfig.class)
 public class CatalogReadOnlyServiceImpl extends AbstractEntityStore<Catalog> implements CatalogReadOnlyService {
 

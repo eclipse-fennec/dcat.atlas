@@ -1,0 +1,18 @@
+Bundle-Name: DCAT.Atlas Telemetry
+Bundle-Description: What this portal holds, as OpenTelemetry metrics. It binds the DCAT.Atlas \
+ runtime service and turns each snapshot into a handful of gauges, reaching into nothing: \
+ everything here comes from a DTO the portal decided to hand out. \
+ \
+ Optional in both directions — nothing in the portal requires this bundle, and this bundle \
+ requires no part of the portal beyond the runtime service's API.
+
+-buildpath: \
+	org.osgi.dto;version=latest,\
+	org.osgi.service.component.annotations;version=latest,\
+	org.osgi.service.metatype.annotations;version=latest,\
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
+	org.eclipse.osgi-technology.opentelemetry.repack;version=latest
+
+-testpath: \
+	${junit},\
+	junit-platform-launcher;version=latest

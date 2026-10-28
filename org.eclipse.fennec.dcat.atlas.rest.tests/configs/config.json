@@ -56,5 +56,8 @@
   "DistributionReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "DistributionAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "PublicIris": { "publicBaseUrl": "http://localhost:8185/rest/" },
+  // Explicit, not inherited: DcatGraphService is ConfigurationPolicy.REQUIRE and `enabled`
+  // defaults to false, so SparqlEndpointIntegrationTest needs this block to have an endpoint.
+  "DcatGraphService":             { "enabled": true },
   "DcatValidationService":        { "shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]", "vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]", "enforceOnWrite": "$[env:SHACL_ENFORCE;default=false]" }
 }

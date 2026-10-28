@@ -44,6 +44,7 @@ import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -64,7 +65,8 @@ import org.osgi.service.metatype.annotations.Designate;
  * {@link #onlyEntityResults}.
  */
 @Component(name = "DcatValidationService", service = { DcatValidationService.class, HealthCheck.class }, property = {
-		HealthCheck.NAME + "=shacl", HealthCheck.TAGS + "=ready" })
+		HealthCheck.NAME + "=shacl", HealthCheck.TAGS + "=ready" },
+		configurationPolicy = ConfigurationPolicy.REQUIRE)
 @Designate(ocd = ShapesConfig.class)
 public class DcatValidationServiceImpl implements DcatValidationService, HealthCheck {
 

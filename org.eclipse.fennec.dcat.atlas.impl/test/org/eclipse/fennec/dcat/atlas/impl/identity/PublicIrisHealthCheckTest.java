@@ -36,7 +36,7 @@ public class PublicIrisHealthCheckTest {
 	@Test
 	void aBoundServiceReportsTheBaseItRendersUnder() {
 		PublicIrisHealthCheck check = new PublicIrisHealthCheck();
-		check.publicIris = new PublicIrisImpl(PUBLIC);
+		check.setPublicIris(new PublicIrisImpl(PUBLIC));
 
 		Result result = check.execute();
 
@@ -49,7 +49,6 @@ public class PublicIrisHealthCheckTest {
 	@Test
 	void aMissingServiceIsCriticalAndNamesTheSetting() {
 		PublicIrisHealthCheck check = new PublicIrisHealthCheck();
-		check.publicIris = null;
 
 		Result result = check.execute();
 
@@ -65,7 +64,6 @@ public class PublicIrisHealthCheckTest {
 		// because the resources hold PublicIris as a mandatory reference. A check that
 		// did not say so would leave them hunting a routing problem.
 		PublicIrisHealthCheck check = new PublicIrisHealthCheck();
-		check.publicIris = null;
 
 		assertTrue(messages(check.execute()).contains("404"));
 	}

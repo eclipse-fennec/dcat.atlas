@@ -42,4 +42,15 @@ public interface CatalogReadOnlyService {
     /** Strong ETag validator for the stored catalog {@code id}, or empty if absent (F-16). */
     Optional<String> etag(String id);
 
+
+    /**
+     * The ids this collection holds, in the store's order, without loading anything.
+     * <p>
+     * A tree listing and no blob read at all, which is what makes an inventory of a large
+     * collection affordable: {@link #listCatalogs()} materialises every entity and a page
+     * materialises its own entries, while this reads one tree object however many ids come
+     * back. A collection that cannot be listed answers empty rather than throwing, because
+     * a caller counting catalogues is not the caller who should be told the store is down.
+     */
+    List<String> ids();
 }

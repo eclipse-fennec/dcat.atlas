@@ -21,7 +21,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
 import org.osgi.service.component.annotations.ServiceScope;
 import org.osgi.service.jakartars.whiteboard.annotations.RequireJakartarsWhiteboard;
 import org.osgi.service.jakartars.whiteboard.propertytypes.JakartarsName;
@@ -81,8 +80,20 @@ public class ValidationResource {
 	 * field can be momentarily {@code null} during a rebind (or if no validation service is
 	 * installed), which {@link #report} answers with 503 rather than a 500/NPE.
 	 */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC, policyOption = ReferencePolicyOption.GREEDY)
-	volatile DcatValidationService validationService;
+	// Name pinned: DS derives it from the bind method, and the strict reading above is
+	// configured as validationService.cardinality.minimum.
+	@Reference(name = "validationService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setValidationService(DcatValidationService validationService) {
+		this.validationService = validationService;
+	}
+
+	void unsetValidationService(DcatValidationService validationService) {
+		if (this.validationService == validationService) {
+			this.validationService = null;
+		}
+	}
+
+	private volatile DcatValidationService validationService;
 
 	@POST
 	@Path("/catalogs")

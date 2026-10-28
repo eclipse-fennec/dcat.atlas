@@ -95,7 +95,7 @@ class FormatDefaultsTest {
 		dataset.getDistribution().add(geo);
 		dataset.getDistribution().add(csv);
 
-		FormatDefaults.apply(dataset);
+		assertEquals(2, FormatDefaults.apply(dataset));
 
 		assertEquals(GEOJSON, geo.getFormat());
 		assertEquals(CSV, csv.getFormat());
@@ -105,6 +105,6 @@ class FormatDefaultsTest {
 	void aRootWithoutDistributionsIsLeftAlone() {
 		// Any EObject may reach the write floor; only Datasets (and their subtypes) have
 		// Distributions, everything else must pass through untouched.
-		FormatDefaults.apply(DcatFactory.eINSTANCE.createDataService());
+		assertEquals(0, FormatDefaults.apply(DcatFactory.eINSTANCE.createDataService()));
 	}
 }

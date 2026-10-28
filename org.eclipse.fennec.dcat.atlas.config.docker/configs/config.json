@@ -96,6 +96,10 @@
 	"DistributionReadOnlyService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)" },
 	"DistributionAdminService": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "validateOnWrite": "$[env:MODEL_VALIDATE;default=true]", "validationService.cardinality.minimum:int": 1 },
 
+	// Once per start: dct:format completed from dcat:mediaType on what is already stored
+	// (#68); new writes are completed regardless. FORMAT_BACKFILL=false switches it off.
+	"FormatBackfill": { "basePath": "$[env:STORE_BASE_PATH;default=dcat]", "gitService.target": "(id=dcatStore)", "enabled": "$[env:FORMAT_BACKFILL;default=true]" },
+
 	// Stored identities are host-free (http://dcat.atlas/...) so data is portable between
 	// environments; this is the base they are rendered under at read time. It must be the
 	// URL clients actually reach the portal on - behind a reverse proxy that is NOT the

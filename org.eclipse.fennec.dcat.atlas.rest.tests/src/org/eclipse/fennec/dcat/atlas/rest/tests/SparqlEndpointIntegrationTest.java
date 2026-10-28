@@ -204,6 +204,19 @@ public class SparqlEndpointIntegrationTest {
 		assertEquals(400, get("", "*/*").statusCode());
 	}
 
+	@Test
+	void aHeadWithoutQueryAnnouncesTheEndpoint() throws Exception {
+		// Endpoint auto-detection (issue #65): clients probe with a bare HEAD and take
+		// anything but 2xx as 'no SPARQL service here'.
+		HttpResponse<String> response = send(HttpRequest.newBuilder(URI.create(SPARQL))
+				.method("HEAD", BodyPublishers.noBody()).build());
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.body().isEmpty(), "a HEAD must not carry a body: " + response.body());
+		assertEquals("application/sparql-results+json",
+				response.headers().firstValue("Content-Type").orElse(""));
+	}
+
 	// --- readiness and reindex ---------------------------------------------
 
 	@Test

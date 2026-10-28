@@ -22,6 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import dcat.Dataset;
 import dcat.DcatFactory;
+import dcat.Distribution;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,6 +50,22 @@ public class DatasetAdminServiceImplTest {
 		assertTrue(loaded.isPresent());
 		assertEquals(BASE + "air", loaded.get().getAbout());
 		assertEquals("Air quality", loaded.get().getTitle().get(0).getValue());
+	}
+
+	@Test
+	void anEmbeddedDistributionGetsItsFormatFromTheMediaType() {
+		// Issue #68, on the dataset write path: a Distribution sent inside its Dataset is
+		// completed exactly like one sent on its own.
+		Dataset sent = dataset(BASE + "air", "Air quality");
+		Distribution distribution = DcatFactory.eINSTANCE.createDistribution();
+		distribution.setAbout(BASE + "air/distributions/csv");
+		distribution.setMediaType("http://www.iana.org/assignments/media-types/text/csv");
+		sent.getDistribution().add(TestEntities.mandatoryDistribution(distribution));
+		service().upsertDataset(sent, Caller.ANONYMOUS);
+
+		Dataset loaded = service().getDataset("air").orElseThrow();
+		assertEquals("http://publications.europa.eu/resource/authority/file-type/CSV",
+				loaded.getDistribution().get(0).getFormat());
 	}
 
 	@Test

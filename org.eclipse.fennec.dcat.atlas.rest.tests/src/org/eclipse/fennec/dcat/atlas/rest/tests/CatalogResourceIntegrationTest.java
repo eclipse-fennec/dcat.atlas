@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,7 +65,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// Seeded the way the store mints identities: logical, not the request URL.
 		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, id));
 		RestEntities.mandatoryDataset(catalog, title);
-		service.upsertCatalog(catalog);
+		service.upsertCatalog(catalog, Caller.ANONYMOUS);
 	}
 
 	@Override
@@ -79,7 +80,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteCatalog(id, false);
+		service.deleteCatalog(id, false, Caller.ANONYMOUS);
 	}
 
 	// --- identity on create -------------------------------------------------
@@ -365,7 +366,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		assertEquals(204, remove.statusCode());
 		assertTrue(service.getCatalog("cat1").get().getDataset().isEmpty());
 
-		datasetAdminService.deleteDataset(MEMBER_DATASET_ID, false);
+		datasetAdminService.deleteDataset(MEMBER_DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	@Test
@@ -435,7 +436,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 			// Unlinking removes the membership, not the dataset.
 			assertTrue(datasetAdminService.getDataset("air").isPresent());
 		} finally {
-			datasetAdminService.deleteDataset("air", false);
+			datasetAdminService.deleteDataset("air", false, Caller.ANONYMOUS);
 		}
 	}
 
@@ -458,8 +459,8 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		} finally {
 			// Unlink before deleting: FR-1 refuses to delete a dataset a catalog still
 			// references, which is exactly the guarantee the link endpoint relies on.
-			service.deleteDatasetFromCatalog("cat1", "air");
-			datasetAdminService.deleteDataset("air", false);
+			service.deleteDatasetFromCatalog("cat1", "air", Caller.ANONYMOUS);
+			datasetAdminService.deleteDataset("air", false, Caller.ANONYMOUS);
 		}
 	}
 
@@ -487,6 +488,6 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		RestEntities.mandatoryDataset(dataset, title);
-		datasetAdminService.upsertDataset(dataset);
+		datasetAdminService.upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

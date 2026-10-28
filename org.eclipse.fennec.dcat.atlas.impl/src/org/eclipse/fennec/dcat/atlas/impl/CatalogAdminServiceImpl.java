@@ -19,6 +19,7 @@ import java.util.function.Function;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
@@ -148,9 +149,9 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	}
 
 	@Override
-	public Catalog upsertCatalog(Catalog catalog) {
+	public Catalog upsertCatalog(Catalog catalog, Caller caller) {
 		String id = idOrMint(catalog);
-		Store store = store();
+		Store store = store(caller);
 		store.put(collection, id, catalog);
 		// A catalog is also a member - of its parent, when it is a sub-catalog (#56).
 		CatalogRecords.memberWritten(store, StoreLayout.logicalIri(collection, id));
@@ -161,8 +162,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	}
 
 	@Override
-	public List<String> deleteCatalog(String id, boolean cascade) {
-		Store store = store();
+	public List<String> deleteCatalog(String id, boolean cascade, Caller caller) {
+		Store store = store(caller);
 		if (cascade) {
 			// Before detach, which would otherwise strip the records' primaryTopic and leave
 			// them meaningless and invalid - see CatalogRecords.memberDeleted.
@@ -182,48 +183,48 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	// --- FR-9 catalog membership -------------------------------------------
 
 	@Override
-	public Catalog addDatasetToCatalog(String catalogId, Dataset dataset) {
-		return add(catalogId, StoreLayout.DATASETS, dataset, DATASETS);
+	public Catalog addDatasetToCatalog(String catalogId, Dataset dataset, Caller caller) {
+		return add(catalogId, StoreLayout.DATASETS, dataset, DATASETS, caller);
 	}
 
 	@Override
-	public Catalog linkDatasetToCatalog(String catalogId, String datasetId) {
-		return link(catalogId, StoreLayout.DATASETS, datasetId, DATASETS);
+	public Catalog linkDatasetToCatalog(String catalogId, String datasetId, Caller caller) {
+		return link(catalogId, StoreLayout.DATASETS, datasetId, DATASETS, caller);
 	}
 
 	@Override
-	public void deleteDatasetFromCatalog(String catalogId, String datasetId) {
-		unlink(catalogId, StoreLayout.DATASETS, datasetId, DATASETS);
+	public void deleteDatasetFromCatalog(String catalogId, String datasetId, Caller caller) {
+		unlink(catalogId, StoreLayout.DATASETS, datasetId, DATASETS, caller);
 	}
 
 	@Override
-	public Catalog addDataServiceToCatalog(String catalogId, DataService dataService) {
-		return add(catalogId, StoreLayout.DATA_SERVICES, dataService, SERVICES);
+	public Catalog addDataServiceToCatalog(String catalogId, DataService dataService, Caller caller) {
+		return add(catalogId, StoreLayout.DATA_SERVICES, dataService, SERVICES, caller);
 	}
 
 	@Override
-	public Catalog linkDataServiceToCatalog(String catalogId, String dataServiceId) {
-		return link(catalogId, StoreLayout.DATA_SERVICES, dataServiceId, SERVICES);
+	public Catalog linkDataServiceToCatalog(String catalogId, String dataServiceId, Caller caller) {
+		return link(catalogId, StoreLayout.DATA_SERVICES, dataServiceId, SERVICES, caller);
 	}
 
 	@Override
-	public void deleteDataServiceFromCatalog(String catalogId, String dataServiceId) {
-		unlink(catalogId, StoreLayout.DATA_SERVICES, dataServiceId, SERVICES);
+	public void deleteDataServiceFromCatalog(String catalogId, String dataServiceId, Caller caller) {
+		unlink(catalogId, StoreLayout.DATA_SERVICES, dataServiceId, SERVICES, caller);
 	}
 
 	@Override
-	public Catalog addSubCatalogToCatalog(String catalogId, Catalog subCatalog) {
-		return add(catalogId, StoreLayout.CATALOGS, subCatalog, SUB_CATALOGS);
+	public Catalog addSubCatalogToCatalog(String catalogId, Catalog subCatalog, Caller caller) {
+		return add(catalogId, StoreLayout.CATALOGS, subCatalog, SUB_CATALOGS, caller);
 	}
 
 	@Override
-	public Catalog linkSubCatalogToCatalog(String catalogId, String subCatalogId) {
-		return link(catalogId, StoreLayout.CATALOGS, subCatalogId, SUB_CATALOGS);
+	public Catalog linkSubCatalogToCatalog(String catalogId, String subCatalogId, Caller caller) {
+		return link(catalogId, StoreLayout.CATALOGS, subCatalogId, SUB_CATALOGS, caller);
 	}
 
 	@Override
-	public void deleteSubCatalogFromCatalog(String catalogId, String subCatalogId) {
-		unlink(catalogId, StoreLayout.CATALOGS, subCatalogId, SUB_CATALOGS);
+	public void deleteSubCatalogFromCatalog(String catalogId, String subCatalogId, Caller caller) {
+		unlink(catalogId, StoreLayout.CATALOGS, subCatalogId, SUB_CATALOGS, caller);
 	}
 
 	// --- the three membership shapes ---------------------------------------
@@ -237,11 +238,11 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	 * whole entity means that entity to be what is stored.
 	 */
 	private <T extends EObject> Catalog add(String catalogId, String memberCollection, T member,
-			Function<Catalog, EList<? extends EObject>> membership) {
+			Function<Catalog, EList<? extends EObject>> membership, Caller caller) {
 		if (member == null) {
 			throw new IllegalArgumentException("Cannot add nothing to catalog " + catalogId);
 		}
-		Store store = store();
+		Store store = store(caller);
 		requireCatalog(store, catalogId);
 		String memberId = memberIdOrMint(memberCollection, member);
 		store.put(memberCollection, memberId, member);
@@ -251,8 +252,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 
 	/** Links an entity that must already exist. */
 	private Catalog link(String catalogId, String memberCollection, String memberId,
-			Function<Catalog, EList<? extends EObject>> membership) {
-		Store store = store();
+			Function<Catalog, EList<? extends EObject>> membership, Caller caller) {
+		Store store = store(caller);
 		requireCatalog(store, catalogId);
 		if (store.get(memberCollection, memberId).isEmpty()) {
 			throw new NoSuchElementException("Unknown " + memberCollection + ": " + memberId);
@@ -290,8 +291,8 @@ public class CatalogAdminServiceImpl extends CatalogReadOnlyServiceImpl implemen
 	}
 
 	private void unlink(String catalogId, String memberCollection, String memberId,
-			Function<Catalog, EList<? extends EObject>> membership) {
-		Store store = store();
+			Function<Catalog, EList<? extends EObject>> membership, Caller caller) {
+		Store store = store(caller);
 		Catalog catalog = requireCatalog(store, catalogId);
 		if (Members.remove(membership.apply(catalog), memberCollection, memberId)) {
 			// The entry is gone, and a record describes an entry (#56).

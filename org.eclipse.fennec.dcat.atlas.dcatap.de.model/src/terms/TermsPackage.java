@@ -209,6 +209,15 @@ public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	int LICENSE_DOCUMENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LICENSE_DOCUMENT__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Type</b></em>' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -291,6 +300,15 @@ public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	int LOCATION__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int LOCATION__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Geometry</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -353,6 +371,15 @@ public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int PERIOD_OF_TIME__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PERIOD_OF_TIME__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Start Date</b></em>' containment reference.
@@ -419,6 +446,15 @@ public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	int PROVENANCE_STATEMENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PROVENANCE_STATEMENT__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Description</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -472,6 +508,15 @@ public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int RIGHTS_STATEMENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int RIGHTS_STATEMENT__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Title</b></em>' containment reference list.
@@ -536,6 +581,15 @@ public interface TermsPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int STANDARD__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int STANDARD__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Title</b></em>' containment reference list.

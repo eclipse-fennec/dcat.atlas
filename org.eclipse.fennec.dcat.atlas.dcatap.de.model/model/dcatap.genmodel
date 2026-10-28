@@ -152,6 +152,7 @@
     </genClasses>
     <genClasses image="false" ecoreClass="rdf.ecore#//IdentifiedResource">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute rdf.ecore#//IdentifiedResource/about"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute rdf.ecore#//IdentifiedResource/managedBy"/>
     </genClasses>
   </genPackages>
   <genPackages prefix="Spdx" ecorePackage="spdx.ecore#/">

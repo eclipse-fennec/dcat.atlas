@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
@@ -96,7 +97,7 @@ public class ChangeAnnouncementIntegrationTest {
 		subscription.unregister();
 		if (catalogWritten != null) {
 			try {
-				catalogs.deleteCatalog(catalogWritten, true);
+				catalogs.deleteCatalog(catalogWritten, true, Caller.ANONYMOUS);
 			} catch (RuntimeException alreadyGone) {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
@@ -104,7 +105,7 @@ public class ChangeAnnouncementIntegrationTest {
 		}
 		if (datasetWritten != null) {
 			try {
-				datasets.deleteDataset(datasetWritten, true);
+				datasets.deleteDataset(datasetWritten, true, Caller.ANONYMOUS);
 			} catch (RuntimeException alreadyGone) {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
@@ -142,7 +143,7 @@ public class ChangeAnnouncementIntegrationTest {
 		awaitDelivery(() -> announced.size() >= 2, "both writes to be announced");
 		announced.clear();
 
-		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten);
+		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten, Caller.ANONYMOUS);
 
 		Event link = awaitOne(DcatChangeNotifierTopics.LINK_TOPIC);
 		assertEquals(DcatIds.DATASETS, link.getProperty(DcatChangeNotifierTopics.ENTITY_COLLECTION));
@@ -160,11 +161,11 @@ public class ChangeAnnouncementIntegrationTest {
 	void aRepeatedLinkAnnouncesNothing() {
 		writeDataset();
 		writeCatalog();
-		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten);
+		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten, Caller.ANONYMOUS);
 		awaitDelivery(() -> announced.size() >= 3, "the link to be announced");
 		announced.clear();
 
-		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten);
+		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten, Caller.ANONYMOUS);
 
 		// Nothing to wait for: the assertion is that nothing is coming. Give delivery the
 		// window it would have had, so a regression fails here rather than racing past.
@@ -177,11 +178,11 @@ public class ChangeAnnouncementIntegrationTest {
 	void anUnlinkAnnouncesItsOwnTopic() {
 		writeDataset();
 		writeCatalog();
-		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten);
+		catalogs.linkDatasetToCatalog(catalogWritten, datasetWritten, Caller.ANONYMOUS);
 		awaitDelivery(() -> announced.size() >= 3, "the link to be announced");
 		announced.clear();
 
-		catalogs.deleteDatasetFromCatalog(catalogWritten, datasetWritten);
+		catalogs.deleteDatasetFromCatalog(catalogWritten, datasetWritten, Caller.ANONYMOUS);
 
 		Event unlink = awaitOne(DcatChangeNotifierTopics.UNLINK_TOPIC);
 		assertEquals(datasetWritten, unlink.getProperty(DcatChangeNotifierTopics.ENTITY_ID));
@@ -194,7 +195,7 @@ public class ChangeAnnouncementIntegrationTest {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, datasetWritten));
 		RestEntities.mandatoryDataset(dataset, "Change announcement probe");
-		datasets.upsertDataset(dataset);
+		datasets.upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 
 	private void writeCatalog() {
@@ -202,7 +203,7 @@ public class ChangeAnnouncementIntegrationTest {
 		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
 		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, catalogWritten));
 		RestEntities.mandatoryDataset(catalog, "Change announcement probe");
-		catalogs.upsertCatalog(catalog);
+		catalogs.upsertCatalog(catalog, Caller.ANONYMOUS);
 	}
 
 	/** The one event on {@code topic}, once it has been delivered. */

@@ -125,6 +125,29 @@
 		"reconcileIntervalSeconds": "$[env:SPARQL_RECONCILE_INTERVAL_S;default=300]"
 	},
 
+	// The header APISix writes the authenticated client into. Required: the name is the
+	// gateway's choice and the two have to agree, so the deployment states it.
+	"DcatCallerHeader": {
+		"caller.header": "$[env:CALLER_HEADER;default=X-Atlas-Client]"
+	},
+
+	// What the portal should start out holding: a folder of .xmi resources, normally a
+	// read-only mount, stored once on startup. They are seeded as nobody - no managedBy -
+	// so every generating system may add its own resources to the catalog they share and
+	// none of them can claim it.
+	//
+	// Only what the portal does not already hold is written. A seed is an offer, not an
+	// assertion: by the second start the catalog is no longer what the file says, and the
+	// difference is the memberships the generating systems have published into it.
+	//
+	// Empty seeds nothing, which is the default. A folder that IS named and is not there
+	// stops the container, because being told to seed and silently not doing it is how a
+	// generating system ends up publishing against a catalog that was never created.
+	"InitialDcatResources": {
+		"folder": "$[env:INITIAL_RESOURCES_DIR;default=]",
+		"halt.on.error": "$[env:INITIAL_RESOURCES_HALT;default=true]"
+	},
+
 	// The DCAT-AP.de shapes are AGPL-3.0 and are NOT in the image (see NOTICE.md):
 	// the operator mounts them. The default points at the canonical mount path, so an
 	// image started without that mount reports CRITICAL on /health/ready and never

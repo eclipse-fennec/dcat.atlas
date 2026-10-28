@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +59,7 @@ public class GitCommitBoundaryTest {
 
 	@Test
 	void oneUpsertIsOneCommit() {
-		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
 		assertEquals(1, commits().size(), messages());
 		assertTrue(commits().get(0).getFullMessage().contains("gov"), messages());
@@ -66,8 +67,8 @@ public class GitCommitBoundaryTest {
 
 	@Test
 	void addingAMemberStoresBothInOneCommit() {
-		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
 		// The dataset and the catalog that now links to it, together: committing them
 		// separately would publish a catalog pointing at a dataset that is not there yet.
@@ -77,11 +78,11 @@ public class GitCommitBoundaryTest {
 
 	@Test
 	void aCascadeDeleteIsOneCommit() {
-		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		catalogs().addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"));
+		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		catalogs().addDatasetToCatalog("gov", dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 		int before = commits().size();
 
-		datasets().deleteDataset("air", true);
+		datasets().deleteDataset("air", true, Caller.ANONYMOUS);
 
 		// The unlink of the catalog and the removal of the dataset are one commit, not two.
 		assertEquals(before + 1, commits().size(), messages());
@@ -90,13 +91,13 @@ public class GitCommitBoundaryTest {
 
 	@Test
 	void aRepeatedLinkCommitsNothing() {
-		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		catalogs().linkDatasetToCatalog("gov", "air");
+		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		catalogs().linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
 		int before = commits().size();
 		String etag = catalogs().etag("gov").orElseThrow();
 
-		catalogs().linkDatasetToCatalog("gov", "air");
+		catalogs().linkDatasetToCatalog("gov", "air", Caller.ANONYMOUS);
 
 		// An idempotent no-op must leave no trace in the history and must not move the ETag:
 		// staging nothing means there is nothing to commit, and the blob is untouched.
@@ -106,7 +107,7 @@ public class GitCommitBoundaryTest {
 
 	@Test
 	void blobsLandUnderTheConfiguredBasePath() {
-		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"));
+		catalogs().upsertCatalog(catalog(CATALOGS + "gov", "GovData"), Caller.ANONYMOUS);
 
 		assertEquals(List.of(TestGitStore.BASE_PATH + "/catalogs/gov.xmi"), TestGitStore.paths(storage));
 	}

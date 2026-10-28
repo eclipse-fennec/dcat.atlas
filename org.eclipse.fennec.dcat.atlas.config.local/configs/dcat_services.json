@@ -81,6 +81,20 @@
 	"PublicIris": {
 		"publicBaseUrl": "$[env:PUBLIC_BASE_URL;default=http://localhost:8085/dcat/rest/]"
 	},
+	// Required by DcatCallerHeader: no block, no admin resources. Local runs have no
+	// gateway, so nothing sets it and every write is anonymous.
+	"DcatCallerHeader": {
+		"caller.header": "$[env:CALLER_HEADER;default=X-Atlas-Client]"
+	},
+	// A folder of .xmi resources stored on startup, unmanaged, so the generating systems
+	// have a catalog to publish into. Empty here: a local run seeds nothing until
+	// INITIAL_RESOURCES_DIR names a folder. halt.on.error is off, so a bad seed fails the
+	// loader and leaves the rest of the runtime up - this is a workbench, not a container.
+	"InitialDcatResources": {
+		"folder": "$[env:INITIAL_RESOURCES_DIR;default=$[prop:INITIAL_RESOURCES_DIR;default=]]",
+		"halt.on.error": false
+	},
+	
 	// SPARQL is off unless asked for, so the block has to be here even to keep it on:
 	// DcatGraphService takes ConfigurationPolicy.REQUIRE and `enabled` now defaults to false.
 	"DcatGraphService": {

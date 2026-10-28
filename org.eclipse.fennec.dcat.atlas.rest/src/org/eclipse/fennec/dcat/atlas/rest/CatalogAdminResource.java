@@ -26,6 +26,7 @@ import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
@@ -53,6 +54,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
@@ -89,6 +91,10 @@ public class CatalogAdminResource {
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
 	private static final String READ_COLLECTION = "catalogs";
 
+	/** The gateway's header, read per request and handed to the service with every write. */
+	@Reference
+	CallerHeader callerHeader;
+
 	/**
 	 * The configured public base, used here to build the {@code Location} of a create
 	 * and of the {@code 409} that refuses one, so those headers carry the same URL as
@@ -115,19 +121,20 @@ public class CatalogAdminResource {
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createCatalog(Catalog catalog) {
+	public Response createCatalog(Catalog catalog, @Context HttpHeaders headers) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second catalog; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
 		// Location header — stamping it here is what used to freeze the writing host into
 		// the stored file (and, behind a proxy, an internal address).
-		CreateIdentity identity = CreateIdentity.resolve(DcatIds.CATALOGS, catalog, this::catalogExists, identityRendering);
+		CreateIdentity identity = CreateIdentity.resolve(DcatIds.CATALOGS, catalog, this::catalogExists,
+				identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
 		URI about = readUri(id);
-		catalogAdminService.upsertCatalog(catalog);
+		catalogAdminService.upsertCatalog(catalog, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(catalog);
 		catalogAdminService.etag(id).ifPresent(created::tag);
 		return created.build();
@@ -138,7 +145,7 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
 		if (precondition != null) {
@@ -151,7 +158,7 @@ public class CatalogAdminResource {
 			return mismatch.build();
 		}
 		boolean existed = catalogAdminService.getCatalog(id).isPresent();
-		catalogAdminService.upsertCatalog(catalog);
+		catalogAdminService.upsertCatalog(catalog, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(catalog);
 		catalogAdminService.etag(id).ifPresent(response::tag);
 		return response.build();
@@ -160,7 +167,8 @@ public class CatalogAdminResource {
 	@DELETE
 	@Path("/{id}")
 	public Response deleteCatalog(@PathParam("id") String id,
-			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request) {
+			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request,
+					@Context HttpHeaders headers) {
 		if (catalogAdminService.getCatalog(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -171,7 +179,7 @@ public class CatalogAdminResource {
 		// If-Match was evaluated against this catalog's ETag only. A cascade also rewrites
 		// the referrers, whose ETags the caller never saw — see the service javadoc for why
 		// that narrowing of F-16 is deliberate.
-		List<String> unlinked = catalogAdminService.deleteCatalog(id, cascade);
+		List<String> unlinked = catalogAdminService.deleteCatalog(id, cascade, callerHeader.of(headers));
 		return CascadeReport.respond(unlinked, identityRendering);
 	}
 
@@ -194,10 +202,10 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addDataset(@PathParam("id") String id, Dataset dataset,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.DATASETS, dataset, this::datasetExists, membership(id, "datasets")),
-				() -> catalogAdminService.addDatasetToCatalog(id, dataset));
+				() -> catalogAdminService.addDatasetToCatalog(id, dataset, callerHeader.of(headers)));
 	}
 
 	/**
@@ -210,15 +218,17 @@ public class CatalogAdminResource {
 	@Path("/{id}/datasets/{datasetId}")
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
-			@Context Request request) {
-		return addMember(id, request, () -> catalogAdminService.linkDatasetToCatalog(id, datasetId));
+			@Context Request request, @Context HttpHeaders headers) {
+		return addMember(id, request, () -> catalogAdminService.linkDatasetToCatalog(id, datasetId,
+				callerHeader.of(headers)));
 	}
 
 	@DELETE
 	@Path("/{id}/datasets/{datasetId}")
 	public Response removeDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
-			@Context Request request) {
-		return removeMember(id, request, () -> catalogAdminService.deleteDatasetFromCatalog(id, datasetId));
+			@Context Request request, @Context HttpHeaders headers) {
+		return removeMember(id, request, () -> catalogAdminService.deleteDatasetFromCatalog(id, datasetId,
+				callerHeader.of(headers)));
 	}
 
 	@POST
@@ -226,10 +236,10 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addService(@PathParam("id") String id, DataService service,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.DATA_SERVICES, service, this::dataServiceExists, membership(id, "services")),
-				() -> catalogAdminService.addDataServiceToCatalog(id, service));
+				() -> catalogAdminService.addDataServiceToCatalog(id, service, callerHeader.of(headers)));
 	}
 
 	/** Links a DataService that already exists; see {@link #linkDataset}. */
@@ -237,15 +247,17 @@ public class CatalogAdminResource {
 	@Path("/{id}/services/{serviceId}")
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkService(@PathParam("id") String id, @PathParam("serviceId") String serviceId,
-			@Context Request request) {
-		return addMember(id, request, () -> catalogAdminService.linkDataServiceToCatalog(id, serviceId));
+			@Context Request request, @Context HttpHeaders headers) {
+		return addMember(id, request, () -> catalogAdminService.linkDataServiceToCatalog(id, serviceId,
+				callerHeader.of(headers)));
 	}
 
 	@DELETE
 	@Path("/{id}/services/{serviceId}")
 	public Response removeService(@PathParam("id") String id, @PathParam("serviceId") String serviceId,
-			@Context Request request) {
-		return removeMember(id, request, () -> catalogAdminService.deleteDataServiceFromCatalog(id, serviceId));
+			@Context Request request, @Context HttpHeaders headers) {
+		return removeMember(id, request, () -> catalogAdminService.deleteDataServiceFromCatalog(id, serviceId,
+				callerHeader.of(headers)));
 	}
 
 	@POST
@@ -253,10 +265,10 @@ public class CatalogAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addSubCatalog(@PathParam("id") String id, Catalog subCatalog,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.CATALOGS, subCatalog, this::catalogExists, membership(id, "catalogs")),
-				() -> catalogAdminService.addSubCatalogToCatalog(id, subCatalog));
+				() -> catalogAdminService.addSubCatalogToCatalog(id, subCatalog, callerHeader.of(headers)));
 	}
 
 	/** Links a sub-catalog that already exists; see {@link #linkDataset}. */
@@ -264,15 +276,17 @@ public class CatalogAdminResource {
 	@Path("/{id}/catalogs/{subCatalogId}")
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkSubCatalog(@PathParam("id") String id, @PathParam("subCatalogId") String subCatalogId,
-			@Context Request request) {
-		return addMember(id, request, () -> catalogAdminService.linkSubCatalogToCatalog(id, subCatalogId));
+			@Context Request request, @Context HttpHeaders headers) {
+		return addMember(id, request, () -> catalogAdminService.linkSubCatalogToCatalog(id, subCatalogId,
+				callerHeader.of(headers)));
 	}
 
 	@DELETE
 	@Path("/{id}/catalogs/{subCatalogId}")
 	public Response removeSubCatalog(@PathParam("id") String id, @PathParam("subCatalogId") String subCatalogId,
-			@Context Request request) {
-		return removeMember(id, request, () -> catalogAdminService.deleteSubCatalogFromCatalog(id, subCatalogId));
+			@Context Request request, @Context HttpHeaders headers) {
+		return removeMember(id, request, () -> catalogAdminService.deleteSubCatalogFromCatalog(id, subCatalogId,
+				callerHeader.of(headers)));
 	}
 
 	/**
@@ -334,7 +348,8 @@ public class CatalogAdminResource {
 	 */
 	private ResponseBuilder refuseMember(String collection, IdentifiedResource member, Predicate<String> exists,
 			String membershipPath) {
-		CreateIdentity identity = CreateIdentity.resolveMember(collection, member, exists, membershipPath, identityRendering);
+		CreateIdentity identity = CreateIdentity.resolveMember(collection, member, exists, membershipPath,
+				identityRendering);
 		return identity.refused() ? identity.refusal() : null;
 	}
 

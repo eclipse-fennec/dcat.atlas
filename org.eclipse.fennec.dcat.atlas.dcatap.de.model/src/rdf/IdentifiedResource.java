@@ -26,6 +26,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * </p>
  * <ul>
  *   <li>{@link rdf.IdentifiedResource#getAbout <em>About</em>}</li>
+ *   <li>{@link rdf.IdentifiedResource#getManagedBy <em>Managed By</em>}</li>
  * </ul>
  *
  * @see rdf.RdfPackage#getIdentifiedResource()
@@ -58,5 +59,31 @@ public interface IdentifiedResource extends EObject {
 	 * @generated
 	 */
 	void setAbout(String value);
+
+	/**
+	 * Returns the value of the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * The system that owns this entry, as the identity the gateway authenticated the writer under. DCAT.Atlas machinery, not DCAT-AP.de: it is stamped by the server when the resource is created and preserved across a replace, and a resource that carries it may only be written or deleted by that same system. Unset means the resource is not system-managed and anyone the gateway lets through may edit it.
+	 * <!-- end-model-doc -->
+	 * @return the value of the '<em>Managed By</em>' attribute.
+	 * @see #setManagedBy(String)
+	 * @see rdf.RdfPackage#getIdentifiedResource_ManagedBy()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.String"
+	 *        extendedMetaData="kind='element' name='managedBy' namespace='http://www.eclipse.org/fennec/dcat/atlas#'"
+	 * @generated
+	 */
+	String getManagedBy();
+
+	/**
+	 * Sets the value of the '{@link rdf.IdentifiedResource#getManagedBy <em>Managed By</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Managed By</em>' attribute.
+	 * @see #getManagedBy()
+	 * @generated
+	 */
+	void setManagedBy(String value);
 
 } // IdentifiedResource

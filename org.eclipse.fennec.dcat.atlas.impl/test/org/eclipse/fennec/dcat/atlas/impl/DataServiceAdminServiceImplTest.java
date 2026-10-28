@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -46,7 +47,7 @@ public class DataServiceAdminServiceImplTest {
 
 	@Test
 	void upsertThenGetReturnsEquivalentDataService() {
-		service().upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
+		service().upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
 
 		Optional<DataService> loaded = service().getDataService("sparql");
 		assertTrue(loaded.isPresent());
@@ -57,8 +58,8 @@ public class DataServiceAdminServiceImplTest {
 	@Test
 	void listReturnsEveryStoredDataService() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
-		service.upsertDataService(dataService(BASE + "wfs", "WFS endpoint"));
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
+		service.upsertDataService(dataService(BASE + "wfs", "WFS endpoint"), Caller.ANONYMOUS);
 		assertEquals(2, service.listDataServices().size());
 	}
 
@@ -70,15 +71,15 @@ public class DataServiceAdminServiceImplTest {
 	@Test
 	void deleteRemovesTheDataService() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
-		service.deleteDataService("sparql", false);
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
+		service.deleteDataService("sparql", false, Caller.ANONYMOUS);
 		assertTrue(service.getDataService("sparql").isEmpty());
 	}
 
 	@Test
 	void mintsIdWhenAboutMissing() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(null, "Untitled about"));
+		service.upsertDataService(dataService(null, "Untitled about"), Caller.ANONYMOUS);
 		assertEquals(1, service.listDataServices().size());
 	}
 
@@ -87,9 +88,10 @@ public class DataServiceAdminServiceImplTest {
 	@Test
 	void addStoresTheDatasetAndLinksIt() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
 
-		DataService stored = service.addDatasetToDataService("sparql", dataset(DATASETS + "air", "Air quality"));
+		DataService stored = service.addDatasetToDataService("sparql", dataset(DATASETS + "air", "Air quality"),
+				Caller.ANONYMOUS);
 
 		assertEquals(1, stored.getServesDataset().size());
 		assertEquals(DATASETS + "air", stored.getServesDataset().get(0).getAbout());
@@ -100,22 +102,23 @@ public class DataServiceAdminServiceImplTest {
 	@Test
 	void linkRequiresTheDatasetToExistAlready() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
 
-		assertThrows(NoSuchElementException.class, () -> service.linkDatasetToDataService("sparql", "air"));
+		assertThrows(NoSuchElementException.class, () -> service.linkDatasetToDataService("sparql", "air",
+				Caller.ANONYMOUS));
 
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		DataService stored = service.linkDatasetToDataService("sparql", "air");
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		DataService stored = service.linkDatasetToDataService("sparql", "air", Caller.ANONYMOUS);
 		assertEquals(1, stored.getServesDataset().size());
 	}
 
 	@Test
 	void linkLeavesTheDatasetItsOwnContent() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
-		service.linkDatasetToDataService("sparql", "air");
+		service.linkDatasetToDataService("sparql", "air", Caller.ANONYMOUS);
 
 		// Unlike add, link writes nothing: the dataset keeps its title.
 		assertEquals("Air quality", datasets().getDataset("air").get().getTitle().get(0).getValue());
@@ -124,12 +127,12 @@ public class DataServiceAdminServiceImplTest {
 	@Test
 	void linkIsIdempotentAndLeavesTheEtagAlone() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
 
-		service.linkDatasetToDataService("sparql", "air");
+		service.linkDatasetToDataService("sparql", "air", Caller.ANONYMOUS);
 		String first = service.etag("sparql").orElseThrow();
-		service.linkDatasetToDataService("sparql", "air");
+		service.linkDatasetToDataService("sparql", "air", Caller.ANONYMOUS);
 
 		assertEquals(1, service.getDataService("sparql").get().getServesDataset().size());
 		assertEquals(first, service.etag("sparql").orElseThrow());
@@ -138,40 +141,41 @@ public class DataServiceAdminServiceImplTest {
 	@Test
 	void removeUnlinksButKeepsTheDataset() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		service.linkDatasetToDataService("sparql", "air");
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		service.linkDatasetToDataService("sparql", "air", Caller.ANONYMOUS);
 
-		service.deleteDatasetFromDataService("sparql", "air");
+		service.deleteDatasetFromDataService("sparql", "air", Caller.ANONYMOUS);
 
 		assertTrue(service.getDataService("sparql").get().getServesDataset().isEmpty());
 		assertTrue(datasets().getDataset("air").isPresent());
 		// Idempotent: unlinking again is a no-op, not a failure.
-		service.deleteDatasetFromDataService("sparql", "air");
+		service.deleteDatasetFromDataService("sparql", "air", Caller.ANONYMOUS);
 	}
 
 	@Test
 	void membershipOnAnUnknownDataServiceFails() {
 		DataServiceAdminServiceImpl service = service();
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		assertThrows(NoSuchElementException.class, () -> service.linkDatasetToDataService("missing", "air"));
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		assertThrows(NoSuchElementException.class, () -> service.linkDatasetToDataService("missing", "air",
+				Caller.ANONYMOUS));
 		assertThrows(NoSuchElementException.class,
-				() -> service.addDatasetToDataService("missing", dataset(DATASETS + "no2", "NO2")));
+				() -> service.addDatasetToDataService("missing", dataset(DATASETS + "no2", "NO2"), Caller.ANONYMOUS));
 	}
 
 	@Test
 	void servedDatasetCannotBeDeletedWhileStillReferenced() {
 		DataServiceAdminServiceImpl service = service();
-		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"));
-		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"));
-		service.linkDatasetToDataService("sparql", "air");
+		service.upsertDataService(dataService(BASE + "sparql", "SPARQL endpoint"), Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset(DATASETS + "air", "Air quality"), Caller.ANONYMOUS);
+		service.linkDatasetToDataService("sparql", "air", Caller.ANONYMOUS);
 
 		// FR-1 walks every non-containment EReference reflectively, so servesDataset is
 		// covered without naming it anywhere — this pins that it really is.
-		assertThrows(ResourceInUseException.class, () -> datasets().deleteDataset("air", false));
+		assertThrows(ResourceInUseException.class, () -> datasets().deleteDataset("air", false, Caller.ANONYMOUS));
 
 		// ...and a cascade detaches the reference instead of leaving a dangling one.
-		datasets().deleteDataset("air", true);
+		datasets().deleteDataset("air", true, Caller.ANONYMOUS);
 		assertTrue(service.getDataService("sparql").get().getServesDataset().isEmpty());
 	}
 
@@ -185,7 +189,8 @@ public class DataServiceAdminServiceImplTest {
 		return TestEntities.mandatoryDataset(dataset, title);
 	}
 
-	/** No description: §4.4 does not make it Pflicht for a DataService, and Dataset::HasDescription does not reach here. */
+	/** No description: §4.4 does not make it Pflicht for a DataService,
+			and Dataset::HasDescription does not reach here. */
 	private static DataService dataService(String about, String title) {
 		DataService service = DcatFactory.eINSTANCE.createDataService();
 		if (about != null) {

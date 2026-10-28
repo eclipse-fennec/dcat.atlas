@@ -15,6 +15,7 @@ package org.eclipse.fennec.dcat.atlas.api.admin;
 
 import java.util.List;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
 
@@ -28,7 +29,7 @@ import dcat.DatasetSeries;
  */
 public interface DatasetSeriesAdminService extends DatasetSeriesReadOnlyService{
 	
-    DatasetSeries upsertDatasetSeries(DatasetSeries series);
+    DatasetSeries upsertDatasetSeries(DatasetSeries series, Caller caller);
     
     /**
      * Deletes the dataset series under {@code id}.
@@ -59,17 +60,17 @@ public interface DatasetSeriesAdminService extends DatasetSeriesReadOnlyService{
      * @throws ResourceInUseException if something still references it and {@code cascade}
      *                                is {@code false}
      */
-    List<String> deleteDatasetSeries(String id, boolean cascade);
+    List<String> deleteDatasetSeries(String id, boolean cascade, Caller caller);
     //**FR-11 (Series membership):** Datasets can be assigned to / removed from a DatasetSeries 
-    DatasetSeries addDatasetToDatasetSeries(String datasetSeriesId, Dataset dataset);
+    DatasetSeries addDatasetToDatasetSeries(String datasetSeriesId, Dataset dataset, Caller caller);
     
     /**
      * If a Dataset already exists and the client simply wants to link it to a DatasetSeries, 
      * use this endpoint. It must fail whether either the DatasetSeries or the Dataset does 
      * not exist.
      */
-    DatasetSeries linkDatasetToDatasetSeries(String datasetSeriesId, String datasetId);
+    DatasetSeries linkDatasetToDatasetSeries(String datasetSeriesId, String datasetId, Caller caller);
     
-    void deleteDatasetFromDatasetSeries(String datasetSeriesId, String datasetId);
+    void deleteDatasetFromDatasetSeries(String datasetSeriesId, String datasetId, Caller caller);
 
 }

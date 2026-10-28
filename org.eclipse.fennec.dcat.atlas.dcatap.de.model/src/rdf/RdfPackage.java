@@ -134,7 +134,7 @@ import org.osgi.annotation.versioning.ProviderType;
  * @generated
  */
 @ProviderType
-@EPackage(uri = RdfPackage.eNS_URI, fingerprint = "fp1:f4782aac339582b8a6f5082d003dfa157e770ebda211da037c7bd170eaf29118", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/rdf.ecore", ecoreSourceLocations = "/model/rdf.ecore")
+@EPackage(uri = RdfPackage.eNS_URI, fingerprint = "fp1:56b836b7667367bf1e722c903a4b7f89374e5121f3c90637a092dd53ba916a43", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/rdf.ecore", ecoreSourceLocations = "/model/rdf.ecore")
 public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -334,13 +334,22 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	int IDENTIFIED_RESOURCE__ABOUT = 0;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int IDENTIFIED_RESOURCE__MANAGED_BY = 1;
+
+	/**
 	 * The number of structural features of the '<em>Identified Resource</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int IDENTIFIED_RESOURCE_FEATURE_COUNT = 1;
+	int IDENTIFIED_RESOURCE_FEATURE_COUNT = 2;
 
 	/**
 	 * The number of operations of the '<em>Identified Resource</em>' class.
@@ -490,6 +499,17 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getIdentifiedResource_About();
 
 	/**
+	 * Returns the meta object for the attribute '{@link rdf.IdentifiedResource#getManagedBy <em>Managed By</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Managed By</em>'.
+	 * @see rdf.IdentifiedResource#getManagedBy()
+	 * @see #getIdentifiedResource()
+	 * @generated
+	 */
+	EAttribute getIdentifiedResource_ManagedBy();
+
+	/**
 	 * Returns the meta object for enum '{@link rdf.Datatype <em>Datatype</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -629,6 +649,14 @@ public interface RdfPackage extends org.eclipse.emf.ecore.EPackage {
 		 * @generated
 		 */
 		EAttribute IDENTIFIED_RESOURCE__ABOUT = eINSTANCE.getIdentifiedResource_About();
+
+		/**
+		 * The meta object literal for the '<em><b>Managed By</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute IDENTIFIED_RESOURCE__MANAGED_BY = eINSTANCE.getIdentifiedResource_ManagedBy();
 
 		/**
 		 * The meta object literal for the '{@link rdf.Datatype <em>Datatype</em>}' enum.

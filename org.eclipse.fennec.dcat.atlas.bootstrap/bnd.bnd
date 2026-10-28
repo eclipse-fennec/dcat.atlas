@@ -1,0 +1,11 @@
+-library: enableEMF
+
+# Nothing is exported. The loader is a component with no API of its own: what it
+# does is visible as resources in the store, and everything it needs to say it says
+# through the admin services it already depends on.
+
+-buildpath: \
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.osgi.service.component.annotations;version=latest,\
+	org.osgi.service.metatype.annotations;version=latest

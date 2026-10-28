@@ -204,6 +204,15 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	int AGENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int AGENT__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -286,6 +295,15 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	int DOCUMENT__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int DOCUMENT__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -339,6 +357,15 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int ORGANIZATION__ABOUT = AGENT__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORGANIZATION__MANAGED_BY = AGENT__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' containment reference list.
@@ -421,6 +448,15 @@ public interface FoafPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int PERSON__ABOUT = AGENT__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int PERSON__MANAGED_BY = AGENT__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Name</b></em>' containment reference list.

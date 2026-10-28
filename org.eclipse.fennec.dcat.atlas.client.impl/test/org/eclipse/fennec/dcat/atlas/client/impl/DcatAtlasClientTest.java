@@ -36,6 +36,7 @@ import org.eclipse.fennec.dcat.atlas.client.api.DcatCollection;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatModelConstraintException;
 import org.eclipse.fennec.dcat.atlas.client.api.DcatShaclException;
 import org.eclipse.fennec.dcat.atlas.client.api.DeleteMode;
+import org.eclipse.fennec.dcat.atlas.client.api.ForbiddenException;
 import org.eclipse.fennec.dcat.atlas.client.api.NotFoundException;
 import org.eclipse.fennec.dcat.atlas.client.api.PreconditionFailedException;
 import org.eclipse.fennec.dcat.atlas.client.api.Registration;
@@ -297,10 +298,28 @@ class DcatAtlasClientTest {
 		assertThrows(BadRequestException.class, () -> failWith(400));
 		assertThrows(NotFoundException.class, () -> failWith(404));
 		assertThrows(ConflictException.class, () -> failWith(409));
+		assertThrows(ForbiddenException.class, () -> failWith(403));
 		assertThrows(PreconditionFailedException.class, () -> failWith(412));
 		assertThrows(TransportException.class, () -> failWith(415));
 		assertThrows(RetryableException.class, () -> failWith(503));
 		assertThrows(TransportException.class, () -> failWith(500));
+	}
+
+	/**
+	 * A refused write is permanent, and the type has to say so. A publishing loop retries
+	 * what it reads as transport trouble, so a 403 landing on TransportException is a loop
+	 * that republishes every 30s and never reports a failure — the resource belongs to
+	 * another system and will still belong to it next time.
+	 */
+	@Test
+	void aWriteRefusedAsSomebodyElsesIsNotRetryable() {
+		portal.enqueue(Reply.of(403, "text/plain", "managed by model.atlas"));
+
+		ForbiddenException refused = assertThrows(ForbiddenException.class,
+				() -> client.registerDataset("d1", dataset("x")));
+		assertFalse(TransportException.class.isInstance(refused), "a retrying caller must not see this as transport trouble");
+		assertFalse(RetryableException.class.isInstance(refused));
+		assertTrue(refused.getMessage().contains("managed by model.atlas"), "the portal's own text is carried through");
 	}
 
 	/**

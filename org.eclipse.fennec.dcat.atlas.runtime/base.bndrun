@@ -128,7 +128,8 @@
 	org.eclipse.fennec.m2x.ocl.engine;version='[0.1.1,0.1.2)',\
 	org.eclipse.fennec.m2x.ocl.model;version='[0.1.1,0.1.2)',\
 	org.eclipse.fennec.m2x.ocl.parser;version='[0.1.1,0.1.2)',\
-	org.eclipse.fennec.m2x.unit;version='[0.1.1,0.1.2)'
+	org.eclipse.fennec.m2x.unit;version='[0.1.1,0.1.2)',\
+	org.eclipse.fennec.dcat.atlas.bootstrap;version=snapshot
 
 # org.eclipse.jgit.ssh.apache is required for a repository configured as an SSH remote. It is
 # no longer needed merely to load the service - that was EU-9, fixed upstream 2026-08-19 by
@@ -143,6 +144,7 @@
 	bnd.identity;id='org.eclipse.jgit.ssh.apache',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
+	bnd.identity;id='org.eclipse.fennec.dcat.atlas.bootstrap',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.msg.body.writer',\
 	bnd.identity;id='org.apache.felix.healthcheck.api',\
 	bnd.identity;id='org.apache.felix.healthcheck.core',\

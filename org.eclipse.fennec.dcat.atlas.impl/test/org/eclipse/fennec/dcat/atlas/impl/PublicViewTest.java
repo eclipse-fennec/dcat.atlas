@@ -26,6 +26,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicView;
 import org.eclipse.fennec.dcat.atlas.impl.identity.PublicIrisImpl;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
@@ -62,9 +63,10 @@ class PublicViewTest {
 
 	@Test
 	void theRenderedDocumentIsTheStoredOneWithOnlyTheBaseChanged() throws Exception {
+
 		CatalogAdminServiceImpl catalogs = catalogs();
-		catalogs.upsertCatalog(catalog("gov", "GovData"));
-		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
 		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		String rendered = toXmi(PublicView.render(catalogs.getCatalog("gov").orElseThrow(), iris));
@@ -75,9 +77,10 @@ class PublicViewTest {
 
 	@Test
 	void noFileUriAppearsInEitherForm() throws Exception {
+
 		CatalogAdminServiceImpl catalogs = catalogs();
-		catalogs.upsertCatalog(catalog("gov", "GovData"));
-		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
 		String stored = TestGitStore.stored(storage, StoreLayout.CATALOGS, "gov");
 		String rendered = toXmi(PublicView.render(catalogs.getCatalog("gov").orElseThrow(), iris));
@@ -91,9 +94,10 @@ class PublicViewTest {
 
 	@Test
 	void identitiesAndLinksAreBothPublic() {
+
 		CatalogAdminServiceImpl catalogs = catalogs();
-		catalogs.upsertCatalog(catalog("gov", "GovData"));
-		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"));
+		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
+		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
 		Catalog rendered = PublicView.render(catalogs.getCatalog("gov").orElseThrow(), iris);
 
@@ -107,10 +111,11 @@ class PublicViewTest {
 
 	@Test
 	void containedObjectsAreRebasedToo() {
+
 		DatasetAdminServiceImpl datasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		DistributionAdminServiceImpl distributions = TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasets));
-		datasets.upsertDataset(dataset("air", "Air quality"));
-		distributions.upsertDistributionToDataset("air", distribution("csv"));
+		datasets.upsertDataset(dataset("air", "Air quality"), Caller.ANONYMOUS);
+		distributions.upsertDistributionToDataset("air", distribution("csv"), Caller.ANONYMOUS);
 
 		Dataset rendered = PublicView.render(datasets.getDataset("air").orElseThrow(), iris);
 
@@ -119,10 +124,11 @@ class PublicViewTest {
 
 	@Test
 	void aForeignIriSurvivesRendering() {
+
 		DatasetAdminServiceImpl datasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
 		Dataset air = dataset("air", "Air quality");
 		air.getTheme().add("http://publications.europa.eu/resource/authority/data-theme/ENVI");
-		datasets.upsertDataset(air);
+		datasets.upsertDataset(air, Caller.ANONYMOUS);
 
 		Dataset rendered = PublicView.render(datasets.getDataset("air").orElseThrow(), iris);
 
@@ -132,8 +138,9 @@ class PublicViewTest {
 
 	@Test
 	void renderingDoesNotDisturbTheStoredEntity() {
+
 		CatalogAdminServiceImpl catalogs = catalogs();
-		catalogs.upsertCatalog(catalog("gov", "GovData"));
+		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 
 		Catalog stored = catalogs.getCatalog("gov").orElseThrow();
 		PublicView.render(stored, iris);

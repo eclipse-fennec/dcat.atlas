@@ -24,6 +24,7 @@ import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
@@ -49,6 +50,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
@@ -75,6 +77,10 @@ public class DataServiceAdminResource {
 	/** Public collection segment the dereferenceable {@code about} URI points at. */
 	private static final String READ_COLLECTION = "data-services";
 
+	/** The gateway's header, read per request and handed to the service with every write. */
+	@Reference
+	CallerHeader callerHeader;
+
 	/**
 	 * The configured public base, used here to build the {@code Location} of a create
 	 * and of the {@code 409} that refuses one, so those headers carry the same URL as
@@ -98,7 +104,7 @@ public class DataServiceAdminResource {
 	@POST
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
-	public Response createDataService(DataService dataService) {
+	public Response createDataService(DataService dataService, @Context HttpHeaders headers) {
 		// The identity is logical, and taken from the body when it names one of ours so that
 		// this same request sent twice conflicts instead of creating a second service; only
 		// then is one minted (see CreateIdentity). The request URL supplies nothing but the
@@ -111,7 +117,7 @@ public class DataServiceAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(id);
-		dataServiceAdminService.upsertDataService(dataService);
+		dataServiceAdminService.upsertDataService(dataService, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(dataService);
 		dataServiceAdminService.etag(id).ifPresent(created::tag);
 		return created.build();
@@ -122,7 +128,7 @@ public class DataServiceAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDataService(@PathParam("id") String id, DataService dataService,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
 		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServiceAdminService.etag(id));
 		if (precondition != null) {
@@ -135,7 +141,7 @@ public class DataServiceAdminResource {
 			return mismatch.build();
 		}
 		boolean existed = dataServiceAdminService.getDataService(id).isPresent();
-		dataServiceAdminService.upsertDataService(dataService);
+		dataServiceAdminService.upsertDataService(dataService, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(dataService);
 		dataServiceAdminService.etag(id).ifPresent(response::tag);
 		return response.build();
@@ -144,7 +150,8 @@ public class DataServiceAdminResource {
 	@DELETE
 	@Path("/{id}")
 	public Response deleteDataService(@PathParam("id") String id,
-			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request) {
+			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request,
+					@Context HttpHeaders headers) {
 		if (dataServiceAdminService.getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -155,7 +162,7 @@ public class DataServiceAdminResource {
 		// If-Match was evaluated against this data service's ETag only. A cascade also rewrites
 		// the referrers, whose ETags the caller never saw — see the service javadoc for why
 		// that narrowing of F-16 is deliberate.
-		List<String> unlinked = dataServiceAdminService.deleteDataService(id, cascade);
+		List<String> unlinked = dataServiceAdminService.deleteDataService(id, cascade, callerHeader.of(headers));
 		return CascadeReport.respond(unlinked, identityRendering);
 	}
 
@@ -178,7 +185,7 @@ public class DataServiceAdminResource {
 	@Consumes({ XMI })
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addDataset(@PathParam("id") String id, Dataset dataset,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		if (dataServiceAdminService.getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -195,7 +202,8 @@ public class DataServiceAdminResource {
 		if (precondition != null) {
 			return precondition.build();
 		}
-		ResponseBuilder ok = Response.ok(dataServiceAdminService.addDatasetToDataService(id, dataset));
+		ResponseBuilder ok = Response.ok(dataServiceAdminService.addDatasetToDataService(id, dataset,
+				callerHeader.of(headers)));
 		dataServiceAdminService.etag(id).ifPresent(ok::tag);
 		return ok.build();
 	}
@@ -205,7 +213,7 @@ public class DataServiceAdminResource {
 	@Path("/{id}/datasets/{datasetId}")
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		if (dataServiceAdminService.getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -217,7 +225,7 @@ public class DataServiceAdminResource {
 		// NoSuchElementException, which is a 404 about the dataset and not a 500.
 		DataService dataService;
 		try {
-			dataService = dataServiceAdminService.linkDatasetToDataService(id, datasetId);
+			dataService = dataServiceAdminService.linkDatasetToDataService(id, datasetId, callerHeader.of(headers));
 		} catch (NoSuchElementException e) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -229,7 +237,7 @@ public class DataServiceAdminResource {
 	@DELETE
 	@Path("/{id}/datasets/{datasetId}")
 	public Response removeDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
-			@Context Request request) {
+			@Context Request request, @Context HttpHeaders headers) {
 		if (dataServiceAdminService.getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
@@ -239,7 +247,7 @@ public class DataServiceAdminResource {
 		}
 		// Idempotent: unlinking a dataset that is not served is a no-op, not a 404 —
 		// consistent with the catalog and series membership removals.
-		dataServiceAdminService.deleteDatasetFromDataService(id, datasetId);
+		dataServiceAdminService.deleteDatasetFromDataService(id, datasetId, callerHeader.of(headers));
 		return Response.noContent().build();
 	}
 

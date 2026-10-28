@@ -160,4 +160,5 @@
 	io.github.vpelikh.swagger-models;version='[4.0.5,4.0.6)',\
 	io.github.vpelikh.swagger-core;version='[4.0.5,4.0.6)',\
 	io.github.vpelikh.swagger-integration;version='[4.0.5,4.0.6)',\
-	io.github.vpelikh.swagger-jakarta-rest;version='[4.0.5,4.0.6)'
+	io.github.vpelikh.swagger-jakarta-rest;version='[4.0.5,4.0.6)',\
+	org.eclipse.fennec.m2x.unit;version='[0.1.1,0.1.2)'

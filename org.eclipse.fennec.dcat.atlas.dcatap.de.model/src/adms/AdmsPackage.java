@@ -227,6 +227,15 @@ public interface AdmsPackage extends org.eclipse.emf.ecore.EPackage {
 	int IDENTIFIER__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int IDENTIFIER__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Notation</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->

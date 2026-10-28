@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -51,7 +52,7 @@ public class DatasetSeriesAdminServiceImplTest {
 
 	@Test
 	void upsertThenGetReturnsEquivalentSeries() {
-		service().upsertDatasetSeries(series(BASE + "air", "Air quality series"));
+		service().upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
 
 		Optional<DatasetSeries> loaded = service().getDatasetSeries("air");
 		assertTrue(loaded.isPresent());
@@ -62,8 +63,8 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void listReturnsEveryStoredSeries() {
 		DatasetSeriesAdminServiceImpl service = service();
-		service.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
-		service.upsertDatasetSeries(series(BASE + "water", "Water quality series"));
+		service.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
+		service.upsertDatasetSeries(series(BASE + "water", "Water quality series"), Caller.ANONYMOUS);
 		assertEquals(2, service.listDatasetSeries().size());
 	}
 
@@ -75,15 +76,15 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void deleteRemovesTheSeries() {
 		DatasetSeriesAdminServiceImpl service = service();
-		service.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
-		service.deleteDatasetSeries("air", false);
+		service.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
+		service.deleteDatasetSeries("air", false, Caller.ANONYMOUS);
 		assertTrue(service.getDatasetSeries("air").isEmpty());
 	}
 
 	@Test
 	void mintsIdWhenAboutMissing() {
 		DatasetSeriesAdminServiceImpl service = service();
-		service.upsertDatasetSeries(series(null, "Untitled about"));
+		service.upsertDatasetSeries(series(null, "Untitled about"), Caller.ANONYMOUS);
 		assertEquals(1, service.listDatasetSeries().size());
 	}
 
@@ -92,10 +93,11 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesRecordsInSeriesOnDataset() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 
-		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
+		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
+
+		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"), Caller.ANONYMOUS);
 
 		Optional<Dataset> stored = datasets.getDataset("no2");
 		assertTrue(stored.isPresent());
@@ -106,12 +108,13 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void addDatasetToSeriesIsIdempotent() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
 
-		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
+		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
+
+		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"), Caller.ANONYMOUS);
 		// Re-add the same membership: the dataset already carries the series.
-		series.addDatasetToDatasetSeries("air", datasets.getDataset("no2").get());
+		series.addDatasetToDatasetSeries("air", datasets.getDataset("no2").get(), Caller.ANONYMOUS);
 
 		assertEquals(1, datasets.getDataset("no2").get().getInSeries().size());
 	}
@@ -120,17 +123,19 @@ public class DatasetSeriesAdminServiceImplTest {
 	void addDatasetToUnknownSeriesThrows() {
 		DatasetSeriesAdminServiceImpl series = service();
 		assertThrows(NoSuchElementException.class,
-				() -> series.addDatasetToDatasetSeries("missing", dataset(DATASET_BASE + "no2", "NO2")));
+				() -> series.addDatasetToDatasetSeries("missing", dataset(DATASET_BASE + "no2", "NO2"),
+						Caller.ANONYMOUS));
 	}
 
 	@Test
 	void deleteDatasetFromSeriesRemovesInSeries() {
 		DatasetAdminServiceImpl datasets = datasetService();
-		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
-		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"));
 
-		series.deleteDatasetFromDatasetSeries("air", "no2");
+		DatasetSeriesAdminServiceImpl series = TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
+		series.addDatasetToDatasetSeries("air", dataset(DATASET_BASE + "no2", "NO2"), Caller.ANONYMOUS);
+
+		series.deleteDatasetFromDatasetSeries("air", "no2", Caller.ANONYMOUS);
 
 		assertTrue(datasets.getDataset("no2").get().getInSeries().isEmpty());
 	}
@@ -138,9 +143,9 @@ public class DatasetSeriesAdminServiceImplTest {
 	@Test
 	void deleteDatasetFromSeriesIgnoresUnknownDataset() {
 		DatasetSeriesAdminServiceImpl series = service();
-		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"));
+		series.upsertDatasetSeries(series(BASE + "air", "Air quality series"), Caller.ANONYMOUS);
 		// No dataset "no2" exists: the call is a no-op, not an error.
-		series.deleteDatasetFromDatasetSeries("air", "no2");
+		series.deleteDatasetFromDatasetSeries("air", "no2", Caller.ANONYMOUS);
 		assertFalse(datasetService().getDataset("no2").isPresent());
 	}
 

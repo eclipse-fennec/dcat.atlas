@@ -87,6 +87,85 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 
 ## Change log
 
+### 2026-10-28 — #57 and #58 meet, and a test that predated the notifier
+
+`snapshot` merged in. Both entries below measured themselves from the same 146-test baseline on
+their own branch, so neither figure survives the merge: `impl` is **171** here and `rest.tests`
+**242**.
+
+The merge left one thing it had no way to see. `SystemManagedResourceTest` was written before the
+mandatory `changeNotifier` reference existed, so its two fixtures built the admin services through
+the package-visible constructor with nothing injected, and all 15 tests failed on the announcement
+with a `NullPointerException` rather than on anything they are about. They go through
+`TestNotifiers.announcing(…)` now, as every other site that builds an admin service by hand
+already did — what any test arriving from a branch older than the rework runs into.
+
+### 2026-10-22 — What a system generates stays the system's (#57)
+
+Through the UI, anyone could delete or edit a dataset, catalog or distribution that
+Model-Atlas or Data-Atlas had put there. The portal then disagrees with its source and
+nothing notices: Model-Atlas gates a rewrite on a fingerprint it reads back, so a hand edit
+that leaves the fingerprint alone survives indefinitely, one that moves it is wiped on the
+next sync, and a hand delete is never recreated. The outcome is not "the system wins" but
+"nobody can predict which", which is why there is **no administrator override**.
+
+**It takes two pieces, and only one is in the model.** `rdf:IdentifiedResource` gained a
+`managedBy` attribute — one feature on the one abstract supertype of Catalog, Dataset,
+DatasetSeries, DataService, Distribution and CatalogRecord, so one check covers every stored
+type. It is **not** `prov:wasGeneratedBy`, which `Dataset` already has (§4.3) and which means
+the activity that produced the *data*: publishable profile metadata a generator may want to
+set itself. Ours is ours, so it is in our own namespace
+(`http://www.eclipse.org/fennec/dcat/atlas#`) rather than in `rdf.ecore`'s, which is W3C's —
+the `lang` attribute in that same ecore already overrides its namespace the same way.
+`EObjectToJena` reads the feature's `ExtendedMetaData` namespace, so the triple comes out as
+ours, and the DCAT-AP.de shapes are not `sh:closed`, so nothing rejects it. Modelled as a
+plain `String` rather than `AnyURI` — a deliberate exception to the IRI convention, because
+the value's job is to compare verbatim with a header and an IRI mapping could only ever
+introduce a way for that comparison to fail.
+
+The other piece is **who is writing now**, which no attribute can hold. The portal
+authenticates nobody — the PEP is the gateway, which is why the writes are under `/admin` —
+so the gateway sets a header (`X-Atlas-Client` by default, `caller.header` on
+`DcatCallerHeader`) and **must strip any copy the client sent**. That is the entire trust
+boundary. `CallerHeader` turns it into a `Caller`, and absent or blank is
+`Caller.ANONYMOUS`, which may write anything unmanaged and nothing managed.
+
+**The `Caller` is a parameter, not ambient state.** Every write method of the five admin
+services takes one, which is ~280 call sites and was the costlier of the two options
+considered. The alternative — a request-scoped value the REST filter publishes and the impls
+read — kept the diff small and failed closed when unset, but it puts an authorization
+decision in a thread-local that an async hop or a missing `clear()` quietly corrupts. For
+this one the compiler checking every caller is worth the churn.
+
+**Enforced at the store**, like both validations, so a non-REST caller is covered too. The
+session carries the caller, and the three staging methods differ exactly as they already did
+for validation: `put` and `save` check, `saveRemoval` checks (it is how a cascade unlinks
+referrers, and a referrer may be a managed catalog — the back door into a system's content),
+and `saveBookkeeping` does not (a record following a member you were allowed to change is the
+server's write, not yours). `put` reads `managedBy` from the **stored** blob and writes it
+back, never from the body: believing the body would make the rule optional in both
+directions — clear the flag, then delete; or stamp a system's name on a resource to fence it
+off.
+
+**A system write claims an unmanaged resource**, not only a create. Whatever a system last
+wrote in full is its content, and this is also what marks the resources that predate the
+rule, with no migration step. The cost is the other direction — a system write to something a
+person created takes it out of their hands — which needs the generator to address that id
+deliberately.
+
+Refusals are `403` (`SystemManagedException` → `SystemManagedExceptionMapper`): not `401`,
+since the caller is authenticated and no credential changes the answer, and not the `409` the
+integrity refusals use, since a conflict could succeed if the stored state changed and this
+cannot. The message names the managing system; `PublicIriFilter` rewrites the logical
+identity in it to the public one, as it does for every text body (#46).
+
+Test-first. `impl/SystemManagedResourceTest` (15) was red as a compile error, being an API
+addition, so it was followed by two mutations once green: dropping the check in `put` loses
+both replace refusals, and reading `managedBy` from the body instead of the store loses them
+*and* lets a body clear the flag — the two-step escape. impl 146 → 161.
+`rest.tests/SystemManagedIntegrationTest` (5) covers the half that only exists over HTTP: the
+header is bound and read, and the refusal is a `403` naming the system rather than a `500`.
+
 ### 2026-10-21 — A runtime service, and the telemetry bundle it was built for (#58)
 
 One OSGi service that hands back a read-only inventory of the DCAT content this instance holds.
@@ -201,7 +280,6 @@ EOF on a non-interactive stdin and takes the framework down with it; `local.bndr
 `gosh.args=--noshutdown`.
 
 Tests: `impl` 146 → 169, plus 4 in `…telemetry` and 2 in `…api`.
-
 
 ### 2026-10-20 — Catalogue records are maintained by the server (#56), and reads carry `Last-Modified`
 

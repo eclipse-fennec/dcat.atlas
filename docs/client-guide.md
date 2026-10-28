@@ -461,6 +461,7 @@ failure alike; catch a subtype to act on one.
 | `DcatShaclException` | 422 | Well-formed, but does not conform to the DCAT-AP.de profile. |
 | `DcatModelConstraintException` | 422 | The model's own OCL constraints refused it; `getViolations()` lists them. |
 | `BadRequestException` | 400 | Malformed request — including an `about` belonging to somebody else. |
+| `ForbiddenException` | 403 | The caller may not write this resource: another system manages it (`managedBy`), or the gateway refused the request. **Permanent** — retrying with the same credentials gets the same answer, so a publishing loop should report rather than reschedule. |
 | `NotFoundException` | 404 | The resource, or its parent, does not exist. |
 | `ConflictException` | 409 | The portal's existing state refuses it: a repeat identity, or a reference that would dangle. |
 | `PreconditionFailedException` | 412 | The `If-Match` no longer matches. A *conditional registration* never raises this — it comes back `applied() == false` instead; anything else that sends a validator does. |
@@ -468,7 +469,8 @@ failure alike; catch a subtype to act on one.
 | `TransportException` | — / 415 | Timeout, refused connection, unreadable body — or `application/xml` sent where `application/xmi` was meant. |
 
 The two most worth handling separately are `DcatShaclException` (the metadata needs
-fixing) and `RetryableException` (nothing needs fixing).
+fixing) and `RetryableException` (nothing needs fixing). `ForbiddenException` is the one
+that must *not* be retried: it is a decision about who owns the resource, not a hiccup.
 
 `409` and `400` each cover more than one server-side cause with nothing on the wire to
 separate them, so the message carries the portal's own text.

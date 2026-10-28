@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
 import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
@@ -84,7 +85,7 @@ public class RuntimeServiceIntegrationTest {
 	void removeWhatThisTestWrote() {
 		if (catalogWritten != null) {
 			try {
-				catalogs.deleteCatalog(catalogWritten, true);
+				catalogs.deleteCatalog(catalogWritten, true, Caller.ANONYMOUS);
 			} catch (RuntimeException alreadyGone) {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
@@ -92,7 +93,7 @@ public class RuntimeServiceIntegrationTest {
 		}
 		if (written != null) {
 			try {
-				datasets.deleteDataset(written, true);
+				datasets.deleteDataset(written, true, Caller.ANONYMOUS);
 			} catch (RuntimeException alreadyGone) {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
@@ -208,7 +209,7 @@ public class RuntimeServiceIntegrationTest {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, written));
 		RestEntities.mandatoryDataset(dataset, "Runtime service probe");
-		datasets.upsertDataset(dataset);
+		datasets.upsertDataset(dataset, Caller.ANONYMOUS);
 		awaitDelivery(() -> runtime.snapshot().changeCount > before.changeCount,
 				"a commit has to reach the inventory");
 
@@ -240,20 +241,20 @@ public class RuntimeServiceIntegrationTest {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, written));
 		RestEntities.mandatoryDataset(dataset, "Runtime service probe");
-		datasets.upsertDataset(dataset);
+		datasets.upsertDataset(dataset, Caller.ANONYMOUS);
 
 		catalogWritten = "runtime-cat-" + UUID.randomUUID();
 		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
 		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, catalogWritten));
 		RestEntities.mandatoryDataset(catalog, "Runtime service probe");
-		catalogs.upsertCatalog(catalog);
+		catalogs.upsertCatalog(catalog, Caller.ANONYMOUS);
 		long beforeTheLink = awaitQuiet();
 
-		catalogs.linkDatasetToCatalog(catalogWritten, written);
+		catalogs.linkDatasetToCatalog(catalogWritten, written, Caller.ANONYMOUS);
 		awaitDelivery(() -> runtime.snapshot().changeCount > beforeTheLink, "the link to be announced");
 		long settled = awaitQuiet();
 
-		catalogs.linkDatasetToCatalog(catalogWritten, written);
+		catalogs.linkDatasetToCatalog(catalogWritten, written, Caller.ANONYMOUS);
 
 		// Nothing to wait for: the assertion is that nothing is coming. Give delivery the
 		// window it would have had, so a regression fails here rather than racing past.

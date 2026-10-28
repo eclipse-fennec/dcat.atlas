@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -42,7 +43,7 @@ public class DatasetAdminServiceImplTest {
 
 	@Test
 	void upsertThenGetReturnsEquivalentDataset() {
-		service().upsertDataset(dataset(BASE + "air", "Air quality"));
+		service().upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
 
 		Optional<Dataset> loaded = service().getDataset("air");
 		assertTrue(loaded.isPresent());
@@ -53,8 +54,8 @@ public class DatasetAdminServiceImplTest {
 	@Test
 	void listReturnsEveryStoredDataset() {
 		DatasetAdminServiceImpl service = service();
-		service.upsertDataset(dataset(BASE + "air", "Air quality"));
-		service.upsertDataset(dataset(BASE + "water", "Water quality"));
+		service.upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
+		service.upsertDataset(dataset(BASE + "water", "Water quality"), Caller.ANONYMOUS);
 		assertEquals(2, service.listDatasets().size());
 	}
 
@@ -66,15 +67,15 @@ public class DatasetAdminServiceImplTest {
 	@Test
 	void deleteRemovesTheDataset() {
 		DatasetAdminServiceImpl service = service();
-		service.upsertDataset(dataset(BASE + "air", "Air quality"));
-		service.deleteDataset("air", false);
+		service.upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
+		service.deleteDataset("air", false, Caller.ANONYMOUS);
 		assertTrue(service.getDataset("air").isEmpty());
 	}
 
 	@Test
 	void mintsIdWhenAboutMissing() {
 		DatasetAdminServiceImpl service = service();
-		service.upsertDataset(dataset(null, "Untitled about"));
+		service.upsertDataset(dataset(null, "Untitled about"), Caller.ANONYMOUS);
 		assertEquals(1, service.listDatasets().size());
 	}
 
@@ -86,13 +87,13 @@ public class DatasetAdminServiceImplTest {
 	@Test
 	void etagIsStableAcrossReadsAndChangesWithContent() {
 		DatasetAdminServiceImpl service = service();
-		service.upsertDataset(dataset(BASE + "air", "Air quality"));
+		service.upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
 		String first = service.etag("air").orElseThrow();
 		// Same stored bytes -> same validator.
 		assertEquals(first, service.etag("air").orElseThrow());
 
 		// Changed content -> different validator.
-		service.upsertDataset(dataset(BASE + "air", "Air quality (v2)"));
+		service.upsertDataset(dataset(BASE + "air", "Air quality (v2)"), Caller.ANONYMOUS);
 		assertNotEquals(first, service.etag("air").orElseThrow());
 	}
 

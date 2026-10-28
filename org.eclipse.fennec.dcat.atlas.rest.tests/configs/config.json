@@ -56,6 +56,9 @@
   "DistributionReadOnlyService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "DistributionAdminService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)" },
   "PublicIris": { "publicBaseUrl": "http://localhost:8185/rest/" },
+  // DcatCallerHeader is REQUIRE: without this block the admin resources have no
+  // CallerHeader to bind and never register.
+  "DcatCallerHeader": { "caller.header": "X-Atlas-Client" },
   // Explicit, not inherited: DcatGraphService is ConfigurationPolicy.REQUIRE and `enabled`
   // defaults to false, so SparqlEndpointIntegrationTest needs this block to have an endpoint.
   "DcatGraphService":             { "enabled": true },

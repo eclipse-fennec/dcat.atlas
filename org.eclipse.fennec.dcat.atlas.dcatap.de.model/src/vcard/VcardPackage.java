@@ -214,6 +214,15 @@ public interface VcardPackage extends org.eclipse.emf.ecore.EPackage {
 	int ADDRESS__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
 
 	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ADDRESS__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
+
+	/**
 	 * The feature id for the '<em><b>Street Address</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -294,6 +303,15 @@ public interface VcardPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @ordered
 	 */
 	int ORGANIZATION__ABOUT = RdfPackage.IDENTIFIED_RESOURCE__ABOUT;
+
+	/**
+	 * The feature id for the '<em><b>Managed By</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int ORGANIZATION__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
 
 	/**
 	 * The feature id for the '<em><b>Fn</b></em>' attribute.

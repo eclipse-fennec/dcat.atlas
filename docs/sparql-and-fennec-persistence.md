@@ -191,7 +191,14 @@ it. Rebuild at startup by scanning persistence.
 
 *Correct for any SPARQL. No second database — this is a cache, not a store.* Writes in a
 data catalog are editorial and infrequent while reads are the hot path, so maintenance is
-cheap and queries are fast. Bounded by catalog size in memory: a few thousand datasets at
+cheap and queries are fast.
+
+As built (`DcatGraphServiceImpl`), the cache is a transactional in-memory *dataset* with one
+named graph per resource, which is what makes a replace idempotent. Queries nevertheless run
+against a view whose **default graph is the union of those graphs** (`UnionDefaultGraph`, the
+equivalent of Fuseki's `unionDefaultGraph`): plain SPARQL without a `GRAPH` clause, as
+generic clients send it, sees the whole catalog, while `GRAPH ?g` / `GRAPH <iri>` and an
+explicit `FROM` still address the per-resource graphs. Bounded by catalog size in memory: a few thousand datasets at
 ~50 triples each is a few hundred thousand triples, which Jena holds comfortably (it scales
 into the millions). *That is a rule of thumb, not a measurement.*
 

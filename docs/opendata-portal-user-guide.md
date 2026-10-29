@@ -644,6 +644,22 @@ GET /datasets/{datasetId}/distributions          # the dataset's distributions
 GET /datasets/{datasetId}/distributions/{id}     # one of them
 ```
 
+#### `dct:format` is completed for you
+
+A distribution sent with a `dcat:mediaType` but no `dct:format` is stored with the
+`dct:format` that media type maps to in the EU file-type vocabulary — `text/csv` becomes
+`http://publications.europa.eu/resource/authority/file-type/CSV`, `application/geo+json`
+becomes `…/GEOJSON`. `dct:format` is what German portals and dashboards query, so this is
+what makes the distribution findable there. A `dct:format` you send is never changed, and a
+media type the portal does not know leaves it unset. Give the media type as the IANA IRI,
+`http://www.iana.org/assignments/media-types/text/csv`.
+
+The same completion runs **once per start** over everything already stored, and writes back
+only what changed, as a single commit `Complete dct:format from dcat:mediaType …`. A start
+that finds nothing to complete commits nothing. Set the environment variable
+`FORMAT_BACKFILL=false` (the `FormatBackfill` configuration's `enabled`) to switch that pass
+off; new writes are completed regardless.
+
 #### Linking a distribution to the service that serves it
 
 `dcat:accessService` says which `dcat:DataService` gives programmatic access to a

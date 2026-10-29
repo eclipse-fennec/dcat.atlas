@@ -86,6 +86,9 @@ public class GuardedStoreSession implements DcatStoreSession {
 		if (object instanceof Catalog catalog) {
 			CatalogRecords.preserveRecords(this, collection, id, catalog);
 		}
+		// Completed before validation, so what is checked is what will be stored: a format
+		// derived from the media type must itself clear the floor.
+		FormatDefaults.apply(object);
 		// After the identity is stamped — "a stored entity has an about" is one of the
 		// constraints, and a SHACL report has to name the node that will actually be
 		// stored — and before anything is staged, because the point is that an invalid
@@ -97,6 +100,7 @@ public class GuardedStoreSession implements DcatStoreSession {
 	@Override
 	public void save(EObject object) {
 		requireMayWrite(object);
+		FormatDefaults.apply(object);
 		validate(object);
 		storage.stage(object);
 	}

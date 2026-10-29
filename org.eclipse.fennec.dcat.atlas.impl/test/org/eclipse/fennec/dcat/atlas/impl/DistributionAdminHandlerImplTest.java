@@ -332,4 +332,29 @@ public class DistributionAdminHandlerImplTest {
 		return TestEntities.mandatoryDataset(dataset, title);
 	}
 
+	@Test
+	void aMissingFormatIsCompletedFromTheMediaTypeOnWrite() {
+		// Issue #68: a writer that knows only the IANA media type must still be found by
+		// clients querying dct:format, the field German portals actually fill.
+		DistributionAdminHandlerImpl service = serviceWithDataset();
+		Distribution sent = distribution(DIST_BASE + "geo", "OGC Features");
+		sent.setMediaType("http://www.iana.org/assignments/media-types/application/geo+json");
+		service.upsertDistributionToDataset("air", sent, Caller.ANONYMOUS);
+
+		Distribution stored = service.getDistributionForDataset("air", "geo").orElseThrow();
+		assertEquals("http://publications.europa.eu/resource/authority/file-type/GEOJSON", stored.getFormat());
+		assertEquals("http://www.iana.org/assignments/media-types/application/geo+json", stored.getMediaType());
+	}
+
+	@Test
+	void anExplicitFormatSurvivesTheWrite() {
+		DistributionAdminHandlerImpl service = serviceWithDataset();
+		Distribution sent = distribution(DIST_BASE + "geo", "OGC Features");
+		sent.setMediaType("http://www.iana.org/assignments/media-types/application/geo+json");
+		sent.setFormat("http://publications.europa.eu/resource/authority/file-type/JSON");
+		service.upsertDistributionToDataset("air", sent, Caller.ANONYMOUS);
+
+		Distribution stored = service.getDistributionForDataset("air", "geo").orElseThrow();
+		assertEquals("http://publications.europa.eu/resource/authority/file-type/JSON", stored.getFormat());
+	}
 }

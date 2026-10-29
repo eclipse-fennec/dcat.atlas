@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import dcat.Distribution;
 import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
@@ -105,5 +106,21 @@ public class DatasetAdminHandlerImplTest {
 			dataset.setAbout(about);
 		}
 		return TestEntities.mandatoryDataset(dataset, title);
+	}
+
+	@Test
+	void anEmbeddedDistributionGetsItsFormatFromTheMediaType() {
+		// Issue #68, on the dataset write path: a Distribution sent inside its Dataset is
+		// completed exactly like one sent on its own.
+		Dataset sent = dataset(BASE + "air", "Air quality");
+		Distribution distribution = DcatFactory.eINSTANCE.createDistribution();
+		distribution.setAbout(BASE + "air/distributions/csv");
+		distribution.setMediaType("http://www.iana.org/assignments/media-types/text/csv");
+		sent.getDistribution().add(TestEntities.mandatoryDistribution(distribution));
+		service().upsertDataset(sent, Caller.ANONYMOUS);
+
+		Dataset loaded = service().getDataset("air").orElseThrow();
+		assertEquals("http://publications.europa.eu/resource/authority/file-type/CSV",
+				loaded.getDistribution().get(0).getFormat());
 	}
 }

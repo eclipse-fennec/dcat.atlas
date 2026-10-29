@@ -339,6 +339,17 @@ distribution.setLicense(license());
 Note the asymmetry: `title` and `description` are multi-valued on a `DcatResource` and
 **single-valued on a `Distribution`**.
 
+One field the portal completes for you: a `Distribution` with a `mediaType` but no
+`format` gets `dct:format` filled from a fixed table of IANA media types to the EU
+file-type vocabulary (`text/csv` → `…/file-type/CSV`, `application/geo+json` →
+`…/file-type/GEOJSON`, and so on). `dct:format` is the field German portals and
+dashboards actually query, so this is what makes a distribution findable there. A
+`format` you set is never changed, and a media type outside the table leaves it unset —
+set it yourself in that case. Give the `mediaType` as DCAT-AP's IANA IRI
+(`http://www.iana.org/assignments/media-types/text/csv`); the model's `MediaTypeIsIri`
+constraint rejects a bare `text/csv` anyway. Entries stored before this existed are
+completed once at the portal's next start, so you need not rewrite them.
+
 `publisher` is a *containment* reference, so one shared `Agent` instance would be
 **moved** from entity to entity rather than copied into each. Build a fresh one per
 entity.

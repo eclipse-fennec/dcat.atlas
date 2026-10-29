@@ -69,7 +69,9 @@ import org.osgi.service.metatype.annotations.Designate;
  * writes, which they do by nature. Named graphs also make an update a single
  * idempotent operation (replace this resource's graph), which is what lets every
  * refresh path — startup, a write, reconciliation, an explicit rebuild — be the
- * same code.
+ * same code. Queries see the union of those graphs as the default graph
+ * ({@link UnionDefaultGraph}), so the per-resource naming stays an internal
+ * maintenance detail rather than something every client has to know.
  * <p>
  * The projection is derived, never authoritative: it is always rebuilt <em>from</em>
  * the stores, and content only ever enters through
@@ -101,6 +103,13 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	private final long maxResultRows;
 
 	private final Dataset dataset = DatasetFactory.createTxnMem();
+
+	/**
+	 * What queries run against: the same data, with the union of the resource graphs
+	 * as its default graph (Fuseki's {@code unionDefaultGraph}), so that plain SPARQL
+	 * without a {@code GRAPH} clause sees the catalog. See {@link UnionDefaultGraph}.
+	 */
+	private final Dataset queryView = DatasetFactory.wrap(new UnionDefaultGraph(dataset.asDatasetGraph()));
 
 	/**
 	 * Which named graph currently holds each resource. Needed because a resource's
@@ -249,7 +258,7 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	@Override
 	public <T> T execute(Query query, Function<QueryExecution, T> consumer) {
 		return Txn.calculateRead(dataset, () -> {
-			QueryExecutionDatasetBuilder builder = QueryExecutionDatasetBuilder.create().dataset(dataset).query(query);
+			QueryExecutionDatasetBuilder builder = QueryExecutionDatasetBuilder.create().dataset(queryView).query(query);
 			if (queryTimeoutMillis > 0) {
 				builder = builder.timeout(queryTimeoutMillis, TimeUnit.MILLISECONDS);
 			}

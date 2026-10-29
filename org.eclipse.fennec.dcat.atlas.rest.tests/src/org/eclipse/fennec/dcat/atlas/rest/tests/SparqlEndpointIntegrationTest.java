@@ -165,6 +165,21 @@ public class SparqlEndpointIntegrationTest {
 	}
 
 	@Test
+	void aQueryWithoutGraphClauseFindsTheResource() throws Exception {
+		// Issue #67: a Fuseki-style client sends plain SPARQL, no GRAPH and no FROM,
+		// and must see the catalog as if the default graph were the union of all
+		// resource graphs.
+		createDatasetOverRest(id, "Air quality " + id);
+
+		HttpResponse<String> response = get(
+				"?query=" + encode("SELECT ?s WHERE { ?s <" + TITLE + "> \"Air quality " + id + "\"@en }"),
+				"application/sparql-results+json");
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.body().contains(BASE + "/datasets/" + id), response.body());
+	}
+
+	@Test
 	void constructReturnsRdfInTheNegotiatedSyntax() throws Exception {
 		createDatasetOverRest(id, "Air quality " + id);
 
@@ -174,6 +189,38 @@ public class SparqlEndpointIntegrationTest {
 				"text/turtle");
 
 		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.body().contains("Air quality " + id), response.body());
+	}
+
+	@Test
+	void plainJsonIsAcceptedForSelect() throws Exception {
+		// Issue #66: generic clients send Accept: application/json, as Fuseki allows.
+		createDatasetOverRest(id, "Air quality " + id);
+
+		HttpResponse<String> response = get(
+				"?query=" + encode("SELECT ?t WHERE { GRAPH <" + BASE + "/datasets/" + id + "> { ?s <" + TITLE + "> ?t } }"),
+				"application/json");
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"),
+				response.headers().toString());
+		assertTrue(response.body().contains("\"bindings\""), response.body());
+		assertTrue(response.body().contains("Air quality " + id), response.body());
+	}
+
+	@Test
+	void plainJsonIsAcceptedForConstructAsJsonLd() throws Exception {
+		createDatasetOverRest(id, "Air quality " + id);
+
+		HttpResponse<String> response = get(
+				"?query=" + encode("CONSTRUCT { ?s ?p ?o } WHERE { GRAPH <" + BASE + "/datasets/" + id
+						+ "> { ?s ?p ?o } }"),
+				"application/json");
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.headers().firstValue("Content-Type").orElse("").startsWith("application/json"),
+				response.headers().toString());
+		assertTrue(response.body().contains("\"@id\""), response.body());
 		assertTrue(response.body().contains("Air quality " + id), response.body());
 	}
 
@@ -211,6 +258,19 @@ public class SparqlEndpointIntegrationTest {
 	@Test
 	void aMissingQueryIsRejected() throws Exception {
 		assertEquals(400, get("", "*/*").statusCode());
+	}
+
+	@Test
+	void aHeadWithoutQueryAnnouncesTheEndpoint() throws Exception {
+		// Endpoint auto-detection (issue #65): clients probe with a bare HEAD and take
+		// anything but 2xx as 'no SPARQL service here'.
+		HttpResponse<String> response = send(HttpRequest.newBuilder(URI.create(SPARQL))
+				.method("HEAD", BodyPublishers.noBody()).build());
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.body().isEmpty(), "a HEAD must not carry a body: " + response.body());
+		assertEquals("application/sparql-results+json",
+				response.headers().firstValue("Content-Type").orElse(""));
 	}
 
 	// --- readiness and reindex ---------------------------------------------

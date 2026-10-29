@@ -78,6 +78,8 @@
 		"enforceOnWrite": "$[env:SHACL_ENFORCE;default=true]"
 	},
 
+	"FormatBackfill": { "storeService.target": "(component.name=DcatGitStoreService)", "enabled": "$[env:FORMAT_BACKFILL;default=true]" },
+
 	"DcatReadOnlyService": { "storeService.target": "(component.name=DcatGitStoreService)" },
 
 	"DcatAdminService": { "storeService.target": "(component.name=DcatGitStoreService)", "sparqlSupported": "$[env:SPARQL_ENABLED;default=true]", "graphService.cardinality.minimum:int": 1 }

@@ -46,6 +46,7 @@ class DcatGraphServiceImplTest {
 	// The store mints logical identities, and the projection derives ids from them, so
 	// fixtures have to look like stored data rather than like a request URL.
 	private static final String BASE = org.eclipse.fennec.dcat.atlas.api.identity.DcatIds.LOGICAL_BASE;
+	private static final String TITLE = "http://purl.org/dc/terms/title";
 
 	/** Leaves every IRI as it is, so a projection assertion reads as what was stored. */
 	private static final org.eclipse.fennec.dcat.atlas.api.identity.PublicIris IDENTITY_IRIS = new org.eclipse.fennec.dcat.atlas.api.identity.PublicIris() {
@@ -252,6 +253,65 @@ class DcatGraphServiceImplTest {
 				execution -> execution.execConstruct());
 
 		assertTrue(expected.isIsomorphicWith(projected));
+	}
+
+	// --- the default graph is the union of the resource graphs (issue #67) ---
+
+	@Test
+	void aQueryWithoutGraphClauseSeesEveryResource() {
+		stores.catalogs.put("c1", catalog(BASE + "catalogs/c1", "Main catalog"));
+		stores.datasets.put("d1", dataset(BASE + "datasets/d1", "Air quality"));
+		DcatGraphServiceImpl graph = graph();
+		graph.refresh();
+
+		// What a Fuseki-style client sends: no GRAPH, no FROM. It must not need to know
+		// that the projection keeps one graph per resource.
+		assertTrue(ask(graph, "ASK { ?s <" + TITLE + "> \"Air quality\"@en }"));
+		assertTrue(ask(graph, "ASK { ?s <" + TITLE + "> \"Main catalog\"@en }"));
+	}
+
+	@Test
+	void theUnionDefaultGraphDoesNotDuplicateTriples() {
+		stores.catalogs.put("c1", catalog(BASE + "catalogs/c1", "Main catalog"));
+		stores.datasets.put("d1", dataset(BASE + "datasets/d1", "Air quality"));
+		DcatGraphServiceImpl graph = graph();
+		graph.refresh();
+
+		long distinctAcrossGraphs = graph.execute(QueryFactory.create(
+				"SELECT (COUNT(*) AS ?n) { SELECT DISTINCT ?s ?p ?o WHERE { GRAPH ?g { ?s ?p ?o } } }"),
+				execution -> execution.execSelect().next().getLiteral("n").getLong());
+		long viaDefaultGraph = graph.execute(QueryFactory.create("SELECT (COUNT(*) AS ?n) WHERE { ?s ?p ?o }"),
+				execution -> execution.execSelect().next().getLiteral("n").getLong());
+
+		assertTrue(viaDefaultGraph > 0);
+		assertEquals(distinctAcrossGraphs, viaDefaultGraph);
+	}
+
+	@Test
+	void graphClausesStillAddressTheResourceGraphs() {
+		stores.catalogs.put("c1", catalog(BASE + "catalogs/c1", "Main catalog"));
+		stores.datasets.put("d1", dataset(BASE + "datasets/d1", "Air quality"));
+		DcatGraphServiceImpl graph = graph();
+		graph.refresh();
+
+		// The per-resource graphs remain reachable and scoped: a title is in exactly
+		// its own resource's graph, and GRAPH ?g enumerates all of them.
+		assertEquals(List.of(BASE + "catalogs/c1", BASE + "datasets/d1"),
+				namedGraphs(graph).stream().sorted().toList());
+		assertTrue(ask(graph, "ASK { GRAPH <" + BASE + "datasets/d1> { ?s <" + TITLE + "> \"Air quality\"@en } }"));
+		assertFalse(ask(graph, "ASK { GRAPH <" + BASE + "catalogs/c1> { ?s <" + TITLE + "> \"Air quality\"@en } }"));
+	}
+
+	@Test
+	void anExplicitFromNarrowsTheDefaultGraphAgain() {
+		stores.catalogs.put("c1", catalog(BASE + "catalogs/c1", "Main catalog"));
+		stores.datasets.put("d1", dataset(BASE + "datasets/d1", "Air quality"));
+		DcatGraphServiceImpl graph = graph();
+		graph.refresh();
+
+		// A client that does name graphs gets exactly what it asked for.
+		assertTrue(ask(graph, "ASK FROM <" + BASE + "datasets/d1> { ?s <" + TITLE + "> \"Air quality\"@en }"));
+		assertFalse(ask(graph, "ASK FROM <" + BASE + "datasets/d1> { ?s <" + TITLE + "> \"Main catalog\"@en }"));
 	}
 
 	// --- disabled and readiness -------------------------------------------

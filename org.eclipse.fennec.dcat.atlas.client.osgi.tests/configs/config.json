@@ -46,6 +46,7 @@
     "password": ""
   },
   "DcatGitStoreService": { "basePath": "dcat", "gitService.target": "(id=dcatStore)", "validationService.cardinality.minimum:int": 1 },
+  "FormatBackfill": { "storeService.target": "(component.name=DcatGitStoreService)" },
   "DcatReadOnlyService": { "storeService.target": "(component.name=DcatGitStoreService)" },
   "DcatAdminService": { "storeService.target": "(component.name=DcatGitStoreService)", "sparqlSupported": true, "graphService.cardinality.minimum:int": 1 },
   "PublicIris": { "publicBaseUrl": "http://localhost:8186/rest/" },

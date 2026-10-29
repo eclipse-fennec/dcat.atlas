@@ -43,6 +43,11 @@
 		"enforceOnWrite": "$[env:SHACL_ENFORCE;default=true]"
 	},
 
+	"FormatBackfill": {
+		"storeService.target": "(component.name=DcatGitStoreService)",
+		"enabled": "$[env:FORMAT_BACKFILL;default=true]"
+	},
+
 	"DcatReadOnlyService": {
 		"storeService.target": "(component.name=DcatGitStoreService)"
 	},

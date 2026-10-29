@@ -22,10 +22,10 @@ import java.util.logging.Logger;
 
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DcatReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntimeDTO;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatChangeNotifierTopics;
@@ -89,17 +89,12 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime, EventHandler
 	@Reference
 	private PublicIris publicIris;
 
+	/**
+	 * The read side as one service: the inventory names what the portal holds, so the four
+	 * collections it counts have to come from the same store.
+	 */
 	@Reference
-	private CatalogReadOnlyService catalogs;
-
-	@Reference
-	private DatasetReadOnlyService datasets;
-
-	@Reference
-	private DataServiceReadOnlyService dataServices;
-
-	@Reference
-	private DatasetSeriesReadOnlyService datasetSeries;
+	private DcatReadOnlyService dcatReadOnlyService;
 
 	private ServiceRegistration<DcatAtlasRuntime> runtimeServiceRegistration;
 
@@ -189,9 +184,10 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime, EventHandler
 		// Cleared before the read, not after: a change that lands while this one is running
 		// has to leave the flag set, or it would be read over and lost.
 		stale = false;
-		readings = new Readings(catalogs(), ids(datasets, DcatIds.DATASETS, DatasetReadOnlyService::ids),
-				ids(dataServices, DcatIds.DATA_SERVICES, DataServiceReadOnlyService::ids),
-				ids(datasetSeries, DcatIds.DATASET_SERIES, DatasetSeriesReadOnlyService::ids));
+		readings = new Readings(catalogs(),
+				ids(dcatReadOnlyService.getDatasetReadOnlyHandler(), DcatIds.DATASETS, DatasetReadOnlyHandler::ids),
+				ids(dcatReadOnlyService.getDataServiceReadOnlyHandler(), DcatIds.DATA_SERVICES, DataServiceReadOnlyHandler::ids),
+				ids(dcatReadOnlyService.getDataSeriesReadOnlyHandler(), DcatIds.DATASET_SERIES, DatasetSeriesReadOnlyHandler::ids));
 		return readings;
 	}
 
@@ -240,7 +236,7 @@ public class DcatAtlasRuntimeComponent implements DcatAtlasRuntime, EventHandler
 	private List<CatalogReading> catalogs() {
 		List<Catalog> stored;
 		try {
-			stored = catalogs.listCatalogs();
+			stored = dcatReadOnlyService.getCatalogReadOnlyHandler().listCatalogs();
 		} catch (RuntimeException unreadable) {
 			LOG.warning("[DCAT.Atlas] the catalogs collection could not be read for the runtime inventory, "
 					+ "reporting it as empty: " + unreadable);

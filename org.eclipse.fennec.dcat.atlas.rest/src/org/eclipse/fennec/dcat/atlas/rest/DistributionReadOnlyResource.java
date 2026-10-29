@@ -18,7 +18,8 @@ import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DcatReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
 import org.osgi.service.component.annotations.Component;
@@ -77,13 +78,22 @@ public class DistributionReadOnlyResource {
 	@Reference
 	PublicIris identityRendering;
 
+	/**
+	 * The read side as one service, so every read resource serves from the store the
+	 * portal was configured with. A read-only deployment registers it on its own; one that
+	 * also writes gets it from the admin service.
+	 */
 	@Reference
-	DistributionReadOnlyService distributionReadOnlyService;
+	DcatReadOnlyService dcatReadOnlyService;
+
+	private DistributionReadOnlyHandler distributionReadOnlyHandler() {
+		return dcatReadOnlyService.getDistributionReadOnlyHandler();
+	}
 
 	@GET
 	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
 	public Response listDistributions(@PathParam("datasetId") String datasetId) {
-		List<Distribution> distributions = distributionReadOnlyService.listDistributionsForDataset(datasetId);
+		List<Distribution> distributions = distributionReadOnlyHandler().listDistributionsForDataset(datasetId);
 		if (distributions.isEmpty()) {
 			return Response.noContent().build();
 		}
@@ -97,13 +107,13 @@ public class DistributionReadOnlyResource {
 	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3, HTML })
 	public Response getDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@Context ContainerRequestContext requestContext) {
-		Optional<Distribution> distribution = distributionReadOnlyService.getDistributionForDataset(datasetId, id);
+		Optional<Distribution> distribution = distributionReadOnlyHandler().getDistributionForDataset(datasetId, id);
 		if (distribution.isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Attach the ETag; DcatConditionalFilter stamps it, adds Vary, and does the
 		// If-None-Match -> 304 handling (F-16).
-		DcatConditionalFilter.attach(requestContext, distributionReadOnlyService.etag(datasetId, id));
+		DcatConditionalFilter.attach(requestContext, distributionReadOnlyHandler().etag(datasetId, id));
 		return Response.ok(distribution.get()).build();
 	}
 

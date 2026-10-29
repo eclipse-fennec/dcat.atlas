@@ -84,8 +84,7 @@ class DcatGraphServiceImplTest {
 	private DcatGraphServiceImpl graph(boolean enabled) {
 		// Identity mapping: this test asserts projection, not rebasing, so the public and
 		// logical forms are deliberately the same and graph names stay readable.
-		return new DcatGraphServiceImpl(IDENTITY_IRIS, stores.catalogService(), stores.datasetService(),
-				stores.seriesService(), stores.dataServiceService(), stores.distributionService(), enabled, 0L, 0L);
+		return new DcatGraphServiceImpl(IDENTITY_IRIS, stores, enabled, 0L, 0L);
 	}
 
 	// --- building ----------------------------------------------------------
@@ -129,7 +128,7 @@ class DcatGraphServiceImplTest {
 
 	@Test
 	void orphanedDistributionStaysOutOfTheGraph() {
-		// No dataset references it, so DistributionReadOnlyService cannot resolve it
+		// No dataset references it, so DistributionReadOnlyHandler cannot resolve it
 		// (FR-10) and it must not appear — otherwise SPARQL would answer with data the
 		// REST API refuses to serve.
 		stores.putDistribution("gone", "x1", distribution(BASE + "datasets/gone/distributions/x1", "CSV"));

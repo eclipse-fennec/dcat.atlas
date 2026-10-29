@@ -91,8 +91,30 @@ interpolation plugin. The configuration itself lives in
 | `SHACL_SHAPES_DIR` | `/opt/dcat/shapes` | Directory of `*.ttl` SHACL shapes |
 | `SHACL_VOCAB_DIR` | `/opt/dcat/vocabularies` | Directory of controlled-vocabulary files — **must also contain the DCAT ontology**, see below |
 | `SHACL_ENFORCE` | `true` | Reject writes that do not conform |
+| `MODEL_VALIDATE` | `true` | Check writes against the model's own constraints (ecore multiplicities and OCL). Switch off to load a corpus that predates a constraint |
+| `SPARQL_ENABLED` | `true` | Serve SPARQL and maintain the RDF projection behind it. Also decides whether the write side requires that projection before it will start |
 | `INITIAL_RESOURCES_DIR` | *(empty)* | Folder of `*.xmi` resources to store on startup, unmanaged — see [Initial resources](#initial-resources). Empty seeds nothing |
 | `INITIAL_RESOURCES_HALT` | `true` | Stop the container when that folder cannot be seeded, instead of serving a portal without it |
+
+### The read side and the write side
+
+The portal is configured as two services, each naming the store it works on:
+
+```jsonc
+"DcatReadOnlyService": { "storeService.target": "(component.name=DcatGitStoreService)" },
+"DcatAdminService":    { "storeService.target": "(component.name=DcatGitStoreService)",
+                         "sparqlSupported": "...", "graphService.cardinality.minimum:int": 1 }
+```
+
+In a read-and-write portal **both targets must name the same store**, or reads and writes go to
+different repositories and nothing says so. A portal that only publishes configures
+`DcatReadOnlyService` alone and serves no admin endpoints at all; the admin component requires its
+configuration, so leaving the block out is how the write side is switched off.
+
+`sparqlSupported` and `graphService.cardinality.minimum` travel together. The first makes the write
+side promise that the RDF projection is maintained; the second is what makes the framework wait for
+that projection instead of starting without it. Setting the first and forgetting the second is
+caught at startup rather than silently ignored.
 
 ### The vocabulary directory needs the DCAT ontology
 

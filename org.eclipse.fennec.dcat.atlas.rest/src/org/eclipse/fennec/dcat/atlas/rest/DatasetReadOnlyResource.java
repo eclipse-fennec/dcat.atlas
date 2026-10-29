@@ -19,10 +19,10 @@ import java.util.Optional;
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DcatReadOnlyService;
 import org.eclipse.fennec.dcat.atlas.api.read.Page;
 import org.eclipse.fennec.dcat.atlas.api.read.PageRequest;
-import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.Pagination;
 import org.eclipse.fennec.dcat.atlas.rest.filter.DcatConditionalFilter;
@@ -83,16 +83,17 @@ public class DatasetReadOnlyResource {
 	@Reference
 	PublicIris identityRendering;
 
-	@Reference
-	DatasetReadOnlyService datasetReadOnlyService;
-
 	/**
-	 * The store's version, which is half of a collection response's validator — the
-	 * other half is which page it is. Read here rather than through the read service
-	 * because it is one token for the whole store, not a per-collection property.
+	 * The read side as one service, so every read resource serves from the store the
+	 * portal was configured with. A read-only deployment registers it on its own; one that
+	 * also writes gets it from the admin service.
 	 */
 	@Reference
-	StoreRevision storeRevision;
+	DcatReadOnlyService dcatReadOnlyService;
+
+	private DatasetReadOnlyHandler datasetReadOnlyHandler() {
+		return dcatReadOnlyService.getDatasetReadOnlyHandler();
+	}
 
 	@GET
 	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3 })
@@ -101,25 +102,25 @@ public class DatasetReadOnlyResource {
 		// An out-of-range limit is clamped rather than refused; one that is not a number at
 		// all never reaches here — see QueryParamExceptionMapper for why that is a 400.
 		PageRequest request = PageRequest.of(after, limit);
-		Page<Dataset> page = datasetReadOnlyService.listDatasets(request);
+		Page<Dataset> page = datasetReadOnlyHandler().listDatasets(request);
 		// GenericEntity preserves List<Dataset> so the RDF body writers see the element type.
 		Object entity = new GenericEntity<List<Dataset>>(page.items()) {
 		};
 		return Pagination.respond(page, entity, request, identityRendering, DcatIds.DATASETS,
-				storeRevision.current(), requestContext);
+				dcatReadOnlyService.revision(), requestContext);
 	}
 
 	@GET
 	@Path("/{id}")
 	@Produces({ XMI, JSON, XML, RDF_XML, TURTLE, N_TRIPLES, JSON_LD, N3, HTML })
 	public Response getDataset(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
-		Optional<Dataset> dataset = datasetReadOnlyService.getDataset(id);
+		Optional<Dataset> dataset = datasetReadOnlyHandler().getDataset(id);
 		if (dataset.isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Attach the ETag; DcatConditionalFilter stamps it, adds Vary, and does the
 		// If-None-Match -> 304 handling (F-16).
-		DcatConditionalFilter.attach(requestContext, datasetReadOnlyService.etag(id));
+		DcatConditionalFilter.attach(requestContext, datasetReadOnlyHandler().etag(id));
 		return Response.ok(dataset.get()).build();
 	}
 }

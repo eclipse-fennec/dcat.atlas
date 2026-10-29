@@ -13,14 +13,15 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.http.HttpResponse;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -32,12 +33,8 @@ import dcat.DcatFactory;
 
 public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
-	@InjectService
-	DataServiceAdminService service;
 
 	/** servesDataset points at a separately stored Dataset. */
-	@InjectService
-	DatasetAdminService datasetService;
 
 	@Override
 	protected String collection() {
@@ -65,22 +62,22 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		// Seeded the way the store mints identities: logical, not the request URL.
 		dataService.setAbout(DcatIds.logicalIri(DcatIds.DATA_SERVICES, id));
 		RestEntities.mandatoryDataService(dataService, title);
-		service.upsertDataService(dataService, Caller.ANONYMOUS);
+		service().upsertDataService(dataService, Caller.ANONYMOUS);
 	}
 
 	@Override
 	protected boolean storedPresent(String id) {
-		return service.getDataService(id).isPresent();
+		return service().getDataService(id).isPresent();
 	}
 
 	@Override
 	protected String storedTitle(String id) {
-		return service.getDataService(id).get().getTitle().get(0).getValue();
+		return service().getDataService(id).get().getTitle().get(0).getValue();
 	}
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteDataService(id, false, Caller.ANONYMOUS);
+		service().deleteDataService(id, false, Caller.ANONYMOUS);
 	}
 
 	// --- dcat:servesDataset membership --------------------------------------
@@ -92,9 +89,23 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		// Unlink first: FR-1 refuses to delete a dataset a service still serves, which is
 		// exactly the guarantee these endpoints rely on. Runs before the base class's
 		// cleanup (JUnit works up the hierarchy for @AfterEach), so svc1 is still there.
-		service.getDataService("svc1")
-				.ifPresent(unused -> service.deleteDatasetFromDataService("svc1", SERVED_DATASET_ID, Caller.ANONYMOUS));
-		datasetService.deleteDataset(SERVED_DATASET_ID, false, Caller.ANONYMOUS);
+		service().getDataService("svc1")
+				.ifPresent(unused -> service().deleteDatasetFromDataService("svc1", SERVED_DATASET_ID, Caller.ANONYMOUS));
+		datasetService().deleteDataset(SERVED_DATASET_ID, false, Caller.ANONYMOUS);
+	}
+
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
+	@InjectService
+	DcatAdminService dcatAdminService;
+
+	private DataServiceAdminHandler service() {
+		return dcatAdminService.getDataServiceAdminHandler();
+	}
+
+	private DatasetAdminHandler datasetService() {
+		return dcatAdminService.getDatasetAdminHandler();
 	}
 
 	@Test
@@ -106,15 +117,15 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 				xmiBody("Dataset", DcatIds.logicalIri(DcatIds.DATASETS, SERVED_DATASET_ID), "NO2"));
 
 		assertEquals(200, add.statusCode(), add.body());
-		assertEquals(1, service.getDataService("svc1").get().getServesDataset().size());
-		// The dataset is stored in its own right, not embedded in the service.
-		assertTrue(datasetService.getDataset(SERVED_DATASET_ID).isPresent());
+		assertEquals(1, service().getDataService("svc1").get().getServesDataset().size());
+		// The dataset is stored in its own right, not embedded in the service().
+		assertTrue(datasetService().getDataset(SERVED_DATASET_ID).isPresent());
 
 		HttpResponse<String> remove = delete(writes() + "/svc1/datasets/" + SERVED_DATASET_ID);
 		assertEquals(204, remove.statusCode());
-		assertTrue(service.getDataService("svc1").get().getServesDataset().isEmpty());
+		assertTrue(service().getDataService("svc1").get().getServesDataset().isEmpty());
 		// Unlinking removes the membership, not the dataset.
-		assertTrue(datasetService.getDataset(SERVED_DATASET_ID).isPresent());
+		assertTrue(datasetService().getDataset(SERVED_DATASET_ID).isPresent());
 	}
 
 	/**
@@ -137,9 +148,9 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		assertEquals(BASE + "/datasets/" + SERVED_DATASET_ID, refused.headers().firstValue("Location").orElse(null),
 				"...and Location at the dataset that is in the way");
 		assertEquals("NO2 measurements",
-				datasetService.getDataset(SERVED_DATASET_ID).get().getTitle().get(0).getValue(),
+				datasetService().getDataset(SERVED_DATASET_ID).get().getTitle().get(0).getValue(),
 				"the refused POST must not have rewritten the dataset");
-		assertTrue(service.getDataService("svc1").get().getServesDataset().isEmpty(),
+		assertTrue(service().getDataService("svc1").get().getServesDataset().isEmpty(),
 				"and must not have linked it either");
 	}
 
@@ -152,10 +163,10 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		HttpResponse<String> link = putEmpty(writes() + "/svc1/datasets/" + SERVED_DATASET_ID);
 
 		assertEquals(200, link.statusCode(), link.body());
-		assertEquals(1, service.getDataService("svc1").get().getServesDataset().size());
+		assertEquals(1, service().getDataService("svc1").get().getServesDataset().size());
 		// The point of linking: the dataset keeps its own content.
 		assertEquals("NO2 measurements",
-				datasetService.getDataset(SERVED_DATASET_ID).get().getTitle().get(0).getValue());
+				datasetService().getDataset(SERVED_DATASET_ID).get().getTitle().get(0).getValue());
 	}
 
 	@Test
@@ -180,6 +191,6 @@ public class DataServiceResourceIntegrationTest extends AbstractEntityResourceIn
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, SERVED_DATASET_ID));
 		RestEntities.mandatoryDataset(dataset, title);
-		datasetService.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasetService().upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

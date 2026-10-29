@@ -17,10 +17,11 @@ import java.net.URI;
 import java.util.Optional;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyHandler;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
@@ -87,16 +88,30 @@ public class DistributionAdminResource {
 	@Reference
 	PublicIris identityRendering;
 
+	/**
+	 * The facade, not a DistributionAdminHandler: it is bound to one store in configuration,
+	 * so every handler this resource reaches writes to the store the portal was
+	 * configured with.
+	 */
 	@Reference
-	DistributionAdminService distributionAdminService;
+	DcatAdminService dcatAdminService;
 
-	/** Used only to answer 404 (rather than 500) when the parent dataset is unknown (FR-10). */
-	@Reference
-	DatasetReadOnlyService datasetReadOnlyService;
+	/**
+	 * The handler this resource writes through. Reached from the facade rather than bound
+	 * on its own, so every admin resource writes to the store the portal was configured
+	 * with; see {@link DcatAdminService}.
+	 */
+	private DistributionAdminHandler distributions() {
+		return dcatAdminService.getDistributionAdminHandler();
+	}
 
-	/** Resolves the {@code accessService} target: the DataService must already be catalogued. */
-	@Reference
-	DataServiceReadOnlyService dataServiceReadOnlyService;
+	private DatasetReadOnlyHandler datasetReadOnlyHandler() {
+		return dcatAdminService.getDatasetReadOnlyHandler();
+	}
+
+	private DataServiceReadOnlyHandler dataServiceReadOnlyHandler() {
+		return dcatAdminService.getDataServiceReadOnlyHandler();
+	}
 
 	/**
 	 * FR-10: a Distribution is always created in the context of its Dataset (the
@@ -107,7 +122,7 @@ public class DistributionAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response createDistribution(@PathParam("datasetId") String datasetId, Distribution distribution,
 			@Context HttpHeaders headers) {
-		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
+		if (datasetReadOnlyHandler().getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Logical identity, nested under the dataset, and taken from the body when it names
@@ -115,16 +130,16 @@ public class DistributionAdminResource {
 		// instead of creating a second one; only then is an id minted (see CreateIdentity).
 		// The configured public base supplies nothing but Location.
 		CreateIdentity identity = CreateIdentity.resolveDistribution(datasetId, distribution,
-				candidate -> distributionAdminService.getDistributionForDataset(datasetId, candidate).isPresent(),
+				candidate -> distributions().getDistributionForDataset(datasetId, candidate).isPresent(),
 				identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
 		URI about = readUri(datasetId, id);
-		distributionAdminService.upsertDistributionToDataset(datasetId, distribution, callerHeader.of(headers));
+		distributions().upsertDistributionToDataset(datasetId, distribution, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(distribution);
-		distributionAdminService.etag(datasetId, id).ifPresent(created::tag);
+		distributions().etag(datasetId, id).ifPresent(created::tag);
 		return created.build();
 	}
 
@@ -134,11 +149,11 @@ public class DistributionAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response upsertDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			Distribution distribution, @Context Request request, @Context HttpHeaders headers) {
-		if (datasetReadOnlyService.getDataset(datasetId).isEmpty()) {
+		if (datasetReadOnlyHandler().getDataset(datasetId).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributions().etag(datasetId,
 				id));
 		if (precondition != null) {
 			return precondition.build();
@@ -150,10 +165,10 @@ public class DistributionAdminResource {
 		if (mismatch != null) {
 			return mismatch.build();
 		}
-		boolean existed = distributionAdminService.getDistributionForDataset(datasetId, id).isPresent();
-		distributionAdminService.upsertDistributionToDataset(datasetId, distribution, callerHeader.of(headers));
+		boolean existed = distributions().getDistributionForDataset(datasetId, id).isPresent();
+		distributions().upsertDistributionToDataset(datasetId, distribution, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(distribution);
-		distributionAdminService.etag(datasetId, id).ifPresent(response::tag);
+		distributions().etag(datasetId, id).ifPresent(response::tag);
 		return response.build();
 	}
 
@@ -161,15 +176,15 @@ public class DistributionAdminResource {
 	@Path("/{id}")
 	public Response deleteDistribution(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@Context Request request, @Context HttpHeaders headers) {
-		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
+		if (distributions().getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributions().etag(datasetId,
 				id));
 		if (precondition != null) {
 			return precondition.build();
 		}
-		distributionAdminService.deleteDistributionFromDataset(datasetId, id, callerHeader.of(headers));
+		distributions().deleteDistributionFromDataset(datasetId, id, callerHeader.of(headers));
 		return Response.noContent().build();
 	}
 
@@ -186,16 +201,16 @@ public class DistributionAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@PathParam("serviceId") String serviceId, @Context Request request, @Context HttpHeaders headers) {
-		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
+		if (distributions().getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// The service must already exist in the catalog — accessService references it, so
 		// there is nothing to point at otherwise.
-		Optional<DataService> dataService = dataServiceReadOnlyService.getDataService(serviceId);
+		Optional<DataService> dataService = dataServiceReadOnlyHandler().getDataService(serviceId);
 		if (dataService.isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributions().etag(datasetId,
 				id));
 		if (precondition != null) {
 			return precondition.build();
@@ -204,9 +219,9 @@ public class DistributionAdminResource {
 		// nothing to write. The add* variant takes the entity and store.put()s it, which
 		// here would mean reading the service only to write it straight back.
 		ResponseBuilder ok = Response
-				.ok(distributionAdminService.linkAccessServiceToDistribution(datasetId, id, serviceId,
+				.ok(distributions().linkAccessServiceToDistribution(datasetId, id, serviceId,
 						callerHeader.of(headers)));
-		distributionAdminService.etag(datasetId, id).ifPresent(ok::tag);
+		distributions().etag(datasetId, id).ifPresent(ok::tag);
 		return ok.build();
 	}
 
@@ -214,17 +229,17 @@ public class DistributionAdminResource {
 	@Path("/{id}/access-service/{serviceId}")
 	public Response removeAccessService(@PathParam("datasetId") String datasetId, @PathParam("id") String id,
 			@PathParam("serviceId") String serviceId, @Context Request request, @Context HttpHeaders headers) {
-		if (distributionAdminService.getDistributionForDataset(datasetId, id).isEmpty()) {
+		if (distributions().getDistributionForDataset(datasetId, id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributionAdminService.etag(datasetId,
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, distributions().etag(datasetId,
 				id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		// Idempotent: unlinking a service that is not referenced is a no-op, not a 404 —
 		// consistent with the FR-11 series membership removal.
-		distributionAdminService.deleteAccessServiceFromDistribution(datasetId, id, serviceId,
+		distributions().deleteAccessServiceFromDistribution(datasetId, id, serviceId,
 				callerHeader.of(headers));
 		return Response.noContent().build();
 	}

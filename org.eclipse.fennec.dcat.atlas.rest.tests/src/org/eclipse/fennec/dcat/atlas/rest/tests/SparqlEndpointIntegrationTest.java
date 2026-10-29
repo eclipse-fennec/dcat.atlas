@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -29,7 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
@@ -63,10 +64,18 @@ public class SparqlEndpointIntegrationTest {
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
-	@InjectService
-	DatasetAdminService datasetService;
 
 	private String id;
+
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
+	@InjectService
+	DcatAdminService dcatAdminService;
+
+	private DatasetAdminHandler datasetService() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
 
 	@BeforeEach
 	void waitForTheWhiteboard(@InjectBundleContext BundleContext context) throws InterruptedException {
@@ -79,7 +88,7 @@ public class SparqlEndpointIntegrationTest {
 	@AfterEach
 	void cleanUp() {
 		if (id != null) {
-			datasetService.deleteDataset(id, false, Caller.ANONYMOUS);
+			datasetService().deleteDataset(id, false, Caller.ANONYMOUS);
 		}
 	}
 
@@ -123,12 +132,12 @@ public class SparqlEndpointIntegrationTest {
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		RestEntities.mandatoryDataset(dataset, title);
 
-		datasetService.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasetService().upsertDataset(dataset, Caller.ANONYMOUS);
 
 		assertTrue(sparqlAsksForTitle(title));
 		// Turns a silent leak into a failure: if the write lands under any other id,
 		// cleanUp() cannot remove it and the store grows by one on every run.
-		assertTrue(datasetService.getDataset(id).isPresent(),
+		assertTrue(datasetService().getDataset(id).isPresent(),
 				"the write must be stored under the id cleanUp() deletes, or it leaks");
 	}
 

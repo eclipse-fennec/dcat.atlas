@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,7 +22,7 @@ import java.net.http.HttpResponse;
 
 import javax.xml.datatype.DatatypeFactory;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.junit.jupiter.api.Test;
 import org.osgi.test.common.annotation.InjectService;
@@ -33,8 +34,6 @@ import rdf.RdfFactory;
 
 public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
-	@InjectService
-	DatasetAdminService service;
 
 	@Override
 	protected String collection() {
@@ -62,28 +61,38 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// Seeded the way the store mints identities: logical, not the request URL.
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		RestEntities.mandatoryDataset(dataset, title);
-		service.upsertDataset(dataset, Caller.ANONYMOUS);
+		service().upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 
 	@Override
 	protected boolean storedPresent(String id) {
-		return service.getDataset(id).isPresent();
+		return service().getDataset(id).isPresent();
 	}
 
 	@Override
 	protected String storedTitle(String id) {
-		return service.getDataset(id).get().getTitle().get(0).getValue();
+		return service().getDataset(id).get().getTitle().get(0).getValue();
 	}
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteDataset(id, false, Caller.ANONYMOUS);
+		service().deleteDataset(id, false, Caller.ANONYMOUS);
 	}
 
 	/**
 	 * A read carries {@code Last-Modified} taken from the entity's own
 	 * {@code dcterms:modified}, formatted as an HTTP date in GMT.
 	 */
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
+	@InjectService
+	DcatAdminService dcatAdminService;
+
+	private DatasetAdminHandler service() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
+
 	@Test
 	void aStoredModifiedDateBecomesTheLastModifiedHeader() throws Exception {
 		track("lm1");
@@ -142,6 +151,6 @@ public class DatasetResourceIntegrationTest extends AbstractEntityResourceIntegr
 		DateOrDateTimeLiteral modified = RdfFactory.eINSTANCE.createDateOrDateTimeLiteral();
 		modified.setValue(DatatypeFactory.newDefaultInstance().newXMLGregorianCalendar(lexical));
 		dataset.setModified(modified);
-		service.upsertDataset(dataset, Caller.ANONYMOUS);
+		service().upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

@@ -107,7 +107,7 @@ public class DcatConditionalFilter implements ContainerResponseFilter {
 	 * There is no cheaper honest source. The store's timestamps are per <em>commit</em> and
 	 * a commit covers the whole repository, so the tip's time would move for every resource
 	 * whenever any one of them was written - the same reason the ETag is the blob id rather
-	 * than the commit id ({@code DcatHelper#etag}). A per-resource commit time would mean a
+	 * than the commit id ({@code DcatStoreService#etag}). A per-resource commit time would mean a
 	 * path-filtered log, which {@code GitService} does not offer.
 	 *
 	 * <h2>Why it is not used as a validator</h2>

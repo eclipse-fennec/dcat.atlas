@@ -20,10 +20,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,20 +45,18 @@ import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicView;
-import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
+import org.eclipse.fennec.dcat.atlas.api.read.CatalogReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetSeriesReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DcatReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DistributionReadOnlyHandler;
 import org.eclipse.fennec.dcat.atlas.msg.body.readerwriter.EObjectToJena;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
-import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -92,11 +90,11 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 
 	/** Renders stored identities public, so query results match what a GET returns. */
 	private final PublicIris publicIris;
-	private final CatalogReadOnlyService catalogs;
-	private final DatasetReadOnlyService datasets;
-	private final DatasetSeriesReadOnlyService datasetSeries;
-	private final DataServiceReadOnlyService dataServices;
-	private final DistributionReadOnlyService distributions;
+	private final CatalogReadOnlyHandler catalogs;
+	private final DatasetReadOnlyHandler datasets;
+	private final DatasetSeriesReadOnlyHandler datasetSeries;
+	private final DataServiceReadOnlyHandler dataServices;
+	private final DistributionReadOnlyHandler distributions;
 
 	private final boolean enabled;
 	private final long queryTimeoutMillis;
@@ -131,37 +129,26 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	private volatile String projectedRevision;
 
 	/**
-	 * How the reconcile poll tells whether anything has changed (P1-7).
+	 * The read side, held for the whole of it: the five handlers the projection reads, and
+	 * the revision the reconcile poll compares (P1-7).
 	 * <p>
-	 * Optional and dynamic: without it the poll simply re-reads everything, which is what
-	 * it did before and is still correct — just not free. Deliberately a
-	 * {@link StoreRevision} rather than anything storage-specific, so the projection stays
-	 * unaware of what the store actually is.
+	 * The revision is a {@code DcatReadOnlyService#revision()} rather than anything
+	 * storage-specific, so the projection stays unaware of what the store actually is. It
+	 * used to be a service of its own that bound the GitService directly, which put the
+	 * storage technology one reference away from this bundle.
 	 */
-	@Reference(name = "storeRevision", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	void setStoreRevision(StoreRevision storeRevision) {
-		this.storeRevision = storeRevision;
-	}
-
-	void unsetStoreRevision(StoreRevision storeRevision) {
-		if (this.storeRevision == storeRevision) {
-			this.storeRevision = null;
-		}
-	}
-
-	private volatile StoreRevision storeRevision;
+	private final DcatReadOnlyService dcatReadOnlyService;
 
 	@Activate
 	public DcatGraphServiceImpl( //
 			@Reference PublicIris publicIris, //
-			@Reference CatalogReadOnlyService catalogs, //
-			@Reference DatasetReadOnlyService datasets, //
-			@Reference DatasetSeriesReadOnlyService datasetSeries, //
-			@Reference DataServiceReadOnlyService dataServices, //
-			@Reference DistributionReadOnlyService distributions, //
+			@Reference DcatReadOnlyService dcatReadOnlyService, //
 			GraphConfig config) {
-		this(publicIris, catalogs, datasets, datasetSeries, dataServices, distributions, config.enabled(),
-				config.queryTimeoutMillis(), config.maxResultRows());
+		// One reference, because the projection reads all five collections plus the store's
+		// revision, and they have to come from the same store; binding them separately made
+		// that six things to get right in configuration.
+		this(publicIris, dcatReadOnlyService, config.enabled(), config.queryTimeoutMillis(),
+				config.maxResultRows());
 
 		if (!enabled) {
 			LOGGER.info("SPARQL is disabled; no RDF projection will be built");
@@ -184,15 +171,15 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 	 * neither the initial build nor the reconciliation timer, so a test drives
 	 * {@link #refresh()} itself and stays deterministic.
 	 */
-	DcatGraphServiceImpl(PublicIris publicIris, CatalogReadOnlyService catalogs, DatasetReadOnlyService datasets,
-			DatasetSeriesReadOnlyService datasetSeries, DataServiceReadOnlyService dataServices,
-			DistributionReadOnlyService distributions, boolean enabled, long queryTimeoutMillis, long maxResultRows) {
+	DcatGraphServiceImpl(PublicIris publicIris, DcatReadOnlyService dcatReadOnlyService, boolean enabled,
+			long queryTimeoutMillis, long maxResultRows) {
 		this.publicIris = publicIris;
-		this.catalogs = catalogs;
-		this.datasets = datasets;
-		this.datasetSeries = datasetSeries;
-		this.dataServices = dataServices;
-		this.distributions = distributions;
+		this.dcatReadOnlyService = dcatReadOnlyService;
+		this.catalogs = dcatReadOnlyService.getCatalogReadOnlyHandler();
+		this.datasets = dcatReadOnlyService.getDatasetReadOnlyHandler();
+		this.datasetSeries = dcatReadOnlyService.getDataSeriesReadOnlyHandler();
+		this.dataServices = dcatReadOnlyService.getDataServiceReadOnlyHandler();
+		this.distributions = dcatReadOnlyService.getDistributionReadOnlyHandler();
 		this.enabled = enabled;
 		this.queryTimeoutMillis = queryTimeoutMillis;
 		this.maxResultRows = maxResultRows;
@@ -349,12 +336,8 @@ public class DcatGraphServiceImpl implements DcatGraphService, SparqlEngine, Hea
 
 	/** The store's version, or {@code null} when nothing can tell us. */
 	private String currentRevision() {
-		StoreRevision revision = storeRevision;
-		if (revision == null) {
-			return null;
-		}
 		try {
-			return revision.current().orElse(null);
+			return dcatReadOnlyService.revision().orElse(null);
 		} catch (RuntimeException e) {
 			// A fingerprint that cannot be read is not a reason to skip the work it was
 			// meant to save; fall through to the full pass.

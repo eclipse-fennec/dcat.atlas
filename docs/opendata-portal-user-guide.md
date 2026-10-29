@@ -1004,7 +1004,7 @@ validation service goes away — a failed shapes reload, a bundle that did not s
 shipped configurations therefore require it:
 
 ```json
-"DatasetAdminService": {
+"DatasetAdminHandler": {
     "validationService.cardinality.minimum:int": 1
 }
 ```

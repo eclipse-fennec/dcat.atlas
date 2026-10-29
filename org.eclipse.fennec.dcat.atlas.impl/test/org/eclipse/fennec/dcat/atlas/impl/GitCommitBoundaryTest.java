@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.impl.handler.CatalogAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -47,14 +49,12 @@ public class GitCommitBoundaryTest {
 	@TempDir
 	Path storage;
 
-	private CatalogAdminServiceImpl catalogs() {
-		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH));
+	private CatalogAdminHandlerImpl catalogs() {
+		return new CatalogAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 	}
 
-	private DatasetAdminServiceImpl datasets() {
-		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH));
+	private DatasetAdminHandlerImpl datasets() {
+		return new DatasetAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 	}
 
 	@Test

@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,8 +27,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,11 +60,21 @@ public class CascadeDeleteIntegrationTest {
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
-	@InjectService
-	CatalogAdminService catalogs;
 
+
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
 	@InjectService
-	DatasetAdminService datasets;
+	DcatAdminService dcatAdminService;
+
+	private CatalogAdminHandler catalogs() {
+		return dcatAdminService.getCatalogAdminHandler();
+	}
+
+	private DatasetAdminHandler datasets() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
 
 	@BeforeEach
 	void ready(@InjectBundleContext BundleContext context) throws InterruptedException {
@@ -73,10 +84,10 @@ public class CascadeDeleteIntegrationTest {
 
 	@AfterEach
 	void cleanup() {
-		catalogs.getCatalog(CATALOG_ID).ifPresent(unused -> catalogs.deleteDatasetFromCatalog(CATALOG_ID, DATASET_ID,
+		catalogs().getCatalog(CATALOG_ID).ifPresent(unused -> catalogs().deleteDatasetFromCatalog(CATALOG_ID, DATASET_ID,
 				Caller.ANONYMOUS));
-		catalogs.deleteCatalog(CATALOG_ID, false, Caller.ANONYMOUS);
-		datasets.deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
+		catalogs().deleteCatalog(CATALOG_ID, false, Caller.ANONYMOUS);
+		datasets().deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	/**
@@ -98,8 +109,8 @@ public class CascadeDeleteIntegrationTest {
 		// unusable for the invalidation this report exists to enable.
 		assertEquals(PUBLIC_BASE + "/catalogs/" + CATALOG_ID, delete.body().strip(), delete.body());
 
-		assertTrue(datasets.getDataset(DATASET_ID).isEmpty(), "the dataset should be gone");
-		assertTrue(catalogs.getCatalog(CATALOG_ID).orElseThrow().getDataset().isEmpty(),
+		assertTrue(datasets().getDataset(DATASET_ID).isEmpty(), "the dataset should be gone");
+		assertTrue(catalogs().getCatalog(CATALOG_ID).orElseThrow().getDataset().isEmpty(),
 				"the catalog should no longer reference it");
 	}
 
@@ -115,7 +126,7 @@ public class CascadeDeleteIntegrationTest {
 
 		assertEquals(204, delete.statusCode(), delete.body());
 		assertTrue(delete.body().isEmpty(), "204 carries no body: " + delete.body());
-		assertTrue(datasets.getDataset(DATASET_ID).isEmpty());
+		assertTrue(datasets().getDataset(DATASET_ID).isEmpty());
 	}
 
 	/** Unchanged for every existing caller: absent parameter means no cascade. */
@@ -126,7 +137,7 @@ public class CascadeDeleteIntegrationTest {
 		HttpResponse<String> delete = delete("/admin/datasets/" + DATASET_ID);
 
 		assertEquals(204, delete.statusCode(), delete.body());
-		assertTrue(datasets.getDataset(DATASET_ID).isEmpty());
+		assertTrue(datasets().getDataset(DATASET_ID).isEmpty());
 	}
 
 	/**
@@ -141,7 +152,7 @@ public class CascadeDeleteIntegrationTest {
 		HttpResponse<String> delete = delete("/admin/datasets/" + DATASET_ID + "?cascade=false");
 
 		assertEquals(409, delete.statusCode(), delete.body());
-		assertFalse(datasets.getDataset(DATASET_ID).isEmpty(), "the dataset must survive a refused delete");
+		assertFalse(datasets().getDataset(DATASET_ID).isEmpty(), "the dataset must survive a refused delete");
 	}
 
 	/**
@@ -161,7 +172,7 @@ public class CascadeDeleteIntegrationTest {
 						.timeout(Duration.ofSeconds(10)).build(),
 				BodyHandlers.ofString());
 		assertEquals(412, stale.statusCode(), stale.body());
-		assertFalse(datasets.getDataset(DATASET_ID).isEmpty(), "a failed precondition must not delete");
+		assertFalse(datasets().getDataset(DATASET_ID).isEmpty(), "a failed precondition must not delete");
 
 		String etag = http
 				.send(HttpRequest.newBuilder(URI.create(BASE + "/datasets/" + DATASET_ID)).header("Accept", XMI)
@@ -173,7 +184,7 @@ public class CascadeDeleteIntegrationTest {
 						.header("If-Match", etag).DELETE().timeout(Duration.ofSeconds(10)).build(),
 				BodyHandlers.ofString());
 		assertEquals(200, current.statusCode(), current.body());
-		assertTrue(datasets.getDataset(DATASET_ID).isEmpty());
+		assertTrue(datasets().getDataset(DATASET_ID).isEmpty());
 	}
 
 	// --- helpers -----------------------------------------------------------
@@ -210,7 +221,7 @@ public class CascadeDeleteIntegrationTest {
 				  <dataset href="http://dcat.atlas/datasets/%s#/"/>
 				</dcat:Catalog>""".formatted(CATALOG_ID, DATASET_ID));
 		assertTrue(put.statusCode() < 300, put.body());
-		assertEquals(1, catalogs.getCatalog(CATALOG_ID).orElseThrow().getDataset().size(),
+		assertEquals(1, catalogs().getCatalog(CATALOG_ID).orElseThrow().getDataset().size(),
 				"fixture should have linked the dataset");
 	}
 

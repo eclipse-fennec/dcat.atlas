@@ -31,7 +31,7 @@ import org.eclipse.fennec.dcat.atlas.api.identity.ForeignIdentityException;
  *
  * <h2>Thrown by the store, not only by REST</h2>
  *
- * Raised at the persistence boundary ({@code DcatHelper.Store.put}) so it holds for every
+ * Raised at the persistence boundary ({@code DcatStoreSession.put}) so it holds for every
  * caller — an importer, a migration script, another bundle — and not merely for requests
  * that arrive over HTTP. Same rule as {@link ForeignIdentityException}, and the same
  * reason: the REST adapter is one door among several.

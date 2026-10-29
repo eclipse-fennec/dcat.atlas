@@ -20,11 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import org.eclipse.fennec.dcat.atlas.api.store.DcatStoreService;
+import org.eclipse.fennec.dcat.atlas.api.store.DcatStoreSession;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.impl.TestGitStore;
-import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
-import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
-import org.eclipse.fennec.jgit.api.GitService;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
 
@@ -47,16 +46,16 @@ class FormatBackfillTest {
 	@TempDir
 	Path storage;
 
-	private ResourceSetFactory resourceSets() {
-		return org.eclipse.fennec.dcat.atlas.impl.TestResourceSets.factory();
-	}
-
-	private GitService git() {
-		return TestGitStore.at(storage);
+	/**
+	 * validateOnWrite off, as this fixture has always run: it stages content that is
+	 * deliberately incomplete, which is the whole premise of a backfill.
+	 */
+	private DcatStoreService store() {
+		return org.eclipse.fennec.dcat.atlas.impl.TestStores.at(storage, false);
 	}
 
 	private FormatBackfill backfill() {
-		return new FormatBackfill(resourceSets(), git(), TestGitStore.BASE_PATH);
+		return new FormatBackfill(store());
 	}
 
 	@Test
@@ -75,22 +74,22 @@ class FormatBackfillTest {
 	void aSecondPassCommitsNothing() {
 		storeWithoutFormat("air", "http://www.iana.org/assignments/media-types/application/geo+json");
 		backfill().run();
-		Optional<String> before = DcatHelper.etag(git(), TestGitStore.BASE_PATH, StoreLayout.DATASETS, "air");
+		Optional<String> before = store().etag(StoreLayout.DATASETS, "air");
 
 		assertEquals(0, backfill().run());
 
 		// Idempotent on the history too: no commit, so the ETag does not move.
-		assertEquals(before, DcatHelper.etag(git(), TestGitStore.BASE_PATH, StoreLayout.DATASETS, "air"));
+		assertEquals(before, store().etag(StoreLayout.DATASETS, "air"));
 	}
 
 	@Test
 	void anUnknownMediaTypeLeavesTheStoreUntouched() {
 		storeWithoutFormat("air", "http://www.iana.org/assignments/media-types/application/x-made-up");
-		Optional<String> before = DcatHelper.etag(git(), TestGitStore.BASE_PATH, StoreLayout.DATASETS, "air");
+		Optional<String> before = store().etag(StoreLayout.DATASETS, "air");
 
 		assertEquals(0, backfill().run());
 
-		assertEquals(before, DcatHelper.etag(git(), TestGitStore.BASE_PATH, StoreLayout.DATASETS, "air"));
+		assertEquals(before, store().etag(StoreLayout.DATASETS, "air"));
 		assertFalse(TestGitStore.stored(storage, StoreLayout.DATASETS, "air").contains("file-type"));
 	}
 
@@ -107,11 +106,11 @@ class FormatBackfillTest {
 	 * the media type is added afterwards and staged as bookkeeping.
 	 */
 	private void storeWithoutFormat(String id, String mediaType) {
-		Store store = DcatHelper.open(resourceSets(), git(), TestGitStore.BASE_PATH, false, null, Caller.ANONYMOUS);
-		Dataset dataset = store.put(StoreLayout.DATASETS, id, dataset(id));
+		DcatStoreSession session = store().open(Caller.ANONYMOUS);
+		Dataset dataset = session.put(StoreLayout.DATASETS, id, dataset(id));
 		dataset.getDistribution().get(0).setMediaType(mediaType);
-		store.saveBookkeeping(dataset);
-		store.commit("fixture: " + id + " without dct:format");
+		session.saveBookkeeping(dataset);
+		session.commit("fixture: " + id + " without dct:format");
 	}
 
 	private static Dataset dataset(String id) {

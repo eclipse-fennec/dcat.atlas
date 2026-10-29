@@ -24,16 +24,15 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatEntity;
 import org.eclipse.fennec.dcat.atlas.api.graph.DcatGraphService;
+import org.eclipse.fennec.dcat.atlas.api.store.DcatStoreService;
+import org.eclipse.fennec.dcat.atlas.api.store.DcatStoreSession;
 import org.eclipse.fennec.dcat.atlas.impl.runtime.DcatChangeNotifier;
-import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
-import org.eclipse.fennec.emf.osgi.ResourceSetFactory;
-import org.eclipse.fennec.jgit.api.GitService;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicyOption;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -48,7 +47,7 @@ import org.osgi.service.metatype.annotations.Designate;
  * <p>
  * <h2>Why this is a write the server makes on its own behalf</h2>
  * The value is deterministic and the next write by anyone would add it anyway, so
- * it is staged as bookkeeping (see {@link Store#saveBookkeeping}): it neither
+ * it is staged as bookkeeping (see {@link DcatStoreSession#saveBookkeeping}): it neither
  * revalidates content the operator accepted long ago, nor asks who manages the
  * resource — a system's entry gets the same completion a person's does.
  * <p>
@@ -70,21 +69,23 @@ public class FormatBackfill {
 			StoreLayout.CATALOGS, DcatEntity.CATALOG, //
 			StoreLayout.DATASET_SERIES, DcatEntity.DATASET_SERIES);
 
-	private final ResourceSetFactory resourceSetFactory;
-	private final GitService gitService;
-	private final String basePath;
+	/**
+	 * The store to complete, selected in this component's own configuration like every
+	 * other consumer's. It opens sessions; it does not know what the storage is.
+	 */
+	private final DcatStoreService storeService;
 
 	/** Optional: absent means no SPARQL, and nothing to re-project. */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
 	volatile DcatGraphService graphService;
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policyOption = ReferencePolicyOption.GREEDY)
+	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
 	volatile DcatChangeNotifier changeNotifier;
 
 	@Activate
-	public FormatBackfill(@Reference ResourceSetFactory resourceSetFactory,
-			@Reference(name = "gitService") GitService gitService, FormatBackfillConfig config) {
-		this(resourceSetFactory, gitService, config.basePath());
+	public FormatBackfill(@Reference(name = "storeService") DcatStoreService storeService,
+			FormatBackfillConfig config) {
+		this(storeService);
 		if (!config.enabled()) {
 			LOG.info("[DCAT.Atlas] format backfill disabled by configuration; stored distributions are left as they are.");
 			return;
@@ -100,10 +101,8 @@ public class FormatBackfill {
 	}
 
 	/** Package-visible for tests. */
-	FormatBackfill(ResourceSetFactory resourceSetFactory, GitService gitService, String basePath) {
-		this.resourceSetFactory = resourceSetFactory;
-		this.gitService = gitService;
-		this.basePath = StoreLayout.requireSafeBasePath(basePath);
+	FormatBackfill(DcatStoreService storeService) {
+		this.storeService = storeService;
 	}
 
 	/**
@@ -113,11 +112,11 @@ public class FormatBackfill {
 	 *         written and the history is untouched
 	 */
 	int run() {
-		if (!StoreHealth.ready(gitService)) {
+		if (!storeService.isReady()) {
 			LOG.warning("[DCAT.Atlas] the store is not readable yet; skipping the format backfill for this start.");
 			return 0;
 		}
-		Store store = DcatHelper.open(resourceSetFactory, gitService, basePath, false, null, Caller.ANONYMOUS);
+		DcatStoreSession store = storeService.open(Caller.ANONYMOUS);
 		List<Touched> touched = new ArrayList<>();
 		int completed = 0;
 		for (Map.Entry<String, DcatEntity> collection : COLLECTIONS.entrySet()) {

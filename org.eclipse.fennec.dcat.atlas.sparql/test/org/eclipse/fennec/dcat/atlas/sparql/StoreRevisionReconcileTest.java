@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Optional;
 
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.store.StoreRevision;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -58,41 +57,20 @@ class StoreRevisionReconcileTest {
 		}
 	};
 
-	/** A revision service whose answer the test controls, counting how often it is asked. */
-	private static final class FakeRevision implements StoreRevision {
-
-		private String value;
-		private RuntimeException failure;
-
-		@Override
-		public Optional<String> current() {
-			if (failure != null) {
-				throw failure;
-			}
-			return Optional.ofNullable(value);
-		}
-	}
-
 	private FakeStores stores;
-	private FakeRevision revision;
 
 	@BeforeEach
 	void setUp() {
 		stores = new FakeStores();
-		revision = new FakeRevision();
 	}
 
 	private DcatGraphServiceImpl graph() {
-		DcatGraphServiceImpl graph = new DcatGraphServiceImpl(IDENTITY_IRIS, stores.catalogService(),
-				stores.datasetService(), stores.seriesService(), stores.dataServiceService(),
-				stores.distributionService(), true, 0L, 0L);
-		graph.setStoreRevision(revision);
-		return graph;
+		return new DcatGraphServiceImpl(IDENTITY_IRIS, stores, true, 0L, 0L);
 	}
 
 	@Test
 	void anUnchangedStoreSkipsTheWork() {
-		revision.value = "commit-1";
+		stores.revision = "commit-1";
 		DcatGraphServiceImpl graph = graph();
 		graph.refresh();
 		// refresh() alone does not record the revision - the tick around it does.
@@ -109,12 +87,12 @@ class StoreRevisionReconcileTest {
 
 	@Test
 	void aMovedStoreIsReconciled() {
-		revision.value = "commit-1";
+		stores.revision = "commit-1";
 		DcatGraphServiceImpl graph = graph();
 		graph.reconcileQuietly();
 		int readsAfterFirstTick = stores.catalogReads;
 
-		revision.value = "commit-2";
+		stores.revision = "commit-2";
 		graph.reconcileQuietly();
 
 		assertTrue(stores.catalogReads > readsAfterFirstTick,
@@ -122,9 +100,8 @@ class StoreRevisionReconcileTest {
 	}
 
 	@Test
-	void withoutARevisionServiceEveryTickReconciles() {
+	void withoutARevisionEveryTickReconciles() {
 		DcatGraphServiceImpl graph = graph();
-		graph.unsetStoreRevision(revision);
 		graph.reconcileQuietly();
 		int readsAfterFirstTick = stores.catalogReads;
 
@@ -136,7 +113,7 @@ class StoreRevisionReconcileTest {
 
 	@Test
 	void anUnreadableRevisionFallsBackToReconciling() {
-		revision.failure = new IllegalStateException("repository unreachable");
+		stores.revisionFailure = new IllegalStateException("repository unreachable");
 		DcatGraphServiceImpl graph = graph();
 		graph.reconcileQuietly();
 		int readsAfterFirstTick = stores.catalogReads;
@@ -151,7 +128,7 @@ class StoreRevisionReconcileTest {
 	void anEmptyRevisionIsNeverTreatedAsUnchanged() {
 		// A store with no content reports no version. Two such answers are not evidence
 		// that nothing changed - they are two absences of evidence.
-		revision.value = null;
+		stores.revision = null;
 		DcatGraphServiceImpl graph = graph();
 		graph.reconcileQuietly();
 		int readsAfterFirstTick = stores.catalogReads;

@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,8 +27,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,11 +60,21 @@ public class ReferenceIntegrityIntegrationTest {
 
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
-	@InjectService
-	CatalogAdminService catalogs;
 
+
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
 	@InjectService
-	DatasetAdminService datasets;
+	DcatAdminService dcatAdminService;
+
+	private CatalogAdminHandler catalogs() {
+		return dcatAdminService.getCatalogAdminHandler();
+	}
+
+	private DatasetAdminHandler datasets() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
 
 	@BeforeEach
 	void ready(@InjectBundleContext BundleContext context) throws InterruptedException {
@@ -74,10 +85,10 @@ public class ReferenceIntegrityIntegrationTest {
 	@AfterEach
 	void cleanup() {
 		// Unlink before deleting: FR-1 refuses to delete a still-referenced dataset.
-		catalogs.getCatalog(CATALOG_ID).ifPresent(unused -> catalogs.deleteDatasetFromCatalog(CATALOG_ID, DATASET_ID,
+		catalogs().getCatalog(CATALOG_ID).ifPresent(unused -> catalogs().deleteDatasetFromCatalog(CATALOG_ID, DATASET_ID,
 				Caller.ANONYMOUS));
-		catalogs.deleteCatalog(CATALOG_ID, false, Caller.ANONYMOUS);
-		datasets.deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
+		catalogs().deleteCatalog(CATALOG_ID, false, Caller.ANONYMOUS);
+		datasets().deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	@Test
@@ -88,7 +99,7 @@ public class ReferenceIntegrityIntegrationTest {
 				  <dataset href="http://dcat.atlas/datasets/%s#/"/>""".formatted(DATASET_ID));
 
 		assertTrue(put.statusCode() < 300, put.statusCode() + " " + put.body());
-		assertEquals(1, catalogs.getCatalog(CATALOG_ID).orElseThrow().getDataset().size());
+		assertEquals(1, catalogs().getCatalog(CATALOG_ID).orElseThrow().getDataset().size());
 		assertEquals("Original title", storedMemberTitle());
 	}
 
@@ -106,25 +117,25 @@ public class ReferenceIntegrityIntegrationTest {
 				  </dataset>""".formatted(DATASET_ID));
 
 		assertTrue(put.statusCode() < 300, put.statusCode() + " " + put.body());
-		assertEquals(1, catalogs.getCatalog(CATALOG_ID).orElseThrow().getDataset().size(),
+		assertEquals(1, catalogs().getCatalog(CATALOG_ID).orElseThrow().getDataset().size(),
 				"the inline member must be linked, not dropped");
 		// It is a reference, so the stored dataset keeps its own content: an inline body is
 		// not a back-door write to another resource.
 		assertEquals("Original title", storedMemberTitle());
-		assertEquals("Original title", datasets.getDataset(DATASET_ID).orElseThrow().getTitle().get(0).getValue());
+		assertEquals("Original title", datasets().getDataset(DATASET_ID).orElseThrow().getTitle().get(0).getValue());
 	}
 
 	@Test
 	void inlineMemberIsNotStoredTwice() throws Exception {
 		seedDataset();
-		int before = datasets.listDatasets().size();
+		int before = datasets().listDatasets().size();
 
 		putCatalog("""
 				  <dataset about="http://dcat.atlas/datasets/%s">
 				    <title lang="en" value="Inline title"/>
 				  </dataset>""".formatted(DATASET_ID));
 
-		assertEquals(before, datasets.listDatasets().size(), "linking must not mint a second dataset");
+		assertEquals(before, datasets().listDatasets().size(), "linking must not mint a second dataset");
 	}
 
 	@Test
@@ -137,7 +148,7 @@ public class ReferenceIntegrityIntegrationTest {
 		// this is that rule on the write side. 404 would be wrong — the request target (the
 		// catalog) is fine, it is the body that names something missing.
 		assertEquals(409, put.statusCode(), put.body());
-		assertTrue(catalogs.getCatalog(CATALOG_ID).isEmpty(), "nothing should have been stored");
+		assertTrue(catalogs().getCatalog(CATALOG_ID).isEmpty(), "nothing should have been stored");
 	}
 
 	/**
@@ -167,7 +178,7 @@ public class ReferenceIntegrityIntegrationTest {
 				  <dataset href="https://someone-else.example/datasets/air#/"/>""");
 
 		assertTrue(put.statusCode() < 300, put.statusCode() + " " + put.body());
-		assertTrue(catalogs.getCatalog(CATALOG_ID).isPresent());
+		assertTrue(catalogs().getCatalog(CATALOG_ID).isPresent());
 	}
 
 	@Test
@@ -184,13 +195,13 @@ public class ReferenceIntegrityIntegrationTest {
 		// FR-1 is documented as 409; without a mapper the ResourceInUseException escapes as
 		// a 500 and the client cannot tell a refusal from a crash.
 		assertEquals(409, delete.statusCode(), delete.body());
-		assertFalse(datasets.getDataset(DATASET_ID).isEmpty(), "the dataset must survive a refused delete");
+		assertFalse(datasets().getDataset(DATASET_ID).isEmpty(), "the dataset must survive a refused delete");
 	}
 
 	// --- helpers -----------------------------------------------------------
 
 	private String storedMemberTitle() {
-		return catalogs.getCatalog(CATALOG_ID).orElseThrow().getDataset().get(0).getTitle().get(0).getValue();
+		return catalogs().getCatalog(CATALOG_ID).orElseThrow().getDataset().get(0).getTitle().get(0).getValue();
 	}
 
 	private void seedDataset() throws Exception {

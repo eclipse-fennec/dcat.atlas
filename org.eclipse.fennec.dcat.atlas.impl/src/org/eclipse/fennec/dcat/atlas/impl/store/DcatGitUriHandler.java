@@ -45,7 +45,7 @@ import org.eclipse.fennec.jgit.exceptions.GitFileNotFoundException;
  * {@code createOutputStream} stages the bytes in the session's {@link PendingChanges} and
  * commits nothing. One {@code close()} must not be one commit: EMF closes a stream per
  * resource, and an operation is frequently several resources that have to land together.
- * The session decides when to commit; see {@code DcatHelper.Store#commit}.
+ * The session decides when to commit; see {@code DcatStoreSession#commit}.
  * <p>
  * This is the first writable git handler in the ecosystem — model.atlas's
  * {@code GitURIHandler} and its ancestor in jena-MDO both refuse to write. The

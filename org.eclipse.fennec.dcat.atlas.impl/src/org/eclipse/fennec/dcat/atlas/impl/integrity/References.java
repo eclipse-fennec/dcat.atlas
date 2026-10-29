@@ -17,9 +17,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Optional;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.EList;
@@ -29,7 +29,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
 import org.eclipse.fennec.dcat.atlas.api.integrity.DanglingReferenceException;
 import org.eclipse.fennec.dcat.atlas.api.integrity.ResourceInUseException;
-import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
+import org.eclipse.fennec.dcat.atlas.api.store.DcatStoreSession;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 
 /**
@@ -81,7 +81,7 @@ public final class References {
 	 * @throws ResourceInUseException if something still references the target and
 	 *                                {@code cascade} is {@code false}
 	 */
-	public static List<String> detach(Store store, String collection, String id, boolean cascade) {
+	public static List<String> detach(DcatStoreSession store, String collection, String id, boolean cascade) {
 		String targetIri = StoreLayout.logicalIri(collection, id);
 		List<Referrer> referrers = referrersTo(store, targetIri);
 		if (referrers.isEmpty()) {
@@ -99,6 +99,8 @@ public final class References {
 		}
 		return iris;
 	}
+	
+	
 
 	/**
 	 * Refuses a write that would store a link to an identity of ours that is not there —
@@ -112,7 +114,7 @@ public final class References {
 	 *
 	 * @throws DanglingReferenceException if any link names a missing identity of ours
 	 */
-	public static void requireResolvable(Store store, EObject entity) {
+	public static void requireResolvable(DcatStoreSession store, EObject entity) {
 		Set<String> missing = new LinkedHashSet<>();
 		for (EObject object : withContents(entity)) {
 			for (EReference reference : nonContainmentRefs(object)) {
@@ -153,7 +155,7 @@ public final class References {
 	 *
 	 * @return the referenced resources, each once, in encounter order
 	 */
-	public static List<EObject> referenced(Store store, EObject entity) {
+	public static List<EObject> referenced(DcatStoreSession store, EObject entity) {
 		Map<String, EObject> resolved = new LinkedHashMap<>();
 		for (EObject object : withContents(entity)) {
 			for (EReference reference : nonContainmentRefs(object)) {
@@ -167,8 +169,8 @@ public final class References {
 		return List.copyOf(resolved.values());
 	}
 
-	/** The stored resource {@code iri} names, if it is one of ours and it is there. */
-	private static Optional<EObject> ourResource(Store store, String iri) {
+
+	private static Optional<EObject> ourResource(DcatStoreSession store, String iri) {
 		for (String collection : StoreLayout.COLLECTIONS) {
 			String id = StoreLayout.idOf(collection, iri);
 			if (id != null) {
@@ -177,9 +179,8 @@ public final class References {
 		}
 		return Optional.empty();
 	}
-
-	/** True when {@code iri} names a resource in one of our collections and it is absent. */
-	private static boolean isMissingIdentityOfOurs(Store store, String iri) {
+	
+	private static boolean isMissingIdentityOfOurs(DcatStoreSession store, String iri) {
 		for (String collection : StoreLayout.COLLECTIONS) {
 			String id = StoreLayout.idOf(collection, iri);
 			if (id != null) {
@@ -189,8 +190,7 @@ public final class References {
 		return false;
 	}
 
-	/** The stored roots that link to {@code targetIri}, each reported once. */
-	private static List<Referrer> referrersTo(Store store, String targetIri) {
+	private static List<Referrer> referrersTo(DcatStoreSession store, String targetIri) {
 		List<Referrer> referrers = new ArrayList<>();
 		for (String collection : StoreLayout.COLLECTIONS) {
 			// Through the session, so a scan sees what the operation running it has already
@@ -220,7 +220,8 @@ public final class References {
 	}
 
 	/** Removes every link to {@code targetIri} from {@code owner}, then saves it. */
-	private static void unlinkAll(EObject owner, String targetIri, Store store) {
+	
+	private static void unlinkAll(EObject owner, String targetIri, DcatStoreSession store) {
 		boolean changed = false;
 		for (EObject object : withContents(owner)) {
 			for (EReference reference : nonContainmentRefs(object)) {
@@ -231,7 +232,7 @@ public final class References {
 			// A removal, and the one that must never be refused: this is what makes a cascade
 			// delete possible, so validating it would leave the dangling reference the cascade
 			// exists to prevent. It also keeps the non-resolving discipline above intact --
-			// validation would resolve and serialize the whole owner. See Store.saveRemoval.
+			// validation would resolve and serialize the whole owner. See DcatStoreSession.saveRemoval.
 			store.saveRemoval(owner);
 		}
 	}

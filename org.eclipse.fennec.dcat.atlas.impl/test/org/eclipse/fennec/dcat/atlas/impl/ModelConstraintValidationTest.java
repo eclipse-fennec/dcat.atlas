@@ -13,6 +13,8 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.impl.handler.DataServiceAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 
@@ -73,12 +75,12 @@ public class ModelConstraintValidationTest {
 	@TempDir
 	Path storage;
 
-	private DatasetAdminServiceImpl datasets(boolean validateOnWrite) {
-		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, validateOnWrite));
+	private DatasetAdminHandlerImpl datasets(boolean validateOnWrite) {
+		return new DatasetAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage, validateOnWrite));
 	}
 
-	private DataServiceAdminServiceImpl dataServices(boolean validateOnWrite) {
-		return TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, validateOnWrite));
+	private DataServiceAdminHandlerImpl dataServices(boolean validateOnWrite) {
+		return new DataServiceAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage, validateOnWrite));
 	}
 
 	// --- what a conformant entity looks like --------------------------------

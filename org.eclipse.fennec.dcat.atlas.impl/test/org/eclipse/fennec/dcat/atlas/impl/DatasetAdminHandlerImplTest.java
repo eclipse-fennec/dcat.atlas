@@ -1,0 +1,126 @@
+/**
+ * Copyright (c) 2012 - 2026 Data In Motion and others.
+ * All rights reserved.
+ *
+ * This program and the accompanying materials are made
+ * available under the terms of the Eclipse Public License 2.0
+ * which is available at https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Data In Motion - initial API and implementation
+ */
+package org.eclipse.fennec.dcat.atlas.impl;
+
+import dcat.Distribution;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.api.access.Caller;
+import java.nio.file.Path;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import dcat.Dataset;
+import dcat.DcatFactory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Round-trips the file-backed dataset store (admin impl, which also covers the
+ * inherited read operations).
+ */
+public class DatasetAdminHandlerImplTest {
+
+	private static final String BASE = org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout.LOGICAL_BASE + "datasets/";
+
+	@TempDir
+	Path storage;
+
+	private DatasetAdminHandlerImpl service() {
+		return new DatasetAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
+	}
+
+	@Test
+	void upsertThenGetReturnsEquivalentDataset() {
+		service().upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
+
+		Optional<Dataset> loaded = service().getDataset("air");
+		assertTrue(loaded.isPresent());
+		assertEquals(BASE + "air", loaded.get().getAbout());
+		assertEquals("Air quality", loaded.get().getTitle().get(0).getValue());
+	}
+
+	@Test
+	void listReturnsEveryStoredDataset() {
+		DatasetAdminHandlerImpl service = service();
+		service.upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
+		service.upsertDataset(dataset(BASE + "water", "Water quality"), Caller.ANONYMOUS);
+		assertEquals(2, service.listDatasets().size());
+	}
+
+	@Test
+	void getUnknownIsEmpty() {
+		assertTrue(service().getDataset("does-not-exist").isEmpty());
+	}
+
+	@Test
+	void deleteRemovesTheDataset() {
+		DatasetAdminHandlerImpl service = service();
+		service.upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
+		service.deleteDataset("air", false, Caller.ANONYMOUS);
+		assertTrue(service.getDataset("air").isEmpty());
+	}
+
+	@Test
+	void mintsIdWhenAboutMissing() {
+		DatasetAdminHandlerImpl service = service();
+		service.upsertDataset(dataset(null, "Untitled about"), Caller.ANONYMOUS);
+		assertEquals(1, service.listDatasets().size());
+	}
+
+	@Test
+	void etagIsEmptyWhenMissing() {
+		assertTrue(service().etag("does-not-exist").isEmpty());
+	}
+
+	@Test
+	void etagIsStableAcrossReadsAndChangesWithContent() {
+		DatasetAdminHandlerImpl service = service();
+		service.upsertDataset(dataset(BASE + "air", "Air quality"), Caller.ANONYMOUS);
+		String first = service.etag("air").orElseThrow();
+		// Same stored bytes -> same validator.
+		assertEquals(first, service.etag("air").orElseThrow());
+
+		// Changed content -> different validator.
+		service.upsertDataset(dataset(BASE + "air", "Air quality (v2)"), Caller.ANONYMOUS);
+		assertNotEquals(first, service.etag("air").orElseThrow());
+	}
+
+	/** A conformant Dataset: title, description and publisher, per DCAT-AP.de §4.3. */
+	private static Dataset dataset(String about, String title) {
+		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
+		if (about != null) {
+			dataset.setAbout(about);
+		}
+		return TestEntities.mandatoryDataset(dataset, title);
+	}
+
+	@Test
+	void anEmbeddedDistributionGetsItsFormatFromTheMediaType() {
+		// Issue #68, on the dataset write path: a Distribution sent inside its Dataset is
+		// completed exactly like one sent on its own.
+		Dataset sent = dataset(BASE + "air", "Air quality");
+		Distribution distribution = DcatFactory.eINSTANCE.createDistribution();
+		distribution.setAbout(BASE + "air/distributions/csv");
+		distribution.setMediaType("http://www.iana.org/assignments/media-types/text/csv");
+		sent.getDistribution().add(TestEntities.mandatoryDistribution(distribution));
+		service().upsertDataset(sent, Caller.ANONYMOUS);
+
+		Dataset loaded = service().getDataset("air").orElseThrow();
+		assertEquals("http://publications.europa.eu/resource/authority/file-type/CSV",
+				loaded.getDistribution().get(0).getFormat());
+	}
+}

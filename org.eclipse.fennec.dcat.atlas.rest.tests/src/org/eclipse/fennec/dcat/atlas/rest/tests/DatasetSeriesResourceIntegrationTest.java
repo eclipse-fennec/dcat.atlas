@@ -13,14 +13,15 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.http.HttpResponse;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetSeriesAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetSeriesAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -32,12 +33,8 @@ import dcat.DcatFactory;
 
 public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
-	@InjectService
-	DatasetSeriesAdminService service;
 
 	/** Series membership materialises as {@code dcat:inSeries} on the Dataset, so we inspect the dataset store. */
-	@InjectService
-	DatasetAdminService datasetService;
 
 	@Override
 	protected String collection() {
@@ -65,22 +62,22 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		// Seeded the way the store mints identities: logical, not the request URL.
 		series.setAbout(DcatIds.logicalIri(DcatIds.DATASET_SERIES, id));
 		RestEntities.mandatoryDataset(series, title);
-		service.upsertDatasetSeries(series, Caller.ANONYMOUS);
+		service().upsertDatasetSeries(series, Caller.ANONYMOUS);
 	}
 
 	@Override
 	protected boolean storedPresent(String id) {
-		return service.getDatasetSeries(id).isPresent();
+		return service().getDatasetSeries(id).isPresent();
 	}
 
 	@Override
 	protected String storedTitle(String id) {
-		return service.getDatasetSeries(id).get().getTitle().get(0).getValue();
+		return service().getDatasetSeries(id).get().getTitle().get(0).getValue();
 	}
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteDatasetSeries(id, false, Caller.ANONYMOUS);
+		service().deleteDatasetSeries(id, false, Caller.ANONYMOUS);
 	}
 
 	// --- FR-11 series membership -------------------------------------------
@@ -89,7 +86,21 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 
 	@AfterEach
 	void removeMemberDataset() {
-		datasetService.deleteDataset(MEMBER_DATASET_ID, false, Caller.ANONYMOUS);
+		datasetService().deleteDataset(MEMBER_DATASET_ID, false, Caller.ANONYMOUS);
+	}
+
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
+	@InjectService
+	DcatAdminService dcatAdminService;
+
+	private DatasetSeriesAdminHandler service() {
+		return dcatAdminService.getDataSeriesAdminHandler();
+	}
+
+	private DatasetAdminHandler datasetService() {
+		return dcatAdminService.getDatasetAdminHandler();
 	}
 
 	@Test
@@ -101,13 +112,13 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		HttpResponse<String> add = postXmi(writes() + "/series1/datasets",
 				xmiBody("Dataset", datasetAbout, "NO2"));
 		assertEquals(200, add.statusCode(), add.body());
-		assertEquals(1, datasetService.getDataset(MEMBER_DATASET_ID).get().getInSeries().size());
-		assertTrue(datasetService.getDataset(MEMBER_DATASET_ID).get().getInSeries().get(0).getAbout()
+		assertEquals(1, datasetService().getDataset(MEMBER_DATASET_ID).get().getInSeries().size());
+		assertTrue(datasetService().getDataset(MEMBER_DATASET_ID).get().getInSeries().get(0).getAbout()
 				.endsWith("/series1"));
 
 		HttpResponse<String> remove = delete(writes() + "/series1/datasets/" + MEMBER_DATASET_ID);
 		assertEquals(204, remove.statusCode());
-		assertTrue(datasetService.getDataset(MEMBER_DATASET_ID).get().getInSeries().isEmpty());
+		assertTrue(datasetService().getDataset(MEMBER_DATASET_ID).get().getInSeries().isEmpty());
 	}
 
 	/**
@@ -131,9 +142,9 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		assertEquals(BASE + "/datasets/" + MEMBER_DATASET_ID, refused.headers().firstValue("Location").orElse(null),
 				"...and Location at the dataset that is in the way");
 		assertEquals("NO2 measurements",
-				datasetService.getDataset(MEMBER_DATASET_ID).get().getTitle().get(0).getValue(),
+				datasetService().getDataset(MEMBER_DATASET_ID).get().getTitle().get(0).getValue(),
 				"the refused POST must not have rewritten the dataset");
-		assertTrue(datasetService.getDataset(MEMBER_DATASET_ID).get().getInSeries().isEmpty(),
+		assertTrue(datasetService().getDataset(MEMBER_DATASET_ID).get().getInSeries().isEmpty(),
 				"and must not have linked it either");
 	}
 
@@ -155,15 +166,15 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		HttpResponse<String> link = putEmpty(writes() + "/series1/datasets/" + MEMBER_DATASET_ID);
 
 		assertEquals(200, link.statusCode(), link.body());
-		assertEquals(1, datasetService.getDataset(MEMBER_DATASET_ID).get().getInSeries().size());
+		assertEquals(1, datasetService().getDataset(MEMBER_DATASET_ID).get().getInSeries().size());
 		// The point of linking: the dataset keeps its own content. A POST of a stub to the
 		// collection would have replaced it, title and all.
 		assertEquals("NO2 measurements",
-				datasetService.getDataset(MEMBER_DATASET_ID).get().getTitle().get(0).getValue());
+				datasetService().getDataset(MEMBER_DATASET_ID).get().getTitle().get(0).getValue());
 
 		HttpResponse<String> remove = delete(writes() + "/series1/datasets/" + MEMBER_DATASET_ID);
 		assertEquals(204, remove.statusCode());
-		assertTrue(datasetService.getDataset(MEMBER_DATASET_ID).get().getInSeries().isEmpty());
+		assertTrue(datasetService().getDataset(MEMBER_DATASET_ID).get().getInSeries().isEmpty());
 	}
 
 	@Test
@@ -188,6 +199,6 @@ public class DatasetSeriesResourceIntegrationTest extends AbstractEntityResource
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, MEMBER_DATASET_ID));
 		RestEntities.mandatoryDataset(dataset, title);
-		datasetService.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasetService().upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

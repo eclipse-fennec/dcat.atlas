@@ -23,9 +23,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntime;
 import org.eclipse.fennec.dcat.atlas.api.runtime.DcatAtlasRuntimeDTO;
@@ -66,14 +67,24 @@ import dcat.DcatFactory;
 @ExtendWith(ServiceExtension.class)
 public class RuntimeServiceIntegrationTest {
 
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
+	@InjectService
+	DcatAdminService dcatAdminService;
+
+	private DatasetAdminHandler datasets() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
+
+	private CatalogAdminHandler catalogs() {
+		return dcatAdminService.getCatalogAdminHandler();
+	}
+
 	@InjectService
 	DcatAtlasRuntime runtime;
 
-	@InjectService
-	DatasetAdminService datasets;
 
-	@InjectService
-	CatalogAdminService catalogs;
 
 	/** Long enough for a posted event to be delivered on an unloaded machine, short enough to fail. */
 	private static final Duration DELIVERY = Duration.ofSeconds(5);
@@ -85,7 +96,7 @@ public class RuntimeServiceIntegrationTest {
 	void removeWhatThisTestWrote() {
 		if (catalogWritten != null) {
 			try {
-				catalogs.deleteCatalog(catalogWritten, true, Caller.ANONYMOUS);
+				catalogs().deleteCatalog(catalogWritten, true, Caller.ANONYMOUS);
 			} catch (RuntimeException alreadyGone) {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
@@ -93,7 +104,7 @@ public class RuntimeServiceIntegrationTest {
 		}
 		if (written != null) {
 			try {
-				datasets.deleteDataset(written, true, Caller.ANONYMOUS);
+				datasets().deleteDataset(written, true, Caller.ANONYMOUS);
 			} catch (RuntimeException alreadyGone) {
 				// The store is shared with the live runtime; cleaning up is best effort.
 			}
@@ -209,7 +220,7 @@ public class RuntimeServiceIntegrationTest {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, written));
 		RestEntities.mandatoryDataset(dataset, "Runtime service probe");
-		datasets.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset, Caller.ANONYMOUS);
 		awaitDelivery(() -> runtime.snapshot().changeCount > before.changeCount,
 				"a commit has to reach the inventory");
 
@@ -241,20 +252,20 @@ public class RuntimeServiceIntegrationTest {
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, written));
 		RestEntities.mandatoryDataset(dataset, "Runtime service probe");
-		datasets.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasets().upsertDataset(dataset, Caller.ANONYMOUS);
 
 		catalogWritten = "runtime-cat-" + UUID.randomUUID();
 		Catalog catalog = DcatFactory.eINSTANCE.createCatalog();
 		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, catalogWritten));
 		RestEntities.mandatoryDataset(catalog, "Runtime service probe");
-		catalogs.upsertCatalog(catalog, Caller.ANONYMOUS);
+		catalogs().upsertCatalog(catalog, Caller.ANONYMOUS);
 		long beforeTheLink = awaitQuiet();
 
-		catalogs.linkDatasetToCatalog(catalogWritten, written, Caller.ANONYMOUS);
+		catalogs().linkDatasetToCatalog(catalogWritten, written, Caller.ANONYMOUS);
 		awaitDelivery(() -> runtime.snapshot().changeCount > beforeTheLink, "the link to be announced");
 		long settled = awaitQuiet();
 
-		catalogs.linkDatasetToCatalog(catalogWritten, written, Caller.ANONYMOUS);
+		catalogs().linkDatasetToCatalog(catalogWritten, written, Caller.ANONYMOUS);
 
 		// Nothing to wait for: the assertion is that nothing is coming. Give delivery the
 		// window it would have had, so a regression fails here rather than racing past.

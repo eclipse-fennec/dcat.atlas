@@ -13,17 +13,10 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.felix.hc.api.FormattingResultLog;
 import org.apache.felix.hc.api.HealthCheck;
 import org.apache.felix.hc.api.Result;
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetSeriesAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -35,16 +28,22 @@ import org.osgi.service.component.annotations.ReferencePolicy;
  *
  * <h2>The failure it exists to name</h2>
  *
- * An operator can require SHACL enforcement by raising the admin services' validation
- * reference to a mandatory minimum — {@code validationService.cardinality.minimum=1}. That
- * is the right switch: without a {@link DcatValidationService} the admin components stay
- * unsatisfied and no write can slip through unvalidated. But the symptom is unhelpful. The
- * JAX-RS whiteboard unregisters an admin resource whose service reference cannot be
- * satisfied, so {@code POST /admin/datasets} answers <b>404</b> — indistinguishable from a
- * mistyped URL — while the read endpoints keep serving normally.
+ * A deployment can hold the write side to a promise it would otherwise break silently: a
+ * store configured with {@code validateOnWrite} refuses to start without a
+ * {@link DcatValidationService}, and a {@code DcatAdminService} configured with
+ * {@code sparqlSupported} refuses to start without a projection. Those are the right
+ * switches — nothing slips through unchecked. But the symptom is unhelpful. The JAX-RS
+ * whiteboard unregisters an admin resource whose service reference cannot be satisfied, so
+ * {@code POST /admin/datasets} answers <b>404</b> — indistinguishable from a mistyped URL —
+ * while the read endpoints keep serving normally.
  * <p>
- * This check turns that into a sentence: which admin services are missing, and whether the
- * validation service they were configured to require is the reason.
+ * This check turns that into a sentence: that the write side is missing, and where to look.
+ *
+ * <h2>One service, not five</h2>
+ *
+ * The handlers behind {@link DcatAdminService} are plain objects built by it, so they
+ * arrive and leave together. There is no longer a state in which catalogs can be written
+ * and datasets cannot, and the check no longer pretends there is.
  *
  * <h2>CRITICAL, not WARN</h2>
  *
@@ -53,77 +52,25 @@ import org.osgi.service.component.annotations.ReferencePolicy;
  * per-collection store checks, and the opposite of the SPARQL projection's WARN, where
  * REST still serves the data.
  * <p>
- * All references are optional and dynamic; a check that could itself go unsatisfied would
+ * Both references are optional and dynamic; a check that could itself go unsatisfied would
  * vanish exactly when it is needed.
  */
 @Component(name = "DcatAdminWriteHealthCheck", service = HealthCheck.class, property = {
 		HealthCheck.NAME + "=admin-write", HealthCheck.TAGS + "=ready" })
 public class AdminWriteHealthCheck implements HealthCheck {
 
-	@Reference(name = "catalogs", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	void setCatalogs(CatalogAdminService catalogs) {
-		this.catalogs = catalogs;
+	@Reference(name = "dcatAdminService", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
+	void setDcatAdminService(DcatAdminService dcatAdminService) {
+		this.dcatAdminService = dcatAdminService;
 	}
 
-	void unsetCatalogs(CatalogAdminService catalogs) {
-		if (this.catalogs == catalogs) {
-			this.catalogs = null;
+	void unsetDcatAdminService(DcatAdminService dcatAdminService) {
+		if (this.dcatAdminService == dcatAdminService) {
+			this.dcatAdminService = null;
 		}
 	}
 
-	private volatile CatalogAdminService catalogs;
-
-	@Reference(name = "datasets", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	void setDatasets(DatasetAdminService datasets) {
-		this.datasets = datasets;
-	}
-
-	void unsetDatasets(DatasetAdminService datasets) {
-		if (this.datasets == datasets) {
-			this.datasets = null;
-		}
-	}
-
-	private volatile DatasetAdminService datasets;
-
-	@Reference(name = "datasetSeries", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	void setDatasetSeries(DatasetSeriesAdminService datasetSeries) {
-		this.datasetSeries = datasetSeries;
-	}
-
-	void unsetDatasetSeries(DatasetSeriesAdminService datasetSeries) {
-		if (this.datasetSeries == datasetSeries) {
-			this.datasetSeries = null;
-		}
-	}
-
-	private volatile DatasetSeriesAdminService datasetSeries;
-
-	@Reference(name = "dataServices", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	void setDataServices(DataServiceAdminService dataServices) {
-		this.dataServices = dataServices;
-	}
-
-	void unsetDataServices(DataServiceAdminService dataServices) {
-		if (this.dataServices == dataServices) {
-			this.dataServices = null;
-		}
-	}
-
-	private volatile DataServiceAdminService dataServices;
-
-	@Reference(name = "distributions", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	void setDistributions(DistributionAdminService distributions) {
-		this.distributions = distributions;
-	}
-
-	void unsetDistributions(DistributionAdminService distributions) {
-		if (this.distributions == distributions) {
-			this.distributions = null;
-		}
-	}
-
-	private volatile DistributionAdminService distributions;
+	private volatile DcatAdminService dcatAdminService;
 
 	@Reference(name = "validation", cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
 	void setValidation(DcatValidationService validation) {
@@ -141,33 +88,27 @@ public class AdminWriteHealthCheck implements HealthCheck {
 	@Override
 	public Result execute() {
 		FormattingResultLog log = new FormattingResultLog();
-		List<String> missing = new ArrayList<>();
-		record Entry(String name, Object service) {
-		}
-		for (Entry entry : List.of(new Entry("catalogs", catalogs), new Entry("datasets", datasets),
-				new Entry("dataset-series", datasetSeries), new Entry("data-services", dataServices),
-				new Entry("distributions", distributions))) {
-			if (entry.service() == null) {
-				missing.add(entry.name());
-			}
-		}
-
-		if (missing.isEmpty()) {
-			log.info("all five admin write services are available");
+		if (dcatAdminService != null) {
+			log.info("the admin write services are available");
 			log.info("SHACL enforcement: {}", enforcementState());
 			return new Result(log);
 		}
 
-		log.critical("admin writes unavailable for: {}", String.join(", ", missing));
-		log.critical("the REST admin endpoints for those collections answer 404, not 503 — the JAX-RS "
-				+ "whiteboard unregisters a resource whose service reference is unsatisfied");
+		log.critical("admin writes are unavailable: no DcatAdminService is registered");
+		log.critical("the REST admin endpoints answer 404, not 503 - the JAX-RS whiteboard "
+				+ "unregisters a resource whose service reference is unsatisfied");
+		log.critical("check, in this order: that a DcatAdminService configuration exists at all "
+				+ "(the component is ConfigurationPolicy.REQUIRE, so without one it never starts); "
+				+ "that its storeService.target matches a DcatStoreService that is itself satisfied; "
+				+ "and that any reference it was configured to require is bound");
 		if (validation == null) {
-			log.critical("no DcatValidationService is registered; if the admin services were configured with "
-					+ "validationService.cardinality.minimum=1 this is the cause — check that the validation "
+			log.critical("no DcatValidationService is registered either; if the store was configured with "
+					+ "validateOnWrite and validationService.cardinality.minimum=1 then the store is "
+					+ "unsatisfied and the admin service is waiting on it - check that the validation "
 					+ "bundle is present and its shapes directory is readable");
 		} else {
-			log.critical("a DcatValidationService IS registered, so the cause is elsewhere: check the store "
-					+ "directory and the admin components in the SCR console");
+			log.critical("a DcatValidationService IS registered, so the cause is elsewhere: check the "
+					+ "DcatAdminService and DcatGitStoreService components in the SCR console");
 		}
 		return new Result(log);
 	}

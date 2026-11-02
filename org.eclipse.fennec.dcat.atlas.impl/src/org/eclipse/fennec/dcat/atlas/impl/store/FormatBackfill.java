@@ -32,7 +32,6 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
-import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.metatype.annotations.Designate;
 
 /**
@@ -75,17 +74,19 @@ public class FormatBackfill {
 	 */
 	private final DcatStoreService storeService;
 
-	/** Optional: absent means no SPARQL, and nothing to re-project. */
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	volatile DcatGraphService graphService;
+	private DcatGraphService graphService;
 
-	@Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-	volatile DcatChangeNotifier changeNotifier;
+	private DcatChangeNotifier changeNotifier;
 
 	@Activate
-	public FormatBackfill(@Reference(name = "storeService") DcatStoreService storeService,
+	public FormatBackfill(@Reference(name = "changeNotifier") DcatChangeNotifier changeNotifier,
+			@Reference(name = "storeService") DcatStoreService storeService,
+			@Reference(name = "graphService", cardinality = ReferenceCardinality.OPTIONAL) DcatGraphService graphService,
 			FormatBackfillConfig config) {
+		
 		this(storeService);
+		this.changeNotifier = changeNotifier;
+		this.graphService = graphService;
 		if (!config.enabled()) {
 			LOG.info("[DCAT.Atlas] format backfill disabled by configuration; stored distributions are left as they are.");
 			return;
@@ -99,6 +100,7 @@ public class FormatBackfill {
 					+ "keep their current dct:format until the next start or write: " + failed.getMessage(), failed);
 		}
 	}
+
 
 	/** Package-visible for tests. */
 	FormatBackfill(DcatStoreService storeService) {

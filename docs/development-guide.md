@@ -12,16 +12,16 @@
 | Path | Purpose |
 |---|---|
 | `org.eclipse.fennec.dcat.atlas.dcatap.de.model/` | EMF model bundle for the DCAT-AP.de vocabulary (ecores + generated code + tests). |
-| `org.eclipse.fennec.dcat.atlas.api/` | OSGi service API — per-entity read-only + admin service interfaces (EMF-typed). |
-| `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations — file-backed store; one read-only + admin component per entity; shared `helper.DcatHelper`. Also the write boundary's model validation (`helper.ModelValidation`), which runs the ecore's multiplicities and OCL invariants through EMF's `Diagnostician`. |
+| `org.eclipse.fennec.dcat.atlas.api/` | OSGi service API. Two services — `read.DcatReadOnlyService` and `admin.DcatAdminService` — each handing out the per-entity handler interfaces (`*ReadOnlyHandler` / `*AdminHandler`, EMF-typed) that are plain objects rather than services. Also the storage contract (`store.DcatStoreService` / `DcatStoreSession`), the runtime DTOs, and the exception types the REST layer maps. |
+| `org.eclipse.fennec.dcat.atlas.impl/` | Service implementations. `store.DcatGitStoreService` is the git-backed store, opening a `GitStoreSession` per operation; the two facade components build the ten handlers over it. Also the write boundary's model validation (`validation.ModelValidation`), which runs the ecore's multiplicities and OCL invariants through EMF's `Diagnostician`, the referential-integrity and catalogue-record helpers, and the runtime inventory. |
 | `org.eclipse.fennec.dcat.atlas.rest/` | JAX-RS whiteboard resources — read-only (public) + admin (write) resource per entity. |
 | `org.eclipse.fennec.dcat.atlas.msg.body.writer/` | JAX-RS `MessageBodyReader`/`Writer`s for RDF (Turtle, JSON-LD, N3, N-Triples, RDF/XML) via the EMF↔Jena bridge (package `…msg.body.readerwriter`). |
-| `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed), controlled-vocabulary checks, and the Felix health checks behind `/health/*`. |
+| `org.eclipse.fennec.dcat.atlas.validation/` | SHACL validation service (Jena-backed) and the controlled-vocabulary checks. It contributes one Felix health check; the rest of `/health/*` comes from `…impl` and `…sparql`. |
 | `org.eclipse.fennec.dcat.atlas.sparql/` | The in-memory RDF projection of the file store and the SPARQL endpoint over it (WP-DCAT-5 Phase 1). Nothing exported — Jena query types stay inside. |
 | `org.eclipse.fennec.dcat.atlas.telemetry/` | OpenTelemetry gauges over the runtime snapshot. Optional in both directions: nothing in the serving path requires it, and it requires no part of the portal beyond `…api.runtime`. Only in `local.bndrun`; adding it to a deployment is that deployment's decision. |
 | `org.eclipse.fennec.shacl.model/` | EMF model bundle for the SHACL vocabulary (used by the validation-report representation). |
 | `org.eclipse.fennec.dcat.atlas.runtime/` | bnd run descriptors: `base.bndrun` (framework + all bundles), `local.bndrun`, `docker.bndrun`, `secrets.bndrun`. Exports the executable jars. |
-| `org.eclipse.fennec.dcat.atlas.config.local/` | OSGi configuration for local development (HTTP on `8085`, store under `/tmp/rdf`). |
+| `org.eclipse.fennec.dcat.atlas.config.local/` | OSGi configuration for local development (HTTP on `8085`, store in the bare repository `/tmp/dcat-store.git`). |
 | `org.eclipse.fennec.dcat.atlas.config.docker/` | OSGi configuration for the container — the same settings, but env-driven via the ConfigAdmin interpolation plugin. |
 | `org.eclipse.fennec.dcat.atlas.rest.tests/` | OSGi integration tests (osgi-test + Jersey whiteboard) for the REST pipeline. Uses its own standalone `test.bndrun`, its own HTTP port (`8185`) and its own store (`/tmp/dcat-atlas-test-store`) — it must never share the local runtime's, since its cleanup deletes fixed ids whether or not it created them. |
 | `docker/` | Container packaging: `dcatatlas/` (Dockerfile + `prepareDocker` staging task), `dockercompose/`, and `docker/README.md`. |
@@ -86,6 +86,16 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 ---
 
 ## Change log
+
+**2026-10-29— #64 Simplify configuration**
+
+The configuration for dcat was very long and mostly repetitive. We had 5 admin components and 5 read-only components that were all configurable with the same store and validation service. They all had to agree for the deployment to work.
+
+Now the storage itself is a service, we have a git-based implementation and then we have just 2 facade services, one admin and one read-only which simply creates the corresponding dcat classes (now simple handlers). 
+
+The result is a much lighter configuration, and also the consumers have now just to inject the 2 facades services instead of 10 different ones.
+
+
 
 ### 2026-10-28 — #57 and #58 meet, and a test that predated the notifier
 
@@ -430,7 +440,7 @@ unlike the model constraints which ship inside the model and fail closed. An ope
 the strict reading raises the DS reference's minimum cardinality in configuration:
 
 ```json
-"DatasetAdminService": { "validationService.cardinality.minimum:int": 1 }
+"DatasetAdminHandler": { "validationService.cardinality.minimum:int": 1 }
 ```
 
 Verified against the Felix SCR source rather than assumed: `DependencyManager
@@ -452,7 +462,7 @@ go unsatisfied would vanish exactly when it is needed.
 `ValidationReport` — what is under test is the decision (which severities block, what absence
 means), not Jena's engine. `impl/AdminWriteHealthCheckTest` (6) pins the wording, including
 that it does not blame a validation service that is present. `WriteValidationIntegrationTest`
-gained `aDirectServiceCallIsEnforcedToo`, which injects `DatasetAdminService` and calls it with
+gained `aDirectServiceCallIsEnforcedToo`, which injects `DatasetAdminHandler` and calls it with
 no HTTP in sight — before the move it stored the entity. **180 unit + 159 OSGi, green.**
 
 *Build notes.* `…impl` gained Jena on its `-buildpath` (`ValidationReport`, `Severity`) and the
@@ -760,7 +770,7 @@ it conflicts with what is stored. Not 404 — the request target (the catalog) i
 
 ### 2026-08-14 — Membership by reference over HTTP (FR-9)
 
-**The gap.** `CatalogAdminService` has had `linkDatasetToCatalog(catalogId, datasetId)` (and the
+**The gap.** `CatalogAdminHandler` has had `linkDatasetToCatalog(catalogId, datasetId)` (and the
 DataService / sub-catalog equivalents) since FR-9 — link a member that already exists, without
 writing it. Nothing outside tests ever called them: there was **no REST endpoint**. The only
 way to attach a member over HTTP was `POST /admin/catalogs/{id}/datasets` with a body, and
@@ -787,7 +797,7 @@ settles it: the model has exactly **seven** non-containment `EReference`s (`Cata
 `CatalogRecord.primaryTopic`, `DataService.servesDataset`), and `servesDataset` is structurally
 identical to the ones that already had one — multi-valued, non-containment, proxy-resolving. It
 was simply never wired. Now `addDatasetToDataService` / `linkDatasetToDataService` /
-`deleteDatasetFromDataService` on `DataServiceAdminService`, with `POST`, `PUT` and `DELETE`
+`deleteDatasetFromDataService` on `DataServiceAdminHandler`, with `POST`, `PUT` and `DELETE`
 under `/admin/data-services/{id}/datasets`. The reference is declared on the DataService, so the
 DataService is what is edited, what If-Match keys on and what comes back; the Dataset is
 untouched. It is **not** the inverse of `dcat:accessService` — that one says which service gives
@@ -943,7 +953,7 @@ the query engine), `SparqlResource` (`/rest/sparql`) and `SparqlAdminResource`
    caller passed, makes every update idempotent by construction (G3), and — the practical win —
    means a delete needs no read-before-delete: "re-read; absent → drop the named graph" is one
    code path for create, update and delete. A distribution additionally needs its dataset id
-   (`invalidate(entity, parentId, id)`), because `DistributionReadOnlyService` only resolves one
+   (`invalidate(entity, parentId, id)`), because `DistributionReadOnlyHandler` only resolves one
    while its dataset still references it (FR-10).
 3. **The endpoint serializes results itself** (`ResultSetFormatter` / `RDFDataMgr`) instead of
    reusing the DCAT message body writers. Those map *EMF objects* to RDF; a `CONSTRUCT` already
@@ -969,7 +979,7 @@ service with no HTTP involved — a hook in the JAX-RS resource fails exactly th
 **Ordering trap — a distribution must be projected *after* its dataset links it.** `upsert`
 writes the distribution file, then adds the `dcat:distribution` reference to the dataset, and
 only then re-projects. Projecting straight after the file write reads through
-`DistributionReadOnlyService`, which cannot yet resolve it, so the projection would conclude the
+`DistributionReadOnlyHandler`, which cannot yet resolve it, so the projection would conclude the
 resource is gone and drop it.
 
 **Jena 6.1.0 API check (plan risk R6, now discharged).** Verified against the bundled jars:
@@ -1480,7 +1490,7 @@ disk**, which is not always the path resource:
   CRUD; the dataset link is a side effect and already deduped.
 - FR-11 (series membership) → the **dataset** (membership is `dcat:inSeries` on the
   dataset, so the dataset is what changes). `DatasetSeriesAdminResource` therefore
-  `@Reference`s `DatasetReadOnlyService` to read the dataset's ETag, and derives the
+  `@Reference`s `DatasetReadOnlyHandler` to read the dataset's ETag, and derives the
   dataset id from the posted body's `about` (add) or the path (delete).
 
 > Idempotency vs ETags — keep them distinct: "adding the same member twice does
@@ -1509,8 +1519,8 @@ a Catalog (**FR-9**); create/delete Distributions in the context of their Datase
 **Design — the membership methods live on the per-entity admin services, not a
 separate relation service.** The earlier `CatalogRelationService` sketch (id-based
 `link*/unlink*`, never implemented) was **deleted**; the operations now hang off
-`CatalogAdminService`, `DistributionAdminService`/`…ReadOnlyService` and
-`DatasetSeriesAdminService`. Where a relationship is materialised is dictated by
+`CatalogAdminHandler`, `DistributionAdminHandler`/`…ReadOnlyService` and
+`DatasetSeriesAdminHandler`. Where a relationship is materialised is dictated by
 the EMF model (all the relevant references are **containment**, `IS_COMPOSITE`):
 
 - **FR-9 — self-contained in the Catalog.** `Catalog.dataset` (→ `DatasetContainer`
@@ -1527,15 +1537,15 @@ the EMF model (all the relevant references are **containment**, `IS_COMPOSITE`):
   link onto the owning Dataset (and **refuses when the Dataset is absent** —
   `NoSuchElementException` → 404); `delete…FromDataset` removes both link and file.
   `get/listDistributionsForDataset` resolve via the Dataset's links. This means the
-  Distribution services now depend on the Dataset services: `DistributionReadOnlyService`
-  `@Reference`s `DatasetReadOnlyService`, `DistributionAdminService` `@Reference`s
-  `DatasetAdminService` (which *is-a* `DatasetReadOnlyService`, so it also satisfies
+  Distribution services now depend on the Dataset services: `DistributionReadOnlyHandler`
+  `@Reference`s `DatasetReadOnlyHandler`, `DistributionAdminHandler` `@Reference`s
+  `DatasetAdminHandler` (which *is-a* `DatasetReadOnlyHandler`, so it also satisfies
   the inherited read-side dependency of the superclass).
 - **FR-11 — series membership is `inSeries` on the Dataset.** There is no
   `seriesMember` back-reference on `DatasetSeries` in this model; membership is
-  `Dataset.inSeries` (containment). So `DatasetSeriesAdminService.addDatasetToDatasetSeries`
+  `Dataset.inSeries` (containment). So `DatasetSeriesAdminHandler.addDatasetToDatasetSeries`
   edits the Dataset (embeds a copy of the series into `inSeries`) and stores it via
-  the injected `DatasetAdminService`; delete reverses it.
+  the injected `DatasetAdminHandler`; delete reverses it.
 
 **REST surface.**
 
@@ -1544,7 +1554,7 @@ the EMF model (all the relevant references are **containment**, `IS_COMPOSITE`):
 - Distribution is **no longer a root collection** — it is nested under its Dataset:
   read `GET /datasets/{datasetId}/distributions[/{id}]`, write
   `POST|PUT|DELETE /admin/datasets/{datasetId}/distributions[/{id}]`. There is no
-  dataset-less create. The admin resource `@Reference`s `DatasetReadOnlyService`
+  dataset-less create. The admin resource `@Reference`s `DatasetReadOnlyHandler`
   only to answer **404** (instead of a 500 from the thrown `NoSuchElementException`)
   when the parent dataset is unknown. Distribution `about`/`Location` is the nested
   read URL `{base}/datasets/{datasetId}/distributions/{id}` (D1).
@@ -1555,11 +1565,11 @@ the EMF model (all the relevant references are **containment**, `IS_COMPOSITE`):
 - Unit (`…impl/test`): FR-9 cases added to `CatalogAdminServiceImplTest`; FR-11 to
   `DatasetSeriesAdminServiceImplTest`; `DistributionAdminServiceImplTest` rewritten
   for the nested API. The series/distribution tests now build a real
-  `DatasetAdminServiceImpl` over a second `@TempDir` and pass it into the
+  `DatasetAdminHandlerImpl` over a second `@TempDir` and pass it into the
   service-under-test (package-visible constructors gained a `Dataset*Service` param).
 - Integration (`…rest.tests`): base HTTP helpers promoted to `protected` plus a
   generic `rdfXmlBody`/`postRdfXml`/`delete`; FR-9 tests in `CatalogResourceIntegrationTest`,
-  FR-11 in `DatasetSeriesResourceIntegrationTest` (also injects `DatasetAdminService`
+  FR-11 in `DatasetSeriesResourceIntegrationTest` (also injects `DatasetAdminHandler`
   to assert `inSeries` landed on the Dataset). `DistributionResourceIntegrationTest`
   is now **standalone** (does not extend `AbstractEntityResourceIntegrationTest`,
   because the nested resource has no dataset-less create): it seeds a Dataset, then
@@ -1633,7 +1643,7 @@ for now (the JPA/PostgreSQL of **F-10** is still open).
 **Model note — Distribution is root-level.** `DCATAPRoot` has a `distribution`
 feature and `Distribution extends rdf:Resource` (own `about`); a Dataset references
 its distributions **by URI** (`Dataset.distribution : EList<Resource>`), not by
-containment. So `DistributionAdminService` uses the same uniform signature as the
+containment. So `DistributionAdminHandler` uses the same uniform signature as the
 others (`upsertDistribution(Distribution)`, no `datasetId`); the dataset↔distribution
 link is a relationship concern (**FR-10**), not part of `upsert`.
 

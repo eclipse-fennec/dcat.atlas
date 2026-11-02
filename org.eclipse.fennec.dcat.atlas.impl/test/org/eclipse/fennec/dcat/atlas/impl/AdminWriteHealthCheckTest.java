@@ -20,7 +20,7 @@ import org.apache.felix.hc.api.Result;
 import org.apache.felix.hc.api.ResultLog;
 import org.apache.jena.shacl.ValidationReport;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.validation.DcatValidationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -31,10 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The check that explains a write path which has vanished (F-25).
  * <p>
- * Raising {@code validationService.cardinality.minimum=1} is the operator's way to require
+ * Configuring the store with {@code validateOnWrite} is the operator's way to require
  * SHACL enforcement, but its symptom is a bare {@code 404} on the admin endpoints — the
  * JAX-RS whiteboard unregisters a resource whose service reference is unsatisfied. These
  * tests pin the wording that turns that into something actionable.
+ * <p>
+ * There is no per-collection case left to test: the handlers are plain objects built by
+ * one DcatAdminService, so they are all there or none of them is.
  */
 public class AdminWriteHealthCheckTest {
 
@@ -48,25 +51,36 @@ public class AdminWriteHealthCheckTest {
 		Result result = check.execute();
 
 		assertEquals(Status.OK, result.getStatus());
-		assertTrue(messages(result).contains("all five admin write services are available"));
+		assertTrue(messages(result).contains("the admin write services are available"));
 	}
 
 	@Test
-	void aMissingAdminServiceIsCriticalAndNamesTheCollection() {
+	void aMissingAdminServiceIsCritical() {
 		AdminWriteHealthCheck check = check(true);
-		withoutDatasets(check);
+		withoutAdmin(check);
 
 		Result result = check.execute();
 
 		assertEquals(Status.CRITICAL, result.getStatus());
-		assertTrue(messages(result).contains("datasets"), messages(result));
+		assertTrue(messages(result).contains("no DcatAdminService is registered"), messages(result));
+	}
+
+	/** The first thing to check, and the one an operator is most likely to have missed. */
+	@Test
+	void theCriticalMessagePointsAtTheConfiguration() {
+		AdminWriteHealthCheck check = check(true);
+		withoutAdmin(check);
+
+		String messages = messages(check.execute());
+
+		assertTrue(messages.contains("ConfigurationPolicy.REQUIRE"), messages);
 	}
 
 	/** The whole point: say why the endpoint 404s instead of leaving it to be guessed. */
 	@Test
 	void theCriticalMessageExplainsThe404() {
 		AdminWriteHealthCheck check = check(true);
-		withoutDatasets(check);
+		withoutAdmin(check);
 
 		String messages = messages(check.execute());
 
@@ -76,7 +90,7 @@ public class AdminWriteHealthCheckTest {
 	@Test
 	void aMissingValidationServiceIsNamedAsTheLikelyCause() {
 		AdminWriteHealthCheck check = check(false);
-		withoutDatasets(check);
+		withoutAdmin(check);
 
 		String messages = messages(check.execute());
 
@@ -87,7 +101,7 @@ public class AdminWriteHealthCheckTest {
 	@Test
 	void withValidationPresentTheCauseIsNotBlamedOnIt() {
 		AdminWriteHealthCheck check = check(true);
-		withoutDatasets(check);
+		withoutAdmin(check);
 
 		String messages = messages(check.execute());
 
@@ -101,28 +115,22 @@ public class AdminWriteHealthCheckTest {
 
 	// --- fixtures -----------------------------------------------------------
 
-	/** The datasets service the fixture bound, so a test can unbind exactly that one. */
-	private DatasetAdminService boundDatasets;
+	/** The facade the fixture bound, so a test can unbind exactly that one. */
+	private DcatAdminService boundDcatAdminService;
 
 	private AdminWriteHealthCheck check(boolean withValidation) {
 		AdminWriteHealthCheck check = new AdminWriteHealthCheck();
-		boundDatasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		check.setCatalogs(TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH)));
-		check.setDatasets(boundDatasets);
-		check.setDatasetSeries(TestNotifiers.announcing(new DatasetSeriesAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
-		check.setDataServices(TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH)));
-		check.setDistributions(TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH,
-				new DatasetReadOnlyServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH))));
+		boundDcatAdminService = TestAdminServices.facade(storage);
+		check.setDcatAdminService(boundDcatAdminService);
 		if (withValidation) {
 			check.setValidation(new AlwaysEnforcing());
 		}
 		return check;
 	}
 
-	/** Unbinds the datasets service the way DS would, rather than clearing the field. */
-	private void withoutDatasets(AdminWriteHealthCheck check) {
-		check.unsetDatasets(boundDatasets);
+	/** Unbinds the facade the way DS would, rather than clearing the field. */
+	private void withoutAdmin(AdminWriteHealthCheck check) {
+		check.unsetDcatAdminService(boundDcatAdminService);
 	}
 
 	/** {@link Result} is {@code Iterable}, not streamable. */

@@ -56,7 +56,7 @@ public interface DcatGraphService {
 	 * reachable through an owning resource.
 	 * <p>
 	 * A {@link DcatEntity#DISTRIBUTION} exists only in the context of a dataset
-	 * (FR-10) and {@code DistributionReadOnlyService} will only resolve it when the
+	 * (FR-10) and {@code DistributionReadOnlyHandler} will only resolve it when the
 	 * dataset still references it, so re-reading one requires the dataset id. For
 	 * every other entity type {@code parentId} is {@code null}.
 	 *

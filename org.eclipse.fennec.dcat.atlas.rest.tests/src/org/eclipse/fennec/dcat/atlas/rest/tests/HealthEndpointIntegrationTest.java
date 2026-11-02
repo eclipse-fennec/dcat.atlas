@@ -68,27 +68,30 @@ public class HealthEndpointIntegrationTest {
 	}
 
 	@Test
-	void readinessAggregatesEveryStoreAndTheShapesCheck() throws Exception {
+	void readinessAggregatesTheStoreAndTheShapesCheck() throws Exception {
 		String body = get("/health/ready").body();
-		assertTrue(body.contains("store:catalogs"), body);
-		assertTrue(body.contains("store:datasets"), body);
-		assertTrue(body.contains("store:data-services"), body);
-		assertTrue(body.contains("store:dataset-series"), body);
-		// Four stores, not five: a Distribution is contained in its Dataset and has no
-		// store of its own, so there is no store:distributions check to report.
-		assertFalse(body.contains("store:distributions"), body);
+		assertTrue(body.contains("\"name\":\"store\""), body);
+		// One line per collection, inside the one check. There used to be a store:<collection>
+		// check each, on the five read services; they all asked the same DcatStoreService the
+		// same question, so they could never disagree and are one check now.
+		assertTrue(body.contains("/catalogs"), body);
+		assertTrue(body.contains("/datasets"), body);
+		assertTrue(body.contains("/data-services"), body);
+		assertTrue(body.contains("/dataset-series"), body);
+		// Four collections, not five: a Distribution is contained in its Dataset and has no
+		// store of its own, so nothing reports on one.
+		assertFalse(body.contains("/distributions"), body);
 		assertTrue(body.contains("shacl"), body);
 	}
 
 	@Test
-	void everyStoreReportsOk() throws Exception {
+	void theStoreReportsOk() throws Exception {
 		String body = get("/health/ready").body();
-		// One OK per store. The "absent but creatable" case that keeps a fresh install
-		// serving cannot be forced here (the test store's dirs may already exist from an
-		// earlier run), so that semantic is pinned by StoreHealthTest instead.
-		// Four: catalogs, datasets, data-services, dataset-series. Distributions are
-		// contained in their Dataset rather than stored on their own.
-		assertEquals(4, countOf(body, "\"name\":\"store:"), body);
+		// The "absent but creatable" case that keeps a fresh install serving cannot be
+		// forced here (the test store's dirs may already exist from an earlier run), so
+		// that semantic is pinned by StoreHealthTest instead.
+		// One check for the whole store, reporting each collection on its own line.
+		assertEquals(1, countOf(body, "\"name\":\"store\""), body);
 		// No store may be in a state that would take the portal out of rotation.
 		assertTrue(!body.contains("cannot be created"), body);
 		assertTrue(!body.contains("is not a directory"), body);

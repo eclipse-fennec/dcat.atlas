@@ -124,7 +124,7 @@ public final class ModelValidation {
 	 * <h2>What it prevents</h2>
 	 *
 	 * Every id-based operation resolves the <em>first</em> match
-	 * ({@code DistributionReadOnlyServiceImpl.find} is a {@code findFirst}), so a second
+	 * ({@code DistributionReadOnlyHandlerImpl.find} is a {@code findFirst}), so a second
 	 * Distribution under one identity is an unreachable shadow — and a {@code DELETE} of that
 	 * id was answered {@code 204} while leaving the other in place, so the same {@code GET}
 	 * answered {@code 200} straight afterwards. Measured, before this existed.

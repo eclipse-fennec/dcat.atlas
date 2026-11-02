@@ -13,14 +13,15 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest.tests;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.http.HttpResponse;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.junit.jupiter.api.Test;
 import org.osgi.test.common.annotation.InjectService;
@@ -32,12 +33,8 @@ import foaf.Organization;
 
 public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegrationTest {
 
-	@InjectService
-	CatalogAdminService service;
 
 	/** Membership by reference needs a real, separately stored Dataset to point at. */
-	@InjectService
-	DatasetAdminService datasetAdminService;
 
 	@Override
 	protected String collection() {
@@ -65,22 +62,22 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// Seeded the way the store mints identities: logical, not the request URL.
 		catalog.setAbout(DcatIds.logicalIri(DcatIds.CATALOGS, id));
 		RestEntities.mandatoryDataset(catalog, title);
-		service.upsertCatalog(catalog, Caller.ANONYMOUS);
+		service().upsertCatalog(catalog, Caller.ANONYMOUS);
 	}
 
 	@Override
 	protected boolean storedPresent(String id) {
-		return service.getCatalog(id).isPresent();
+		return service().getCatalog(id).isPresent();
 	}
 
 	@Override
 	protected String storedTitle(String id) {
-		return service.getCatalog(id).get().getTitle().get(0).getValue();
+		return service().getCatalog(id).get().getTitle().get(0).getValue();
 	}
 
 	@Override
 	protected void removeFromStore(String id) {
-		service.deleteCatalog(id, false, Caller.ANONYMOUS);
+		service().deleteCatalog(id, false, Caller.ANONYMOUS);
 	}
 
 	// --- identity on create -------------------------------------------------
@@ -91,6 +88,20 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 	 * what the logical-identity design exists to prevent, and a client that re-sends a catalog
 	 * it was served would have had no way to tell it happened — both POSTs answered 201.
 	 */
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
+	@InjectService
+	DcatAdminService dcatAdminService;
+
+	private CatalogAdminHandler service() {
+		return dcatAdminService.getCatalogAdminHandler();
+	}
+
+	private DatasetAdminHandler datasetAdminHandler() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
+
 	@Test
 	void postingAnAboutThatAlreadyExistsIsRefused() throws Exception {
 		track("dup-cat");
@@ -101,7 +112,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 
 		assertEquals(409, second.statusCode(), second.body());
 		assertTrue(second.body().contains("catalogs/dup-cat"), "the 409 should name what is in the way: " + second.body());
-		assertEquals(1, service.listCatalogs().stream().filter(c -> existingAbout.equals(c.getAbout())).count(),
+		assertEquals(1, service().listCatalogs().stream().filter(c -> existingAbout.equals(c.getAbout())).count(),
 				"exactly one catalog should carry that identity");
 		assertEquals("GovData", storedTitle("dup-cat"), "the refused POST must not have overwritten anything");
 	}
@@ -134,7 +145,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		HttpResponse<String> created = postXmi(writes(), GOVDATA_CATALOG);
 
 		assertEquals(201, created.statusCode(), created.body());
-		Catalog stored = service.getCatalog("gov").orElseThrow();
+		Catalog stored = service().getCatalog("gov").orElseThrow();
 		assertEquals("https://www.umweltbundesamt.de/", stored.getPublisher().getAbout());
 		assertEquals("http://dcat-ap.de/def/licenses/dl-by-de/2.0", stored.getLicense().getAbout());
 	}
@@ -155,7 +166,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// Counted rather than matched on content: the store this runs against is shared and
 		// outlives the run, so what the second POST did is the difference it made, not how
 		// many GovData catalogs happen to be lying in it.
-		int afterFirst = service.listCatalogs().size();
+		int afterFirst = service().listCatalogs().size();
 
 		HttpResponse<String> second = postXmi(writes(), GOVDATA_CATALOG);
 
@@ -164,7 +175,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// POST .../catalogs/gov/datasets without a GET to find out where "gov" ended up.
 		assertEquals(reads() + "/gov", second.headers().firstValue("Location").orElse(null),
 				"the conflict should carry the Location the create would have");
-		assertEquals(afterFirst, service.listCatalogs().size(), "the refused POST must not have stored anything");
+		assertEquals(afterFirst, service().listCatalogs().size(), "the refused POST must not have stored anything");
 	}
 
 	/**
@@ -237,7 +248,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		HttpResponse<String> created = postXmi(writes(), body);
 
 		assertEquals(201, created.statusCode(), created.body());
-		assertTrue(service.getCatalog("xsi-typed").orElseThrow().getPublisher() instanceof Organization,
+		assertTrue(service().getCatalog("xsi-typed").orElseThrow().getPublisher() instanceof Organization,
 				"xsi:type should have selected the narrower type");
 	}
 
@@ -267,7 +278,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		HttpResponse<String> created = postXmi(writes(), body);
 
 		assertEquals(201, created.statusCode(), created.body());
-		Catalog stored = service.getCatalog("rights-held").orElseThrow();
+		Catalog stored = service().getCatalog("rights-held").orElseThrow();
 		assertEquals("https://stadtwerke.example", stored.getPublisher().getAbout());
 		assertEquals("https://stadt.example", stored.getRightsHolder().getAbout());
 		assertTrue(stored.getRightsHolder() instanceof Organization, "xsi:type should apply to the rights holder too");
@@ -287,7 +298,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 				USER_GUIDE_CATALOG.formatted(reads() + "/example"));
 
 		assertEquals(201, created.statusCode(), created.body());
-		Catalog stored = service.getCatalog("example").orElseThrow();
+		Catalog stored = service().getCatalog("example").orElseThrow();
 		assertEquals(2, stored.getTitle().size(), "both titles should have been read");
 		assertEquals("Example Catalog", stored.getTitle().get(0).getValue());
 		assertEquals(2, stored.getLanguage().size(), "a repeated URI-valued property");
@@ -323,7 +334,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 				xmiBody("Catalog", DcatIds.logicalIri(DcatIds.CATALOGS, "frag") + "#x", "Fragment"));
 
 		assertEquals(400, refused.statusCode(), refused.body());
-		assertTrue(service.getCatalog("frag").isEmpty(), "the fragment must not have been filed as an id");
+		assertTrue(service().getCatalog("frag").isEmpty(), "the fragment must not have been filed as an id");
 	}
 
 	// --- FR-9 catalog membership -------------------------------------------
@@ -342,7 +353,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 
 		HttpResponse<String> add = postXmi(writes() + "/cat1/datasets", xmiBody("Dataset", memberAbout, "Air"));
 		assertEquals(200, add.statusCode(), add.body());
-		assertEquals(1, service.getCatalog("cat1").get().getDataset().size());
+		assertEquals(1, service().getCatalog("cat1").get().getDataset().size());
 
 		// Sending it again is refused: this endpoint writes the whole member, so a second
 		// POST is a replace wearing the clothes of an add — and the dataset it would
@@ -358,15 +369,15 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		// not the membership path this request used to reach it.
 		assertEquals(BASE + "/datasets/" + MEMBER_DATASET_ID, reAdd.headers().firstValue("Location").orElse(null),
 				"the member conflict should point at the member that exists");
-		assertEquals(1, service.getCatalog("cat1").get().getDataset().size());
-		assertEquals("Air", datasetAdminService.getDataset(MEMBER_DATASET_ID).get().getTitle().get(0).getValue(),
+		assertEquals(1, service().getCatalog("cat1").get().getDataset().size());
+		assertEquals("Air", datasetAdminHandler().getDataset(MEMBER_DATASET_ID).get().getTitle().get(0).getValue(),
 				"the refused POST must not have rewritten the dataset");
 
 		HttpResponse<String> remove = delete(writes() + "/cat1/datasets/" + MEMBER_DATASET_ID);
 		assertEquals(204, remove.statusCode());
-		assertTrue(service.getCatalog("cat1").get().getDataset().isEmpty());
+		assertTrue(service().getCatalog("cat1").get().getDataset().isEmpty());
 
-		datasetAdminService.deleteDataset(MEMBER_DATASET_ID, false, Caller.ANONYMOUS);
+		datasetAdminHandler().deleteDataset(MEMBER_DATASET_ID, false, Caller.ANONYMOUS);
 	}
 
 	@Test
@@ -380,11 +391,11 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 
 		HttpResponse<String> add = postXmi(writes() + "/cat1/catalogs", xmiBody("Catalog", memberAbout, "EU"));
 		assertEquals(200, add.statusCode(), add.body());
-		assertEquals(1, service.getCatalog("cat1").get().getCatalog().size());
+		assertEquals(1, service().getCatalog("cat1").get().getCatalog().size());
 
 		HttpResponse<String> remove = delete(writes() + "/cat1/catalogs/eu");
 		assertEquals(204, remove.statusCode());
-		assertTrue(service.getCatalog("cat1").get().getCatalog().isEmpty());
+		assertTrue(service().getCatalog("cat1").get().getCatalog().isEmpty());
 	}
 
 	/**
@@ -400,7 +411,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 				xmiBody("Dataset", "https://www.govdata.de/datasets/air", "Air"));
 
 		assertEquals(400, refused.statusCode(), refused.body());
-		assertTrue(service.getCatalog("cat1").get().getDataset().isEmpty(), "nothing should have been linked");
+		assertTrue(service().getCatalog("cat1").get().getDataset().isEmpty(), "nothing should have been linked");
 	}
 
 	@Test
@@ -425,18 +436,18 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 			HttpResponse<String> link = putEmpty(writes() + "/cat1/datasets/air");
 
 			assertEquals(200, link.statusCode(), link.body());
-			assertEquals(1, service.getCatalog("cat1").get().getDataset().size());
+			assertEquals(1, service().getCatalog("cat1").get().getDataset().size());
 			// The point of linking: the dataset itself is untouched. A POST of a stub to
 			// the collection would have replaced it, title and all.
-			assertEquals("Air quality", datasetAdminService.getDataset("air").get().getTitle().get(0).getValue());
+			assertEquals("Air quality", datasetAdminHandler().getDataset("air").get().getTitle().get(0).getValue());
 
 			HttpResponse<String> remove = delete(writes() + "/cat1/datasets/air");
 			assertEquals(204, remove.statusCode());
-			assertTrue(service.getCatalog("cat1").get().getDataset().isEmpty());
+			assertTrue(service().getCatalog("cat1").get().getDataset().isEmpty());
 			// Unlinking removes the membership, not the dataset.
-			assertTrue(datasetAdminService.getDataset("air").isPresent());
+			assertTrue(datasetAdminHandler().getDataset("air").isPresent());
 		} finally {
-			datasetAdminService.deleteDataset("air", false, Caller.ANONYMOUS);
+			datasetAdminHandler().deleteDataset("air", false, Caller.ANONYMOUS);
 		}
 	}
 
@@ -455,12 +466,12 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 			assertEquals(200, second.statusCode(), second.body());
 			// No second write, so the catalog's ETag is unchanged (F-16).
 			assertEquals(etag, second.headers().firstValue("ETag").orElseThrow());
-			assertEquals(1, service.getCatalog("cat1").get().getDataset().size());
+			assertEquals(1, service().getCatalog("cat1").get().getDataset().size());
 		} finally {
 			// Unlink before deleting: FR-1 refuses to delete a dataset a catalog still
 			// references, which is exactly the guarantee the link endpoint relies on.
-			service.deleteDatasetFromCatalog("cat1", "air", Caller.ANONYMOUS);
-			datasetAdminService.deleteDataset("air", false, Caller.ANONYMOUS);
+			service().deleteDatasetFromCatalog("cat1", "air", Caller.ANONYMOUS);
+			datasetAdminHandler().deleteDataset("air", false, Caller.ANONYMOUS);
 		}
 	}
 
@@ -474,7 +485,7 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		HttpResponse<String> link = putEmpty(writes() + "/cat1/datasets/does-not-exist");
 
 		assertEquals(404, link.statusCode(), link.body());
-		assertTrue(service.getCatalog("cat1").get().getDataset().isEmpty());
+		assertTrue(service().getCatalog("cat1").get().getDataset().isEmpty());
 	}
 
 	@Test
@@ -488,6 +499,6 @@ public class CatalogResourceIntegrationTest extends AbstractEntityResourceIntegr
 		Dataset dataset = DcatFactory.eINSTANCE.createDataset();
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, id));
 		RestEntities.mandatoryDataset(dataset, title);
-		datasetAdminService.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasetAdminHandler().upsertDataset(dataset, Caller.ANONYMOUS);
 	}
 }

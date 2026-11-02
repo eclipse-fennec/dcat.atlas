@@ -24,10 +24,11 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
-import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DistributionAdminHandler;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.RestReady;
 import org.junit.jupiter.api.AfterEach;
@@ -80,16 +81,28 @@ public class DistributionResourceIntegrationTest {
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
 	/** Seeds/inspects the owning dataset that distributions attach to. */
-	@InjectService
-	DatasetAdminService datasetService;
 
 	/** Seeds/inspects the DataService referenced by {@code dcat:accessService}. */
-	@InjectService
-	DataServiceAdminService dataServiceService;
 
 	/** Reads back the stored distribution to assert on the accessService references. */
+
+	/**
+	 * The write side is one service now; the handlers behind it are plain objects.
+	 */
 	@InjectService
-	DistributionAdminService distributionService;
+	DcatAdminService dcatAdminService;
+
+	private DatasetAdminHandler datasetService() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
+
+	private DataServiceAdminHandler dataServiceService() {
+		return dcatAdminService.getDataServiceAdminHandler();
+	}
+
+	private DistributionAdminHandler distributionService() {
+		return dcatAdminService.getDistributionAdminHandler();
+	}
 
 	@BeforeEach
 	void ensureResourcesAndDataset(@InjectBundleContext BundleContext context) throws InterruptedException {
@@ -99,14 +112,14 @@ public class DistributionResourceIntegrationTest {
 		// URL here is not an identity the store owns, so DcatIds.idOf refuses to carve an id
 		// out of it and upsert files the dataset under a fresh UUID instead — leaving every
 		// /datasets/{DATASET_ID}/... path below a 404.
-		datasetService.upsertDataset(dataset(DcatIds.logicalIri(DcatIds.DATASETS, DATASET_ID), "Air quality"),
+		datasetService().upsertDataset(dataset(DcatIds.logicalIri(DcatIds.DATASETS, DATASET_ID), "Air quality"),
 				Caller.ANONYMOUS);
 	}
 
 	@AfterEach
 	void cleanup() {
-		datasetService.deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
-		dataServiceService.deleteDataService(SERVICE_ID, false, Caller.ANONYMOUS);
+		datasetService().deleteDataset(DATASET_ID, false, Caller.ANONYMOUS);
+		dataServiceService().deleteDataService(SERVICE_ID, false, Caller.ANONYMOUS);
 	}
 
 	private String distributions() {
@@ -133,7 +146,7 @@ public class DistributionResourceIntegrationTest {
 		assertTrue(get.body().contains("CSV download"), get.body());
 
 		// The owning dataset now carries the dcat:distribution link.
-		assertEquals(1, datasetService.getDataset(DATASET_ID).get().getDistribution().size());
+		assertEquals(1, datasetService().getDataset(DATASET_ID).get().getDistribution().size());
 	}
 
 	/**
@@ -158,7 +171,7 @@ public class DistributionResourceIntegrationTest {
 		// The nested read URL, which is the multi-segment case of the conflict's Location.
 		assertEquals(distributions() + "/" + DISTRIBUTION_ID, second.headers().firstValue("Location").orElse(null),
 				"the conflict should point at the distribution it collided with");
-		assertEquals(1, datasetService.getDataset(DATASET_ID).get().getDistribution().size(),
+		assertEquals(1, datasetService().getDataset(DATASET_ID).get().getDistribution().size(),
 				"the refused create must not have added a second distribution");
 	}
 
@@ -182,7 +195,7 @@ public class DistributionResourceIntegrationTest {
 
 		assertEquals(400, refused.statusCode(), refused.body());
 		assertTrue(refused.body().contains(foreign), "the 400 should quote back the about: " + refused.body());
-		assertTrue(datasetService.getDataset(DATASET_ID).get().getDistribution().isEmpty(),
+		assertTrue(datasetService().getDataset(DATASET_ID).get().getDistribution().isEmpty(),
 				"the refused create must not have added a distribution");
 	}
 
@@ -200,7 +213,7 @@ public class DistributionResourceIntegrationTest {
 		assertEquals(400, refused.statusCode(), refused.body());
 		assertTrue(refused.body().contains("some-other-distribution")
 				&& refused.body().contains("distributions/" + PUT_DISTRIBUTION_ID), refused.body());
-		assertTrue(distributionService.getDistributionForDataset(DATASET_ID, PUT_DISTRIBUTION_ID).isEmpty(),
+		assertTrue(distributionService().getDistributionForDataset(DATASET_ID, PUT_DISTRIBUTION_ID).isEmpty(),
 				"the refused PUT must not have stored anything");
 	}
 
@@ -218,7 +231,7 @@ public class DistributionResourceIntegrationTest {
 		HttpResponse<String> delete = send(HttpRequest.newBuilder(URI.create(url)).DELETE(), TURTLE);
 		assertEquals(204, delete.statusCode());
 		assertEquals(404, get(distributions() + "/csv", TURTLE).statusCode());
-		assertTrue(datasetService.getDataset(DATASET_ID).get().getDistribution().isEmpty());
+		assertTrue(datasetService().getDataset(DATASET_ID).get().getDistribution().isEmpty());
 	}
 
 	@Test
@@ -275,15 +288,15 @@ public class DistributionResourceIntegrationTest {
 		String url = adminDistributions() + "/csv";
 		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
 				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
-		String datasetEtagAfterFirst = datasetService.etag(DATASET_ID).orElseThrow();
+		String datasetEtagAfterFirst = datasetService().etag(DATASET_ID).orElseThrow();
 
 		// PUT the identical distribution again: the dcat:distribution link is already
 		// present, so the owning dataset is untouched and its ETag does not change.
 		send(HttpRequest.newBuilder(URI.create(url)).header("Content-Type", XML)
 				.PUT(BodyPublishers.ofString(distributionBody(PUT_DISTRIBUTION_ID, "CSV download"))), XML);
 
-		assertEquals(datasetEtagAfterFirst, datasetService.etag(DATASET_ID).orElseThrow());
-		assertEquals(1, datasetService.getDataset(DATASET_ID).get().getDistribution().size());
+		assertEquals(datasetEtagAfterFirst, datasetService().etag(DATASET_ID).orElseThrow());
+		assertEquals(1, datasetService().getDataset(DATASET_ID).get().getDistribution().size());
 	}
 
 	@Test
@@ -337,15 +350,15 @@ public class DistributionResourceIntegrationTest {
 
 		send(HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
 				RDF_XML);
-		String etagAfterFirst = distributionService.etag(DATASET_ID, "csv").orElseThrow();
+		String etagAfterFirst = distributionService().etag(DATASET_ID, "csv").orElseThrow();
 
 		// Idempotent: the link is already recorded, so nothing is written and the ETag holds.
 		HttpResponse<String> again = send(
 				HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).PUT(BodyPublishers.noBody()),
 				RDF_XML);
 		assertEquals(200, again.statusCode());
-		assertEquals(etagAfterFirst, distributionService.etag(DATASET_ID, "csv").orElseThrow());
-		assertEquals(1, distributionService.getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().size());
+		assertEquals(etagAfterFirst, distributionService().etag(DATASET_ID, "csv").orElseThrow());
+		assertEquals(1, distributionService().getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().size());
 	}
 
 	@Test
@@ -361,9 +374,9 @@ public class DistributionResourceIntegrationTest {
 				HttpRequest.newBuilder(URI.create(url + "/access-service/" + SERVICE_ID)).DELETE(), RDF_XML);
 		assertEquals(204, unlink.statusCode());
 
-		assertTrue(distributionService.getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().isEmpty());
+		assertTrue(distributionService().getDistributionForDataset(DATASET_ID, "csv").get().getAccessService().isEmpty());
 		// The DataService is a catalog entity of its own and must survive the unlink.
-		assertTrue(dataServiceService.getDataService(SERVICE_ID).isPresent());
+		assertTrue(dataServiceService().getDataService(SERVICE_ID).isPresent());
 	}
 
 	@Test
@@ -423,7 +436,7 @@ public class DistributionResourceIntegrationTest {
 		// Logical, for the same reason as the dataset seed above.
 		service.setAbout(DcatIds.logicalIri(DcatIds.DATA_SERVICES, SERVICE_ID));
 		RestEntities.mandatoryDataService(service, "Air quality WFS");
-		dataServiceService.upsertDataService(service, Caller.ANONYMOUS);
+		dataServiceService().upsertDataService(service, Caller.ANONYMOUS);
 	}
 
 	/**

@@ -13,6 +13,9 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.impl.handler.CatalogAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DistributionAdminHandlerImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,15 +59,14 @@ class PublicViewTest {
 	@TempDir
 	Path storage;
 
-	private CatalogAdminServiceImpl catalogs() {
-		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH));
+	private CatalogAdminHandlerImpl catalogs() {
+		return new CatalogAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 	}
 
 	@Test
 	void theRenderedDocumentIsTheStoredOneWithOnlyTheBaseChanged() throws Exception {
 
-		CatalogAdminServiceImpl catalogs = catalogs();
+		CatalogAdminHandlerImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
@@ -78,7 +80,7 @@ class PublicViewTest {
 	@Test
 	void noFileUriAppearsInEitherForm() throws Exception {
 
-		CatalogAdminServiceImpl catalogs = catalogs();
+		CatalogAdminHandlerImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
@@ -95,7 +97,7 @@ class PublicViewTest {
 	@Test
 	void identitiesAndLinksAreBothPublic() {
 
-		CatalogAdminServiceImpl catalogs = catalogs();
+		CatalogAdminHandlerImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 		catalogs.addDatasetToCatalog("gov", dataset("air", "Air quality"), Caller.ANONYMOUS);
 
@@ -112,8 +114,8 @@ class PublicViewTest {
 	@Test
 	void containedObjectsAreRebasedToo() {
 
-		DatasetAdminServiceImpl datasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		DistributionAdminServiceImpl distributions = TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH, datasets));
+		DatasetAdminHandlerImpl datasets = new DatasetAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
+		DistributionAdminHandlerImpl distributions = new DistributionAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage), datasets);
 		datasets.upsertDataset(dataset("air", "Air quality"), Caller.ANONYMOUS);
 		distributions.upsertDistributionToDataset("air", distribution("csv"), Caller.ANONYMOUS);
 
@@ -125,7 +127,7 @@ class PublicViewTest {
 	@Test
 	void aForeignIriSurvivesRendering() {
 
-		DatasetAdminServiceImpl datasets = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+		DatasetAdminHandlerImpl datasets = new DatasetAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 		Dataset air = dataset("air", "Air quality");
 		air.getTheme().add("http://publications.europa.eu/resource/authority/data-theme/ENVI");
 		datasets.upsertDataset(air, Caller.ANONYMOUS);
@@ -139,7 +141,7 @@ class PublicViewTest {
 	@Test
 	void renderingDoesNotDisturbTheStoredEntity() {
 
-		CatalogAdminServiceImpl catalogs = catalogs();
+		CatalogAdminHandlerImpl catalogs = catalogs();
 		catalogs.upsertCatalog(catalog("gov", "GovData"), Caller.ANONYMOUS);
 
 		Catalog stored = catalogs.getCatalog("gov").orElseThrow();

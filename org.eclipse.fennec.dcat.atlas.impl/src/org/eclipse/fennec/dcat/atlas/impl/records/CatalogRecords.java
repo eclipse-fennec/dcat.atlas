@@ -28,8 +28,8 @@ import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.InternalEList;
+import org.eclipse.fennec.dcat.atlas.api.store.DcatStoreSession;
 import org.eclipse.fennec.dcat.atlas.impl.integrity.Members;
-import org.eclipse.fennec.dcat.atlas.impl.store.DcatHelper.Store;
 import org.eclipse.fennec.dcat.atlas.impl.store.StoreLayout;
 
 import dcat.Catalog;
@@ -37,8 +37,8 @@ import dcat.CatalogRecord;
 import dcat.DcatFactory;
 import dcat.DcatPackage;
 import dcat.DcatResource;
-import rdf.DateOrDateTimeLiteral;
 import rdf.Datatype;
+import rdf.DateOrDateTimeLiteral;
 import rdf.RdfFactory;
 
 /**
@@ -109,7 +109,7 @@ public final class CatalogRecords {
 	 * migration path for everything catalogued before this existed, and it costs nothing to
 	 * the common case.
 	 */
-	public static void memberWritten(Store store, String memberIri) {
+	public static void memberWritten(DcatStoreSession store, String memberIri) {
 		for (Catalog catalog : owners(store, memberIri)) {
 			CatalogRecord record = recordFor(catalog, memberIri);
 			if (record == null) {
@@ -121,10 +121,10 @@ public final class CatalogRecords {
 			} else {
 				record.setModified(now());
 			}
-			// Bookkeeping, not the caller's content: see Store.saveBookkeeping.
+			// Bookkeeping, not the caller's content: see DcatStoreSession.saveBookkeeping.
 			store.saveBookkeeping(catalog);
 		}
-	}
+}
 
 	/**
 	 * The member named by {@code memberIri} is being deleted: drop its record wherever one
@@ -134,7 +134,7 @@ public final class CatalogRecords {
 	 * record's {@code primaryTopic} along with every other link to the member and leave a
 	 * record that is both meaningless and invalid.
 	 */
-	public static void memberDeleted(Store store, String memberIri) {
+	public static void memberDeleted(DcatStoreSession store, String memberIri) {
 		for (Catalog catalog : owners(store, memberIri)) {
 			memberUnlinked(catalog, memberIri);
 			store.saveBookkeeping(catalog);
@@ -161,7 +161,7 @@ public final class CatalogRecords {
 	 * a new entry and gets a new record. A member that is no longer listed has no entry, so
 	 * its record goes.
 	 */
-	public static void preserveRecords(Store store, String collection, String id, Catalog incoming) {
+	public static void preserveRecords(DcatStoreSession store, String collection, String id, Catalog incoming) {
 		Map<String, CatalogRecord> stored = new LinkedHashMap<>();
 		store.<Catalog>get(collection, id).filter(previous -> previous != incoming)
 				.ifPresent(previous -> {
@@ -198,7 +198,7 @@ public final class CatalogRecords {
 	}
 
 	/** The catalogs holding {@code memberIri}, or holding a record that describes it. */
-	private static List<Catalog> owners(Store store, String memberIri) {
+	private static List<Catalog> owners(DcatStoreSession store, String memberIri) {
 		List<Catalog> owners = new ArrayList<>();
 		for (String id : store.ids(StoreLayout.CATALOGS)) {
 			Catalog catalog = store.<Catalog>get(StoreLayout.CATALOGS, id).orElse(null);
@@ -236,7 +236,7 @@ public final class CatalogRecords {
 	}
 
 	/** The stored member behind a logical IRI, in whichever collection it belongs to. */
-	private static EObject memberOf(Store store, String memberIri) {
+	private static EObject memberOf(DcatStoreSession store, String memberIri) {
 		for (String collection : StoreLayout.COLLECTIONS) {
 			String id = StoreLayout.idOf(collection, memberIri);
 			if (id != null) {

@@ -23,7 +23,7 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
  * Helpers for HTTP conditional requests / optimistic locking (F-16).
  * <p>
  * ETags come from the service layer as a strong validator over the stored
- * representation (see {@code DcatHelper.etag}). The heavy lifting of comparing
+ * representation (see {@code DcatStoreService.etag}). The heavy lifting of comparing
  * {@code If-Match}/{@code If-None-Match} is delegated to
  * {@link Request#evaluatePreconditions}, which returns a pre-built response
  * (304 for a matched {@code If-None-Match} on a read, 412 for a failed

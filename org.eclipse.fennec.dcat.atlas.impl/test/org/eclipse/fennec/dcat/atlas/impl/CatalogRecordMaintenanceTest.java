@@ -13,6 +13,10 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.impl.handler.CatalogAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DataServiceAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
+import org.eclipse.fennec.dcat.atlas.impl.handler.DistributionAdminHandlerImpl;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -54,23 +58,20 @@ public class CatalogRecordMaintenanceTest {
 	@TempDir
 	Path storage;
 
-	private DistributionAdminServiceImpl distributions() {
-		return TestNotifiers.announcing(new DistributionAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH, datasets()));
+	private DistributionAdminHandlerImpl distributions() {
+		return new DistributionAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage), datasets());
 	}
 
-	private CatalogAdminServiceImpl catalogs() {
-		return TestNotifiers.announcing(new CatalogAdminServiceImpl(TestResourceSets.factory(),
-				TestGitStore.at(storage), TestGitStore.BASE_PATH));
+	private CatalogAdminHandlerImpl catalogs() {
+		return new CatalogAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 	}
 
-	private DatasetAdminServiceImpl datasets() {
-		return TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
+	private DatasetAdminHandlerImpl datasets() {
+		return new DatasetAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 	}
 
-	private DataServiceAdminServiceImpl dataServices() {
-		return TestNotifiers.announcing(new DataServiceAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage),
-				TestGitStore.BASE_PATH));
+	private DataServiceAdminHandlerImpl dataServices() {
+		return new DataServiceAdminHandlerImpl(TestNotifiers.discarding(), TestStores.at(storage));
 	}
 
 	// --- a member entering the catalog --------------------------------------

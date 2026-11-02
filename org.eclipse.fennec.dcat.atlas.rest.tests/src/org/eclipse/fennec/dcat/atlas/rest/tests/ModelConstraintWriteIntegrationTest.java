@@ -84,16 +84,15 @@ public class ModelConstraintWriteIntegrationTest {
 	private static final String BASE = "http://localhost:8185/rest";
 	private static final String ADMIN_DATASETS = BASE + "/admin/datasets";
 	private static final String XMI = "application/xmi";
-	private static final String PID = "DatasetAdminService";
 	/**
-	 * {@code validateOnWrite} is {@link org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig}
-	 * on <em>each</em> admin service, so switching it for datasets says nothing about
-	 * catalogs or distributions. #34's tests seed through those two, and had to learn this
-	 * the hard way: turning it off for {@code DatasetAdminService} left the catalog write
-	 * still enforcing.
+	 * One store, so one switch. {@code validateOnWrite} used to be
+	 * {@link org.eclipse.fennec.dcat.atlas.impl.store.StoreConfig} on <em>each</em> admin
+	 * service, and #34's tests had to learn the hard way that turning it off for
+	 * {@code DatasetAdminHandler} left the catalog and distribution writes still enforcing.
+	 * They seed through all three paths, which is now the same switch three times — kept as
+	 * three calls because each one still has to be waited for on the path it affects.
 	 */
-	private static final String CATALOG_PID = "CatalogAdminService";
-	private static final String DISTRIBUTION_PID = "DistributionAdminService";
+	private static final String PID = "DcatGitStoreService";
 	/** Fixed id for the idempotent readiness probe so it never mints throw-away resources. */
 	private static final String PROBE_ID = "model-constraint-readiness-probe";
 	private static final String CONFORMANT_ID = "model-constraint-conformant";
@@ -132,8 +131,6 @@ public class ModelConstraintWriteIntegrationTest {
 		// Back to the shipped default, which is on: leaving it off would silently disarm
 		// every test class that runs after this one.
 		setValidateOnWrite(PID, true);
-		setValidateOnWrite(CATALOG_PID, true);
-		setValidateOnWrite(DISTRIBUTION_PID, true);
 		delete(ADMIN_DATASETS + "/" + PROBE_ID);
 		delete(ADMIN_DATASETS + "/" + CONFORMANT_ID);
 		// #34: cascade, because a linked dataset cannot be deleted while its catalog holds it.
@@ -451,13 +448,13 @@ public class ModelConstraintWriteIntegrationTest {
 	/** A Catalog that is under the model's floor, written while its own service is not enforcing. */
 	private void seedInvalidCatalog() throws Exception {
 		String url = ADMIN_CATALOGS + "/" + INVALID_CATALOG_ID;
-		seedUnderTheFloor(CATALOG_PID, url, titleOnlyCatalog(INVALID_CATALOG_ID), "catalog");
+		seedUnderTheFloor(PID, url, titleOnlyCatalog(INVALID_CATALOG_ID), "catalog");
 	}
 
 	/** A Distribution under the floor, likewise — the only way one gets in once #34 is fixed. */
 	private void seedInvalidDistribution() throws Exception {
 		String url = adminDistributions(OWNER_ID) + "/csv";
-		seedUnderTheFloor(DISTRIBUTION_PID, url, titleOnlyDistribution(OWNER_ID, "csv"), "distribution");
+		seedUnderTheFloor(PID, url, titleOnlyDistribution(OWNER_ID, "csv"), "distribution");
 	}
 
 	/**

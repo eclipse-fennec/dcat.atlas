@@ -34,7 +34,8 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.validation.ShaclViolationException;
 import org.eclipse.fennec.dcat.atlas.rest.tests.helper.ResourceAware;
@@ -51,6 +52,7 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.test.common.annotation.InjectBundleContext;
 import org.osgi.test.common.annotation.InjectService;
+import org.osgi.test.common.service.ServiceAware;
 import org.osgi.test.junit5.context.BundleContextExtension;
 import org.osgi.test.junit5.service.ServiceExtension;
 
@@ -109,9 +111,24 @@ public class WriteValidationIntegrationTest {
 	@InjectService
 	ConfigurationAdmin configAdmin;
 
-	/** The service itself, to prove enforcement no longer depends on going through REST. */
+	/**
+	 * The service itself, to prove enforcement no longer depends on going through REST.
+	 * <p>
+	 * Resolved in {@code @BeforeEach} <em>after</em> the shapes are configured, not injected.
+	 * The admin services used to hold the validation service themselves, dynamically, so a
+	 * reconfiguration rebound it and left them registered; the store holds it statically now,
+	 * so reconfiguring validation recycles the store, and the facade with it. An injected
+	 * field would still point at the handler built before the shapes existed, and that one
+	 * enforces nothing.
+	 * <p>
+	 * It is the facade that is tracked, because the handler is a plain object with no
+	 * registration of its own; a new facade means new handlers.
+	 */
+	DatasetAdminHandler datasetAdminHandler;
+
+	/** Tracks the registration, so it follows the store being rebuilt rather than pinning one instance. */
 	@InjectService
-	DatasetAdminService datasetAdminService;
+	ServiceAware<DcatAdminService> dcatAdminServices;
 
 	@TempDir
 	Path shapesDir;
@@ -134,17 +151,26 @@ public class WriteValidationIntegrationTest {
 		assertEquals(422, ready.statusCode(),
 				"enforcement did not become active after configuring shapes; last probe: " + ready.statusCode() + " "
 						+ ready.body());
+
+		// Only now, with the store rebuilt around the configured shapes, is there a service
+		// worth holding on to.
+		DcatAdminService dcatAdminService = dcatAdminServices.waitForService(15_000);
+		assertNotNull(dcatAdminService, "DcatAdminService should be registered once the store has rebuilt");
+		datasetAdminHandler = dcatAdminService.getDatasetAdminHandler();
 	}
 
 	@AfterEach
 	void disableEnforcement() throws Exception {
-		// Leave the runtime as later test classes expect it: no shapes, no enforcement.
-		updateValidationConfig(DEFAULT_SHAPES_DIR, false);
-		// Best-effort cleanup of the keyword-less dataset the readiness probe may have stored
-		// before enforcement kicked in.
+		// Cleanup first, while the admin resources are still registered. Reconfiguring the
+		// validation service recycles the store and every entity service with it, so a DELETE
+		// sent afterwards can land in the window where the whiteboard has unregistered the
+		// resource — answered 404, discarded, and the resource left behind for the next test.
+		// A delete only removes content, so enforcement being on does not refuse it.
 		http.send(delete(ADMIN_DATASETS + "/" + PROBE_ID), BodyHandlers.discarding());
 		http.send(delete(ADMIN_DATASETS + "/" + DIRECT_ID), BodyHandlers.discarding());
 		http.send(delete(ADMIN_DATASETS + "/" + FOCUS_ID), BodyHandlers.discarding());
+		// Leave the runtime as later test classes expect it: no shapes, no enforcement.
+		updateValidationConfig(DEFAULT_SHAPES_DIR, false);
 	}
 
 	@Test
@@ -238,11 +264,11 @@ public class WriteValidationIntegrationTest {
 		keywordless.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
 
 		ShaclViolationException refused = assertThrows(ShaclViolationException.class,
-				() -> datasetAdminService.upsertDataset(keywordless, Caller.ANONYMOUS));
+				() -> datasetAdminHandler.upsertDataset(keywordless, Caller.ANONYMOUS));
 
 		assertNotNull(refused.getReport(), "the caller needs the report, not just a failure");
 		assertFalse(refused.getReport().conforms(), "a conforming report would not have been thrown");
-		assertTrue(datasetAdminService.getDataset(DIRECT_ID).isEmpty(),
+		assertTrue(datasetAdminHandler.getDataset(DIRECT_ID).isEmpty(),
 				"nothing may reach the store when the service itself refuses");
 	}
 
@@ -253,9 +279,9 @@ public class WriteValidationIntegrationTest {
 		dataset.setAbout(DcatIds.logicalIri(DcatIds.DATASETS, DIRECT_ID));
 		dataset.getKeyword().add(RestEntities.literal("air"));
 
-		datasetAdminService.upsertDataset(dataset, Caller.ANONYMOUS);
+		datasetAdminHandler.upsertDataset(dataset, Caller.ANONYMOUS);
 
-		assertTrue(datasetAdminService.getDataset(DIRECT_ID).isPresent());
+		assertTrue(datasetAdminHandler.getDataset(DIRECT_ID).isPresent());
 	}
 
 	private void updateValidationConfig(String directory, boolean enforceOnWrite) throws IOException {

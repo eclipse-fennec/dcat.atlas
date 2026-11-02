@@ -19,10 +19,11 @@ import java.net.URI;
 import java.util.NoSuchElementException;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyHandler;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
@@ -90,16 +91,26 @@ public class DataServiceAdminResource {
 	@Reference
 	PublicIris identityRendering;
 
-	@Reference
-	DataServiceAdminService dataServiceAdminService;
-
 	/**
-	 * Read-only, because {@code servesDataset} membership only asks whether the Dataset id
-	 * in the body is already taken; the write goes through {@link DataServiceAdminService},
-	 * which owns the reference.
+	 * The facade, not a DataServiceAdminHandler: it is bound to one store in configuration,
+	 * so every handler this resource reaches writes to the store the portal was
+	 * configured with.
 	 */
 	@Reference
-	DatasetReadOnlyService datasetReadOnlyService;
+	DcatAdminService dcatAdminService;
+
+	/**
+	 * The handler this resource writes through. Reached from the facade rather than bound
+	 * on its own, so every admin resource writes to the store the portal was configured
+	 * with; see {@link DcatAdminService}.
+	 */
+	private DataServiceAdminHandler dataServices() {
+		return dcatAdminService.getDataServiceAdminHandler();
+	}
+
+	private DatasetReadOnlyHandler datasetReadOnlyHandler() {
+		return dcatAdminService.getDatasetReadOnlyHandler();
+	}
 
 	@POST
 	@Consumes({ XMI })
@@ -111,15 +122,15 @@ public class DataServiceAdminResource {
 		// Location header — stamping it here is what used to freeze the writing host into
 		// the stored file (and, behind a proxy, an internal address).
 		CreateIdentity identity = CreateIdentity.resolve(DcatIds.DATA_SERVICES, dataService,
-				candidate -> dataServiceAdminService.getDataService(candidate).isPresent(), identityRendering);
+				candidate -> dataServices().getDataService(candidate).isPresent(), identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
 		URI about = readUri(id);
-		dataServiceAdminService.upsertDataService(dataService, callerHeader.of(headers));
+		dataServices().upsertDataService(dataService, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(dataService);
-		dataServiceAdminService.etag(id).ifPresent(created::tag);
+		dataServices().etag(id).ifPresent(created::tag);
 		return created.build();
 	}
 
@@ -130,7 +141,7 @@ public class DataServiceAdminResource {
 	public Response upsertDataService(@PathParam("id") String id, DataService dataService,
 			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServiceAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServices().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -140,10 +151,10 @@ public class DataServiceAdminResource {
 		if (mismatch != null) {
 			return mismatch.build();
 		}
-		boolean existed = dataServiceAdminService.getDataService(id).isPresent();
-		dataServiceAdminService.upsertDataService(dataService, callerHeader.of(headers));
+		boolean existed = dataServices().getDataService(id).isPresent();
+		dataServices().upsertDataService(dataService, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(dataService);
-		dataServiceAdminService.etag(id).ifPresent(response::tag);
+		dataServices().etag(id).ifPresent(response::tag);
 		return response.build();
 	}
 
@@ -152,17 +163,17 @@ public class DataServiceAdminResource {
 	public Response deleteDataService(@PathParam("id") String id,
 			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request,
 					@Context HttpHeaders headers) {
-		if (dataServiceAdminService.getDataService(id).isEmpty()) {
+		if (dataServices().getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServiceAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServices().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		// If-Match was evaluated against this data service's ETag only. A cascade also rewrites
 		// the referrers, whose ETags the caller never saw — see the service javadoc for why
 		// that narrowing of F-16 is deliberate.
-		List<String> unlinked = dataServiceAdminService.deleteDataService(id, cascade, callerHeader.of(headers));
+		List<String> unlinked = dataServices().deleteDataService(id, cascade, callerHeader.of(headers));
 		return CascadeReport.respond(unlinked, identityRendering);
 	}
 
@@ -186,25 +197,25 @@ public class DataServiceAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response addDataset(@PathParam("id") String id, Dataset dataset,
 			@Context Request request, @Context HttpHeaders headers) {
-		if (dataServiceAdminService.getDataService(id).isEmpty()) {
+		if (dataServices().getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// Resolve the identity the store will file it under — refusing one that is not ours
 		// and one that is already taken, exactly as POST /admin/datasets does — which also
 		// stamps it, so the shapes see the exact form to be stored; then validate, then write.
 		CreateIdentity identity = CreateIdentity.resolveMember(DcatIds.DATASETS, dataset,
-				candidate -> datasetReadOnlyService.getDataset(candidate).isPresent(),
+				candidate -> datasetReadOnlyHandler().getDataset(candidate).isPresent(),
 				READ_COLLECTION + "/" + id + "/" + DcatIds.DATASETS, identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServiceAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServices().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
-		ResponseBuilder ok = Response.ok(dataServiceAdminService.addDatasetToDataService(id, dataset,
+		ResponseBuilder ok = Response.ok(dataServices().addDatasetToDataService(id, dataset,
 				callerHeader.of(headers)));
-		dataServiceAdminService.etag(id).ifPresent(ok::tag);
+		dataServices().etag(id).ifPresent(ok::tag);
 		return ok.build();
 	}
 
@@ -214,10 +225,10 @@ public class DataServiceAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
 			@Context Request request, @Context HttpHeaders headers) {
-		if (dataServiceAdminService.getDataService(id).isEmpty()) {
+		if (dataServices().getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServiceAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServices().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -225,12 +236,12 @@ public class DataServiceAdminResource {
 		// NoSuchElementException, which is a 404 about the dataset and not a 500.
 		DataService dataService;
 		try {
-			dataService = dataServiceAdminService.linkDatasetToDataService(id, datasetId, callerHeader.of(headers));
+			dataService = dataServices().linkDatasetToDataService(id, datasetId, callerHeader.of(headers));
 		} catch (NoSuchElementException e) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		ResponseBuilder ok = Response.ok(dataService);
-		dataServiceAdminService.etag(id).ifPresent(ok::tag);
+		dataServices().etag(id).ifPresent(ok::tag);
 		return ok.build();
 	}
 
@@ -238,16 +249,16 @@ public class DataServiceAdminResource {
 	@Path("/{id}/datasets/{datasetId}")
 	public Response removeDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
 			@Context Request request, @Context HttpHeaders headers) {
-		if (dataServiceAdminService.getDataService(id).isEmpty()) {
+		if (dataServices().getDataService(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServiceAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, dataServices().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		// Idempotent: unlinking a dataset that is not served is a no-op, not a 404 —
 		// consistent with the catalog and series membership removals.
-		dataServiceAdminService.deleteDatasetFromDataService(id, datasetId, callerHeader.of(headers));
+		dataServices().deleteDatasetFromDataService(id, datasetId, callerHeader.of(headers));
 		return Response.noContent().build();
 	}
 

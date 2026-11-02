@@ -24,14 +24,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * rather than go looking for it: a snapshot that polled the store would re-read the tree once
  * per gauge per export interval. Every write in this portal — through any of the ten stores,
  * whether it rewrites one resource or five — ends in exactly one place,
- * {@link DcatHelper.Store#commit(String)}, so that is the one call site that covers all of
+ * {@code DcatStoreSession#commit(String)}, so that is the one call site that covers all of
  * them. A listener service threaded through ten components would put the same notification in
  * ten places and let a new store forget it.
  * </p>
  *
  * <p>
  * The listeners are held statically because the notifier and its one listener are in the same
- * bundle and the same class loader, and because {@code Store} is created per operation and
+ * bundle and the same class loader, and because {@code DcatStoreSession} is created per operation and
  * owns nothing that outlives it. Nothing outside this bundle can register.
  * </p>
  */

@@ -13,6 +13,7 @@
  */
 package org.eclipse.fennec.dcat.atlas.impl;
 
+import org.eclipse.fennec.dcat.atlas.impl.handler.DatasetAdminHandlerImpl;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
 import java.nio.file.Path;
 
@@ -60,7 +61,7 @@ public class ShaclWriteEnforcementTest {
 
 	@Test
 	void aHardViolationRefusesTheWrite() {
-		DatasetAdminServiceImpl service = service(enforcing(report(Severity.Violation)));
+		DatasetAdminHandlerImpl service = service(enforcing(report(Severity.Violation)));
 
 		ShaclViolationException refused = assertThrows(ShaclViolationException.class,
 				() -> service.upsertDataset(dataset(), Caller.ANONYMOUS));
@@ -72,7 +73,7 @@ public class ShaclWriteEnforcementTest {
 
 	@Test
 	void aRefusedWriteLeavesNothingOnDisk() {
-		DatasetAdminServiceImpl service = service(enforcing(report(Severity.Violation)));
+		DatasetAdminHandlerImpl service = service(enforcing(report(Severity.Violation)));
 
 		assertThrows(ShaclViolationException.class, () -> service.upsertDataset(dataset(), Caller.ANONYMOUS));
 
@@ -87,7 +88,7 @@ public class ShaclWriteEnforcementTest {
 	 */
 	@Test
 	void aWarningDoesNotBlock() {
-		DatasetAdminServiceImpl service = service(enforcing(report(Severity.Warning)));
+		DatasetAdminHandlerImpl service = service(enforcing(report(Severity.Warning)));
 
 		service.upsertDataset(dataset(), Caller.ANONYMOUS);
 
@@ -96,7 +97,7 @@ public class ShaclWriteEnforcementTest {
 
 	@Test
 	void enforcementOffStoresTheEntityAnyway() {
-		DatasetAdminServiceImpl service = service(new FakeValidation(report(Severity.Violation), false));
+		DatasetAdminHandlerImpl service = service(new FakeValidation(report(Severity.Violation), false));
 
 		service.upsertDataset(dataset(), Caller.ANONYMOUS);
 
@@ -115,13 +116,12 @@ public class ShaclWriteEnforcementTest {
 
 	// --- fixtures -----------------------------------------------------------
 
-	private DatasetAdminServiceImpl service(DcatValidationService validation) {
-
-		DatasetAdminServiceImpl service = TestNotifiers.announcing(new DatasetAdminServiceImpl(TestResourceSets.factory(), TestGitStore.at(storage), TestGitStore.BASE_PATH));
-		if (validation != null) {
-			service.setValidationService(validation);
-		}
-		return service;
+	private DatasetAdminHandlerImpl service(DcatValidationService validation) {
+		// The store enforces, not the service, so which validator is in play is decided
+		// when the store is built. A null one means nothing is bound at all, which only
+		// a store that does not validate on write may do.
+		return new DatasetAdminHandlerImpl(TestNotifiers.discarding(),
+				validation == null ? TestStores.at(storage, false) : TestStores.at(storage, validation));
 	}
 
 	private static DcatValidationService enforcing(ValidationReport report) {

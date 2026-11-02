@@ -13,25 +13,25 @@
  */
 package org.eclipse.fennec.dcat.atlas.rest;
 
-import java.util.List;
-
 import java.net.URI;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
-import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyService;
-import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyService;
+import org.eclipse.fennec.dcat.atlas.api.read.DataServiceReadOnlyHandler;
+import org.eclipse.fennec.dcat.atlas.api.read.DatasetReadOnlyHandler;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CallerHeader;
+import org.eclipse.fennec.dcat.atlas.rest.helper.CascadeReport;
 import org.eclipse.fennec.dcat.atlas.rest.helper.ConditionalRequests;
 import org.eclipse.fennec.dcat.atlas.rest.helper.CreateIdentity;
-import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
-import org.eclipse.fennec.dcat.atlas.rest.helper.CascadeReport;
 import org.eclipse.fennec.dcat.atlas.rest.helper.PublicUri;
+import org.eclipse.fennec.dcat.atlas.rest.helper.ReplaceIdentity;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
@@ -43,22 +43,22 @@ import org.osgi.service.servlet.whiteboard.annotations.RequireHttpWhiteboard;
 import dcat.Catalog;
 import dcat.DataService;
 import dcat.Dataset;
-import rdf.IdentifiedResource;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
+import rdf.IdentifiedResource;
 
 /**
  * Admin (write) REST adapter for the {@code Catalog} collection (F-4/F-11).
@@ -68,8 +68,8 @@ import jakarta.ws.rs.core.Response.Status;
  * public {@link CatalogReadOnlyResource} so the upstream PEP (APISix/Keycloak)
  * can require authentication/authorization here while leaving reads open
  * (F-6/F-12). The adapter holds no business logic: it maps the request onto the
- * resource's public {@code rdf:about} URI (the read URL) and delegates to
- * {@link CatalogAdminService}.
+ * resource's public {@code rdf:about} URI (the read URL) and delegates to the
+ * catalog handler of {@link DcatAdminService}.
  */
 @RequireCodecMessageBodyReaderWriter
 @RequireJakartarsWhiteboard
@@ -104,19 +104,30 @@ public class CatalogAdminResource {
 	@Reference
 	PublicIris identityRendering;
 
-	@Reference
-	CatalogAdminService catalogAdminService;
-
 	/**
-	 * Read-only, because the membership endpoints only ask these whether a member id is
-	 * already taken — the write itself goes through {@link CatalogAdminService}, which owns
-	 * the reference as well as the member.
+	 * The facade, not a CatalogAdminHandler: it is bound to one store in configuration,
+	 * so every handler this resource reaches writes to the store the portal was
+	 * configured with.
 	 */
 	@Reference
-	DatasetReadOnlyService datasetReadOnlyService;
+	DcatAdminService dcatAdminService;
 
-	@Reference
-	DataServiceReadOnlyService dataServiceReadOnlyService;
+	/**
+	 * The handler this resource writes through. Reached from the facade rather than bound
+	 * on its own, so every admin resource writes to the store the portal was configured
+	 * with; see {@link DcatAdminService}.
+	 */
+	private CatalogAdminHandler catalogs() {
+		return dcatAdminService.getCatalogAdminHandler();
+	}
+
+	private DatasetReadOnlyHandler datasetReadOnlyHandler() {
+		return dcatAdminService.getDatasetReadOnlyHandler();
+	}
+
+	private DataServiceReadOnlyHandler dataServiceReadOnlyHandler() {
+		return dcatAdminService.getDataServiceReadOnlyHandler();
+	}
 
 	@POST
 	@Consumes({ XMI })
@@ -134,9 +145,9 @@ public class CatalogAdminResource {
 		}
 		String id = identity.id();
 		URI about = readUri(id);
-		catalogAdminService.upsertCatalog(catalog, callerHeader.of(headers));
+		catalogs().upsertCatalog(catalog, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(catalog);
-		catalogAdminService.etag(id).ifPresent(created::tag);
+		catalogs().etag(id).ifPresent(created::tag);
 		return created.build();
 	}
 
@@ -147,7 +158,7 @@ public class CatalogAdminResource {
 	public Response upsertCatalog(@PathParam("id") String id, Catalog catalog,
 			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogs().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -157,10 +168,10 @@ public class CatalogAdminResource {
 		if (mismatch != null) {
 			return mismatch.build();
 		}
-		boolean existed = catalogAdminService.getCatalog(id).isPresent();
-		catalogAdminService.upsertCatalog(catalog, callerHeader.of(headers));
+		boolean existed = catalogs().getCatalog(id).isPresent();
+		catalogs().upsertCatalog(catalog, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(catalog);
-		catalogAdminService.etag(id).ifPresent(response::tag);
+		catalogs().etag(id).ifPresent(response::tag);
 		return response.build();
 	}
 
@@ -169,17 +180,17 @@ public class CatalogAdminResource {
 	public Response deleteCatalog(@PathParam("id") String id,
 			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request,
 					@Context HttpHeaders headers) {
-		if (catalogAdminService.getCatalog(id).isEmpty()) {
+		if (catalogs().getCatalog(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogs().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		// If-Match was evaluated against this catalog's ETag only. A cascade also rewrites
 		// the referrers, whose ETags the caller never saw — see the service javadoc for why
 		// that narrowing of F-16 is deliberate.
-		List<String> unlinked = catalogAdminService.deleteCatalog(id, cascade, callerHeader.of(headers));
+		List<String> unlinked = catalogs().deleteCatalog(id, cascade, callerHeader.of(headers));
 		return CascadeReport.respond(unlinked, identityRendering);
 	}
 
@@ -205,7 +216,7 @@ public class CatalogAdminResource {
 			@Context Request request, @Context HttpHeaders headers) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.DATASETS, dataset, this::datasetExists, membership(id, "datasets")),
-				() -> catalogAdminService.addDatasetToCatalog(id, dataset, callerHeader.of(headers)));
+				() -> catalogs().addDatasetToCatalog(id, dataset, callerHeader.of(headers)));
 	}
 
 	/**
@@ -219,7 +230,7 @@ public class CatalogAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
 			@Context Request request, @Context HttpHeaders headers) {
-		return addMember(id, request, () -> catalogAdminService.linkDatasetToCatalog(id, datasetId,
+		return addMember(id, request, () -> catalogs().linkDatasetToCatalog(id, datasetId,
 				callerHeader.of(headers)));
 	}
 
@@ -227,7 +238,7 @@ public class CatalogAdminResource {
 	@Path("/{id}/datasets/{datasetId}")
 	public Response removeDataset(@PathParam("id") String id, @PathParam("datasetId") String datasetId,
 			@Context Request request, @Context HttpHeaders headers) {
-		return removeMember(id, request, () -> catalogAdminService.deleteDatasetFromCatalog(id, datasetId,
+		return removeMember(id, request, () -> catalogs().deleteDatasetFromCatalog(id, datasetId,
 				callerHeader.of(headers)));
 	}
 
@@ -239,7 +250,7 @@ public class CatalogAdminResource {
 			@Context Request request, @Context HttpHeaders headers) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.DATA_SERVICES, service, this::dataServiceExists, membership(id, "services")),
-				() -> catalogAdminService.addDataServiceToCatalog(id, service, callerHeader.of(headers)));
+				() -> catalogs().addDataServiceToCatalog(id, service, callerHeader.of(headers)));
 	}
 
 	/** Links a DataService that already exists; see {@link #linkDataset}. */
@@ -248,7 +259,7 @@ public class CatalogAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkService(@PathParam("id") String id, @PathParam("serviceId") String serviceId,
 			@Context Request request, @Context HttpHeaders headers) {
-		return addMember(id, request, () -> catalogAdminService.linkDataServiceToCatalog(id, serviceId,
+		return addMember(id, request, () -> catalogs().linkDataServiceToCatalog(id, serviceId,
 				callerHeader.of(headers)));
 	}
 
@@ -256,7 +267,7 @@ public class CatalogAdminResource {
 	@Path("/{id}/services/{serviceId}")
 	public Response removeService(@PathParam("id") String id, @PathParam("serviceId") String serviceId,
 			@Context Request request, @Context HttpHeaders headers) {
-		return removeMember(id, request, () -> catalogAdminService.deleteDataServiceFromCatalog(id, serviceId,
+		return removeMember(id, request, () -> catalogs().deleteDataServiceFromCatalog(id, serviceId,
 				callerHeader.of(headers)));
 	}
 
@@ -268,7 +279,7 @@ public class CatalogAdminResource {
 			@Context Request request, @Context HttpHeaders headers) {
 		return addMember(id, request,
 				() -> refuseMember(DcatIds.CATALOGS, subCatalog, this::catalogExists, membership(id, "catalogs")),
-				() -> catalogAdminService.addSubCatalogToCatalog(id, subCatalog, callerHeader.of(headers)));
+				() -> catalogs().addSubCatalogToCatalog(id, subCatalog, callerHeader.of(headers)));
 	}
 
 	/** Links a sub-catalog that already exists; see {@link #linkDataset}. */
@@ -277,7 +288,7 @@ public class CatalogAdminResource {
 	@Produces({ XMI, JSON, XML, RDF_XML })
 	public Response linkSubCatalog(@PathParam("id") String id, @PathParam("subCatalogId") String subCatalogId,
 			@Context Request request, @Context HttpHeaders headers) {
-		return addMember(id, request, () -> catalogAdminService.linkSubCatalogToCatalog(id, subCatalogId,
+		return addMember(id, request, () -> catalogs().linkSubCatalogToCatalog(id, subCatalogId,
 				callerHeader.of(headers)));
 	}
 
@@ -285,7 +296,7 @@ public class CatalogAdminResource {
 	@Path("/{id}/catalogs/{subCatalogId}")
 	public Response removeSubCatalog(@PathParam("id") String id, @PathParam("subCatalogId") String subCatalogId,
 			@Context Request request, @Context HttpHeaders headers) {
-		return removeMember(id, request, () -> catalogAdminService.deleteSubCatalogFromCatalog(id, subCatalogId,
+		return removeMember(id, request, () -> catalogs().deleteSubCatalogFromCatalog(id, subCatalogId,
 				callerHeader.of(headers)));
 	}
 
@@ -308,7 +319,7 @@ public class CatalogAdminResource {
 
 	private Response addMember(String id, Request request, java.util.function.Supplier<ResponseBuilder> validate,
 			java.util.function.Supplier<Catalog> add) {
-		if (catalogAdminService.getCatalog(id).isEmpty()) {
+		if (catalogs().getCatalog(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		// After the 404 (an unknown catalog cannot take a member, conformant or not) and
@@ -317,7 +328,7 @@ public class CatalogAdminResource {
 		if (invalid != null) {
 			return invalid.build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogs().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -328,7 +339,7 @@ public class CatalogAdminResource {
 			return Response.status(Status.NOT_FOUND).build();
 		}
 		ResponseBuilder ok = Response.ok(catalog);
-		catalogAdminService.etag(id).ifPresent(ok::tag);
+		catalogs().etag(id).ifPresent(ok::tag);
 		return ok.build();
 	}
 
@@ -359,29 +370,29 @@ public class CatalogAdminResource {
 	}
 
 	private boolean datasetExists(String id) {
-		return datasetReadOnlyService.getDataset(id).isPresent();
+		return datasetReadOnlyHandler().getDataset(id).isPresent();
 	}
 
 	private boolean dataServiceExists(String id) {
-		return dataServiceReadOnlyService.getDataService(id).isPresent();
+		return dataServiceReadOnlyHandler().getDataService(id).isPresent();
 	}
 
 	private boolean catalogExists(String id) {
-		return catalogAdminService.getCatalog(id).isPresent();
+		return catalogs().getCatalog(id).isPresent();
 	}
 
 	/** Shared flow for the remove-member endpoints (see {@link #addMember}); returns 204. */
 	private Response removeMember(String id, Request request, Runnable remove) {
-		if (catalogAdminService.getCatalog(id).isEmpty()) {
+		if (catalogs().getCatalog(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, catalogs().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		remove.run();
 		ResponseBuilder noContent = Response.noContent();
-		catalogAdminService.etag(id).ifPresent(noContent::tag);
+		catalogs().etag(id).ifPresent(noContent::tag);
 		return noContent.build();
 	}
 

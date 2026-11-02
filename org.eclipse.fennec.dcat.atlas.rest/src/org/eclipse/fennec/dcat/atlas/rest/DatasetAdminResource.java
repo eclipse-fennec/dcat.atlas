@@ -18,7 +18,8 @@ import java.util.List;
 import java.net.URI;
 
 import org.eclipse.fennec.codec.rest.annotations.RequireCodecMessageBodyReaderWriter;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminHandler;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.rest.filter.PublicIriFilter;
@@ -87,8 +88,22 @@ public class DatasetAdminResource {
 	@Reference
 	PublicIris identityRendering;
 
+	/**
+	 * The facade, not a DatasetAdminHandler: it is bound to one store in configuration,
+	 * so every handler this resource reaches writes to the store the portal was
+	 * configured with.
+	 */
 	@Reference
-	DatasetAdminService datasetAdminService;
+	DcatAdminService dcatAdminService;
+
+	/**
+	 * The handler this resource writes through. Reached from the facade rather than bound
+	 * on its own, so every admin resource writes to the store the portal was configured
+	 * with; see {@link DcatAdminService}.
+	 */
+	private DatasetAdminHandler datasets() {
+		return dcatAdminService.getDatasetAdminHandler();
+	}
 
 	@POST
 	@Consumes({ XMI })
@@ -100,15 +115,15 @@ public class DatasetAdminResource {
 		// Location header — stamping it here is what used to freeze the writing host into
 		// the stored file (and, behind a proxy, an internal address).
 		CreateIdentity identity = CreateIdentity.resolve(DcatIds.DATASETS, dataset,
-				candidate -> datasetAdminService.getDataset(candidate).isPresent(), identityRendering);
+				candidate -> datasets().getDataset(candidate).isPresent(), identityRendering);
 		if (identity.refused()) {
 			return identity.refusal().build();
 		}
 		String id = identity.id();
 		URI about = readUri(id);
-		datasetAdminService.upsertDataset(dataset, callerHeader.of(headers));
+		datasets().upsertDataset(dataset, callerHeader.of(headers));
 		ResponseBuilder created = Response.created(about).entity(dataset);
-		datasetAdminService.etag(id).ifPresent(created::tag);
+		datasets().etag(id).ifPresent(created::tag);
 		return created.build();
 	}
 
@@ -119,7 +134,7 @@ public class DatasetAdminResource {
 	public Response upsertDataset(@PathParam("id") String id, Dataset dataset,
 			@Context Request request, @Context HttpHeaders headers) {
 		// Optimistic locking (F-16): reject a stale If-Match; If-None-Match: * makes it create-only.
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasets().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
@@ -129,10 +144,10 @@ public class DatasetAdminResource {
 		if (mismatch != null) {
 			return mismatch.build();
 		}
-		boolean existed = datasetAdminService.getDataset(id).isPresent();
-		datasetAdminService.upsertDataset(dataset, callerHeader.of(headers));
+		boolean existed = datasets().getDataset(id).isPresent();
+		datasets().upsertDataset(dataset, callerHeader.of(headers));
 		ResponseBuilder response = Response.status(existed ? Status.OK : Status.CREATED).entity(dataset);
-		datasetAdminService.etag(id).ifPresent(response::tag);
+		datasets().etag(id).ifPresent(response::tag);
 		return response.build();
 	}
 
@@ -141,17 +156,17 @@ public class DatasetAdminResource {
 	public Response deleteDataset(@PathParam("id") String id,
 			@QueryParam("cascade") @DefaultValue("false") boolean cascade, @Context Request request,
 					@Context HttpHeaders headers) {
-		if (datasetAdminService.getDataset(id).isEmpty()) {
+		if (datasets().getDataset(id).isEmpty()) {
 			return Response.status(Status.NOT_FOUND).build();
 		}
-		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasetAdminService.etag(id));
+		ResponseBuilder precondition = ConditionalRequests.evaluate(request, datasets().etag(id));
 		if (precondition != null) {
 			return precondition.build();
 		}
 		// If-Match was evaluated against this dataset's ETag only. A cascade also rewrites
 		// the referrers, whose ETags the caller never saw — see the service javadoc for why
 		// that narrowing of F-16 is deliberate.
-		List<String> unlinked = datasetAdminService.deleteDataset(id, cascade, callerHeader.of(headers));
+		List<String> unlinked = datasets().deleteDataset(id, cascade, callerHeader.of(headers));
 		return CascadeReport.respond(unlinked, identityRendering);
 	}
 

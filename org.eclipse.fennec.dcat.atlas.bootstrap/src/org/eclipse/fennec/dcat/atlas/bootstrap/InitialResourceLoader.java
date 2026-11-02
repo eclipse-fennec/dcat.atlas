@@ -24,10 +24,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.fennec.dcat.atlas.api.access.Caller;
-import org.eclipse.fennec.dcat.atlas.api.admin.CatalogAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DataServiceAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetAdminService;
-import org.eclipse.fennec.dcat.atlas.api.admin.DatasetSeriesAdminService;
+import org.eclipse.fennec.dcat.atlas.api.admin.DcatAdminService;
 import org.eclipse.fennec.dcat.atlas.api.identity.DcatIds;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicIris;
 import org.eclipse.fennec.dcat.atlas.api.identity.PublicView;
@@ -91,17 +88,13 @@ public class InitialResourceLoader {
 	@Reference
 	PublicIris publicIris;
 
+	/**
+	 * The write side, as one service: the seeder files four kinds of resource and they all
+	 * have to land in the same store, which is what binding the facade rather than four
+	 * handlers guarantees.
+	 */
 	@Reference
-	CatalogAdminService catalogs;
-
-	@Reference
-	DatasetAdminService datasets;
-
-	@Reference
-	DataServiceAdminService dataServices;
-
-	@Reference
-	DatasetSeriesAdminService datasetSeries;
+	DcatAdminService dcatAdminService;
 
 	/**
 	 * Seeds the folder, once, as the component activates.
@@ -189,17 +182,17 @@ public class InitialResourceLoader {
 	private Map<String, SeedTarget> targets() {
 		return Map.of(//
 				DcatIds.DATASETS,
-				SeedTarget.of(id -> datasets.getDataset(id).isPresent(),
-						resource -> datasets.upsertDataset((Dataset) resource, Caller.ANONYMOUS)), //
+				SeedTarget.of(id -> dcatAdminService.getDatasetAdminHandler().getDataset(id).isPresent(),
+						resource -> dcatAdminService.getDatasetAdminHandler().upsertDataset((Dataset) resource, Caller.ANONYMOUS)), //
 				DcatIds.DATASET_SERIES,
-				SeedTarget.of(id -> datasetSeries.getDatasetSeries(id).isPresent(),
-						resource -> datasetSeries.upsertDatasetSeries((DatasetSeries) resource, Caller.ANONYMOUS)), //
+				SeedTarget.of(id -> dcatAdminService.getDataSeriesAdminHandler().getDatasetSeries(id).isPresent(),
+						resource -> dcatAdminService.getDataSeriesAdminHandler().upsertDatasetSeries((DatasetSeries) resource, Caller.ANONYMOUS)), //
 				DcatIds.DATA_SERVICES,
-				SeedTarget.of(id -> dataServices.getDataService(id).isPresent(),
-						resource -> dataServices.upsertDataService((DataService) resource, Caller.ANONYMOUS)), //
+				SeedTarget.of(id -> dcatAdminService.getDataServiceAdminHandler().getDataService(id).isPresent(),
+						resource -> dcatAdminService.getDataServiceAdminHandler().upsertDataService((DataService) resource, Caller.ANONYMOUS)), //
 				DcatIds.CATALOGS,
-				SeedTarget.of(id -> catalogs.getCatalog(id).isPresent(),
-						resource -> catalogs.upsertCatalog((Catalog) resource, Caller.ANONYMOUS)));
+				SeedTarget.of(id -> dcatAdminService.getCatalogAdminHandler().getCatalog(id).isPresent(),
+						resource -> dcatAdminService.getCatalogAdminHandler().upsertCatalog((Catalog) resource, Caller.ANONYMOUS)));
 	}
 
 	private static String named(List<Seed> seeds) {

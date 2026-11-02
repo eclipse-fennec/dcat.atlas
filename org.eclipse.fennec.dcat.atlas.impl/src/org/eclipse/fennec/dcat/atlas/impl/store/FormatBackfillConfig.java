@@ -21,8 +21,13 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 		description = "Completes dct:format from dcat:mediaType on the distributions already in the store, once per start.")
 public @interface FormatBackfillConfig {
 
-	@AttributeDefinition(name = "Base path", description = "Folder inside the git repository the stores use; must match the StoreConfig of the admin services.")
-	String basePath() default "dcat";
+	/**
+	 * Which store to complete. There is no base path here any more: where the collections
+	 * sit inside the store is the store's own business, and naming it twice was a second
+	 * place for the two to disagree.
+	 */
+	@AttributeDefinition(name = "Store target filter", description = "The target filter selecting which DcatStoreService to complete")
+	String storeService_target() default "(scope=no-inject)";
 
 	@AttributeDefinition(name = "Enabled", description = "false skips the pass. New writes are completed regardless; this only concerns what is already stored.")
 	boolean enabled() default true;

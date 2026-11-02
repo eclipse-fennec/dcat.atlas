@@ -17,21 +17,19 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 /**
- * Shared configuration for the git-backed DCAT-AP stores. Every entity service
- * {@code @Designate}s this same OCD.
+ * Configuration for the git-backed store.
  * <p>
  * The repository itself is not configured here: it belongs to the
- * {@code org.eclipse.fennec.jgit} {@code GitService} each store binds, so which repository,
- * which branch and which credentials are one {@code GitConfig} the stores share rather than
- * ten copies that could disagree. Point the stores at a particular one with the usual DS
- * {@code gitService.target} property.
+ * {@code org.eclipse.fennec.jgit} {@code GitService} this store binds, so which repository,
+ * which branch and which credentials are one {@code GitConfig}. Point the store at a
+ * particular one with the usual DS {@code gitService.target} property.
  * <p>
  * Persistence is one XMI blob per resource, at
  * {@code <basePath>/<collection>/<id>.xmi}. Distributions have no folder of their own:
  * {@code dcat:distribution} is containment, so a Distribution is stored inside its Dataset's
  * blob (FR-10).
  */
-@ObjectClassDefinition(name = "DCAT-AP Atlas git store", description = "Git-backed persistence for the DCAT-AP entity stores")
+@ObjectClassDefinition(name = "DCAT-AP Atlas git store", description = "Git-backed persistence for the DCAT-AP collections")
 public @interface StoreConfig {
 
 	/**
@@ -60,7 +58,16 @@ public @interface StoreConfig {
 	 * <p>
 	 * Switch it off ({@code MODEL_VALIDATE=false}) to import a corpus written before a
 	 * constraint existed, rather than removing the constraint.
+	 * <p>
+	 * It is also what makes the {@code DcatValidationService} reference required. The model
+	 * floor needs no service, but the SHACL one does, and {@code ShaclValidation} reads an
+	 * absent service as "no enforcement" — so a store left on with nothing bound would
+	 * accept unchecked writes while its configuration said it validated them. A store that
+	 * cannot keep that promise does not start.
 	 */
 	@AttributeDefinition(name = "Validate on write", description = "Refuse a write whose entity violates the model's OCL constraints or declared multiplicities")
 	boolean validateOnWrite() default true;
+	
+	@AttributeDefinition(name = "gitService Target Filter", description = "The target filter to bind this service to the right GitService")
+	String gitService_target() default "(scope=no-inject)";
 }

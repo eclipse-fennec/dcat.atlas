@@ -1,7 +1,12 @@
 # Container flavour of the runtime: the base application plus the env-driven
 # container configuration bundle. Exported by `gradlew :...runtime:export.docker`
 # to generated/distributions/executable/docker.jar, which the Dockerfile copies.
+# The second entry is the SBOM exporter for `./gradlew sbom`, included only once it has been
+# fetched (see cnf/sbom/plugin.bnd); until then it expands to nothing, and resolve, the build
+# and the export ignore it as well as -sbom.
 -include: \
-	base.bndrun
+	base.bndrun,\
+	${if;${isfile;${workspace}/cnf/cache/sbom-exporter/org.gecko.bnd.sbom.jar};${workspace}/cnf/sbom/plugin.bnd}
+-sbom: level=medium, format=cyclonedx
 
 -runbundles.docker: org.eclipse.fennec.dcat.atlas.config.docker

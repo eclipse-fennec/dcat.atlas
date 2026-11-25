@@ -51,6 +51,13 @@ rather than downloaded from a Maven release build. The Docker Hub push needs the
 `DOCKER_USERNAME` and `DOCKER_API_TOKEN` secrets, inherited by the reusable from the
 calling workflow.
 
+Every push and every PR also runs `.github/workflows/runtime-smoke.yml`: it builds the image
+the same way (without pushing it), starts it with a minimal test shape from
+`.github/runtime-smoke/shapes/`, waits for `/health/ready`, runs the API round trip in
+`.github/runtime-smoke/check.sh` and fails on errors in the container log. The check script
+works against any instance started with that shape, the container as well as a local
+`docker.jar`: `.github/runtime-smoke/check.sh http://localhost:8080`.
+
 The compose files below name the locally built `eclipse-fennec/dcat.atlas:latest`; point
 their `image:` at one of the tags above to run a published image instead.
 

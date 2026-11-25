@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: EPL-2.0 AND CC0-1.0
+#
+# Minimal SHACL shape for the runtime smoke test (#78). Not the DCAT-AP.de shapes:
+# those are AGPL-3.0 and never part of this repository or the image (NOTICE.md).
+#
+# It exists for two reasons. The container's readiness check is CRITICAL while the
+# configured shapes directory holds no *.ttl, so without a shape the container never
+# becomes ready. And it gives the smoke test a rule that only SHACL enforces - the
+# EMF model knows no title length limit - so a 422 on the over-long title proves that
+# the shapes were loaded and are enforced on write.
+#
+# Generated with the assistance of AI (Anthropic Claude); reviewed by a project
+# committer before merge.
+
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix ex:   <urn:dcat-atlas:runtime-smoke#> .
+
+ex:CatalogTitleShape a sh:NodeShape ;
+    sh:targetClass dcat:Catalog ;
+    sh:property [
+        sh:path dct:title ;
+        sh:maxLength 40 ;
+        sh:message "runtime smoke test: catalog title longer than 40 characters"
+    ] .

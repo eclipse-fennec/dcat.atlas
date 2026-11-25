@@ -40,7 +40,8 @@ env:
   # Two invocations on purpose, see docker/dcatatlas/build.gradle.
   EXPORT_TASKS: ':org.eclipse.fennec.dcat.atlas.runtime:export.docker'
   PREPARE_TASKS: ':docker:dcatatlas:prepareDocker'
-  DOCKER_CONTEXT: docker/dcatatlas
+  # Not DOCKER_CONTEXT: the docker CLI reads that variable as its own context name.
+  IMAGE_BUILD_CONTEXT: docker/dcatatlas
   IMAGE: dcat.atlas:runtime-smoke
   CONTAINER_NAME: runtime-smoke
   CONTAINER_PORT: '8080'
@@ -93,7 +94,7 @@ jobs:
       - name: Stage the Docker build context
         run: ./gradlew --no-daemon $PREPARE_TASKS
       - name: Build the image (no push)
-        run: docker build --tag "$IMAGE" "$DOCKER_CONTEXT"
+        run: docker build --tag "$IMAGE" "$IMAGE_BUILD_CONTEXT"
       - name: Start the container
         run: |
           run_args="${DOCKER_RUN_ARGS//'${GITHUB_WORKSPACE}'/$GITHUB_WORKSPACE}"

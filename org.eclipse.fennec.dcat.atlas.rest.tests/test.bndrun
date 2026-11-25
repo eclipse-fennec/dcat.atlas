@@ -7,6 +7,10 @@
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.msg.body.writer',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.rest',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.sparql',\
+	bnd.identity;id='org.eclipse.fennec.dcat.atlas.odata',\
+	bnd.identity;id='org.eclipse.fennec.odata.runtime',\
+	bnd.identity;id='org.eclipse.fennec.odata.persistence.inmemory',\
+	bnd.identity;id='org.eclipse.fennec.odata.metadata',\
 	bnd.identity;id='org.eclipse.fennec.dcat.atlas.validation',\
 	bnd.identity;id='org.apache.felix.eventadmin',\
 	bnd.identity;id='org.apache.felix.configadmin.plugin.interpolation',\

@@ -19,8 +19,6 @@ import javax.xml.datatype.Duration;
 
 import org.eclipse.emf.common.util.EList;
 
-import org.eclipse.emf.ecore.EObject;
-
 import org.osgi.annotation.versioning.ProviderType;
 
 import rdf.DateOrDateTimeLiteral;
@@ -228,27 +226,27 @@ public interface Distribution extends IdentifiedResource {
 	void setByteSize(BigInteger value);
 
 	/**
-	 * Returns the value of the '<em><b>Compress Format</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Compress Format</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Compress Format</em>' containment reference.
-	 * @see #setCompressFormat(EObject)
+	 * @return the value of the '<em>Compress Format</em>' attribute.
+	 * @see #setCompressFormat(String)
 	 * @see dcat.DcatPackage#getDistribution_CompressFormat()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI"
 	 *        extendedMetaData="kind='element' name='compressFormat' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EObject getCompressFormat();
+	String getCompressFormat();
 
 	/**
-	 * Sets the value of the '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}' containment reference.
+	 * Sets the value of the '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Compress Format</em>' containment reference.
+	 * @param value the new value of the '<em>Compress Format</em>' attribute.
 	 * @see #getCompressFormat()
 	 * @generated
 	 */
-	void setCompressFormat(EObject value);
+	void setCompressFormat(String value);
 
 	/**
 	 * Returns the value of the '<em><b>Spatial Resolution In Meters</b></em>' attribute.

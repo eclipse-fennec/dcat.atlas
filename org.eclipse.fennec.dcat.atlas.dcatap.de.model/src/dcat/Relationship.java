@@ -12,7 +12,7 @@
  */
 package dcat;
 
-import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.common.util.EList;
 
 import org.osgi.annotation.versioning.ProviderType;
 
@@ -28,6 +28,7 @@ import rdf.PlainLiteral;
  * The following features are supported:
  * </p>
  * <ul>
+ *   <li>{@link dcat.Relationship#getRelation <em>Relation</em>}</li>
  *   <li>{@link dcat.Relationship#getHadRole <em>Had Role</em>}</li>
  *   <li>{@link dcat.Relationship#getDescription <em>Description</em>}</li>
  *   <li>{@link dcat.Relationship#getNodeID <em>Node ID</em>}</li>
@@ -40,27 +41,30 @@ import rdf.PlainLiteral;
 @ProviderType
 public interface Relationship extends IdentifiedResource {
 	/**
-	 * Returns the value of the '<em><b>Had Role</b></em>' containment reference.
+	 * Returns the value of the '<em><b>Relation</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Had Role</em>' containment reference.
-	 * @see #setHadRole(EObject)
+	 * @return the value of the '<em>Relation</em>' attribute list.
+	 * @see dcat.DcatPackage#getRelationship_Relation()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
+	 *        extendedMetaData="kind='element' name='relation' namespace='http://purl.org/dc/terms/'"
+	 * @generated
+	 */
+	EList<String> getRelation();
+
+	/**
+	 * Returns the value of the '<em><b>Had Role</b></em>' attribute list.
+	 * The list contents are of type {@link java.lang.String}.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Had Role</em>' attribute list.
 	 * @see dcat.DcatPackage#getRelationship_HadRole()
-	 * @model containment="true"
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.AnyURI" required="true"
 	 *        extendedMetaData="kind='element' name='hadRole' namespace='##targetNamespace'"
 	 * @generated
 	 */
-	EObject getHadRole();
-
-	/**
-	 * Sets the value of the '{@link dcat.Relationship#getHadRole <em>Had Role</em>}' containment reference.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Had Role</em>' containment reference.
-	 * @see #getHadRole()
-	 * @generated
-	 */
-	void setHadRole(EObject value);
+	EList<String> getHadRole();
 
 	/**
 	 * Returns the value of the '<em><b>Description</b></em>' containment reference.

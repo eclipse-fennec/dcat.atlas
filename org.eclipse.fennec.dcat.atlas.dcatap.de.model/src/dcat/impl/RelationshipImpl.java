@@ -15,14 +15,19 @@ package dcat.impl;
 import dcat.DcatPackage;
 import dcat.Relationship;
 
+import java.util.Collection;
+
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
 
+import org.eclipse.emf.common.util.EList;
+
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
+
+import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 
 import rdf.PlainLiteral;
 
@@ -36,6 +41,7 @@ import rdf.impl.IdentifiedResourceImpl;
  * The following features are implemented:
  * </p>
  * <ul>
+ *   <li>{@link dcat.impl.RelationshipImpl#getRelation <em>Relation</em>}</li>
  *   <li>{@link dcat.impl.RelationshipImpl#getHadRole <em>Had Role</em>}</li>
  *   <li>{@link dcat.impl.RelationshipImpl#getDescription <em>Description</em>}</li>
  *   <li>{@link dcat.impl.RelationshipImpl#getNodeID <em>Node ID</em>}</li>
@@ -45,14 +51,24 @@ import rdf.impl.IdentifiedResourceImpl;
  */
 public class RelationshipImpl extends IdentifiedResourceImpl implements Relationship {
 	/**
-	 * The cached value of the '{@link #getHadRole() <em>Had Role</em>}' containment reference.
+	 * The cached value of the '{@link #getRelation() <em>Relation</em>}' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getRelation()
+	 * @generated
+	 * @ordered
+	 */
+	protected EList<String> relation;
+
+	/**
+	 * The cached value of the '{@link #getHadRole() <em>Had Role</em>}' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getHadRole()
 	 * @generated
 	 * @ordered
 	 */
-	protected EObject hadRole;
+	protected EList<String> hadRole;
 
 	/**
 	 * The cached value of the '{@link #getDescription() <em>Description</em>}' containment reference.
@@ -108,42 +124,23 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EObject getHadRole() {
+	public EList<String> getRelation() {
+		if (relation == null) {
+			relation = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.RELATIONSHIP__RELATION);
+		}
+		return relation;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EList<String> getHadRole() {
+		if (hadRole == null) {
+			hadRole = new EDataTypeUniqueEList<String>(String.class, this, DcatPackage.RELATIONSHIP__HAD_ROLE);
+		}
 		return hadRole;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public NotificationChain basicSetHadRole(EObject newHadRole, NotificationChain msgs) {
-		EObject oldHadRole = hadRole;
-		hadRole = newHadRole;
-		if (eNotificationRequired()) {
-			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DcatPackage.RELATIONSHIP__HAD_ROLE, oldHadRole, newHadRole);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
-		}
-		return msgs;
-	}
-
-	/**
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @generated
-	 */
-	public void setHadRole(EObject newHadRole) {
-		if (newHadRole != hadRole) {
-			NotificationChain msgs = null;
-			if (hadRole != null)
-				msgs = ((InternalEObject)hadRole).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DcatPackage.RELATIONSHIP__HAD_ROLE, null, msgs);
-			if (newHadRole != null)
-				msgs = ((InternalEObject)newHadRole).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DcatPackage.RELATIONSHIP__HAD_ROLE, null, msgs);
-			msgs = basicSetHadRole(newHadRole, msgs);
-			if (msgs != null) msgs.dispatch();
-		}
-		else if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DcatPackage.RELATIONSHIP__HAD_ROLE, newHadRole, newHadRole));
 	}
 
 	/**
@@ -218,8 +215,6 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 	@Override
 	public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, NotificationChain msgs) {
 		switch (featureID) {
-			case DcatPackage.RELATIONSHIP__HAD_ROLE:
-				return basicSetHadRole(null, msgs);
 			case DcatPackage.RELATIONSHIP__DESCRIPTION:
 				return basicSetDescription(null, msgs);
 		}
@@ -234,6 +229,8 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 	@Override
 	public Object eGet(int featureID, boolean resolve, boolean coreType) {
 		switch (featureID) {
+			case DcatPackage.RELATIONSHIP__RELATION:
+				return getRelation();
 			case DcatPackage.RELATIONSHIP__HAD_ROLE:
 				return getHadRole();
 			case DcatPackage.RELATIONSHIP__DESCRIPTION:
@@ -249,11 +246,17 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
+			case DcatPackage.RELATIONSHIP__RELATION:
+				getRelation().clear();
+				getRelation().addAll((Collection<? extends String>)newValue);
+				return;
 			case DcatPackage.RELATIONSHIP__HAD_ROLE:
-				setHadRole((EObject)newValue);
+				getHadRole().clear();
+				getHadRole().addAll((Collection<? extends String>)newValue);
 				return;
 			case DcatPackage.RELATIONSHIP__DESCRIPTION:
 				setDescription((PlainLiteral)newValue);
@@ -273,8 +276,11 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 	@Override
 	public void eUnset(int featureID) {
 		switch (featureID) {
+			case DcatPackage.RELATIONSHIP__RELATION:
+				getRelation().clear();
+				return;
 			case DcatPackage.RELATIONSHIP__HAD_ROLE:
-				setHadRole((EObject)null);
+				getHadRole().clear();
 				return;
 			case DcatPackage.RELATIONSHIP__DESCRIPTION:
 				setDescription((PlainLiteral)null);
@@ -294,8 +300,10 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 	@Override
 	public boolean eIsSet(int featureID) {
 		switch (featureID) {
+			case DcatPackage.RELATIONSHIP__RELATION:
+				return relation != null && !relation.isEmpty();
 			case DcatPackage.RELATIONSHIP__HAD_ROLE:
-				return hadRole != null;
+				return hadRole != null && !hadRole.isEmpty();
 			case DcatPackage.RELATIONSHIP__DESCRIPTION:
 				return description != null;
 			case DcatPackage.RELATIONSHIP__NODE_ID:
@@ -314,7 +322,11 @@ public class RelationshipImpl extends IdentifiedResourceImpl implements Relation
 		if (eIsProxy()) return super.toString();
 
 		StringBuilder result = new StringBuilder(super.toString());
-		result.append(" (nodeID: ");
+		result.append(" (relation: ");
+		result.append(relation);
+		result.append(", hadRole: ");
+		result.append(hadRole);
+		result.append(", nodeID: ");
 		result.append(nodeID);
 		result.append(')');
 		return result.toString();

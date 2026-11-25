@@ -9,6 +9,8 @@
 	org.eclipse.fennec.dcat.atlas.msg.body.writer;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.rest;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.sparql;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.odata;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.http;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.bootstrap;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.validation;version=snapshot,\
 	org.eclipse.fennec.dcat.atlas.config.local;version=snapshot,\

@@ -884,6 +884,150 @@ curl -i -X POST http://localhost:8085/dcat/rest/admin/sparql/reindex
 It runs in the background and queries keep being answered from the previous projection
 meanwhile; watch the `sparql` check on `/health/ready` for completion.
 
+### Querying with OData
+
+`GET /dcat/odata/` is an **OData 4.01** view of the same catalogue, for clients and tools
+that speak OData — a UI grid that wants server-side filtering, sorting and paging without
+learning SPARQL, for instance. It is **read-only**: a write answers `405`, and not because
+a rule refuses it but because the service has no write backend at all.
+
+Four entity sets are published:
+
+```bash
+curl http://localhost:8085/dcat/odata/
+#   -> {"@odata.context":"/dcat/odata/$metadata","value":[
+#        {"name":"Catalog","kind":"EntitySet","url":"Catalog"},
+#        {"name":"DataService",...},{"name":"Dataset",...},{"name":"DatasetSeries",...}]}
+```
+
+**`Distribution` is deliberately not one of them** — a distribution belongs to its dataset
+and is served inside it (see *What a response looks like* below). Asking for a set that is
+not published, whether `Distribution`, `Agent` or a typo, is a `404`.
+
+The full model is in `$metadata`:
+
+```bash
+curl 'http://localhost:8085/dcat/odata/$metadata'
+```
+
+#### Fetching one entity: check which form your deployment supports
+
+**This is the thing to know before anything else**, and it is the one place a generic OData
+client can break.
+
+Every entity's key is its `about` — the public IRI the REST API serves it under. The
+canonical OData URL for a single entity therefore carries a percent-encoded IRI, and whether
+that URL works depends on how the portal is deployed:
+
+```bash
+curl "http://localhost:8085/dcat/odata/Dataset('http%3A%2F%2Flocalhost%3A8085%2Fdcat%2Frest%2Fdatasets%2Fair')"
+#   -> 200 and the entity                                 ... on a deployment that supports it
+#   -> HTTP/1.1 400 Ambiguous URI path separator          ... otherwise
+#      (an HTML error page from the HTTP server, not an OData error document)
+```
+
+The reason is below the OData service: an encoded `/` (`%2F`) inside a path segment is
+refused by default by the embedded HTTP server, and an IRI key contains several. A portal can
+be configured to accept it, on a port set aside for OData. **Ask which you are talking to, or
+just try the URL once** — a `400` whose body is an HTML page rather than a JSON `error`
+object means this form is not available to you.
+
+Where it does work you get the canonical behaviour: a `#Dataset/$entity` context, an `ETag`,
+a `404` for a key that does not exist, and navigation below the entity
+(`/Dataset('…')/distribution`, `/Dataset('…')/title`).
+
+> ⚠️ **Do not build a client around the canonical form unless you know every deployment it
+> will run against supports it.** The difference is invisible until you hit it: a portal
+> started from the container image refuses these URLs today, while a development runtime may
+> be configured to accept them on a port of its own. Code written and tested against the
+> permissive one fails the first time it meets the other, on the single call shape your
+> client probably uses most. **Write against the filter form below** — it works on every
+> deployment — and treat the canonical form as something to adopt only once the deployment
+> you target has committed to it.
+
+**The form that always works** is a filter on the key:
+
+```bash
+curl -G http://localhost:8085/dcat/odata/Dataset \
+  --data-urlencode "\$filter=about eq 'http://localhost:8085/dcat/rest/datasets/air'"
+```
+
+It reaches the right entity on any deployment, but **it is a collection request, so you get a
+list with one element, not an entity**. A client has to know that:
+
+- read `value[0]`, not the body itself;
+- `value: []` is how "no such dataset" arrives — there is no `404` to catch, because the
+  collection query succeeded and matched nothing;
+- `@odata.context` ends in `#Dataset`, not `#Dataset/$entity`, so a library that switches on
+  the context will take the collection branch;
+- there is no `ETag` on the response, so conditional reads are not available this way.
+
+If you are writing against this API and canonical single-entity URLs would save you real
+work, say so — it is a deployment decision rather than something the OData service can
+change, and it is written up in the development guide under the 2026-11-25 change-log entry.
+
+#### Reading a collection
+
+```bash
+# everything, keys only, with a total
+curl -G http://localhost:8085/dcat/odata/Dataset \
+  --data-urlencode '$select=about' --data-urlencode '$count=true'
+
+# datasets on an environmental theme that have a GeoJSON distribution
+curl -G http://localhost:8085/dcat/odata/Dataset --data-urlencode '$count=true' \
+  --data-urlencode "\$filter=theme/any(t: t eq 'http://publications.europa.eu/resource/authority/data-theme/ENVI')
+                             and distribution/any(d: d/format eq 'http://publications.europa.eu/resource/authority/file-type/GEOJSON')"
+
+# sorted, one page at a time
+curl -G http://localhost:8085/dcat/odata/Dataset \
+  --data-urlencode '$orderby=about asc' --data-urlencode '$top=25' --data-urlencode '$skip=0'
+```
+
+`$filter`, `$select`, `$orderby`, `$top`, `$skip` and `$count` all work, including the
+`any()` lambda over a multi-valued property or a nested collection, which is what makes
+"this theme **and** that distribution format" one request instead of a crawl.
+
+When more rows remain, the response carries **`@odata.nextLink`** — a ready-made URL for
+the next page. Follow it rather than computing `$skip` yourself.
+
+> In a shell, `$filter` and `$top` are shell variables. Single-quote them, escape the
+> dollar, or use `curl -G --data-urlencode` as above — which also percent-encodes the
+> expression for you.
+
+#### What a response looks like
+
+**Containment arrives inline.** A dataset carries its `publisher` and its `distribution`
+entries nested in the payload, each with an `about` of its own. There is nothing to
+`$expand` — the distributions are already there.
+
+Two consequences worth knowing before you write against it:
+
+- **Do not count entities by counting `about` in the body.** A page of 3 datasets can
+  easily contain a dozen `about` values. Use `$count=true` and read `@odata.count`.
+- `$select=about` returns only the roots' keys, which is the cheap way to get a list of
+  identities.
+
+Unset properties are present and `null` (`"managedBy": null`), and empty collections are
+present and empty (`"identifier": []`), rather than being left out.
+
+**An empty entity set answers `200` with `{"value":[]}`** — note that this differs from the
+REST collections documented above, which answer `204 No Content` with no body at all.
+
+#### What the responses mean
+
+| Status | Meaning |
+|---|---|
+| `200` | Results. Always a JSON body, including when nothing matched. |
+| `400` | The query did not parse, or names a property or function the model has no such thing as. The message says which. |
+| `400` *(HTML page)* | The URL itself was refused by the HTTP server — in practice, an entity key in the path. See above. |
+| `404` | No such entity set on this service. |
+| `405` | A write. This endpoint reads only; the REST API is the write boundary. |
+| `503` | The snapshot is still being built; retry shortly. |
+
+The OData view follows the store automatically — a write through REST appears here within
+about a second. Watch the `odata` check on `/health/ready` to see whether the snapshot is
+current.
+
 ### Conditional reads (caching)
 
 Every read carries an `ETag`. Send it back on the next request as `If-None-Match` and

@@ -21,6 +21,46 @@
 		"osgi.http.whiteboard.target": "(id=dcatHttp)"
 	},
 
+	// The OData endpoint, beside /rest and /rest/sparql on the one HTTP runtime, so the
+	// gateway's public/internal split covers it the same way. A factory configuration
+	// replaces the servlet's unconfigured default root, which would publish every bound
+	// EPackage.
+	//
+	// Package order is load-bearing: the first one hosts the service's single entity
+	// container, and binding order is otherwise arbitrary, so dcat comes first. Entity
+	// sets are given as type IRIs - the nsURI with the type name appended, which keeps a
+	// hash namespace's '#'. Each entry then names its own package instead of being
+	// matched against all seven; the set is still called after its EClass, so the URLs
+	// stay /Dataset and the like.
+	"org.eclipse.fennec.odata.servlet~dcatOData": {
+		"osgi.http.whiteboard.servlet.pattern": "/odata/*",
+		"osgi.http.whiteboard.target": "(id=dcatHttp)",
+		"odata.model.packages": [
+			"http://www.w3.org/ns/dcat#",
+			"http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+			"http://purl.org/dc/terms/",
+			"http://xmlns.com/foaf/0.1/",
+			"http://www.w3.org/2006/vcard/ns#",
+			"http://spdx.org/rdf/terms#",
+			"http://www.w3.org/ns/adms#"
+		],
+		"odata.model.entitysets": [
+			"http://www.w3.org/ns/dcat#Catalog",
+			"http://www.w3.org/ns/dcat#Dataset",
+			"http://www.w3.org/ns/dcat#DatasetSeries",
+			"http://www.w3.org/ns/dcat#DataService"
+		]
+	},
+
+	// The request-limits filter guards one root, so it needs the same pattern and target
+	// as the servlet it belongs to. Its shipped caps - $top ceiling, expression length,
+	// nesting depth, body size - are the secure defaults and are left alone. CORS stays
+	// off: a browser client of this service is the gateway's business, not the runtime's.
+	"org.eclipse.fennec.odata.request.filter~dcatOData": {
+		"osgi.http.whiteboard.filter.pattern": "/odata/*",
+		"osgi.http.whiteboard.target": "(id=dcatHttp)"
+	},
+
 	// F-25 probes. Liveness must never depend on the store or the shapes:
 	// a restart does not mount a volume. Readiness is what stops traffic.
 	"org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatLive": {
@@ -115,6 +155,15 @@
 	"PublicIris": {
 		"publicBaseUrl": "$[env:PUBLIC_BASE_URL]",
 		"additionalOwnedBases": "$[env:ADDITIONAL_OWNED_BASES;default=]"
+	},
+
+	// The snapshot behind the OData endpoints. Like the SPARQL projection it is a
+	// disposable view of the store - no persistent state - rebuilt on announced changes
+	// and reconciled on a timer. The component takes ConfigurationPolicy.REQUIRE and
+	// `enabled` defaults to false, so this block has to be here even to turn it on.
+	"DcatODataRepository": {
+		"enabled": "$[env:ODATA_ENABLED;default=true]",
+		"reconcileIntervalSeconds": "$[env:ODATA_RECONCILE_INTERVAL_S;default=300]"
 	},
 
 	// The SPARQL endpoint and the in-memory RDF projection behind it (WP-DCAT-5).

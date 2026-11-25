@@ -87,6 +87,132 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 
 ## Change log
 
+### 2026-11-25 — OData 4.01 endpoints (#76), and the key that the HTTP server will not let through
+
+`/dcat/odata/` publishes four entity sets — `Catalog`, `Dataset`, `DatasetSeries`,
+`DataService` — over `emf.odata`, beside `/rest` and `/rest/sparql` on the one Felix HTTP
+runtime. `DcatEntityRepository` supplies them from a snapshot rebuilt off the read services
+whenever the store announces a change; the usage is written up in the user guide under
+*Consuming the catalog → Querying with OData*.
+
+Three things worth recording beyond that.
+
+**The endpoint is read-only by absence, not by configuration.** Until the 2026-11-25
+`emf.odata` snapshot, `org.eclipse.fennec.odata.persistence.inmemory` also registered a
+`MemoryWriteRepository` with no configuration policy, so it activated unconditionally and
+made the endpoint writable — a `POST` was accepted into volatile memory, bypassing SHACL,
+the identity rules and the git store, and the aggregating `InMemoryQueryService` then served
+the result back beside the catalogue. We held it off with `WriteService.target`,
+`MediaService.target` and `DeltaService.target` filters on a property no service carried.
+Upstream has since removed the class, so nothing in the resolved set provides a
+`WriteService` at all; the filters are gone from all three runtime configurations. The
+consequence to keep in mind is that there is now **no second gate**: registering a
+`WriteService` component is all it would take to make the endpoint writable. What that would
+involve is in `xdp/internal/dcat.atlas/plans/odata-write-design-note.md`.
+
+**Entity sets are configured as type IRIs.** They were bare class names at first, because
+the qualified form could not address a hash namespace: the entry was split at its first
+`'#'`, so `http://www.w3.org/ns/dcat#Dataset` was compared against a package whose nsURI is
+`http://www.w3.org/ns/dcat#` as though it were `http://www.w3.org/ns/dcat`. Fixed upstream
+(`emf.odata` #147), which now tries the type IRI — the nsURI with the type name appended —
+before the split form. A qualified entry names its own package instead of being matched
+against all seven published ones. The set keeps its `EClass` name, so the URLs did not
+change.
+
+#### An entity cannot be addressed by its key, and the fix is a deployment decision
+
+The key of every entity is its `about`, the public IRI. The canonical OData URL for one
+entity therefore carries a percent-encoded IRI in a path segment:
+
+```
+GET /dcat/odata/Dataset('http%3A%2F%2Flocalhost%3A8085%2Fdcat%2Frest%2Fdatasets%2Fair')
+→ 400 Ambiguous URI path separator
+```
+
+That is **Jetty, not the OData servlet** — the response is Jetty's HTML error page and the
+request never reaches our code. Jetty's default `UriCompliance` rejects an encoded `/`
+(`%2F`) inside a path segment, and an IRI key contains several. Anything addressed below an
+entity, such as `/Dataset('…')/distribution`, is refused for the same reason.
+
+What this costs today:
+
+- a generic OData client that builds a single-entity URL from `@odata.id` fails;
+- `$filter=about eq '…'` reaches the same entity and is the documented workaround, but it is
+  a collection request — the client gets a one-element list, `value: []` instead of a `404`,
+  a `#Dataset` rather than `#Dataset/$entity` context, and no `ETag`;
+- navigation below an entity is unreachable, which is partly masked by the serializer
+  inlining containment: a dataset's distributions are in the collection payload anyway.
+
+It did not surface during acceptance testing because every test addresses collections.
+
+**Three routes out, all measured on the dev runtime 2026-11-25.** Everything downstream of
+Jetty already copes: the OData resource-path grammar lexes a quoted key as one token
+(`STRING : '\'' ( ~'\'' | '\'\'' )* '\''`), so slashes inside it are part of the key, and
+nothing between `getPathInfo()` and the parser re-decodes the path. The entity resolves the
+moment the request is let through.
+
+*1. Loosen the runtime's own URI rules.* The Felix HTTP bundle exposes Jetty's setting as
+`org.eclipse.jetty.UriComplianceMode` on the `org.apache.felix.http~dcatHttp` instance. It
+resolves the value with `UriCompliance.valueOf`, which knows the six mode names and returns
+**null** for anything else — so the surgical spelling `DEFAULT,AMBIGUOUS_PATH_SEPARATOR`,
+which `UriCompliance.from` accepts and which permits that one violation alone, is silently
+ignored here (it only logs `Invalid URI compliance mode`). The narrowest name that works is
+`LEGACY`, which permits eight violations for every context on the runtime. Tried:
+single-entity URLs worked, and `/rest` paths the connector used to refuse cleanly became
+unhandled 500s —
+
+```
+/dcat/rest/datasets/a%2F..%2Fcatalogs         400 → 500
+/dcat/rest/datasets/..%2F..%2Fhealth%2Fready  400 → 500
+```
+
+No traversal succeeded and nothing leaked, but a clean rejection at the door became a server
+error inside JAX-RS, on endpoints that never asked for any of this. Not shippable.
+
+*2. A second connector of our own.* Felix tracks `org.apache.felix.http.jetty.ConnectorFactory`
+services and adds what they return to its `Server`. `org.eclipse.fennec.dcat.atlas.http`
+registers one: a `ServerConnector` with its own `HttpConfiguration` whose compliance comes
+from `UriCompliance.from`, so exactly one violation is allowed, on one loopback port.
+
+There is a second gate behind the connector. The ee10 servlet layer wraps a request whose URI
+carries violations in `ServletApiRequest.AmbiguousURI`, which throws from `getPathInfo()` and
+`getServletPath()` — the two methods the OData servlet routes on — unless
+`ServletHandler.setDecodeAmbiguousURIs(true)`. Felix sets that for `LEGACY`, `UNSAFE` and
+`UNAMBIGUOUS` and nothing else, which is why `LEGACY` worked end to end and a hand-configured
+connector did not. The component does the same, on the same beans. That switch is per servlet
+context and reaches every context, so unlike the compliance it cannot be confined to a port —
+it does not need to be, because a URI carrying violations never gets past the strict
+connector to reach a servlet. Measured, with the component deployed on port 8186:
+
+| | 8085 (strict) | 8186 (one violation) |
+|---|---|---|
+| `Dataset('<encoded IRI>')` | 400 | **200**, context `#Dataset/$entity`, with an `ETag` |
+| `…/distribution`, `…/title` | 400 | **200** |
+| a key that does not exist | 400 | **404** |
+| `/rest` ambiguous paths | **400**, as before | 500 |
+| `/rest/datasets` | 200 | 200 |
+
+So `/rest` is reachable on that port too and shows the same 500s there — Jetty serves every
+context on every connector. The isolation is the port, not the path: the connector binds
+loopback, and whatever fronts the runtime must route only OData paths to it. Known hole, the
+same one Felix's own `LEGACY` handling has: a context registered after the connector starts
+does not get the switch, and the symptom is a 400 indistinguishable from the original. The
+component logs the handler count at activation for that reason.
+
+*3. Key on a URL-safe id instead of the IRI* — a server-stamped `id` attribute on
+`rdf.IdentifiedResource` marked as the OData key, with `managedBy` as the precedent for
+DCAT.Atlas machinery living in the model. No server change at all. It is a model change, and
+it costs the property that an OData key is the same identifier the REST API and the RDF graph
+use, which is why `about` was chosen (OData plan, open decision 1). Measured support for it:
+`Dataset('simple-id')` answers 404 and `Dataset('urn%3Ax')` answers 404 — the servlet is
+reached — while `Dataset('a%2Fb')` is 400. The encoded slash is the whole problem; a key
+without one needs nothing from Jetty.
+
+**Not decided.** Option 2 is built and proven on the dev runtime but is not in
+`config.docker` or the test runtime, and whether the public deployment gets a second port is
+an operations call. Until it is taken, the public endpoint is option 3's fallback: `$filter`
+on the key, documented in the user guide.
+
 ### 2026-10-28 — #57 and #58 meet, and a test that predated the notifier
 
 `snapshot` merged in. Both entries below measured themselves from the same 146-test baseline on

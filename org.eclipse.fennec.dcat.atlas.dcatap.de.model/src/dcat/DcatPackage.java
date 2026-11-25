@@ -44,7 +44,7 @@ import rdf.RdfPackage;
  * @generated
  */
 @ProviderType
-@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:a0249091231f3a6de4db9071b4c0169c98a15ac4d3d491e1f1afb4c85fb7e811", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
+@EPackage(uri = DcatPackage.eNS_URI, fingerprint = "fp1:239c7f08817ce87b5d43f14efaeded315cd02463193f18bab032b76d70867f50", genModel = "/model/dcatap.genmodel", genModelSourceLocations = {"model/dcatap.genmodel","org.eclipse.fennec.dcat.atlas.dcatap.de.model/model/dcatap.genmodel"}, ecore = "/model/dcatap.ecore", ecoreSourceLocations = "/model/dcatap.ecore")
 public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	/**
 	 * The package name.
@@ -1361,7 +1361,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int DISTRIBUTION__BYTE_SIZE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 6;
 
 	/**
-	 * The feature id for the '<em><b>Compress Format</b></em>' containment reference.
+	 * The feature id for the '<em><b>Compress Format</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -1569,13 +1569,22 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	int RELATIONSHIP__MANAGED_BY = RdfPackage.IDENTIFIED_RESOURCE__MANAGED_BY;
 
 	/**
-	 * The feature id for the '<em><b>Had Role</b></em>' containment reference.
+	 * The feature id for the '<em><b>Relation</b></em>' attribute list.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int RELATIONSHIP__HAD_ROLE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 0;
+	int RELATIONSHIP__RELATION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Had Role</b></em>' attribute list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int RELATIONSHIP__HAD_ROLE = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 1;
 
 	/**
 	 * The feature id for the '<em><b>Description</b></em>' containment reference.
@@ -1584,7 +1593,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int RELATIONSHIP__DESCRIPTION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 1;
+	int RELATIONSHIP__DESCRIPTION = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 2;
 
 	/**
 	 * The feature id for the '<em><b>Node ID</b></em>' attribute.
@@ -1593,7 +1602,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int RELATIONSHIP__NODE_ID = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 2;
+	int RELATIONSHIP__NODE_ID = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 3;
 
 	/**
 	 * The number of structural features of the '<em>Relationship</em>' class.
@@ -1602,7 +1611,7 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	 * @generated
 	 * @ordered
 	 */
-	int RELATIONSHIP_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 3;
+	int RELATIONSHIP_FEATURE_COUNT = RdfPackage.IDENTIFIED_RESOURCE_FEATURE_COUNT + 4;
 
 	/**
 	 * The number of operations of the '<em>Relationship</em>' class.
@@ -2785,15 +2794,15 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EAttribute getDistribution_ByteSize();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}'.
+	 * Returns the meta object for the attribute '{@link dcat.Distribution#getCompressFormat <em>Compress Format</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Compress Format</em>'.
+	 * @return the meta object for the attribute '<em>Compress Format</em>'.
 	 * @see dcat.Distribution#getCompressFormat()
 	 * @see #getDistribution()
 	 * @generated
 	 */
-	EReference getDistribution_CompressFormat();
+	EAttribute getDistribution_CompressFormat();
 
 	/**
 	 * Returns the meta object for the attribute '{@link dcat.Distribution#getSpatialResolutionInMeters <em>Spatial Resolution In Meters</em>}'.
@@ -2993,15 +3002,26 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 	EClass getRelationship();
 
 	/**
-	 * Returns the meta object for the containment reference '{@link dcat.Relationship#getHadRole <em>Had Role</em>}'.
+	 * Returns the meta object for the attribute list '{@link dcat.Relationship#getRelation <em>Relation</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the containment reference '<em>Had Role</em>'.
+	 * @return the meta object for the attribute list '<em>Relation</em>'.
+	 * @see dcat.Relationship#getRelation()
+	 * @see #getRelationship()
+	 * @generated
+	 */
+	EAttribute getRelationship_Relation();
+
+	/**
+	 * Returns the meta object for the attribute list '{@link dcat.Relationship#getHadRole <em>Had Role</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute list '<em>Had Role</em>'.
 	 * @see dcat.Relationship#getHadRole()
 	 * @see #getRelationship()
 	 * @generated
 	 */
-	EReference getRelationship_HadRole();
+	EAttribute getRelationship_HadRole();
 
 	/**
 	 * Returns the meta object for the containment reference '{@link dcat.Relationship#getDescription <em>Description</em>}'.
@@ -3773,12 +3793,12 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EAttribute DISTRIBUTION__BYTE_SIZE = eINSTANCE.getDistribution_ByteSize();
 
 		/**
-		 * The meta object literal for the '<em><b>Compress Format</b></em>' containment reference feature.
+		 * The meta object literal for the '<em><b>Compress Format</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference DISTRIBUTION__COMPRESS_FORMAT = eINSTANCE.getDistribution_CompressFormat();
+		EAttribute DISTRIBUTION__COMPRESS_FORMAT = eINSTANCE.getDistribution_CompressFormat();
 
 		/**
 		 * The meta object literal for the '<em><b>Spatial Resolution In Meters</b></em>' attribute feature.
@@ -3927,12 +3947,20 @@ public interface DcatPackage extends org.eclipse.emf.ecore.EPackage {
 		EClass RELATIONSHIP = eINSTANCE.getRelationship();
 
 		/**
-		 * The meta object literal for the '<em><b>Had Role</b></em>' containment reference feature.
+		 * The meta object literal for the '<em><b>Relation</b></em>' attribute list feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		EReference RELATIONSHIP__HAD_ROLE = eINSTANCE.getRelationship_HadRole();
+		EAttribute RELATIONSHIP__RELATION = eINSTANCE.getRelationship_Relation();
+
+		/**
+		 * The meta object literal for the '<em><b>Had Role</b></em>' attribute list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute RELATIONSHIP__HAD_ROLE = eINSTANCE.getRelationship_HadRole();
 
 		/**
 		 * The meta object literal for the '<em><b>Description</b></em>' containment reference feature.

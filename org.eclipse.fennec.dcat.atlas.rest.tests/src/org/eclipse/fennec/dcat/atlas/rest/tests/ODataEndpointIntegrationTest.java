@@ -164,9 +164,9 @@ public class ODataEndpointIntegrationTest {
 		// The portal's acceptance criterion as one request: a lambda over a primitive
 		// collection (theme is a multi-valued AnyURI) and one over a containment
 		// navigation (distribution), conjoined.
-		HttpResponse<String> response = get(scoped("&$filter=" + encode(
-				"theme/any(t: t eq '" + ENVI + "') and distribution/any(d: d/format eq '" + GEOJSON + "')")
-				+ "&$count=true"));
+		HttpResponse<String> response = get(scopedAnd(
+				"theme/any(t: t eq '" + ENVI + "') and distribution/any(d: d/format eq '" + GEOJSON + "')",
+				"&$count=true"));
 
 		assertEquals(200, response.statusCode(), response.body());
 		assertTrue(response.body().contains(iri(matching)), response.body());
@@ -181,12 +181,11 @@ public class ODataEndpointIntegrationTest {
 	void eachHalfOfTheFilterExcludesOnItsOwn() throws Exception {
 		// Guards the test above: if either conjunct were being dropped the combined
 		// filter would still pass, because the matching fixture satisfies both.
-		String byTheme = get(scoped("&$filter=" + encode("theme/any(t: t eq '" + ENVI + "')"))).body();
+		String byTheme = get(scopedAnd("theme/any(t: t eq '" + ENVI + "')", "")).body();
 		assertTrue(byTheme.contains(iri(matching)) && byTheme.contains(iri(wrongFormat)), byTheme);
 		assertFalse(byTheme.contains(iri(wrongTheme)), byTheme);
 
-		String byFormat = get(scoped("&$filter="
-				+ encode("distribution/any(d: d/format eq '" + GEOJSON + "')"))).body();
+		String byFormat = get(scopedAnd("distribution/any(d: d/format eq '" + GEOJSON + "')", "")).body();
 		assertTrue(byFormat.contains(iri(matching)) && byFormat.contains(iri(wrongTheme)), byFormat);
 		assertFalse(byFormat.contains(iri(wrongFormat)), byFormat);
 	}
@@ -353,7 +352,21 @@ public class ODataEndpointIntegrationTest {
 	 * depends on what the shared store already held.
 	 */
 	private String scoped(String suffix) {
-		return ODATA + "/Dataset?$filter=" + encode("startswith(about, '" + iri(run) + "')") + suffix;
+		return scopedAnd(null, suffix);
+	}
+
+	/**
+	 * {@link #scoped} with a further condition conjoined into the SAME {@code $filter}.
+	 * <p>
+	 * It has to be one option: a second {@code $filter} in the query string is not an
+	 * error here, it is silently ignored — the first one wins — so a test written that way
+	 * passes its scoping filter alone and asserts nothing about the condition it meant to
+	 * test.
+	 */
+	private String scopedAnd(String condition, String suffix) {
+		String scope = "startswith(about, '" + iri(run) + "')";
+		String filter = condition == null ? scope : scope + " and (" + condition + ")";
+		return ODATA + "/Dataset?$filter=" + encode(filter) + suffix;
 	}
 
 	/**

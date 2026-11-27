@@ -88,6 +88,8 @@ interpolation plugin. The configuration itself lives in
 | `GIT_REPO` | `/opt/dcat/store.git` | The bare git repository holding the store. A path keeps it on disk; a URL switches to an in-memory mirror of that remote |
 | `GIT_REMOTE` | *(empty)* | Remote URL an on-disk `GIT_REPO` is mirrored to. Commits stay durable locally **and** are pushed there. Refused if `GIT_REPO` is itself a URL |
 | `GIT_BRANCH` | `main` | Branch the store commits onto |
+| `GIT_AUTHOR_NAME` | `DCAT.Atlas` | Name on every commit the store writes. Identifies the portal in the history, not the client that made the request — who changed what is the commit message's business |
+| `GIT_AUTHOR_EMAIL` | `dcat-atlas@example.org` | Email on every commit the store writes. An `example.org` address is deliberate: it is a machine identity, and a real-looking one invites a reply |
 | `GIT_PUSH_ON_COMMIT` | `true` | Push after every commit. A no-op for a local repository; **do not turn it off for a remote** — a remote is held in memory, so an unpushed commit is lost on restart. The container default is `true` although the component's own default is `false`, so the dangerous combination cannot arise by omission |
 | `GIT_SSH_PRIVATE_KEY` | *(empty)* | **Path to** the private key file authenticating against an SSH remote. Empty means no key, and then the SSH stack is never built at all |
 | `GIT_SSH_PRIVATE_KEY_PWD` | *(empty)* | Passphrase, if the key is encrypted |
@@ -99,6 +101,14 @@ interpolation plugin. The configuration itself lives in
 | `ODATA_RECONCILE_INTERVAL_S` | `300` | How often the snapshot is reconciled with the store even though no change was announced. Not a poll: the pass skips while the store revision is unchanged |
 | `ODATA_BASE_URL` | *(empty)* | Absolute public URL of the **OData root** — the `PUBLIC_BASE_URL` host with `/odata` in place of `/rest`. Needed only when a proxy rewrites the path: an entity is fetched with `$entity?$id=<canonical URL>`, and unset, the root is derived from what the container sees, so an absolute id carrying the public prefix answers `400`. A client sending the id *relative* to the service root is unaffected either way |
 | `ODATA_TRUST_FORWARDED` | `false` | Derive the OData root from `X-Forwarded-Host`/`-Proto`/`-Prefix` instead of `ODATA_BASE_URL`. Only turn this on if the gateway strips those headers from client requests |
+| `MODEL_VALIDATE` | `true` | Refuse a write whose entity violates the model's own OCL constraints or declared multiplicities. This is the model's floor and travels with it — independent of `SHACL_ENFORCE`, which is the operator's DCAT-AP.de layer on top |
+| `FORMAT_BACKFILL` | `true` | Once per start, complete `dct:format` from `dcat:mediaType` on the distributions **already stored**. New writes are completed regardless, so this only concerns existing data and is safe to turn off once a store has been through it |
+| `ADDITIONAL_OWNED_BASES` | *(empty)* | Extra bases to fold inbound as ours, beyond `PUBLIC_BASE_URL` and the logical base. A migration aid for absorbing data written under an old hostname. **Expected to stay empty** — if a fresh deployment needs entries, something else is wrong |
+| `CALLER_HEADER` | `X-Atlas-Client` | Request header the gateway (APISix/Keycloak) writes the authenticated client id into. It decides which system-generated resources a request may change, so **the gateway must also strip any copy a client sent**. The name is the gateway's choice and the two have to agree — a mismatch makes every request anonymous rather than failing |
+| `SPARQL_ENABLED` | `true` | Build the in-memory RDF projection and serve `/rest/sparql`. Off costs the endpoint and the memory the projection needs, nothing else — the graph is rebuilt from the store on every start, so none of it is persistent state |
+| `SPARQL_QUERY_TIMEOUT_MS` | `30000` | Wall-clock budget for one query; `0` disables it. This is the real protection against an unbounded query — "rooted" queries are an expectation, not a guard, and ARQ will execute whatever it is given |
+| `SPARQL_MAX_ROWS` | `10000` | Row cap on `SELECT` results, applied by wrapping the query in a `LIMIT`, so an over-large result is **truncated rather than refused**; `0` disables the cap |
+| `SPARQL_RECONCILE_INTERVAL_S` | `300` | Interval of the store/graph reconciliation pass; `0` disables it. It re-reads the stores, so it is not free — it bounds how long the projection can be silently wrong, it is not a poll |
 | `SHACL_SHAPES_DIR` | `/opt/dcat/shapes` | Directory of `*.ttl` SHACL shapes |
 | `SHACL_VOCAB_DIR` | `/opt/dcat/vocabularies` | Directory of controlled-vocabulary files — **must also contain the DCAT ontology**, see below |
 | `SHACL_ENFORCE` | `true` | Reject writes that do not conform |

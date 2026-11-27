@@ -28,6 +28,12 @@ import org.junit.jupiter.api.Test;
  * half of that question — the half that lives in {@code emf.odata}. The other half is the
  * servlet container: Jetty normalises and may reject {@code //} and {@code %2F} inside a
  * path segment before the parser ever sees it, and only the live runtime can answer that.
+ * <p>
+ * It has since answered: Jetty refuses that path, and the form a client uses is
+ * {@code $entity?$id=Dataset('…')}, where the same literal travels as a query value. That
+ * does not make these tests historical — the {@code $id} is handed to this same parser once
+ * it is resolved against the service root, so what is measured here is still on the path of
+ * every by-key read. {@code ODataEndpointIntegrationTest} covers it end to end.
  */
 public class IriKeyInUrlTest {
 

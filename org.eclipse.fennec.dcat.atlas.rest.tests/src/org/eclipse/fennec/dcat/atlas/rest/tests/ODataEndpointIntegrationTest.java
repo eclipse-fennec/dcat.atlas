@@ -245,6 +245,78 @@ public class ODataEndpointIntegrationTest {
 		assertNotEquals(aboutIn(firstPage.body()), aboutIn(second), "$skip has to advance the window");
 	}
 
+	// --- a single entity, addressed by its id --------------------------------
+
+	/**
+	 * The key of every entity is its {@code about}, an absolute IRI, so the canonical
+	 * single-entity URL carries a percent-encoded {@code '/'} inside a path segment and
+	 * Jetty refuses it at the connector, before the servlet. This is that refusal, pinned:
+	 * it is what makes {@code $entity?$id=} the form the documentation gives, and it is
+	 * measured on the same strict runtime as the tests below so the two cannot drift.
+	 */
+	@Test
+	void theKeyInThePathIsRefusedByTheContainer() throws Exception {
+		HttpResponse<String> response = get(ODATA + "/Dataset('" + encode(iri(matching)) + "')");
+
+		assertEquals(400, response.statusCode(), response.body());
+	}
+
+	@Test
+	void anEntityIsReadByItsIdAsAQueryParameter() throws Exception {
+		// [OData-Protocol] 4.1: the entity-id goes in the query string, where a '/' needs
+		// no encoding and no container rule is in the way. This is a single entity, not a
+		// one-element collection - the distinction $filter on the key cannot make.
+		HttpResponse<String> response = get(entity("Dataset('" + iri(matching) + "')"));
+
+		assertEquals(200, response.statusCode(), response.body());
+		assertTrue(response.body().contains("#Dataset/$entity"),
+				"a by-id read is an entity, not a collection: " + response.body());
+		assertFalse(response.body().contains("\"value\":["),
+				"...and so carries no collection envelope: " + response.body());
+		assertTrue(response.body().contains(iri(matching)), response.body());
+	}
+
+	@Test
+	void theIdMayAlsoBeTheAbsoluteCanonicalUrl() throws Exception {
+		// What a generic client holds is @odata.id, which it resolves against the service
+		// root; both the resolved form and the relative one have to address the entity.
+		HttpResponse<String> absolute = get(entity(ODATA + "/Dataset('" + iri(matching) + "')"));
+
+		assertEquals(200, absolute.statusCode(), absolute.body());
+		assertTrue(absolute.body().contains(iri(matching)), absolute.body());
+	}
+
+	@Test
+	void anIdThatAddressesNothingIsNotFound() throws Exception {
+		// 404, where the $filter workaround could only answer 200 with an empty list.
+		assertEquals(404, get(entity("Dataset('" + iri(run) + "-absent')")).statusCode());
+
+		// ...and an id below some other service root is not an entity of this one at all.
+		assertEquals(400, get(entity("https://elsewhere.example/somewhere/Dataset('x')")).statusCode());
+
+		// Measured, and a trap for anyone reading the one above as a host check: with no
+		// odata.base.url configured, an id is matched on its PATH alone. A foreign host
+		// under this service's path therefore addresses OUR entity, and answers for it.
+		assertEquals(200, get(entity("https://elsewhere.example/odata/Dataset('" + iri(matching) + "')"))
+				.statusCode());
+	}
+
+	@Test
+	void aTypeCastIsWhatCarriesSelectAndExpand() throws Exception {
+		// Without a cast the ABNF allows only $id and $format, so a shape has to be asked
+		// for through $entity/<qualified type>. Worth pinning: a client that sends $select
+		// on the bare form gets a 400 rather than a quietly unshaped entity.
+		assertEquals(400, get(entity("Dataset('" + iri(matching) + "')") + "&$select=about").statusCode());
+
+		HttpResponse<String> cast = get(
+				ODATA + "/$entity/dcat.Dataset?$id=" + encode("Dataset('" + iri(matching) + "')")
+						+ "&$select=about");
+
+		assertEquals(200, cast.statusCode(), cast.body());
+		assertTrue(cast.body().contains(iri(matching)), cast.body());
+		assertFalse(cast.body().contains("\"description\""), cast.body());
+	}
+
 	// --- what the endpoint refuses ------------------------------------------
 
 	@Test
@@ -346,6 +418,17 @@ public class ODataEndpointIntegrationTest {
 	}
 
 	// --- helpers ---------------------------------------------------------------
+
+	/**
+	 * A read of the one entity the given entity-id addresses ([OData-Protocol] 4.1).
+	 * <p>
+	 * The id travels as a query option, which is the whole point: the key of this model is
+	 * an absolute IRI, and in a path segment its slashes have to be percent-encoded, which
+	 * the servlet container rejects before the servlet runs. A query value has no such rule.
+	 */
+	private String entity(String entityId) {
+		return ODATA + "/$entity?$id=" + encode(entityId);
+	}
 
 	/**
 	 * A {@code Dataset} query restricted to this test's own fixtures, so an assertion never

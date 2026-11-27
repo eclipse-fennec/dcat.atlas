@@ -95,6 +95,10 @@ interpolation plugin. The configuration itself lives in
 | `GIT_USERNAME` / `GIT_PASSWORD` | *(empty)* | Credentials for an `https://` remote instead. Unused for SSH |
 | `STORE_BASE_PATH` | `dcat` | Folder inside the repository the collections live under |
 | `PUBLIC_BASE_URL` | **none — required** | Base that stored, host-free identities are rendered under at read time. Must be the absolute URL clients actually reach the portal on (behind a proxy, *not* the address the container sees). There is deliberately no default: it becomes the host in every rendered `about`, so a wrong one silently advertises somebody else's IRIs. Unset, the container fails to start. |
+| `ODATA_ENABLED` | `true` | Build the OData snapshot and serve `/odata`. Off costs the endpoints and the memory the snapshot needs, nothing else |
+| `ODATA_RECONCILE_INTERVAL_S` | `300` | How often the snapshot is reconciled with the store even though no change was announced. Not a poll: the pass skips while the store revision is unchanged |
+| `ODATA_BASE_URL` | *(empty)* | Absolute public URL of the **OData root** — the `PUBLIC_BASE_URL` host with `/odata` in place of `/rest`. Needed only when a proxy rewrites the path: an entity is fetched with `$entity?$id=<canonical URL>`, and unset, the root is derived from what the container sees, so an absolute id carrying the public prefix answers `400`. A client sending the id *relative* to the service root is unaffected either way |
+| `ODATA_TRUST_FORWARDED` | `false` | Derive the OData root from `X-Forwarded-Host`/`-Proto`/`-Prefix` instead of `ODATA_BASE_URL`. Only turn this on if the gateway strips those headers from client requests |
 | `SHACL_SHAPES_DIR` | `/opt/dcat/shapes` | Directory of `*.ttl` SHACL shapes |
 | `SHACL_VOCAB_DIR` | `/opt/dcat/vocabularies` | Directory of controlled-vocabulary files — **must also contain the DCAT ontology**, see below |
 | `SHACL_ENFORCE` | `true` | Reject writes that do not conform |

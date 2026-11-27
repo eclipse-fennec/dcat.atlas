@@ -32,9 +32,29 @@
 	// hash namespace's '#'. Each entry then names its own package instead of being
 	// matched against all seven; the set is still called after its EClass, so the URLs
 	// stay /Dataset and the like.
+	//
+	// ODATA_BASE_URL is to the OData root what PUBLIC_BASE_URL is to /rest, and it is needed
+	// for the same reason: an entity is addressed by `$entity?$id=<its canonical URL>`, and
+	// resolving that id means recognising the service root in it. Unset, the root is derived
+	// from what the CONTAINER sees, so an absolute id built from the public URL resolves only
+	// when the gateway's path to the service root is the container's path too. Behind a proxy
+	// that adds a prefix - `https://data.example.de/dcat/odata` onto a container serving
+	// `/odata` - it does not, and such an id answers 400. Measured, 2026-11-27.
+	//
+	// Empty is the previous behaviour and costs nothing on a deployment whose paths line up;
+	// a client sending the id RELATIVE to the service root, `Dataset('<iri>')`, is unaffected
+	// either way. Set it to the absolute public URL of the OData root - the PUBLIC_BASE_URL
+	// host with /odata rather than /rest - when a gateway rewrites the path.
+	//
+	// ODATA_TRUST_FORWARDED is the other route: derive the root from X-Forwarded-Host/-Proto/
+	// -Prefix instead. Off by default on purpose - those headers are only as trustworthy as
+	// the hop that sets them, so turning them on is a statement that the gateway strips what
+	// a client sends. Prefer ODATA_BASE_URL, which asserts the answer rather than trusting it.
 	"org.eclipse.fennec.odata.servlet~dcatOData": {
 		"osgi.http.whiteboard.servlet.pattern": "/odata/*",
 		"osgi.http.whiteboard.target": "(id=dcatHttp)",
+		"odata.base.url": "$[env:ODATA_BASE_URL;default=]",
+		"odata.forwarded.trust": "$[env:ODATA_TRUST_FORWARDED;default=false]",
 		"odata.model.packages": [
 			"http://www.w3.org/ns/dcat#",
 			"http://www.w3.org/1999/02/22-rdf-syntax-ns#",

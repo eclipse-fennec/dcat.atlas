@@ -910,61 +910,84 @@ The full model is in `$metadata`:
 curl 'http://localhost:8085/dcat/odata/$metadata'
 ```
 
-#### Fetching one entity: check which form your deployment supports
+#### Fetching one entity: put the id in the query string
 
-**This is the thing to know before anything else**, and it is the one place a generic OData
-client can break.
+Every entity's key is its `about` — the public IRI the REST API serves it under. Give that
+id as the **`$id` query option** on `$entity` and you get the entity itself:
 
-Every entity's key is its `about` — the public IRI the REST API serves it under. The
-canonical OData URL for a single entity therefore carries a percent-encoded IRI, and whether
-that URL works depends on how the portal is deployed:
+```bash
+curl -G 'http://localhost:8085/dcat/odata/$entity' \
+  --data-urlencode "\$id=Dataset('http://localhost:8085/dcat/rest/datasets/air')"
+#   -> 200, "@odata.context":"/dcat/odata/$metadata#Dataset/$entity", with an ETag
+```
+
+This is standard OData ([OData-Protocol] 4.1, *Addressing the Entity-Id*), not a local
+convention, and it is the form to write against. You get a single entity rather than a list,
+a `404` when the id addresses nothing, and an `ETag` for conditional reads.
+
+The `$id` is the canonical URL of the entity, and it may be given **relative to the service
+root**, as above, or absolute — which is what a client resolving `@odata.id` from a previous
+response ends up with:
+
+```bash
+curl -G 'http://localhost:8085/dcat/odata/$entity' \
+  --data-urlencode "\$id=http://localhost:8085/dcat/odata/Dataset('http://localhost:8085/dcat/rest/datasets/air')"
+```
+
+> ⚠️ **Prefer the relative form.** The absolute one has to be recognised as addressing *this*
+> service, which means matching the service root in its path — and behind a proxy that serves
+> the portal under a prefix the container does not see, that match can fail and the id answers
+> `400`. The operator can fix it for a deployment (`ODATA_BASE_URL`), but the relative form,
+> `Dataset('<the IRI>')`, needs nothing from anybody and works everywhere. If you hold an
+> absolute `@odata.id`, strip the service root off it before sending it back.
+
+**Why the query string and not the path.** The canonical path form,
+`Dataset('<the IRI>')`, needs the IRI's slashes percent-encoded inside a path segment, and
+the embedded HTTP server refuses an encoded `/` (`%2F`) there before the OData service is
+reached:
 
 ```bash
 curl "http://localhost:8085/dcat/odata/Dataset('http%3A%2F%2Flocalhost%3A8085%2Fdcat%2Frest%2Fdatasets%2Fair')"
-#   -> 200 and the entity                                 ... on a deployment that supports it
-#   -> HTTP/1.1 400 Ambiguous URI path separator          ... otherwise
+#   -> HTTP/1.1 400 Ambiguous URI path separator
 #      (an HTML error page from the HTTP server, not an OData error document)
 ```
 
-The reason is below the OData service: an encoded `/` (`%2F`) inside a path segment is
-refused by default by the embedded HTTP server, and an IRI key contains several. A portal can
-be configured to accept it, on a port set aside for OData. **Ask which you are talking to, or
-just try the URL once** — a `400` whose body is an HTML page rather than a JSON `error`
-object means this form is not available to you.
+A query value has no such rule, which is why `$entity?$id=` works on every deployment and the
+path form works on none. If a client library builds the path form for you, point it at
+`$entity` instead — the id it would have put in the path is exactly what `$id` takes.
 
-Where it does work you get the canonical behaviour: a `#Dataset/$entity` context, an `ETag`,
-a `404` for a key that does not exist, and navigation below the entity
-(`/Dataset('…')/distribution`, `/Dataset('…')/title`).
+**Two limits of `$entity` worth knowing before you hit them.**
 
-> ⚠️ **Do not build a client around the canonical form unless you know every deployment it
-> will run against supports it.** The difference is invisible until you hit it: a portal
-> started from the container image refuses these URLs today, while a development runtime may
-> be configured to accept them on a port of its own. Code written and tested against the
-> permissive one fails the first time it meets the other, on the single call shape your
-> client probably uses most. **Write against the filter form below** — it works on every
-> deployment — and treat the canonical form as something to adopt only once the deployment
-> you target has committed to it.
+Without a type cast, `$entity` accepts only `$id` and `$format`; `$select` and `$expand` need
+the cast, which is how OData says which type to shape:
 
-**The form that always works** is a filter on the key:
+```bash
+curl -G 'http://localhost:8085/dcat/odata/$entity/dcat.Dataset' \
+  --data-urlencode "\$id=Dataset('http://localhost:8085/dcat/rest/datasets/air')" \
+  --data-urlencode '$select=about,title'
+```
+
+And `$id` addresses an **entity**, nothing below one: there is no `$entity` equivalent of
+`/Dataset('…')/distribution`. In practice this costs little, because the serializer inlines
+containment — a dataset's distributions are in its payload already.
+
+> ℹ️ `$id` is matched on its **path**, not its host. An absolute `$id` under a different host
+> but this service's path still addresses this service's entity. Do not use the host in it to
+> point at another portal.
+
+A filter on the key also reaches the entity and is what this guide recommended before `$id`
+was available:
 
 ```bash
 curl -G http://localhost:8085/dcat/odata/Dataset \
   --data-urlencode "\$filter=about eq 'http://localhost:8085/dcat/rest/datasets/air'"
 ```
 
-It reaches the right entity on any deployment, but **it is a collection request, so you get a
-list with one element, not an entity**. A client has to know that:
-
-- read `value[0]`, not the body itself;
-- `value: []` is how "no such dataset" arrives — there is no `404` to catch, because the
-  collection query succeeded and matched nothing;
-- `@odata.context` ends in `#Dataset`, not `#Dataset/$entity`, so a library that switches on
-  the context will take the collection branch;
-- there is no `ETag` on the response, so conditional reads are not available this way.
-
-If you are writing against this API and canonical single-entity URLs would save you real
-work, say so — it is a deployment decision rather than something the OData service can
-change, and it is written up in the development guide under the 2026-11-25 change-log entry.
+It still works, but **it is a collection request**, so prefer `$entity?$id=` unless you want
+a list. The differences are the ones that bite a client: you read `value[0]` rather than the
+body, `value: []` is how "no such dataset" arrives instead of a `404`, `@odata.context` ends
+in `#Dataset` so a library switching on it takes the collection branch, and there is no
+`ETag`.
 
 #### Reading a collection
 

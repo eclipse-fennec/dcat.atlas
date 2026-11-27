@@ -8,25 +8,6 @@
         "org.apache.felix.http.runtime.init.id": "dcatHttp",
         "org.apache.felix.http.whiteboard.enable": true
     },
-	// A second Jetty connector, loopback only, whose URI rules allow exactly one more
-	// violation than the main one: a percent-encoded '/' inside a path segment. That is
-	// what an OData single-entity URL needs, because the key is the resource IRI.
-	//
-	// Not the runtime's own org.eclipse.jetty.UriComplianceMode property: Felix resolves
-	// that with UriCompliance.valueOf, which takes only the six mode names - the narrowest
-	// permitting an encoded separator is LEGACY, which permits seven others besides, on
-	// every context. Measured here, that turns clean 400s on /rest into 500s.
-	//
-	// Jetty serves every context on every connector, so /rest answers on this port too,
-	// under these looser rules. The isolation is the PORT, not the path: a gateway must
-	// route only the OData paths here, and the bind address stays loopback.
-	"DcatHttpConnector~dcatOData": {
-		"port": 8186,
-		"host": "localhost",
-		"uriCompliance": "DEFAULT,AMBIGUOUS_PATH_SEPARATOR",
-		"name": "dcatOData"
-	},
-
 	"org.apache.felix.hc.core.impl.servlet.HealthCheckExecutorServlet~dcatLive": {
 		"servletPath": "/health/live",
 		"tags": ["live"],

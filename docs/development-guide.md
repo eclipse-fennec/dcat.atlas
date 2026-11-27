@@ -87,6 +87,80 @@ impossible to create at all. See the 2026-08-17 change-log entry.
 
 ## Change log
 
+### 2026-11-27 — The key goes in the query string, and the second connector is gone
+
+The entry below left a decision open: an OData single-entity URL carries the resource IRI in
+a path segment, the HTTP server refuses the encoded `/` that needs, and the three routes out
+were all deployment choices. The `emf.odata` snapshot of today closes it with a fourth that
+is not a deployment choice at all — `$entity?$id=`, [OData-Protocol] 4.1, where the id
+travels as a query value and no path rule applies:
+
+```
+GET /dcat/odata/$entity?$id=Dataset('http://localhost:8085/dcat/rest/datasets/air')
+→ 200, context #Dataset/$entity, with an ETag
+```
+
+`ODataServlet.entityIdPath` resolves the id against the service root — absolute,
+root-relative or relative — and hands the result to the same `keyedResource` path the
+canonical URL would have reached, so this is the identical request with the identical
+response, differing only in how the id got there.
+
+**So option 2 is withdrawn and `org.eclipse.fennec.dcat.atlas.http` is deleted**, with its
+`DcatHttpConnector~dcatOData` configuration, its entries in `base.bndrun` and the runtime's
+`-dependson`. It was the only bundle in the workspace compiling against Jetty, and the only
+reason the dev runtime opened a second port. What it bought is now had with no port, no
+relaxed URI compliance, no `setDecodeAmbiguousURIs` reaching every servlet context, and no
+gateway obligation to route OData paths somewhere separate. The strict connector is the only
+one again.
+
+Five tests in `ODataEndpointIntegrationTest` hold it, and they run on the test runtime, which
+never had the lenient connector — so they are measured against exactly the Jetty a container
+deployment has. They pin the working form (relative and absolute `$id`), the `404` for an id
+that addresses nothing, and the `400` the path form still answers, which is the fact that
+makes `$entity` the documented shape rather than a preference.
+
+**What the query form does not give back.** `$entity` without a type cast accepts only `$id`
+and `$format` — `$select` and `$expand` need `$entity/dcat.Dataset` — and `$id` addresses an
+entity and nothing below it, so there is no equivalent of `/Dataset('…')/distribution`. The
+latter is mostly masked by the serializer inlining containment, which is the same reason it
+went unnoticed during acceptance testing. Both are pinned by tests rather than left as
+folklore.
+
+One measured subtlety, also pinned: with no `odata.base.url` configured, `serviceRelative`
+matches an id on its **path** and ignores the authority, so an absolute `$id` carrying a
+foreign host but this service's path addresses our entity and answers for it. It is upstream
+behaviour, it is not a host check, and nothing should be built on reading it as one.
+
+The user guide's "Fetching one entity" section is rewritten around `$id`. The `$filter`
+workaround is still described, because it still works and clients were told to use it, but
+it is now the alternative rather than the recommendation.
+
+**The container needed one thing after all, and it is the same thing `PUBLIC_BASE_URL` is.**
+`config.docker` already had the servlet, the request filter and `DcatODataRepository`, and it
+never had the connector, so the deletion cost it nothing. But resolving an absolute `$id`
+means recognising the service root inside it, and with `odata.base.url` unset that root is
+derived from what the *container* sees. The README's own example puts the portal at
+`https://data.example.de/dcat/…` while `CONTEXT_PATH` defaults to `/`, and measured on the
+dev runtime, a prefix the container does not share is exactly what breaks it:
+
+| `$id` | |
+|---|---|
+| `Dataset('<iri>')` — relative to the service root | **200** |
+| absolute, path matching the service root | **200** |
+| absolute, with a gateway prefix the container does not serve | **400** |
+| the same, root-relative | **400** |
+| the same, with `X-Forwarded-Prefix` and trust unconfigured | **400** |
+
+So `odata.base.url` and `odata.forwarded.trust` are now in the docker servlet block, as
+`ODATA_BASE_URL` (empty) and `ODATA_TRUST_FORWARDED` (false) — **both defaults are exactly
+today's behaviour**, so this wires a lever rather than changing anything. `ODATA_BASE_URL` is
+preferred over the forwarded headers for the usual reason: it asserts the answer instead of
+trusting a hop to have stripped what a client sent. The relative `$id` is unaffected by any of
+this, which is why the user guide now tells clients to prefer it.
+
+Worth knowing while in there: `ODATA_*` and `SPARQL_*` were **absent from the docker README's
+environment table** entirely. The four OData rows are added; the SPARQL ones are still missing.
+
 ### 2026-11-25 — OData 4.01 endpoints (#76), and the key that the HTTP server will not let through
 
 `/dcat/odata/` publishes four entity sets — `Catalog`, `Dataset`, `DatasetSeries`,
@@ -120,6 +194,10 @@ against all seven published ones. The set keeps its `EClass` name, so the URLs d
 change.
 
 #### An entity cannot be addressed by its key, and the fix is a deployment decision
+
+> **Superseded 2026-11-27** — see the entry above. `$entity?$id=` settles this without a
+> deployment choice; option 2 below is built no longer, and the three routes are kept here
+> as the record of what was measured and why none of them was taken.
 
 The key of every entity is its `about`, the public IRI. The canonical OData URL for one
 entity therefore carries a percent-encoded IRI in a path segment:

@@ -884,6 +884,173 @@ curl -i -X POST http://localhost:8085/dcat/rest/admin/sparql/reindex
 It runs in the background and queries keep being answered from the previous projection
 meanwhile; watch the `sparql` check on `/health/ready` for completion.
 
+### Querying with OData
+
+`GET /dcat/odata/` is an **OData 4.01** view of the same catalogue, for clients and tools
+that speak OData — a UI grid that wants server-side filtering, sorting and paging without
+learning SPARQL, for instance. It is **read-only**: a write answers `405`, and not because
+a rule refuses it but because the service has no write backend at all.
+
+Four entity sets are published:
+
+```bash
+curl http://localhost:8085/dcat/odata/
+#   -> {"@odata.context":"/dcat/odata/$metadata","value":[
+#        {"name":"Catalog","kind":"EntitySet","url":"Catalog"},
+#        {"name":"DataService",...},{"name":"Dataset",...},{"name":"DatasetSeries",...}]}
+```
+
+**`Distribution` is deliberately not one of them** — a distribution belongs to its dataset
+and is served inside it (see *What a response looks like* below). Asking for a set that is
+not published, whether `Distribution`, `Agent` or a typo, is a `404`.
+
+The full model is in `$metadata`:
+
+```bash
+curl 'http://localhost:8085/dcat/odata/$metadata'
+```
+
+#### Fetching one entity: put the id in the query string
+
+Every entity's key is its `about` — the public IRI the REST API serves it under. Give that
+id as the **`$id` query option** on `$entity` and you get the entity itself:
+
+```bash
+curl -G 'http://localhost:8085/dcat/odata/$entity' \
+  --data-urlencode "\$id=Dataset('http://localhost:8085/dcat/rest/datasets/air')"
+#   -> 200, "@odata.context":"/dcat/odata/$metadata#Dataset/$entity", with an ETag
+```
+
+This is standard OData ([OData-Protocol] 4.1, *Addressing the Entity-Id*), not a local
+convention, and it is the form to write against. You get a single entity rather than a list,
+a `404` when the id addresses nothing, and an `ETag` for conditional reads.
+
+The `$id` is the canonical URL of the entity, and it may be given **relative to the service
+root**, as above, or absolute — which is what a client resolving `@odata.id` from a previous
+response ends up with:
+
+```bash
+curl -G 'http://localhost:8085/dcat/odata/$entity' \
+  --data-urlencode "\$id=http://localhost:8085/dcat/odata/Dataset('http://localhost:8085/dcat/rest/datasets/air')"
+```
+
+> ⚠️ **Prefer the relative form.** The absolute one has to be recognised as addressing *this*
+> service, which means matching the service root in its path — and behind a proxy that serves
+> the portal under a prefix the container does not see, that match can fail and the id answers
+> `400`. The operator can fix it for a deployment (`ODATA_BASE_URL`), but the relative form,
+> `Dataset('<the IRI>')`, needs nothing from anybody and works everywhere. If you hold an
+> absolute `@odata.id`, strip the service root off it before sending it back.
+
+**Why the query string and not the path.** The canonical path form,
+`Dataset('<the IRI>')`, needs the IRI's slashes percent-encoded inside a path segment, and
+the embedded HTTP server refuses an encoded `/` (`%2F`) there before the OData service is
+reached:
+
+```bash
+curl "http://localhost:8085/dcat/odata/Dataset('http%3A%2F%2Flocalhost%3A8085%2Fdcat%2Frest%2Fdatasets%2Fair')"
+#   -> HTTP/1.1 400 Ambiguous URI path separator
+#      (an HTML error page from the HTTP server, not an OData error document)
+```
+
+A query value has no such rule, which is why `$entity?$id=` works on every deployment and the
+path form works on none. If a client library builds the path form for you, point it at
+`$entity` instead — the id it would have put in the path is exactly what `$id` takes.
+
+**Two limits of `$entity` worth knowing before you hit them.**
+
+Without a type cast, `$entity` accepts only `$id` and `$format`; `$select` and `$expand` need
+the cast, which is how OData says which type to shape:
+
+```bash
+curl -G 'http://localhost:8085/dcat/odata/$entity/dcat.Dataset' \
+  --data-urlencode "\$id=Dataset('http://localhost:8085/dcat/rest/datasets/air')" \
+  --data-urlencode '$select=about,title'
+```
+
+And `$id` addresses an **entity**, nothing below one: there is no `$entity` equivalent of
+`/Dataset('…')/distribution`. In practice this costs little, because the serializer inlines
+containment — a dataset's distributions are in its payload already.
+
+> ℹ️ `$id` is matched on its **path**, not its host. An absolute `$id` under a different host
+> but this service's path still addresses this service's entity. Do not use the host in it to
+> point at another portal.
+
+A filter on the key also reaches the entity and is what this guide recommended before `$id`
+was available:
+
+```bash
+curl -G http://localhost:8085/dcat/odata/Dataset \
+  --data-urlencode "\$filter=about eq 'http://localhost:8085/dcat/rest/datasets/air'"
+```
+
+It still works, but **it is a collection request**, so prefer `$entity?$id=` unless you want
+a list. The differences are the ones that bite a client: you read `value[0]` rather than the
+body, `value: []` is how "no such dataset" arrives instead of a `404`, `@odata.context` ends
+in `#Dataset` so a library switching on it takes the collection branch, and there is no
+`ETag`.
+
+#### Reading a collection
+
+```bash
+# everything, keys only, with a total
+curl -G http://localhost:8085/dcat/odata/Dataset \
+  --data-urlencode '$select=about' --data-urlencode '$count=true'
+
+# datasets on an environmental theme that have a GeoJSON distribution
+curl -G http://localhost:8085/dcat/odata/Dataset --data-urlencode '$count=true' \
+  --data-urlencode "\$filter=theme/any(t: t eq 'http://publications.europa.eu/resource/authority/data-theme/ENVI')
+                             and distribution/any(d: d/format eq 'http://publications.europa.eu/resource/authority/file-type/GEOJSON')"
+
+# sorted, one page at a time
+curl -G http://localhost:8085/dcat/odata/Dataset \
+  --data-urlencode '$orderby=about asc' --data-urlencode '$top=25' --data-urlencode '$skip=0'
+```
+
+`$filter`, `$select`, `$orderby`, `$top`, `$skip` and `$count` all work, including the
+`any()` lambda over a multi-valued property or a nested collection, which is what makes
+"this theme **and** that distribution format" one request instead of a crawl.
+
+When more rows remain, the response carries **`@odata.nextLink`** — a ready-made URL for
+the next page. Follow it rather than computing `$skip` yourself.
+
+> In a shell, `$filter` and `$top` are shell variables. Single-quote them, escape the
+> dollar, or use `curl -G --data-urlencode` as above — which also percent-encodes the
+> expression for you.
+
+#### What a response looks like
+
+**Containment arrives inline.** A dataset carries its `publisher` and its `distribution`
+entries nested in the payload, each with an `about` of its own. There is nothing to
+`$expand` — the distributions are already there.
+
+Two consequences worth knowing before you write against it:
+
+- **Do not count entities by counting `about` in the body.** A page of 3 datasets can
+  easily contain a dozen `about` values. Use `$count=true` and read `@odata.count`.
+- `$select=about` returns only the roots' keys, which is the cheap way to get a list of
+  identities.
+
+Unset properties are present and `null` (`"managedBy": null`), and empty collections are
+present and empty (`"identifier": []`), rather than being left out.
+
+**An empty entity set answers `200` with `{"value":[]}`** — note that this differs from the
+REST collections documented above, which answer `204 No Content` with no body at all.
+
+#### What the responses mean
+
+| Status | Meaning |
+|---|---|
+| `200` | Results. Always a JSON body, including when nothing matched. |
+| `400` | The query did not parse, or names a property or function the model has no such thing as. The message says which. |
+| `400` *(HTML page)* | The URL itself was refused by the HTTP server — in practice, an entity key in the path. See above. |
+| `404` | No such entity set on this service. |
+| `405` | A write. This endpoint reads only; the REST API is the write boundary. |
+| `503` | The snapshot is still being built; retry shortly. |
+
+The OData view follows the store automatically — a write through REST appears here within
+about a second. Watch the `odata` check on `/health/ready` to see whether the snapshot is
+current.
+
 ### Conditional reads (caching)
 
 Every read carries an `ETag`. Send it back on the next request as `If-None-Match` and

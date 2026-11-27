@@ -42,7 +42,7 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/mediaType"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/packageFormat"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/byteSize"/>
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//Distribution/compressFormat"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/compressFormat"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/spatialResolutionInMeters"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/temporalResolution"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/accessRights"/>
@@ -62,7 +62,8 @@
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Distribution/accessURL"/>
     </genClasses>
     <genClasses ecoreClass="dcatap.ecore#//Relationship">
-      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//Relationship/hadRole"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Relationship/relation"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EAttribute dcatap.ecore#//Relationship/hadRole"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference dcatap.ecore#//Relationship/description"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute dcatap.ecore#//Relationship/nodeID"/>
     </genClasses>

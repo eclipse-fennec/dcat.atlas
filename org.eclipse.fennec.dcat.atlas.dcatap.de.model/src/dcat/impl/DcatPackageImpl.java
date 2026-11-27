@@ -468,8 +468,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getDistribution_CompressFormat() {
-		return (EReference)distributionEClass.getEStructuralFeatures().get(7);
+	public EAttribute getDistribution_CompressFormat() {
+		return (EAttribute)distributionEClass.getEStructuralFeatures().get(7);
 	}
 
 	/**
@@ -639,8 +639,17 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EReference getRelationship_HadRole() {
-		return (EReference)relationshipEClass.getEStructuralFeatures().get(0);
+	public EAttribute getRelationship_Relation() {
+		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(0);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public EAttribute getRelationship_HadRole() {
+		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -649,7 +658,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EReference getRelationship_Description() {
-		return (EReference)relationshipEClass.getEStructuralFeatures().get(1);
+		return (EReference)relationshipEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -658,7 +667,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 	 * @generated
 	 */
 	public EAttribute getRelationship_NodeID() {
-		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(2);
+		return (EAttribute)relationshipEClass.getEStructuralFeatures().get(3);
 	}
 
 	/**
@@ -1132,7 +1141,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEAttribute(distributionEClass, DISTRIBUTION__MEDIA_TYPE);
 		createEAttribute(distributionEClass, DISTRIBUTION__PACKAGE_FORMAT);
 		createEAttribute(distributionEClass, DISTRIBUTION__BYTE_SIZE);
-		createEReference(distributionEClass, DISTRIBUTION__COMPRESS_FORMAT);
+		createEAttribute(distributionEClass, DISTRIBUTION__COMPRESS_FORMAT);
 		createEAttribute(distributionEClass, DISTRIBUTION__SPATIAL_RESOLUTION_IN_METERS);
 		createEAttribute(distributionEClass, DISTRIBUTION__TEMPORAL_RESOLUTION);
 		createEAttribute(distributionEClass, DISTRIBUTION__ACCESS_RIGHTS);
@@ -1152,7 +1161,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		createEAttribute(distributionEClass, DISTRIBUTION__ACCESS_URL);
 
 		relationshipEClass = createEClass(RELATIONSHIP);
-		createEReference(relationshipEClass, RELATIONSHIP__HAD_ROLE);
+		createEAttribute(relationshipEClass, RELATIONSHIP__RELATION);
+		createEAttribute(relationshipEClass, RELATIONSHIP__HAD_ROLE);
 		createEReference(relationshipEClass, RELATIONSHIP__DESCRIPTION);
 		createEAttribute(relationshipEClass, RELATIONSHIP__NODE_ID);
 
@@ -1283,7 +1293,7 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		initEAttribute(getDistribution_MediaType(), theXMLTypePackage.getAnyURI(), "mediaType", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_PackageFormat(), theXMLTypePackage.getAnyURI(), "packageFormat", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_ByteSize(), theXMLTypePackage.getNonNegativeInteger(), "byteSize", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEReference(getDistribution_CompressFormat(), ecorePackage.getEObject(), null, "compressFormat", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDistribution_CompressFormat(), theXMLTypePackage.getAnyURI(), "compressFormat", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_SpatialResolutionInMeters(), theXMLTypePackage.getDecimal(), "spatialResolutionInMeters", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_TemporalResolution(), theXMLTypePackage.getDuration(), "temporalResolution", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDistribution_AccessRights(), theXMLTypePackage.getAnyURI(), "accessRights", null, 0, 1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1303,7 +1313,8 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		initEAttribute(getDistribution_AccessURL(), theXMLTypePackage.getAnyURI(), "accessURL", null, 1, -1, Distribution.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(relationshipEClass, Relationship.class, "Relationship", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEReference(getRelationship_HadRole(), ecorePackage.getEObject(), null, "hadRole", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getRelationship_Relation(), theXMLTypePackage.getAnyURI(), "relation", null, 1, -1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getRelationship_HadRole(), theXMLTypePackage.getAnyURI(), "hadRole", null, 1, -1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getRelationship_Description(), theRdfPackage.getPlainLiteral(), null, "description", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getRelationship_NodeID(), theXMLTypePackage.getNCName(), "nodeID", null, 0, 1, Relationship.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
@@ -1867,6 +1878,14 @@ public class DcatPackageImpl extends EPackageImpl implements DcatPackage {
 		   new String[] {
 			   "name", "Relationship",
 			   "kind", "elementOnly"
+		   });
+		addAnnotation
+		  (getRelationship_Relation(),
+		   source,
+		   new String[] {
+			   "kind", "element",
+			   "name", "relation",
+			   "namespace", "http://purl.org/dc/terms/"
 		   });
 		addAnnotation
 		  (getRelationship_HadRole(),

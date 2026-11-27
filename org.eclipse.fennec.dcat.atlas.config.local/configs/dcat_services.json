@@ -100,6 +100,16 @@
 		"halt.on.error": false
 	},
 	
+	// The snapshot behind the OData endpoints. Like the SPARQL projection it is a
+	// disposable copy of the store, rebuilt on announced changes and reconciled on a
+	// timer; switching it off costs the endpoints and the memory they need, nothing else.
+	// The component takes ConfigurationPolicy.REQUIRE and `enabled` defaults to false, so
+	// this block has to be here even to turn it on.
+	"DcatODataRepository": {
+		"enabled": "$[env:ODATA_ENABLED;default=true]",
+		"reconcileIntervalSeconds": "$[env:ODATA_RECONCILE_INTERVAL_S;default=300]"
+	},
+
 	// SPARQL is off unless asked for, so the block has to be here even to keep it on:
 	// DcatGraphService takes ConfigurationPolicy.REQUIRE and `enabled` now defaults to false.
 	"DcatGraphService": {

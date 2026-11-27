@@ -63,5 +63,37 @@
   // Explicit, not inherited: DcatGraphService is ConfigurationPolicy.REQUIRE and `enabled`
   // defaults to false, so SparqlEndpointIntegrationTest needs this block to have an endpoint.
   "DcatGraphService":             { "enabled": true },
+  // Same reason: DcatODataRepository is REQUIRE with `enabled` false by default, so
+  // ODataEndpointIntegrationTest needs this block to have a snapshot. The reconcile
+  // timer is off - every test waits on the announced refresh, and a second rebuild
+  // racing it would only make failures intermittent.
+  "DcatODataRepository":          { "enabled": true, "reconcileIntervalSeconds": 0 },
+  // The OData root, mirroring config.local/config.docker but on the test runtime. The
+  // factory configuration replaces the servlet's unconfigured default root, which would
+  // publish every bound EPackage; dcat is first because the first package hosts the
+  // service's one entity container.
+  "org.eclipse.fennec.odata.servlet~dcatOData": {
+    "osgi.http.whiteboard.servlet.pattern": "/odata/*",
+    "osgi.http.whiteboard.target": "(id=testHttp)",
+    "odata.model.packages": [
+      "http://www.w3.org/ns/dcat#",
+      "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      "http://purl.org/dc/terms/",
+      "http://xmlns.com/foaf/0.1/",
+      "http://www.w3.org/2006/vcard/ns#",
+      "http://spdx.org/rdf/terms#",
+      "http://www.w3.org/ns/adms#"
+    ],
+    "odata.model.entitysets": [
+      "http://www.w3.org/ns/dcat#Catalog",
+      "http://www.w3.org/ns/dcat#Dataset",
+      "http://www.w3.org/ns/dcat#DatasetSeries",
+      "http://www.w3.org/ns/dcat#DataService"
+    ]
+  },
+  "org.eclipse.fennec.odata.request.filter~dcatOData": {
+    "osgi.http.whiteboard.filter.pattern": "/odata/*",
+    "osgi.http.whiteboard.target": "(id=testHttp)"
+  },
   "DcatValidationService":        { "shapesDirectory": "$[env:SHACL_SHAPES_DIR;default=/tmp/dcat-shapes-unset]", "vocabularyDirectory": "$[env:SHACL_VOCAB_DIR;default=/tmp/dcat-vocab-unset]", "enforceOnWrite": "$[env:SHACL_ENFORCE;default=false]" }
 }

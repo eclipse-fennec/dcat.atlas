@@ -135,8 +135,25 @@ org.eclipse.osgi-technology.rest:org.eclipse.osgitech.rest.bnd.library:1.2.3
 org.eclipse.fennec.codec:org.eclipse.fennec.codec.workspace.library:0.1.0-SNAPSHOT
 org.eclipse.fennec.m2x:org.eclipse.fennec.m2x.library.workspace:0.1.1-SNAPSHOT
 # The Fennec-own models (org.eclipse.fennec.model utilities) — eclipse-fennec/fennec.models,
-# enabled as fennecEMFModels. dcat.atlas needs no external model from common.models.
+# enabled as fennecEMFModels. common.models - enabled as fennecEMFCommonModels, the library
+# name is not the artifact name - carries org.odata.csdl.model, which the OData bundles build
+# against.
 org.eclipse.fennec.models:org.eclipse.fennec.models.library:0.1.0-SNAPSHOT
+org.eclipse.fennec.models:org.eclipse.fennec.common.models.library:0.1.0-SNAPSHOT
+
+# Eclipse Fennec OData (eclipse-fennec/emf.odata): the OData v4.01 server. The DCAT catalog
+# contributes only an EntityRepository and configuration; the query engine comes from here.
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.metadata:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.vocabularies:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.csdl:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.codec.json:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.ocl.evaluator:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.query:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.operation.api:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.wire.api:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.persistence.api:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.persistence.inmemory:0.1.0-SNAPSHOT
+org.eclipse.fennec.odata:org.eclipse.fennec.odata.runtime:0.1.0-SNAPSHOT
 
 # These used to come in through the old fennecJPA library, whose artifacts are gone from
 # Maven Central: the JPA API (dcat.atlas.rest), and the classic spifly bundle with the ASM

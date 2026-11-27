@@ -1,0 +1,30 @@
+-library: enableEMF
+
+# Nothing is exported. What the OData stack consumes is a service (EntityRepository);
+# the CSDL profile of the DCAT model is derived by emf.odata from the EPackages, so no
+# type of this bundle is API.
+
+-buildpath: \
+	org.eclipse.fennec.dcat.atlas.api;version=snapshot,\
+	org.eclipse.fennec.dcat.atlas.dcatap.de.model;version=snapshot,\
+	org.eclipse.fennec.odata.csdl;version=latest,\
+	org.eclipse.fennec.odata.query;version=latest,\
+	org.eclipse.fennec.odata.persistence.api;version=latest,\
+	org.odata.csdl.model;version=latest,\
+	org.eclipse.emf.ecore.xmi;version=latest,\
+	org.apache.felix.healthcheck.api;version=latest,\
+	org.osgi.service.component;version=latest,\
+	org.osgi.service.component.annotations;version=latest,\
+	org.osgi.service.event;version=latest,\
+	org.osgi.service.metatype.annotations;version=latest
+
+# The plain JUnit tests run on buildpath+testpath, so everything the odata bundles reach
+# for at runtime has to be named here: jackson for the CSDL-JSON reader, the ANTLR runtime
+# for the URI parser, and the OCL model the parser builds its IR in.
+-testpath: \
+	tools.jackson.core.jackson-core;version=latest,\
+	tools.jackson.core.jackson-databind;version=latest,\
+	com.fasterxml.jackson.core.jackson-annotations;version=latest,\
+	org.antlr.antlr4-runtime;version=latest,\
+	org.eclipse.fennec.m2x.ocl.model;version=latest,\
+	org.eclipse.fennec.odata.ocl.evaluator;version=latest
